@@ -1,0 +1,503 @@
+//
+//  PersistenceController.swift
+//  gym app
+//
+//  CoreData persistence controller
+//
+
+import CoreData
+
+struct PersistenceController {
+    static let shared = PersistenceController()
+
+    static var preview: PersistenceController = {
+        let result = PersistenceController(inMemory: true)
+        let viewContext = result.container.viewContext
+
+        // Add sample data for previews
+        do {
+            try viewContext.save()
+        } catch {
+            let nsError = error as NSError
+            fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+        }
+        return result
+    }()
+
+    let container: NSPersistentContainer
+
+    init(inMemory: Bool = false) {
+        // Create the managed object model programmatically
+        let model = Self.createManagedObjectModel()
+        container = NSPersistentContainer(name: "GymApp", managedObjectModel: model)
+
+        if inMemory {
+            container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
+        }
+
+        container.loadPersistentStores { storeDescription, error in
+            if let error = error as NSError? {
+                fatalError("Unresolved error \(error), \(error.userInfo)")
+            }
+        }
+
+        container.viewContext.automaticallyMergesChangesFromParent = true
+        container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+    }
+
+    // MARK: - Model Creation
+
+    private static func createManagedObjectModel() -> NSManagedObjectModel {
+        let model = NSManagedObjectModel()
+
+        // Create entities
+        let moduleEntity = createModuleEntity()
+        let exerciseEntity = createExerciseEntity()
+        let setGroupEntity = createSetGroupEntity()
+        let workoutEntity = createWorkoutEntity()
+        let moduleReferenceEntity = createModuleReferenceEntity()
+        let sessionEntity = createSessionEntity()
+        let completedModuleEntity = createCompletedModuleEntity()
+        let sessionExerciseEntity = createSessionExerciseEntity()
+        let completedSetGroupEntity = createCompletedSetGroupEntity()
+        let setDataEntity = createSetDataEntity()
+        let syncQueueEntity = createSyncQueueEntity()
+
+        // Set up relationships
+        setupRelationships(
+            moduleEntity: moduleEntity,
+            exerciseEntity: exerciseEntity,
+            setGroupEntity: setGroupEntity,
+            workoutEntity: workoutEntity,
+            moduleReferenceEntity: moduleReferenceEntity,
+            sessionEntity: sessionEntity,
+            completedModuleEntity: completedModuleEntity,
+            sessionExerciseEntity: sessionExerciseEntity,
+            completedSetGroupEntity: completedSetGroupEntity,
+            setDataEntity: setDataEntity
+        )
+
+        model.entities = [
+            moduleEntity, exerciseEntity, setGroupEntity,
+            workoutEntity, moduleReferenceEntity,
+            sessionEntity, completedModuleEntity, sessionExerciseEntity,
+            completedSetGroupEntity, setDataEntity, syncQueueEntity
+        ]
+
+        return model
+    }
+
+    // MARK: - Entity Definitions
+
+    private static func createModuleEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "ModuleEntity"
+        entity.managedObjectClassName = "ModuleEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("name", type: .stringAttributeType),
+            createAttribute("typeRaw", type: .stringAttributeType),
+            createAttribute("notes", type: .stringAttributeType, optional: true),
+            createAttribute("estimatedDuration", type: .integer32AttributeType, optional: true),
+            createAttribute("createdAt", type: .dateAttributeType),
+            createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("syncStatusRaw", type: .stringAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createExerciseEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "ExerciseEntity"
+        entity.managedObjectClassName = "ExerciseEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("name", type: .stringAttributeType),
+            createAttribute("exerciseTypeRaw", type: .stringAttributeType),
+            createAttribute("trackingMetricsRaw", type: .stringAttributeType),
+            createAttribute("progressionTypeRaw", type: .stringAttributeType),
+            createAttribute("notes", type: .stringAttributeType, optional: true),
+            createAttribute("orderIndex", type: .integer32AttributeType),
+            createAttribute("createdAt", type: .dateAttributeType),
+            createAttribute("updatedAt", type: .dateAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createSetGroupEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "SetGroupEntity"
+        entity.managedObjectClassName = "SetGroupEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("sets", type: .integer32AttributeType),
+            createAttribute("targetReps", type: .integer32AttributeType, optional: true),
+            createAttribute("targetWeight", type: .doubleAttributeType, optional: true),
+            createAttribute("targetRPE", type: .integer32AttributeType, optional: true),
+            createAttribute("targetDuration", type: .integer32AttributeType, optional: true),
+            createAttribute("targetDistance", type: .doubleAttributeType, optional: true),
+            createAttribute("targetHoldTime", type: .integer32AttributeType, optional: true),
+            createAttribute("restPeriod", type: .integer32AttributeType, optional: true),
+            createAttribute("notes", type: .stringAttributeType, optional: true),
+            createAttribute("orderIndex", type: .integer32AttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createWorkoutEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "WorkoutEntity"
+        entity.managedObjectClassName = "WorkoutEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("name", type: .stringAttributeType),
+            createAttribute("estimatedDuration", type: .integer32AttributeType, optional: true),
+            createAttribute("notes", type: .stringAttributeType, optional: true),
+            createAttribute("archived", type: .booleanAttributeType),
+            createAttribute("createdAt", type: .dateAttributeType),
+            createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("syncStatusRaw", type: .stringAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createModuleReferenceEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "ModuleReferenceEntity"
+        entity.managedObjectClassName = "ModuleReferenceEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("moduleId", type: .UUIDAttributeType),
+            createAttribute("orderIndex", type: .integer32AttributeType),
+            createAttribute("isRequired", type: .booleanAttributeType),
+            createAttribute("notes", type: .stringAttributeType, optional: true)
+        ]
+
+        return entity
+    }
+
+    private static func createSessionEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "SessionEntity"
+        entity.managedObjectClassName = "SessionEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("workoutId", type: .UUIDAttributeType),
+            createAttribute("workoutName", type: .stringAttributeType),
+            createAttribute("date", type: .dateAttributeType),
+            createAttribute("skippedModuleIdsRaw", type: .stringAttributeType, optional: true),
+            createAttribute("duration", type: .integer32AttributeType, optional: true),
+            createAttribute("overallFeeling", type: .integer32AttributeType, optional: true),
+            createAttribute("notes", type: .stringAttributeType, optional: true),
+            createAttribute("createdAt", type: .dateAttributeType),
+            createAttribute("syncStatusRaw", type: .stringAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createCompletedModuleEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "CompletedModuleEntity"
+        entity.managedObjectClassName = "CompletedModuleEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("moduleId", type: .UUIDAttributeType),
+            createAttribute("moduleName", type: .stringAttributeType),
+            createAttribute("moduleTypeRaw", type: .stringAttributeType),
+            createAttribute("skipped", type: .booleanAttributeType),
+            createAttribute("notes", type: .stringAttributeType, optional: true),
+            createAttribute("orderIndex", type: .integer32AttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createSessionExerciseEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "SessionExerciseEntity"
+        entity.managedObjectClassName = "SessionExerciseEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("exerciseId", type: .UUIDAttributeType),
+            createAttribute("exerciseName", type: .stringAttributeType),
+            createAttribute("exerciseTypeRaw", type: .stringAttributeType),
+            createAttribute("notes", type: .stringAttributeType, optional: true),
+            createAttribute("orderIndex", type: .integer32AttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createCompletedSetGroupEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "CompletedSetGroupEntity"
+        entity.managedObjectClassName = "CompletedSetGroupEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("setGroupId", type: .UUIDAttributeType),
+            createAttribute("orderIndex", type: .integer32AttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createSetDataEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "SetDataEntity"
+        entity.managedObjectClassName = "SetDataEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("setNumber", type: .integer32AttributeType),
+            createAttribute("weight", type: .doubleAttributeType, optional: true),
+            createAttribute("reps", type: .integer32AttributeType, optional: true),
+            createAttribute("rpe", type: .integer32AttributeType, optional: true),
+            createAttribute("completed", type: .booleanAttributeType),
+            createAttribute("duration", type: .integer32AttributeType, optional: true),
+            createAttribute("distance", type: .doubleAttributeType, optional: true),
+            createAttribute("pace", type: .doubleAttributeType, optional: true),
+            createAttribute("avgHeartRate", type: .integer32AttributeType, optional: true),
+            createAttribute("holdTime", type: .integer32AttributeType, optional: true),
+            createAttribute("intensity", type: .integer32AttributeType, optional: true),
+            createAttribute("height", type: .doubleAttributeType, optional: true),
+            createAttribute("quality", type: .integer32AttributeType, optional: true),
+            createAttribute("restAfter", type: .integer32AttributeType, optional: true)
+        ]
+
+        return entity
+    }
+
+    private static func createSyncQueueEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "SyncQueueEntity"
+        entity.managedObjectClassName = "SyncQueueEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("operationRaw", type: .stringAttributeType),
+            createAttribute("entityTypeRaw", type: .stringAttributeType),
+            createAttribute("entityId", type: .UUIDAttributeType),
+            createAttribute("payload", type: .binaryDataAttributeType),
+            createAttribute("attempts", type: .integer32AttributeType),
+            createAttribute("createdAt", type: .dateAttributeType),
+            createAttribute("lastAttemptAt", type: .dateAttributeType, optional: true)
+        ]
+
+        return entity
+    }
+
+    // MARK: - Relationship Setup
+
+    private static func setupRelationships(
+        moduleEntity: NSEntityDescription,
+        exerciseEntity: NSEntityDescription,
+        setGroupEntity: NSEntityDescription,
+        workoutEntity: NSEntityDescription,
+        moduleReferenceEntity: NSEntityDescription,
+        sessionEntity: NSEntityDescription,
+        completedModuleEntity: NSEntityDescription,
+        sessionExerciseEntity: NSEntityDescription,
+        completedSetGroupEntity: NSEntityDescription,
+        setDataEntity: NSEntityDescription
+    ) {
+        // Module <-> Exercise (one-to-many)
+        let moduleToExercises = NSRelationshipDescription()
+        moduleToExercises.name = "exercises"
+        moduleToExercises.destinationEntity = exerciseEntity
+        moduleToExercises.isOrdered = true
+        moduleToExercises.minCount = 0
+        moduleToExercises.maxCount = 0 // unlimited
+        moduleToExercises.deleteRule = .cascadeDeleteRule
+
+        let exerciseToModule = NSRelationshipDescription()
+        exerciseToModule.name = "module"
+        exerciseToModule.destinationEntity = moduleEntity
+        exerciseToModule.minCount = 0
+        exerciseToModule.maxCount = 1
+        exerciseToModule.deleteRule = .nullifyDeleteRule
+
+        moduleToExercises.inverseRelationship = exerciseToModule
+        exerciseToModule.inverseRelationship = moduleToExercises
+
+        moduleEntity.properties.append(moduleToExercises)
+        exerciseEntity.properties.append(exerciseToModule)
+
+        // Exercise <-> SetGroup (one-to-many)
+        let exerciseToSetGroups = NSRelationshipDescription()
+        exerciseToSetGroups.name = "setGroups"
+        exerciseToSetGroups.destinationEntity = setGroupEntity
+        exerciseToSetGroups.isOrdered = true
+        exerciseToSetGroups.minCount = 0
+        exerciseToSetGroups.maxCount = 0
+        exerciseToSetGroups.deleteRule = .cascadeDeleteRule
+
+        let setGroupToExercise = NSRelationshipDescription()
+        setGroupToExercise.name = "exercise"
+        setGroupToExercise.destinationEntity = exerciseEntity
+        setGroupToExercise.minCount = 0
+        setGroupToExercise.maxCount = 1
+        setGroupToExercise.deleteRule = .nullifyDeleteRule
+
+        exerciseToSetGroups.inverseRelationship = setGroupToExercise
+        setGroupToExercise.inverseRelationship = exerciseToSetGroups
+
+        exerciseEntity.properties.append(exerciseToSetGroups)
+        setGroupEntity.properties.append(setGroupToExercise)
+
+        // Workout <-> ModuleReference (one-to-many)
+        let workoutToModuleRefs = NSRelationshipDescription()
+        workoutToModuleRefs.name = "moduleReferences"
+        workoutToModuleRefs.destinationEntity = moduleReferenceEntity
+        workoutToModuleRefs.isOrdered = true
+        workoutToModuleRefs.minCount = 0
+        workoutToModuleRefs.maxCount = 0
+        workoutToModuleRefs.deleteRule = .cascadeDeleteRule
+
+        let moduleRefToWorkout = NSRelationshipDescription()
+        moduleRefToWorkout.name = "workout"
+        moduleRefToWorkout.destinationEntity = workoutEntity
+        moduleRefToWorkout.minCount = 0
+        moduleRefToWorkout.maxCount = 1
+        moduleRefToWorkout.deleteRule = .nullifyDeleteRule
+
+        workoutToModuleRefs.inverseRelationship = moduleRefToWorkout
+        moduleRefToWorkout.inverseRelationship = workoutToModuleRefs
+
+        workoutEntity.properties.append(workoutToModuleRefs)
+        moduleReferenceEntity.properties.append(moduleRefToWorkout)
+
+        // Session <-> CompletedModule (one-to-many)
+        let sessionToCompletedModules = NSRelationshipDescription()
+        sessionToCompletedModules.name = "completedModules"
+        sessionToCompletedModules.destinationEntity = completedModuleEntity
+        sessionToCompletedModules.isOrdered = true
+        sessionToCompletedModules.minCount = 0
+        sessionToCompletedModules.maxCount = 0
+        sessionToCompletedModules.deleteRule = .cascadeDeleteRule
+
+        let completedModuleToSession = NSRelationshipDescription()
+        completedModuleToSession.name = "session"
+        completedModuleToSession.destinationEntity = sessionEntity
+        completedModuleToSession.minCount = 0
+        completedModuleToSession.maxCount = 1
+        completedModuleToSession.deleteRule = .nullifyDeleteRule
+
+        sessionToCompletedModules.inverseRelationship = completedModuleToSession
+        completedModuleToSession.inverseRelationship = sessionToCompletedModules
+
+        sessionEntity.properties.append(sessionToCompletedModules)
+        completedModuleEntity.properties.append(completedModuleToSession)
+
+        // CompletedModule <-> SessionExercise (one-to-many)
+        let completedModuleToExercises = NSRelationshipDescription()
+        completedModuleToExercises.name = "completedExercises"
+        completedModuleToExercises.destinationEntity = sessionExerciseEntity
+        completedModuleToExercises.isOrdered = true
+        completedModuleToExercises.minCount = 0
+        completedModuleToExercises.maxCount = 0
+        completedModuleToExercises.deleteRule = .cascadeDeleteRule
+
+        let sessionExerciseToModule = NSRelationshipDescription()
+        sessionExerciseToModule.name = "completedModule"
+        sessionExerciseToModule.destinationEntity = completedModuleEntity
+        sessionExerciseToModule.minCount = 0
+        sessionExerciseToModule.maxCount = 1
+        sessionExerciseToModule.deleteRule = .nullifyDeleteRule
+
+        completedModuleToExercises.inverseRelationship = sessionExerciseToModule
+        sessionExerciseToModule.inverseRelationship = completedModuleToExercises
+
+        completedModuleEntity.properties.append(completedModuleToExercises)
+        sessionExerciseEntity.properties.append(sessionExerciseToModule)
+
+        // SessionExercise <-> CompletedSetGroup (one-to-many)
+        let sessionExerciseToSetGroups = NSRelationshipDescription()
+        sessionExerciseToSetGroups.name = "completedSetGroups"
+        sessionExerciseToSetGroups.destinationEntity = completedSetGroupEntity
+        sessionExerciseToSetGroups.isOrdered = true
+        sessionExerciseToSetGroups.minCount = 0
+        sessionExerciseToSetGroups.maxCount = 0
+        sessionExerciseToSetGroups.deleteRule = .cascadeDeleteRule
+
+        let completedSetGroupToExercise = NSRelationshipDescription()
+        completedSetGroupToExercise.name = "sessionExercise"
+        completedSetGroupToExercise.destinationEntity = sessionExerciseEntity
+        completedSetGroupToExercise.minCount = 0
+        completedSetGroupToExercise.maxCount = 1
+        completedSetGroupToExercise.deleteRule = .nullifyDeleteRule
+
+        sessionExerciseToSetGroups.inverseRelationship = completedSetGroupToExercise
+        completedSetGroupToExercise.inverseRelationship = sessionExerciseToSetGroups
+
+        sessionExerciseEntity.properties.append(sessionExerciseToSetGroups)
+        completedSetGroupEntity.properties.append(completedSetGroupToExercise)
+
+        // CompletedSetGroup <-> SetData (one-to-many)
+        let completedSetGroupToSets = NSRelationshipDescription()
+        completedSetGroupToSets.name = "sets"
+        completedSetGroupToSets.destinationEntity = setDataEntity
+        completedSetGroupToSets.isOrdered = true
+        completedSetGroupToSets.minCount = 0
+        completedSetGroupToSets.maxCount = 0
+        completedSetGroupToSets.deleteRule = .cascadeDeleteRule
+
+        let setDataToSetGroup = NSRelationshipDescription()
+        setDataToSetGroup.name = "completedSetGroup"
+        setDataToSetGroup.destinationEntity = completedSetGroupEntity
+        setDataToSetGroup.minCount = 0
+        setDataToSetGroup.maxCount = 1
+        setDataToSetGroup.deleteRule = .nullifyDeleteRule
+
+        completedSetGroupToSets.inverseRelationship = setDataToSetGroup
+        setDataToSetGroup.inverseRelationship = completedSetGroupToSets
+
+        completedSetGroupEntity.properties.append(completedSetGroupToSets)
+        setDataEntity.properties.append(setDataToSetGroup)
+    }
+
+    // MARK: - Helper Functions
+
+    private static func createAttribute(
+        _ name: String,
+        type: NSAttributeType,
+        optional: Bool = false,
+        defaultValue: Any? = nil
+    ) -> NSAttributeDescription {
+        let attribute = NSAttributeDescription()
+        attribute.name = name
+        attribute.attributeType = type
+        attribute.isOptional = optional
+        if let defaultValue = defaultValue {
+            attribute.defaultValue = defaultValue
+        }
+        return attribute
+    }
+
+    // MARK: - Save Context
+
+    func save() {
+        let context = container.viewContext
+        if context.hasChanges {
+            do {
+                try context.save()
+            } catch {
+                let nsError = error as NSError
+                print("Error saving context: \(nsError), \(nsError.userInfo)")
+            }
+        }
+    }
+}

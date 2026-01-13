@@ -1,0 +1,337 @@
+//
+//  SessionViewModel.swift
+//  gym app
+//
+//  ViewModel for managing workout sessions (active logging)
+//
+
+import Foundation
+import Combine
+
+@MainActor
+class SessionViewModel: ObservableObject {
+    // Current session state
+    @Published var currentSession: Session?
+    @Published var isSessionActive = false
+    @Published var currentModuleIndex = 0
+    @Published var currentExerciseIndex = 0
+    @Published var currentSetGroupIndex = 0
+    @Published var currentSetIndex = 0
+
+    // Timer state
+    @Published var restTimerSeconds = 0
+    @Published var isRestTimerRunning = false
+    @Published var sessionStartTime: Date?
+    @Published var sessionElapsedSeconds = 0
+
+    // History
+    @Published var sessions: [Session] = []
+
+    private let repository: DataRepository
+    private var timerCancellable: AnyCancellable?
+    private var sessionTimerCancellable: AnyCancellable?
+
+    init(repository: DataRepository = .shared) {
+        self.repository = repository
+        loadSessions()
+    }
+
+    func loadSessions() {
+        repository.loadSessions()
+        sessions = repository.sessions
+    }
+
+    // MARK: - Session Management
+
+    func startSession(workout: Workout, modules: [Module]) {
+        let completedModules = modules.map { module in
+            CompletedModule(
+                moduleId: module.id,
+                moduleName: module.name,
+                moduleType: module.type,
+                completedExercises: module.exercises.map { exercise in
+                    SessionExercise(
+                        exerciseId: exercise.id,
+                        exerciseName: exercise.name,
+                        exerciseType: exercise.exerciseType,
+                        completedSetGroups: exercise.setGroups.map { setGroup in
+                            CompletedSetGroup(
+                                setGroupId: setGroup.id,
+                                sets: (1...setGroup.sets).map { setNum in
+                                    // Pre-fill with target values for convenience
+                                    SetData(
+                                        setNumber: setNum,
+                                        weight: setGroup.targetWeight,
+                                        reps: setGroup.targetReps,
+                                        completed: false,
+                                        duration: setGroup.targetDuration,
+                                        holdTime: setGroup.targetHoldTime
+                                    )
+                                }
+                            )
+                        }
+                    )
+                }
+            )
+        }
+
+        currentSession = Session(
+            workoutId: workout.id,
+            workoutName: workout.name,
+            completedModules: completedModules
+        )
+
+        currentModuleIndex = 0
+        currentExerciseIndex = 0
+        currentSetGroupIndex = 0
+        currentSetIndex = 0
+        sessionStartTime = Date()
+        isSessionActive = true
+
+        startSessionTimer()
+    }
+
+    func endSession(feeling: Int?, notes: String?) {
+        guard var session = currentSession else { return }
+
+        session.duration = sessionElapsedSeconds / 60
+        session.overallFeeling = feeling
+        session.notes = notes
+
+        repository.saveSession(session)
+        loadSessions()
+
+        stopSessionTimer()
+        stopRestTimer()
+
+        currentSession = nil
+        isSessionActive = false
+    }
+
+    func cancelSession() {
+        stopSessionTimer()
+        stopRestTimer()
+        currentSession = nil
+        isSessionActive = false
+    }
+
+    // MARK: - Set Logging
+
+    func logSet(
+        weight: Double? = nil,
+        reps: Int? = nil,
+        rpe: Int? = nil,
+        duration: Int? = nil,
+        holdTime: Int? = nil,
+        distance: Double? = nil,
+        completed: Bool = true
+    ) {
+        guard var session = currentSession else { return }
+
+        // Navigate to current set
+        guard currentModuleIndex < session.completedModules.count else { return }
+        var module = session.completedModules[currentModuleIndex]
+
+        guard currentExerciseIndex < module.completedExercises.count else { return }
+        var exercise = module.completedExercises[currentExerciseIndex]
+
+        guard currentSetGroupIndex < exercise.completedSetGroups.count else { return }
+        var setGroup = exercise.completedSetGroups[currentSetGroupIndex]
+
+        guard currentSetIndex < setGroup.sets.count else { return }
+        var setData = setGroup.sets[currentSetIndex]
+
+        // Update set data
+        setData.weight = weight ?? setData.weight
+        setData.reps = reps ?? setData.reps
+        setData.rpe = rpe
+        setData.duration = duration ?? setData.duration
+        setData.holdTime = holdTime ?? setData.holdTime
+        setData.distance = distance
+        setData.completed = completed
+
+        // Put it all back together
+        setGroup.sets[currentSetIndex] = setData
+        exercise.completedSetGroups[currentSetGroupIndex] = setGroup
+        module.completedExercises[currentExerciseIndex] = exercise
+        session.completedModules[currentModuleIndex] = module
+
+        currentSession = session
+
+        // Auto-advance to next set
+        advanceToNextSet()
+    }
+
+    func advanceToNextSet() {
+        guard let session = currentSession else { return }
+        let module = session.completedModules[currentModuleIndex]
+        let exercise = module.completedExercises[currentExerciseIndex]
+        let setGroup = exercise.completedSetGroups[currentSetGroupIndex]
+
+        if currentSetIndex < setGroup.sets.count - 1 {
+            // Next set in current set group
+            currentSetIndex += 1
+        } else if currentSetGroupIndex < exercise.completedSetGroups.count - 1 {
+            // Next set group
+            currentSetGroupIndex += 1
+            currentSetIndex = 0
+        } else if currentExerciseIndex < module.completedExercises.count - 1 {
+            // Next exercise
+            currentExerciseIndex += 1
+            currentSetGroupIndex = 0
+            currentSetIndex = 0
+        } else if currentModuleIndex < session.completedModules.count - 1 {
+            // Next module
+            currentModuleIndex += 1
+            currentExerciseIndex = 0
+            currentSetGroupIndex = 0
+            currentSetIndex = 0
+        }
+        // else: end of workout
+    }
+
+    func skipExercise() {
+        guard let session = currentSession else { return }
+        let module = session.completedModules[currentModuleIndex]
+
+        if currentExerciseIndex < module.completedExercises.count - 1 {
+            currentExerciseIndex += 1
+            currentSetGroupIndex = 0
+            currentSetIndex = 0
+        } else if currentModuleIndex < session.completedModules.count - 1 {
+            currentModuleIndex += 1
+            currentExerciseIndex = 0
+            currentSetGroupIndex = 0
+            currentSetIndex = 0
+        }
+    }
+
+    func skipModule() {
+        guard var session = currentSession else { return }
+
+        // Mark current module as skipped
+        session.skippedModuleIds.append(session.completedModules[currentModuleIndex].moduleId)
+        currentSession = session
+
+        if currentModuleIndex < session.completedModules.count - 1 {
+            currentModuleIndex += 1
+            currentExerciseIndex = 0
+            currentSetGroupIndex = 0
+            currentSetIndex = 0
+        }
+    }
+
+    // MARK: - Current Position Accessors
+
+    var currentModule: CompletedModule? {
+        guard let session = currentSession,
+              currentModuleIndex < session.completedModules.count else { return nil }
+        return session.completedModules[currentModuleIndex]
+    }
+
+    var currentExercise: SessionExercise? {
+        guard let module = currentModule,
+              currentExerciseIndex < module.completedExercises.count else { return nil }
+        return module.completedExercises[currentExerciseIndex]
+    }
+
+    var currentSetGroup: CompletedSetGroup? {
+        guard let exercise = currentExercise,
+              currentSetGroupIndex < exercise.completedSetGroups.count else { return nil }
+        return exercise.completedSetGroups[currentSetGroupIndex]
+    }
+
+    var currentSet: SetData? {
+        guard let setGroup = currentSetGroup,
+              currentSetIndex < setGroup.sets.count else { return nil }
+        return setGroup.sets[currentSetIndex]
+    }
+
+    var isLastSet: Bool {
+        guard let session = currentSession else { return true }
+        let lastModuleIndex = session.completedModules.count - 1
+        guard currentModuleIndex == lastModuleIndex else { return false }
+
+        let module = session.completedModules[currentModuleIndex]
+        let lastExerciseIndex = module.completedExercises.count - 1
+        guard currentExerciseIndex == lastExerciseIndex else { return false }
+
+        let exercise = module.completedExercises[currentExerciseIndex]
+        let lastSetGroupIndex = exercise.completedSetGroups.count - 1
+        guard currentSetGroupIndex == lastSetGroupIndex else { return false }
+
+        let setGroup = exercise.completedSetGroups[currentSetGroupIndex]
+        return currentSetIndex == setGroup.sets.count - 1
+    }
+
+    // MARK: - Timer Management
+
+    func startRestTimer(seconds: Int) {
+        restTimerSeconds = seconds
+        isRestTimerRunning = true
+
+        timerCancellable = Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                if self.restTimerSeconds > 0 {
+                    self.restTimerSeconds -= 1
+                } else {
+                    self.stopRestTimer()
+                }
+            }
+    }
+
+    func stopRestTimer() {
+        timerCancellable?.cancel()
+        isRestTimerRunning = false
+        restTimerSeconds = 0
+    }
+
+    private func startSessionTimer() {
+        sessionElapsedSeconds = 0
+
+        sessionTimerCancellable = Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.sessionElapsedSeconds += 1
+            }
+    }
+
+    private func stopSessionTimer() {
+        sessionTimerCancellable?.cancel()
+    }
+
+    // MARK: - History
+
+    func getSessionsForWorkout(_ workoutId: UUID) -> [Session] {
+        sessions.filter { $0.workoutId == workoutId }
+    }
+
+    func getRecentSessions(limit: Int = 10) -> [Session] {
+        Array(sessions.prefix(limit))
+    }
+
+    func deleteSession(_ session: Session) {
+        repository.deleteSession(session)
+        loadSessions()
+    }
+
+    func deleteSessions(at offsets: IndexSet) {
+        for index in offsets {
+            deleteSession(sessions[index])
+        }
+    }
+
+    // Get last session data for an exercise (for showing previous performance)
+    func getLastSessionData(for exerciseName: String) -> SessionExercise? {
+        for session in sessions {
+            for module in session.completedModules {
+                if let exercise = module.completedExercises.first(where: { $0.exerciseName == exerciseName }) {
+                    return exercise
+                }
+            }
+        }
+        return nil
+    }
+}

@@ -2,7 +2,7 @@
 //  gym_appApp.swift
 //  gym app
 //
-//  Created by  Andrew Buescher on 1/12/26.
+//  Created by Andrew Buescher on 1/12/26.
 //
 
 import SwiftUI
@@ -11,7 +11,7 @@ import SwiftUI
 struct gym_appApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainTabView()
         }
     }
 }
