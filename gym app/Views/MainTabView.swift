@@ -15,7 +15,7 @@ struct MainTabView: View {
         TabView(selection: $selectedTab) {
             HomeView()
                 .tabItem {
-                    Label("Home", systemImage: "house")
+                    Label("Home", systemImage: "house.fill")
                 }
                 .tag(0)
 
@@ -27,7 +27,7 @@ struct MainTabView: View {
 
             ModulesListView()
                 .tabItem {
-                    Label("Modules", systemImage: "square.stack.3d.up")
+                    Label("Modules", systemImage: "square.stack.3d.up.fill")
                 }
                 .tag(2)
 
@@ -39,14 +39,16 @@ struct MainTabView: View {
 
             SettingsView()
                 .tabItem {
-                    Label("Settings", systemImage: "gear")
+                    Label("Settings", systemImage: "gearshape.fill")
                 }
                 .tag(4)
         }
+        .tint(AppColors.accentBlue)
         .environmentObject(appState)
         .environmentObject(appState.moduleViewModel)
         .environmentObject(appState.workoutViewModel)
         .environmentObject(appState.sessionViewModel)
+        .preferredColorScheme(.dark)
     }
 }
 

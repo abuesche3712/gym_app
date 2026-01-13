@@ -20,6 +20,7 @@ class SessionViewModel: ObservableObject {
 
     // Timer state
     @Published var restTimerSeconds = 0
+    @Published var restTimerTotal = 0
     @Published var isRestTimerRunning = false
     @Published var sessionStartTime: Date?
     @Published var sessionElapsedSeconds = 0
@@ -268,6 +269,7 @@ class SessionViewModel: ObservableObject {
 
     func startRestTimer(seconds: Int) {
         restTimerSeconds = seconds
+        restTimerTotal = seconds
         isRestTimerRunning = true
 
         timerCancellable = Timer.publish(every: 1, on: .main, in: .common)
@@ -286,6 +288,7 @@ class SessionViewModel: ObservableObject {
         timerCancellable?.cancel()
         isRestTimerRunning = false
         restTimerSeconds = 0
+        restTimerTotal = 0
     }
 
     private func startSessionTimer() {

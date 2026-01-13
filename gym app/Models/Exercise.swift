@@ -14,6 +14,7 @@ struct Exercise: Identifiable, Codable, Hashable {
     var setGroups: [SetGroup]
     var trackingMetrics: [MetricType]
     var progressionType: ProgressionType
+    var supersetGroupId: UUID?  // Exercises with same ID are in a superset
     var notes: String?
     var createdAt: Date
     var updatedAt: Date
@@ -25,6 +26,7 @@ struct Exercise: Identifiable, Codable, Hashable {
         setGroups: [SetGroup] = [],
         trackingMetrics: [MetricType]? = nil,
         progressionType: ProgressionType = .none,
+        supersetGroupId: UUID? = nil,
         notes: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -34,6 +36,7 @@ struct Exercise: Identifiable, Codable, Hashable {
         self.exerciseType = exerciseType
         self.setGroups = setGroups
         self.progressionType = progressionType
+        self.supersetGroupId = supersetGroupId
         self.notes = notes
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -44,6 +47,10 @@ struct Exercise: Identifiable, Codable, Hashable {
         } else {
             self.trackingMetrics = Exercise.defaultMetrics(for: exerciseType)
         }
+    }
+
+    var isInSuperset: Bool {
+        supersetGroupId != nil
     }
 
     static func defaultMetrics(for type: ExerciseType) -> [MetricType] {

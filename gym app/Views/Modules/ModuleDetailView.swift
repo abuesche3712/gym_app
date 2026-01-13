@@ -16,6 +16,8 @@ struct ModuleDetailView: View {
     @State private var showingEditModule = false
     @State private var showingAddExercise = false
     @State private var showingDeleteConfirmation = false
+    @State private var isSelectingForSuperset = false
+    @State private var selectedExerciseIds: Set<UUID> = []
 
     private var currentModule: Module {
         moduleViewModel.getModule(id: module.id) ?? module
@@ -70,9 +72,38 @@ struct ModuleDetailView: View {
                         description: Text("Add exercises to this module")
                     )
                 } else {
-                    ForEach(currentModule.exercises) { exercise in
-                        NavigationLink(destination: ExerciseDetailView(exercise: exercise, moduleId: currentModule.id)) {
-                            ExerciseRow(exercise: exercise)
+                    ForEach(currentModule.groupedExercises, id: \.first?.id) { exerciseGroup in
+                        if exerciseGroup.count > 1 {
+                            // Superset group
+                            SupersetGroupRow(
+                                exercises: exerciseGroup,
+                                moduleId: currentModule.id,
+                                isSelecting: isSelectingForSuperset,
+                                selectedIds: $selectedExerciseIds,
+                                onBreakSuperset: {
+                                    if let supersetId = exerciseGroup.first?.supersetGroupId {
+                                        breakSupersetGroup(supersetId)
+                                    }
+                                }
+                            )
+                        } else if let exercise = exerciseGroup.first {
+                            // Single exercise
+                            if isSelectingForSuperset {
+                                Button {
+                                    toggleSelection(exercise.id)
+                                } label: {
+                                    HStack {
+                                        Image(systemName: selectedExerciseIds.contains(exercise.id) ? "checkmark.circle.fill" : "circle")
+                                            .foregroundColor(selectedExerciseIds.contains(exercise.id) ? .blue : .gray)
+                                        ExerciseRow(exercise: exercise)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                NavigationLink(destination: ExerciseDetailView(exercise: exercise, moduleId: currentModule.id)) {
+                                    ExerciseRow(exercise: exercise)
+                                }
+                            }
                         }
                     }
                     .onDelete(perform: deleteExercise)
@@ -82,10 +113,21 @@ struct ModuleDetailView: View {
                 HStack {
                     Text("Exercises (\(currentModule.exercises.count))")
                     Spacer()
-                    Button {
-                        showingAddExercise = true
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
+                    if isSelectingForSuperset {
+                        Button("Done") {
+                            if selectedExerciseIds.count >= 2 {
+                                createSuperset()
+                            }
+                            isSelectingForSuperset = false
+                            selectedExerciseIds.removeAll()
+                        }
+                        .disabled(selectedExerciseIds.count < 2)
+                    } else {
+                        Button {
+                            showingAddExercise = true
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                        }
                     }
                 }
             }
@@ -115,6 +157,17 @@ struct ModuleDetailView: View {
                         showingAddExercise = true
                     } label: {
                         Label("Add Exercise", systemImage: "plus")
+                    }
+
+                    if currentModule.exercises.count >= 2 {
+                        Divider()
+
+                        Button {
+                            isSelectingForSuperset = true
+                            selectedExerciseIds.removeAll()
+                        } label: {
+                            Label("Create Superset", systemImage: "link")
+                        }
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -158,6 +211,26 @@ struct ModuleDetailView: View {
         updatedModule.updatedAt = Date()
         moduleViewModel.saveModule(updatedModule)
     }
+
+    private func toggleSelection(_ exerciseId: UUID) {
+        if selectedExerciseIds.contains(exerciseId) {
+            selectedExerciseIds.remove(exerciseId)
+        } else {
+            selectedExerciseIds.insert(exerciseId)
+        }
+    }
+
+    private func createSuperset() {
+        var updatedModule = currentModule
+        updatedModule.createSuperset(exerciseIds: Array(selectedExerciseIds))
+        moduleViewModel.saveModule(updatedModule)
+    }
+
+    private func breakSupersetGroup(_ supersetGroupId: UUID) {
+        var updatedModule = currentModule
+        updatedModule.breakSupersetGroup(supersetGroupId: supersetGroupId)
+        moduleViewModel.saveModule(updatedModule)
+    }
 }
 
 // MARK: - Exercise Row
@@ -193,6 +266,112 @@ struct ExerciseRow: View {
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Superset Group Row
+
+struct SupersetGroupRow: View {
+    let exercises: [Exercise]
+    let moduleId: UUID
+    let isSelecting: Bool
+    @Binding var selectedIds: Set<UUID>
+    let onBreakSuperset: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Superset header
+            HStack {
+                Image(systemName: "link")
+                    .font(.caption)
+                    .foregroundColor(.orange)
+                Text("SUPERSET")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.orange)
+                Spacer()
+                if !isSelecting {
+                    Button {
+                        onBreakSuperset()
+                    } label: {
+                        Text("Unlink")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .padding(.bottom, 8)
+
+            // Exercises in superset
+            VStack(spacing: 0) {
+                ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
+                    HStack(spacing: 12) {
+                        // Connector line
+                        VStack(spacing: 0) {
+                            Rectangle()
+                                .fill(Color.orange.opacity(index == 0 ? 0 : 0.5))
+                                .frame(width: 2)
+                            Circle()
+                                .fill(Color.orange)
+                                .frame(width: 8, height: 8)
+                            Rectangle()
+                                .fill(Color.orange.opacity(index == exercises.count - 1 ? 0 : 0.5))
+                                .frame(width: 2)
+                        }
+                        .frame(width: 8)
+
+                        if isSelecting {
+                            Button {
+                                toggleSelection(exercise.id)
+                            } label: {
+                                HStack {
+                                    Image(systemName: selectedIds.contains(exercise.id) ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(selectedIds.contains(exercise.id) ? .blue : .gray)
+                                    CompactExerciseRow(exercise: exercise)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            NavigationLink(destination: ExerciseDetailView(exercise: exercise, moduleId: moduleId)) {
+                                CompactExerciseRow(exercise: exercise)
+                            }
+                        }
+                    }
+                    .frame(minHeight: 44)
+                }
+            }
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.orange.opacity(0.05))
+        )
+    }
+
+    private func toggleSelection(_ exerciseId: UUID) {
+        if selectedIds.contains(exerciseId) {
+            selectedIds.remove(exerciseId)
+        } else {
+            selectedIds.insert(exerciseId)
+        }
+    }
+}
+
+// MARK: - Compact Exercise Row (for supersets)
+
+struct CompactExerciseRow: View {
+    let exercise: Exercise
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(exercise.name)
+                .font(.subheadline.weight(.medium))
+
+            Text(exercise.formattedSetScheme)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

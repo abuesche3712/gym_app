@@ -14,46 +14,50 @@ struct ActiveSessionView: View {
 
     @State private var showingEndConfirmation = false
     @State private var showingCancelConfirmation = false
-    @State private var showingFeelingPicker = false
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Progress Header
-                sessionProgressHeader
+            ZStack {
+                // Background
+                AppColors.background.ignoresSafeArea()
 
-                // Main Content
-                if let currentModule = sessionViewModel.currentModule,
-                   let currentExercise = sessionViewModel.currentExercise {
+                VStack(spacing: 0) {
+                    // Progress Header
+                    sessionProgressHeader
 
-                    ScrollView {
-                        VStack(spacing: 20) {
-                            // Module indicator
-                            moduleIndicator(currentModule)
+                    // Main Content
+                    if let currentModule = sessionViewModel.currentModule,
+                       let currentExercise = sessionViewModel.currentExercise {
 
-                            // Exercise Card
-                            exerciseCard(currentExercise)
+                        ScrollView {
+                            VStack(spacing: AppSpacing.lg) {
+                                // Module indicator
+                                moduleIndicator(currentModule)
 
-                            // Set Input
-                            setInputSection
+                                // Exercise Card with sets
+                                exerciseCard(currentExercise)
 
-                            // Previous Performance
-                            previousPerformanceSection(exerciseName: currentExercise.exerciseName)
+                                // Set Input
+                                setInputSection
+
+                                // Previous Performance
+                                previousPerformanceSection(exerciseName: currentExercise.exerciseName)
+                            }
+                            .padding(AppSpacing.screenPadding)
                         }
-                        .padding()
+                    } else {
+                        // Workout complete
+                        workoutCompleteView
                     }
-                } else {
-                    // Workout complete
-                    workoutCompleteView
-                }
 
-                // Rest Timer (if running)
-                if sessionViewModel.isRestTimerRunning {
-                    restTimerBar
-                }
+                    // Rest Timer Overlay
+                    if sessionViewModel.isRestTimerRunning {
+                        restTimerOverlay
+                    }
 
-                // Bottom Action Bar
-                bottomActionBar
+                    // Bottom Action Bar
+                    bottomActionBar
+                }
             }
             .navigationTitle(sessionViewModel.currentSession?.workoutName ?? "Workout")
             .navigationBarTitleDisplayMode(.inline)
@@ -62,12 +66,14 @@ struct ActiveSessionView: View {
                     Button("Cancel") {
                         showingCancelConfirmation = true
                     }
+                    .foregroundColor(AppColors.error)
                 }
 
                 ToolbarItem(placement: .primaryAction) {
                     Button("Finish") {
                         showingEndConfirmation = true
                     }
+                    .foregroundColor(AppColors.accentBlue)
                 }
             }
             .confirmationDialog("Cancel Workout", isPresented: $showingCancelConfirmation) {
@@ -90,94 +96,136 @@ struct ActiveSessionView: View {
     // MARK: - Progress Header
 
     private var sessionProgressHeader: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: AppSpacing.sm) {
             // Timer
             Text(formatTime(sessionViewModel.sessionElapsedSeconds))
-                .font(.system(size: 36, weight: .bold, design: .monospaced))
+                .font(.system(size: 40, weight: .bold, design: .monospaced))
+                .foregroundColor(AppColors.textPrimary)
 
             // Progress bar
             if let session = sessionViewModel.currentSession {
                 let totalModules = session.completedModules.count
                 let progress = Double(sessionViewModel.currentModuleIndex) / Double(max(totalModules, 1))
 
-                ProgressView(value: progress)
-                    .tint(.green)
+                ProgressBar(progress: progress, height: 4, color: AppColors.accentTeal)
+                    .padding(.horizontal, AppSpacing.xl)
 
                 Text("Module \(sessionViewModel.currentModuleIndex + 1) of \(totalModules)")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
             }
         }
-        .padding()
-        .background(Color(.systemGray6))
+        .padding(AppSpacing.lg)
+        .background(
+            AppColors.cardBackground
+                .overlay(
+                    LinearGradient(
+                        colors: [AppColors.accentBlue.opacity(0.1), .clear],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+        )
     }
 
     // MARK: - Module Indicator
 
     private func moduleIndicator(_ module: CompletedModule) -> some View {
-        HStack {
-            Image(systemName: module.moduleType.icon)
-                .foregroundStyle(Color(module.moduleType.color))
+        HStack(spacing: AppSpacing.md) {
+            ZStack {
+                Circle()
+                    .fill(AppColors.moduleColor(module.moduleType).opacity(0.2))
+                    .frame(width: 40, height: 40)
+
+                Image(systemName: module.moduleType.icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(AppColors.moduleColor(module.moduleType))
+            }
 
             Text(module.moduleName)
                 .font(.headline)
+                .foregroundColor(AppColors.textPrimary)
 
             Spacer()
 
             Button {
                 sessionViewModel.skipModule()
             } label: {
-                Text("Skip Module")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
+                Text("Skip")
+                    .font(.caption.weight(.medium))
+                    .foregroundColor(AppColors.warning)
+                    .padding(.horizontal, AppSpacing.md)
+                    .padding(.vertical, AppSpacing.xs)
+                    .background(
+                        Capsule()
+                            .fill(AppColors.warning.opacity(0.15))
+                    )
             }
         }
-        .padding()
-        .background(Color(module.moduleType.color).opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(AppSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.medium)
+                .fill(AppGradients.moduleGradient(module.moduleType))
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .stroke(AppColors.moduleColor(module.moduleType).opacity(0.3), lineWidth: 1)
+                )
+        )
     }
 
     // MARK: - Exercise Card
 
     private func exerciseCard(_ exercise: SessionExercise) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
+            // Header
             HStack {
-                Text(exercise.exerciseName)
-                    .font(.title2)
-                    .fontWeight(.bold)
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text(exercise.exerciseName)
+                        .font(.title2.bold())
+                        .foregroundColor(AppColors.textPrimary)
+
+                    if let setGroup = sessionViewModel.currentSetGroup {
+                        Text("Set \(sessionViewModel.currentSetIndex + 1) of \(setGroup.sets.count)")
+                            .font(.subheadline)
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                }
 
                 Spacer()
 
                 Button {
                     sessionViewModel.skipExercise()
                 } label: {
-                    Text("Skip")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Image(systemName: "forward.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(AppColors.textTertiary)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            Circle()
+                                .fill(AppColors.surfaceLight)
+                        )
                 }
             }
 
-            // Set progress
+            // Set indicators with per-set timer rings
             if let setGroup = sessionViewModel.currentSetGroup {
-                HStack {
-                    Text("Set \(sessionViewModel.currentSetIndex + 1) of \(setGroup.sets.count)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    // Set group indicator
-                    if sessionViewModel.currentExercise?.completedSetGroups.count ?? 0 > 1 {
-                        Text("Group \(sessionViewModel.currentSetGroupIndex + 1)")
-                            .font(.caption)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color(.systemGray5))
-                            .clipShape(Capsule())
+                HStack(spacing: AppSpacing.sm) {
+                    ForEach(Array(setGroup.sets.enumerated()), id: \.offset) { index, set in
+                        SetIndicator(
+                            setNumber: index + 1,
+                            isCompleted: index < sessionViewModel.currentSetIndex,
+                            isCurrent: index == sessionViewModel.currentSetIndex,
+                            restTime: set.restAfter ?? appState.defaultRestTime
+                        )
                     }
                 }
             }
         }
+        .padding(AppSpacing.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .fill(AppColors.cardBackground)
+        )
     }
 
     // MARK: - Set Input Section
@@ -185,11 +233,11 @@ struct ActiveSessionView: View {
     @State private var inputWeight: String = ""
     @State private var inputReps: String = ""
     @State private var inputRPE: Int = 0
-    @State private var inputDuration: String = ""
-    @State private var inputHoldTime: String = ""
+    @State private var inputDuration: Int = 0
+    @State private var inputHoldTime: Int = 0
 
     private var setInputSection: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: AppSpacing.lg) {
             if let exercise = sessionViewModel.currentExercise {
                 switch exercise.exerciseType {
                 case .strength:
@@ -207,76 +255,98 @@ struct ActiveSessionView: View {
             Button {
                 logCurrentSet()
             } label: {
-                Label(sessionViewModel.isLastSet ? "Finish Exercise" : "Log Set & Rest",
-                      systemImage: sessionViewModel.isLastSet ? "checkmark.circle.fill" : "checkmark")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: sessionViewModel.isLastSet ? "checkmark.circle.fill" : "checkmark")
+                        .font(.system(size: 18, weight: .semibold))
+
+                    Text(sessionViewModel.isLastSet ? "Finish Exercise" : "Log Set")
+                        .font(.headline)
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppSpacing.lg)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .fill(AppGradients.accentGradient)
+                )
             }
+            .buttonStyle(.plain)
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .onAppear {
-            loadSetDefaults()
-        }
-        .onChange(of: sessionViewModel.currentSetIndex) { _, _ in
-            loadSetDefaults()
-        }
+        .padding(AppSpacing.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .fill(AppColors.cardBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
+                )
+        )
+        .onAppear { loadSetDefaults() }
+        .onChange(of: sessionViewModel.currentSetIndex) { _, _ in loadSetDefaults() }
     }
 
     private var strengthInput: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 16) {
+        VStack(spacing: AppSpacing.lg) {
+            HStack(spacing: AppSpacing.md) {
                 // Weight
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Weight (\(appState.weightUnit.abbreviation))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text("WEIGHT (\(appState.weightUnit.abbreviation.uppercased()))")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(AppColors.textTertiary)
+
                     TextField("0", text: $inputWeight)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
-                        .padding()
-                        .background(Color(.systemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(AppSpacing.md)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppCorners.medium)
+                                .fill(AppColors.surfaceLight)
+                        )
                 }
 
                 // Reps
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Reps")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text("REPS")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(AppColors.textTertiary)
+
                     TextField("0", text: $inputReps)
                         .keyboardType(.numberPad)
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
-                        .padding()
-                        .background(Color(.systemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(AppSpacing.md)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppCorners.medium)
+                                .fill(AppColors.surfaceLight)
+                        )
                 }
             }
 
             // RPE
-            VStack(alignment: .leading, spacing: 8) {
-                Text("RPE (Rate of Perceived Exertion)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("RPE")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(AppColors.textTertiary)
 
-                HStack(spacing: 8) {
+                HStack(spacing: AppSpacing.sm) {
                     ForEach([6, 7, 8, 9, 10], id: \.self) { rpe in
                         Button {
-                            inputRPE = rpe
+                            withAnimation(AppAnimation.quick) {
+                                inputRPE = inputRPE == rpe ? 0 : rpe
+                            }
                         } label: {
                             Text("\(rpe)")
                                 .font(.headline)
-                                .frame(width: 44, height: 44)
-                                .background(inputRPE == rpe ? Color.blue : Color(.systemBackground))
-                                .foregroundStyle(inputRPE == rpe ? .white : .primary)
-                                .clipShape(Circle())
+                                .foregroundColor(inputRPE == rpe ? .white : AppColors.textSecondary)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 44)
+                                .background(
+                                    RoundedRectangle(cornerRadius: AppCorners.small)
+                                        .fill(inputRPE == rpe ? AppColors.accentBlue : AppColors.surfaceLight)
+                                )
                         }
                     }
                 }
@@ -285,53 +355,29 @@ struct ActiveSessionView: View {
     }
 
     private var isometricInput: some View {
-        VStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Hold Time (seconds)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField("0", text: $inputHoldTime)
-                    .keyboardType(.numberPad)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .padding()
-                    .background(Color(.systemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-        }
+        TimePickerView(totalSeconds: $inputHoldTime, maxMinutes: 5, label: "Hold Time")
     }
 
     private var cardioInput: some View {
-        VStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Duration (seconds)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField("0", text: $inputDuration)
-                    .keyboardType(.numberPad)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .padding()
-                    .background(Color(.systemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-        }
+        TimePickerView(totalSeconds: $inputDuration, maxMinutes: 60, label: "Duration")
     }
 
     private var simpleRepsInput: some View {
-        VStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Reps")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField("0", text: $inputReps)
-                    .keyboardType(.numberPad)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .padding()
-                    .background(Color(.systemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("REPS")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(AppColors.textTertiary)
+
+            TextField("0", text: $inputReps)
+                .keyboardType(.numberPad)
+                .font(.system(size: 48, weight: .bold, design: .rounded))
+                .foregroundColor(AppColors.textPrimary)
+                .multilineTextAlignment(.center)
+                .padding(AppSpacing.lg)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .fill(AppColors.surfaceLight)
+                )
         }
     }
 
@@ -340,93 +386,141 @@ struct ActiveSessionView: View {
     private func previousPerformanceSection(exerciseName: String) -> some View {
         Group {
             if let lastData = sessionViewModel.getLastSessionData(for: exerciseName) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Last Session")
-                        .font(.headline)
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    HStack {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 14))
+                            .foregroundColor(AppColors.textTertiary)
+                        Text("Last Session")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(AppColors.textSecondary)
+                    }
 
-                    ForEach(lastData.completedSetGroups) { setGroup in
-                        ForEach(setGroup.sets) { set in
-                            if let formatted = set.formattedStrength ?? set.formattedIsometric ?? set.formattedCardio {
-                                Text("Set \(set.setNumber): \(formatted)")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                    VStack(spacing: AppSpacing.sm) {
+                        ForEach(lastData.completedSetGroups) { setGroup in
+                            ForEach(setGroup.sets) { set in
+                                if let formatted = set.formattedStrength ?? set.formattedIsometric ?? set.formattedCardio {
+                                    HStack {
+                                        Text("Set \(set.setNumber)")
+                                            .font(.caption)
+                                            .foregroundColor(AppColors.textTertiary)
+                                            .frame(width: 50, alignment: .leading)
+
+                                        Text(formatted)
+                                            .font(.subheadline.weight(.medium))
+                                            .foregroundColor(AppColors.textSecondary)
+
+                                        Spacer()
+                                    }
+                                }
                             }
                         }
                     }
                 }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(AppSpacing.cardPadding)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .fill(AppColors.surfaceLight.opacity(0.5))
+                )
             }
         }
     }
 
-    // MARK: - Rest Timer Bar
+    // MARK: - Rest Timer Overlay
 
-    private var restTimerBar: some View {
-        HStack {
-            Text("Rest")
-                .font(.headline)
-
+    private var restTimerOverlay: some View {
+        VStack(spacing: AppSpacing.lg) {
             Spacer()
 
-            Text(formatTime(sessionViewModel.restTimerSeconds))
-                .font(.system(size: 24, weight: .bold, design: .monospaced))
+            VStack(spacing: AppSpacing.md) {
+                Text("REST")
+                    .font(.caption.weight(.bold))
+                    .foregroundColor(AppColors.textSecondary)
+                    .tracking(2)
 
-            Spacer()
+                SetTimerRing(
+                    timeRemaining: sessionViewModel.restTimerSeconds,
+                    totalTime: sessionViewModel.restTimerTotal,
+                    size: 120,
+                    isActive: true
+                )
 
-            Button {
-                sessionViewModel.stopRestTimer()
-            } label: {
-                Text("Skip")
-                    .font(.subheadline)
+                Button {
+                    sessionViewModel.stopRestTimer()
+                } label: {
+                    Text("Skip Rest")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(AppColors.accentBlue)
+                }
             }
+            .padding(AppSpacing.xl)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: AppCorners.xl))
+
+            Spacer()
         }
-        .padding()
-        .background(Color.blue.opacity(0.2))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.opacity(0.6))
+        .transition(.opacity)
     }
 
     // MARK: - Bottom Action Bar
 
     private var bottomActionBar: some View {
-        HStack(spacing: 16) {
-            // Quick weight buttons
+        HStack(spacing: AppSpacing.md) {
             ForEach([-10, -5, 5, 10], id: \.self) { delta in
                 Button {
                     adjustWeight(by: delta)
                 } label: {
                     Text(delta > 0 ? "+\(delta)" : "\(delta)")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .frame(width: 50, height: 40)
-                        .background(Color(.systemGray5))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(delta > 0 ? AppColors.success : AppColors.error)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppCorners.small)
+                                .fill(AppColors.cardBackground)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: AppCorners.small)
+                                        .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
+                                )
+                        )
                 }
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
+        .padding(AppSpacing.md)
+        .background(AppColors.cardBackground)
     }
 
     // MARK: - Workout Complete View
 
     private var workoutCompleteView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 80))
-                .foregroundStyle(.green)
+        VStack(spacing: AppSpacing.xl) {
+            Spacer()
 
-            Text("Workout Complete!")
-                .font(.title)
-                .fontWeight(.bold)
+            ZStack {
+                Circle()
+                    .fill(AppColors.success.opacity(0.15))
+                    .frame(width: 120, height: 120)
 
-            Text("Great job! Tap Finish to save your session.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 64))
+                    .foregroundColor(AppColors.success)
+            }
+
+            VStack(spacing: AppSpacing.sm) {
+                Text("Workout Complete!")
+                    .font(.title.bold())
+                    .foregroundColor(AppColors.textPrimary)
+
+                Text("Great job! Tap Finish to save your session.")
+                    .font(.subheadline)
+                    .foregroundColor(AppColors.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            Spacer()
         }
-        .padding()
+        .padding(AppSpacing.xl)
     }
 
     // MARK: - Helper Functions
@@ -442,8 +536,8 @@ struct ActiveSessionView: View {
             inputWeight = set.weight.map { String(format: "%.0f", $0) } ?? ""
             inputReps = set.reps.map { "\($0)" } ?? ""
             inputRPE = set.rpe ?? 0
-            inputDuration = set.duration.map { "\($0)" } ?? ""
-            inputHoldTime = set.holdTime.map { "\($0)" } ?? ""
+            inputDuration = set.duration ?? 0
+            inputHoldTime = set.holdTime ?? 0
         }
     }
 
@@ -455,15 +549,13 @@ struct ActiveSessionView: View {
     private func logCurrentSet() {
         let weight = Double(inputWeight)
         let reps = Int(inputReps)
-        let duration = Int(inputDuration)
-        let holdTime = Int(inputHoldTime)
 
         sessionViewModel.logSet(
             weight: weight,
             reps: reps,
             rpe: inputRPE > 0 ? inputRPE : nil,
-            duration: duration,
-            holdTime: holdTime,
+            duration: inputDuration > 0 ? inputDuration : nil,
+            holdTime: inputHoldTime > 0 ? inputHoldTime : nil,
             completed: true
         )
 
@@ -473,8 +565,50 @@ struct ActiveSessionView: View {
             sessionViewModel.startRestTimer(seconds: restPeriod > 0 ? restPeriod : appState.defaultRestTime)
         }
 
-        // Clear inputs for next set
         inputRPE = 0
+    }
+}
+
+// MARK: - Set Indicator
+
+struct SetIndicator: View {
+    let setNumber: Int
+    let isCompleted: Bool
+    let isCurrent: Bool
+    var restTime: Int = 90
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(backgroundColor)
+                .frame(width: 40, height: 40)
+
+            if isCompleted {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(AppColors.success)
+            } else {
+                Text("\(setNumber)")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(isCurrent ? AppColors.accentBlue : AppColors.textTertiary)
+            }
+        }
+        .overlay(
+            Circle()
+                .stroke(isCurrent ? AppColors.accentBlue : .clear, lineWidth: 2)
+        )
+        .animation(AppAnimation.quick, value: isCompleted)
+        .animation(AppAnimation.quick, value: isCurrent)
+    }
+
+    private var backgroundColor: Color {
+        if isCompleted {
+            return AppColors.success.opacity(0.15)
+        } else if isCurrent {
+            return AppColors.accentBlue.opacity(0.15)
+        } else {
+            return AppColors.surfaceLight
+        }
     }
 }
 
@@ -489,51 +623,84 @@ struct EndSessionSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("How did you feel?") {
-                    HStack(spacing: 16) {
+            VStack(spacing: AppSpacing.xl) {
+                // Feeling picker
+                VStack(spacing: AppSpacing.md) {
+                    Text("How did you feel?")
+                        .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
+
+                    HStack(spacing: AppSpacing.md) {
                         ForEach(1...5, id: \.self) { value in
                             Button {
-                                feeling = value
+                                withAnimation(AppAnimation.quick) {
+                                    feeling = value
+                                }
                             } label: {
-                                VStack {
+                                VStack(spacing: AppSpacing.xs) {
                                     Text(feelingEmoji(value))
-                                        .font(.largeTitle)
+                                        .font(.system(size: 36))
                                     Text("\(value)")
                                         .font(.caption)
+                                        .foregroundColor(feeling == value ? AppColors.textPrimary : AppColors.textTertiary)
                                 }
-                                .padding(8)
-                                .background(feeling == value ? Color.blue.opacity(0.2) : Color.clear)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, AppSpacing.md)
+                                .background(
+                                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                                        .fill(feeling == value ? AppColors.accentBlue.opacity(0.2) : AppColors.surfaceLight)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: AppCorners.medium)
+                                                .stroke(feeling == value ? AppColors.accentBlue : .clear, lineWidth: 2)
+                                        )
+                                )
                             }
                             .buttonStyle(.plain)
                         }
                     }
-                    .frame(maxWidth: .infinity)
                 }
 
-                Section("Notes (optional)") {
+                // Notes
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("Notes (optional)")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundColor(AppColors.textSecondary)
+
                     TextEditor(text: $notes)
-                        .frame(minHeight: 80)
+                        .font(.body)
+                        .foregroundColor(AppColors.textPrimary)
+                        .scrollContentBackground(.hidden)
+                        .padding(AppSpacing.md)
+                        .frame(minHeight: 100)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppCorners.medium)
+                                .fill(AppColors.surfaceLight)
+                        )
                 }
+
+                Spacer()
             }
+            .padding(AppSpacing.screenPadding)
+            .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Finish Workout")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(AppColors.textSecondary)
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         onSave(feeling, notes.isEmpty ? nil : notes)
                     }
+                    .fontWeight(.semibold)
+                    .foregroundColor(AppColors.accentBlue)
                 }
             }
         }
         .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
     }
 
     private func feelingEmoji(_ value: Int) -> String {

@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+// Helper for sheet(item:) with Int index
+struct EditingIndex: Identifiable {
+    let id: Int
+    var index: Int { id }
+}
+
 struct ExerciseFormView: View {
     @EnvironmentObject var moduleViewModel: ModuleViewModel
     @Environment(\.dismiss) private var dismiss
@@ -21,6 +27,7 @@ struct ExerciseFormView: View {
     @State private var setGroups: [SetGroup] = []
 
     @State private var showingAddSetGroup = false
+    @State private var editingSetGroup: EditingIndex?
 
     private var isEditing: Bool { exercise != nil }
 
@@ -44,11 +51,16 @@ struct ExerciseFormView: View {
 
             Section {
                 if setGroups.isEmpty {
-                    Text("No sets defined")
+                    Text("No sets defined - tap + to add")
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(Array(setGroups.enumerated()), id: \.element.id) { index, setGroup in
-                        SetGroupEditRow(setGroup: binding(for: index), index: index + 1)
+                        Button {
+                            editingSetGroup = EditingIndex(id: index)
+                        } label: {
+                            SetGroupEditRow(setGroup: binding(for: index), index: index + 1)
+                        }
+                        .buttonStyle(.plain)
                     }
                     .onDelete(perform: deleteSetGroup)
                     .onMove(perform: moveSetGroup)
@@ -60,7 +72,13 @@ struct ExerciseFormView: View {
                     Label("Add Set Group", systemImage: "plus.circle")
                 }
             } header: {
-                Text("Sets")
+                HStack {
+                    Text("Sets")
+                    Spacer()
+                    Text("Tap to edit")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section("Notes") {
@@ -86,8 +104,15 @@ struct ExerciseFormView: View {
         }
         .sheet(isPresented: $showingAddSetGroup) {
             NavigationStack {
-                SetGroupFormView(exerciseType: exerciseType) { newSetGroup in
+                SetGroupFormView(exerciseType: exerciseType, existingSetGroup: nil) { newSetGroup in
                     setGroups.append(newSetGroup)
+                }
+            }
+        }
+        .sheet(item: $editingSetGroup) { editing in
+            NavigationStack {
+                SetGroupFormView(exerciseType: exerciseType, existingSetGroup: setGroups[editing.index]) { updatedSetGroup in
+                    setGroups[editing.index] = updatedSetGroup
                 }
             }
         }
@@ -98,10 +123,8 @@ struct ExerciseFormView: View {
                 progressionType = exercise.progressionType
                 notes = exercise.notes ?? ""
                 setGroups = exercise.setGroups
-            } else {
-                // Default set group for new exercises
-                setGroups = [SetGroup(sets: 3, targetReps: 10, restPeriod: 90)]
             }
+            // New exercises start with no set groups - user adds them explicitly
         }
     }
 
@@ -197,16 +220,19 @@ struct SetGroupFormView: View {
     @Environment(\.dismiss) private var dismiss
 
     let exerciseType: ExerciseType
+    let existingSetGroup: SetGroup?
     let onSave: (SetGroup) -> Void
 
-    @State private var sets: Int = 3
-    @State private var targetReps: Int = 10
+    @State private var sets: Int = 1
+    @State private var targetReps: Int = 0
     @State private var targetWeight: String = ""
     @State private var targetRPE: Int = 0
     @State private var targetDuration: Int = 0
     @State private var targetHoldTime: Int = 0
     @State private var restPeriod: Int = 90
     @State private var notes: String = ""
+
+    private var isEditing: Bool { existingSetGroup != nil }
 
     var body: some View {
         Form {
@@ -217,7 +243,7 @@ struct SetGroupFormView: View {
             Section("Target") {
                 switch exerciseType {
                 case .strength:
-                    Stepper("Reps: \(targetReps)", value: $targetReps, in: 1...100)
+                    Stepper("Reps: \(targetReps)", value: $targetReps, in: 0...100)
                     TextField("Target Weight (lbs)", text: $targetWeight)
                         .keyboardType(.decimalPad)
                     Picker("RPE", selection: $targetRPE) {
@@ -228,10 +254,10 @@ struct SetGroupFormView: View {
                     }
 
                 case .cardio:
-                    Stepper("Duration: \(targetDuration)s", value: $targetDuration, in: 0...3600, step: 30)
+                    TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, label: "Duration")
 
                 case .isometric:
-                    Stepper("Hold Time: \(targetHoldTime)s", value: $targetHoldTime, in: 5...300, step: 5)
+                    TimePickerView(totalSeconds: $targetHoldTime, maxMinutes: 5, label: "Hold Time")
 
                 case .mobility:
                     Stepper("Reps: \(targetReps)", value: $targetReps, in: 1...50)
@@ -241,23 +267,15 @@ struct SetGroupFormView: View {
                 }
             }
 
-            Section("Rest") {
-                Picker("Rest Period", selection: $restPeriod) {
-                    Text("30s").tag(30)
-                    Text("60s").tag(60)
-                    Text("90s").tag(90)
-                    Text("2 min").tag(120)
-                    Text("3 min").tag(180)
-                    Text("4 min").tag(240)
-                    Text("5 min").tag(300)
-                }
+            Section("Rest Between Sets") {
+                TimePickerView(totalSeconds: $restPeriod, maxMinutes: 5, label: "Rest Period", compact: true)
             }
 
             Section("Notes") {
                 TextField("Notes (e.g., 'top set', 'back-off')", text: $notes)
             }
         }
-        .navigationTitle("Add Set Group")
+        .navigationTitle(isEditing ? "Edit Set Group" : "Add Set Group")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -267,10 +285,11 @@ struct SetGroupFormView: View {
             }
 
             ToolbarItem(placement: .confirmationAction) {
-                Button("Add") {
+                Button(isEditing ? "Save" : "Add") {
                     let setGroup = SetGroup(
+                        id: existingSetGroup?.id ?? UUID(),
                         sets: sets,
-                        targetReps: exerciseType == .strength || exerciseType == .mobility || exerciseType == .explosive ? targetReps : nil,
+                        targetReps: exerciseType == .strength || exerciseType == .mobility || exerciseType == .explosive ? (targetReps > 0 ? targetReps : nil) : nil,
                         targetWeight: Double(targetWeight),
                         targetRPE: targetRPE > 0 ? targetRPE : nil,
                         targetDuration: targetDuration > 0 ? targetDuration : nil,
@@ -281,6 +300,18 @@ struct SetGroupFormView: View {
                     onSave(setGroup)
                     dismiss()
                 }
+            }
+        }
+        .onAppear {
+            if let existing = existingSetGroup {
+                sets = existing.sets
+                targetReps = existing.targetReps ?? 0
+                targetWeight = existing.targetWeight.map { String(format: "%.0f", $0) } ?? ""
+                targetRPE = existing.targetRPE ?? 0
+                targetDuration = existing.targetDuration ?? 0
+                targetHoldTime = existing.targetHoldTime ?? 0
+                restPeriod = existing.restPeriod ?? 90
+                notes = existing.notes ?? ""
             }
         }
     }

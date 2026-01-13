@@ -46,6 +46,8 @@
 		B63EBF2A2F15E73700D8C22D /* FirebaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF0B2F15E73700D8C22D /* FirebaseService.swift */; };
 		B63EBF2B2F15E73700D8C22D /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */; };
 		B63EBF2C2F15E73700D8C22D /* SyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF0D2F15E73700D8C22D /* SyncManager.swift */; };
+		B658B09E2F16903C00B2F84E /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B658B09B2F16903C00B2F84E /* AppTheme.swift */; };
+		B658B09F2F16903C00B2F84E /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = B658B09C2F16903C00B2F84E /* Components.swift */; };
 		B693104C2F15E12A0021CB0F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B693104B2F15E12A0021CB0F /* GoogleService-Info.plist */; };
 		B693104D2F15E12A0021CB0F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B693104B2F15E12A0021CB0F /* GoogleService-Info.plist */; };
 		B693104E2F15E12A0021CB0F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B693104B2F15E12A0021CB0F /* GoogleService-Info.plist */; };
@@ -109,6 +111,8 @@
 		B63EBF0B2F15E73700D8C22D /* FirebaseService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FirebaseService.swift; sourceTree = "<group>"; };
 		B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		B63EBF0D2F15E73700D8C22D /* SyncManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncManager.swift; sourceTree = "<group>"; };
+		B658B09B2F16903C00B2F84E /* AppTheme.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		B658B09C2F16903C00B2F84E /* Components.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		B693104B2F15E12A0021CB0F /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -162,6 +166,7 @@
 		B610AC012F15B4DD008B2C15 /* gym app */ = {
 			isa = PBXGroup;
 			children = (
+				B658B09D2F16903C00B2F84E /* Theme */,
 				B63EBF082F15E73700D8C22D /* CoreData */,
 				B63EBEF12F15E73700D8C22D /* Models */,
 				B63EBF0A2F15E73700D8C22D /* Repositories */,
@@ -312,6 +317,15 @@
 				B63EBF0D2F15E73700D8C22D /* SyncManager.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		B658B09D2F16903C00B2F84E /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				B658B09B2F16903C00B2F84E /* AppTheme.swift */,
+				B658B09C2F16903C00B2F84E /* Components.swift */,
+			);
+			path = Theme;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -466,6 +480,7 @@
 				B63EBF262F15E73700D8C22D /* MainTabView.swift in Sources */,
 				B63EBF0F2F15E73700D8C22D /* AppState.swift in Sources */,
 				B63EBF142F15E73700D8C22D /* Exercise.swift in Sources */,
+				B658B09E2F16903C00B2F84E /* AppTheme.swift in Sources */,
 				B63EBF1A2F15E73700D8C22D /* SessionDetailView.swift in Sources */,
 				B63EBF192F15E73700D8C22D /* HistoryView.swift in Sources */,
 				B63EBF152F15E73700D8C22D /* Module.swift in Sources */,
@@ -486,6 +501,7 @@
 				B610AC032F15B4DD008B2C15 /* gym_appApp.swift in Sources */,
 				B63EBF242F15E73700D8C22D /* WorkoutsListView.swift in Sources */,
 				B63EBF182F15E73700D8C22D /* Workout.swift in Sources */,
+				B658B09F2F16903C00B2F84E /* Components.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -649,6 +665,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"gym app/Preview Content\"";
+				DEVELOPMENT_TEAM = 32458MUSUC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -677,6 +694,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"gym app/Preview Content\"";
+				DEVELOPMENT_TEAM = 32458MUSUC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

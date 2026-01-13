@@ -13,108 +13,190 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                // Units Section
-                Section("Units") {
-                    Picker("Weight", selection: $appState.weightUnit) {
-                        ForEach(WeightUnit.allCases, id: \.self) { unit in
-                            Text(unit.displayName).tag(unit)
+            ScrollView {
+                VStack(spacing: AppSpacing.lg) {
+                    // Units Section
+                    SettingsSection(title: "Units") {
+                        SettingsRow(icon: "scalemass", title: "Weight") {
+                            Picker("Weight", selection: $appState.weightUnit) {
+                                ForEach(WeightUnit.allCases, id: \.self) { unit in
+                                    Text(unit.abbreviation).tag(unit)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 120)
+                        }
+
+                        SettingsRow(icon: "ruler", title: "Distance") {
+                            Picker("Distance", selection: $appState.distanceUnit) {
+                                ForEach(DistanceUnit.allCases, id: \.self) { unit in
+                                    Text(unit.abbreviation).tag(unit)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 120)
                         }
                     }
 
-                    Picker("Distance", selection: $appState.distanceUnit) {
-                        ForEach(DistanceUnit.allCases, id: \.self) { unit in
-                            Text(unit.displayName).tag(unit)
+                    // Timer Section
+                    SettingsSection(title: "Timer") {
+                        SettingsRow(icon: "timer", title: "Default Rest") {
+                            CompactTimePicker(totalSeconds: $appState.defaultRestTime, maxMinutes: 5)
                         }
                     }
-                }
 
-                // Timer Section
-                Section("Timer Defaults") {
-                    Picker("Default Rest Time", selection: $appState.defaultRestTime) {
-                        Text("30 seconds").tag(30)
-                        Text("60 seconds").tag(60)
-                        Text("90 seconds").tag(90)
-                        Text("2 minutes").tag(120)
-                        Text("3 minutes").tag(180)
-                        Text("4 minutes").tag(240)
-                        Text("5 minutes").tag(300)
-                    }
-                }
-
-                // Sync Section
-                Section {
-                    HStack {
-                        Text("Sync Status")
-                        Spacer()
-                        Image(systemName: "icloud.slash")
-                            .foregroundStyle(.secondary)
-                        Text("Local Only")
-                            .foregroundStyle(.secondary)
-                    }
-
-                    if let lastSync = appState.lastSyncDate {
-                        LabeledContent("Last Sync", value: formatDate(lastSync))
-                    }
-
-                    Button {
-                        Task {
-                            await appState.triggerSync()
+                    // Sync Section
+                    SettingsSection(title: "Cloud Sync", footer: "Cloud sync coming soon. Your data is stored locally.") {
+                        SettingsRow(icon: "icloud", title: "Sync Status") {
+                            HStack(spacing: AppSpacing.sm) {
+                                Image(systemName: "icloud.slash")
+                                    .foregroundColor(AppColors.textTertiary)
+                                Text("Local Only")
+                                    .foregroundColor(AppColors.textSecondary)
+                            }
+                            .font(.subheadline)
                         }
-                    } label: {
-                        HStack {
-                            Text("Sync Now")
-                            Spacer()
-                            if appState.isSyncing {
-                                ProgressView()
+
+                        Button {
+                            Task {
+                                await appState.triggerSync()
+                            }
+                        } label: {
+                            HStack {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .foregroundColor(AppColors.textTertiary)
+                                    .frame(width: 28)
+                                Text("Sync Now")
+                                    .foregroundColor(AppColors.textTertiary)
+                                Spacer()
                             }
                         }
+                        .disabled(true)
+                        .padding(.vertical, AppSpacing.sm)
                     }
-                    .disabled(true) // Disabled until Firebase is set up
-                } header: {
-                    Text("Cloud Sync")
-                } footer: {
-                    Text("Cloud sync coming soon. Your data is currently stored locally on this device.")
+
+                    // Data Section
+                    SettingsSection(title: "Data") {
+                        NavigationLink {
+                            DataStatsView()
+                        } label: {
+                            SettingsRowLabel(icon: "chart.bar", title: "Statistics")
+                        }
+
+                        NavigationLink {
+                            ExportDataView()
+                        } label: {
+                            SettingsRowLabel(icon: "square.and.arrow.up", title: "Export Data")
+                        }
+                    }
+
+                    // About Section
+                    SettingsSection(title: "About") {
+                        SettingsRow(icon: "info.circle", title: "Version") {
+                            Text("1.0.0 MVP")
+                                .font(.subheadline)
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+
+                        Button {
+                            showingAbout = true
+                        } label: {
+                            SettingsRowLabel(icon: "questionmark.circle", title: "About Gym App")
+                        }
+                    }
                 }
-
-                // Data Section
-                Section("Data") {
-                    NavigationLink {
-                        DataStatsView()
-                    } label: {
-                        Label("Statistics", systemImage: "chart.bar")
-                    }
-
-                    NavigationLink {
-                        ExportDataView()
-                    } label: {
-                        Label("Export Data", systemImage: "square.and.arrow.up")
-                    }
-                }
-
-                // About Section
-                Section("About") {
-                    LabeledContent("Version", value: "1.0.0")
-                    LabeledContent("Build", value: "MVP")
-
-                    Button {
-                        showingAbout = true
-                    } label: {
-                        Text("About Gym App")
-                    }
-                }
+                .padding(AppSpacing.screenPadding)
             }
+            .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Settings")
             .sheet(isPresented: $showingAbout) {
                 AboutView()
             }
         }
     }
+}
 
-    private func formatDate(_ date: Date) -> String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
+// MARK: - Settings Section
+
+struct SettingsSection<Content: View>: View {
+    let title: String
+    var footer: String? = nil
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text(title.uppercased())
+                .font(.caption.weight(.semibold))
+                .foregroundColor(AppColors.textTertiary)
+                .padding(.leading, AppSpacing.xs)
+
+            VStack(spacing: 0) {
+                content
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppColors.cardBackground)
+            )
+
+            if let footer = footer {
+                Text(footer)
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
+                    .padding(.leading, AppSpacing.xs)
+            }
+        }
+    }
+}
+
+// MARK: - Settings Row
+
+struct SettingsRow<Content: View>: View {
+    let icon: String
+    let title: String
+    @ViewBuilder let trailing: Content
+
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(AppColors.accentBlue)
+                .frame(width: 28)
+
+            Text(title)
+                .font(.body)
+                .foregroundColor(AppColors.textPrimary)
+
+            Spacer()
+
+            trailing
+        }
+        .padding(.vertical, AppSpacing.md)
+    }
+}
+
+struct SettingsRowLabel: View {
+    let icon: String
+    let title: String
+
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(AppColors.accentBlue)
+                .frame(width: 28)
+
+            Text(title)
+                .font(.body)
+                .foregroundColor(AppColors.textPrimary)
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .padding(.vertical, AppSpacing.md)
     }
 }
 
@@ -126,36 +208,43 @@ struct DataStatsView: View {
     @EnvironmentObject var workoutViewModel: WorkoutViewModel
 
     var body: some View {
-        List {
-            Section("Overview") {
-                LabeledContent("Total Sessions", value: "\(sessionViewModel.sessions.count)")
-                LabeledContent("Total Workouts", value: "\(workoutViewModel.workouts.count)")
-                LabeledContent("Total Modules", value: "\(moduleViewModel.modules.count)")
-            }
+        ScrollView {
+            VStack(spacing: AppSpacing.lg) {
+                // Overview
+                StatsSection(title: "Overview") {
+                    StatsRow(label: "Total Sessions", value: "\(sessionViewModel.sessions.count)")
+                    StatsRow(label: "Total Workouts", value: "\(workoutViewModel.workouts.count)")
+                    StatsRow(label: "Total Modules", value: "\(moduleViewModel.modules.count)")
+                }
 
-            Section("This Week") {
-                let thisWeekSessions = sessionsThisWeek
-                LabeledContent("Sessions", value: "\(thisWeekSessions.count)")
-                LabeledContent("Total Sets", value: "\(totalSets(in: thisWeekSessions))")
-                LabeledContent("Total Volume", value: "\(Int(totalVolume(in: thisWeekSessions))) lbs")
-            }
+                // This Week
+                StatsSection(title: "This Week") {
+                    let thisWeekSessions = sessionsThisWeek
+                    StatsRow(label: "Sessions", value: "\(thisWeekSessions.count)")
+                    StatsRow(label: "Total Sets", value: "\(totalSets(in: thisWeekSessions))")
+                    StatsRow(label: "Total Volume", value: "\(Int(totalVolume(in: thisWeekSessions))) lbs")
+                }
 
-            Section("This Month") {
-                let thisMonthSessions = sessionsThisMonth
-                LabeledContent("Sessions", value: "\(thisMonthSessions.count)")
-                LabeledContent("Total Sets", value: "\(totalSets(in: thisMonthSessions))")
-                LabeledContent("Total Volume", value: "\(Int(totalVolume(in: thisMonthSessions))) lbs")
-            }
+                // This Month
+                StatsSection(title: "This Month") {
+                    let thisMonthSessions = sessionsThisMonth
+                    StatsRow(label: "Sessions", value: "\(thisMonthSessions.count)")
+                    StatsRow(label: "Total Sets", value: "\(totalSets(in: thisMonthSessions))")
+                    StatsRow(label: "Total Volume", value: "\(Int(totalVolume(in: thisMonthSessions))) lbs")
+                }
 
-            Section("All Time") {
-                LabeledContent("Total Sets", value: "\(totalSets(in: sessionViewModel.sessions))")
-                LabeledContent("Total Volume", value: "\(Int(totalVolume(in: sessionViewModel.sessions))) lbs")
-
-                if let firstSession = sessionViewModel.sessions.last {
-                    LabeledContent("First Session", value: firstSession.formattedDate)
+                // All Time
+                StatsSection(title: "All Time") {
+                    StatsRow(label: "Total Sets", value: "\(totalSets(in: sessionViewModel.sessions))")
+                    StatsRow(label: "Total Volume", value: "\(Int(totalVolume(in: sessionViewModel.sessions))) lbs")
+                    if let firstSession = sessionViewModel.sessions.last {
+                        StatsRow(label: "First Session", value: firstSession.formattedDate)
+                    }
                 }
             }
+            .padding(AppSpacing.screenPadding)
         }
+        .background(AppColors.background.ignoresSafeArea())
         .navigationTitle("Statistics")
     }
 
@@ -182,18 +271,71 @@ struct DataStatsView: View {
     }
 }
 
+struct StatsSection<Content: View>: View {
+    let title: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(AppColors.textPrimary)
+
+            VStack(spacing: 0) {
+                content
+            }
+            .padding(AppSpacing.cardPadding)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppColors.cardBackground)
+            )
+        }
+    }
+}
+
+struct StatsRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .foregroundColor(AppColors.textSecondary)
+            Spacer()
+            Text(value)
+                .fontWeight(.semibold)
+                .foregroundColor(AppColors.textPrimary)
+        }
+        .padding(.vertical, AppSpacing.sm)
+    }
+}
+
 // MARK: - Export Data View
 
 struct ExportDataView: View {
     var body: some View {
-        List {
-            Section {
-                Text("Export functionality coming in a future update.")
-                    .foregroundStyle(.secondary)
-            } footer: {
-                Text("You'll be able to export your workout data to CSV or PDF format.")
+        VStack(spacing: AppSpacing.xl) {
+            Spacer()
+
+            VStack(spacing: AppSpacing.md) {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 48))
+                    .foregroundColor(AppColors.textTertiary)
+
+                Text("Coming Soon")
+                    .font(.title2.bold())
+                    .foregroundColor(AppColors.textPrimary)
+
+                Text("Export functionality will be available in a future update.")
+                    .font(.subheadline)
+                    .foregroundColor(AppColors.textSecondary)
+                    .multilineTextAlignment(.center)
             }
+
+            Spacer()
         }
+        .padding(AppSpacing.screenPadding)
+        .background(AppColors.background.ignoresSafeArea())
         .navigationTitle("Export Data")
     }
 }
@@ -206,49 +348,63 @@ struct AboutView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: AppSpacing.xl) {
                     // App Icon
-                    Image(systemName: "dumbbell.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.blue)
-                        .padding()
-                        .background(Color.blue.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                    ZStack {
+                        RoundedRectangle(cornerRadius: AppCorners.xl)
+                            .fill(AppGradients.accentGradient)
+                            .frame(width: 100, height: 100)
+
+                        Image(systemName: "dumbbell.fill")
+                            .font(.system(size: 40))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.top, AppSpacing.xl)
 
                     // App Info
-                    VStack(spacing: 8) {
+                    VStack(spacing: AppSpacing.xs) {
                         Text("Gym App")
-                            .font(.title)
-                            .fontWeight(.bold)
+                            .font(.title.bold())
+                            .foregroundColor(AppColors.textPrimary)
 
                         Text("Version 1.0.0 (MVP)")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(AppColors.textSecondary)
                     }
 
                     // Description
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: AppSpacing.lg) {
                         Text("A modular gym tracking app designed for flexible workout composition.")
+                            .font(.body)
+                            .foregroundColor(AppColors.textSecondary)
                             .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
 
                         Divider()
+                            .background(AppColors.border)
 
                         Text("Features")
                             .font(.headline)
+                            .foregroundColor(AppColors.textPrimary)
 
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: AppSpacing.md) {
                             FeatureRow(icon: "square.stack.3d.up", text: "Modular workout design")
-                            FeatureRow(icon: "clock", text: "Built-in rest timer")
-                            FeatureRow(icon: "icloud", text: "Cloud sync")
+                            FeatureRow(icon: "timer", text: "Built-in rest timer")
+                            FeatureRow(icon: "icloud", text: "Cloud sync (coming soon)")
                             FeatureRow(icon: "chart.line.uptrend.xyaxis", text: "Progress tracking")
                         }
                     }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(AppSpacing.cardPadding)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppCorners.large)
+                            .fill(AppColors.cardBackground)
+                    )
+
+                    Spacer()
                 }
-                .padding()
+                .padding(AppSpacing.screenPadding)
             }
+            .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("About")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -256,6 +412,7 @@ struct AboutView: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .foregroundColor(AppColors.accentBlue)
                 }
             }
         }
@@ -267,11 +424,14 @@ struct FeatureRow: View {
     let text: String
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppSpacing.md) {
             Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundColor(AppColors.accentBlue)
                 .frame(width: 24)
-                .foregroundStyle(.blue)
+
             Text(text)
+                .foregroundColor(AppColors.textPrimary)
         }
     }
 }

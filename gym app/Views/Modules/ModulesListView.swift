@@ -29,50 +29,65 @@ struct ModulesListView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                // Type filter pills
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        FilterPill(title: "All", isSelected: selectedType == nil) {
-                            selectedType = nil
-                        }
+            ScrollView {
+                VStack(spacing: AppSpacing.lg) {
+                    // Type filter pills
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: AppSpacing.sm) {
+                            FilterPill(title: "All", isSelected: selectedType == nil) {
+                                withAnimation(AppAnimation.quick) {
+                                    selectedType = nil
+                                }
+                            }
 
-                        ForEach(ModuleType.allCases) { type in
-                            FilterPill(
-                                title: type.displayName,
-                                isSelected: selectedType == type,
-                                color: Color(type.color)
-                            ) {
-                                selectedType = type
+                            ForEach(ModuleType.allCases) { type in
+                                FilterPill(
+                                    title: type.displayName,
+                                    isSelected: selectedType == type,
+                                    color: AppColors.moduleColor(type)
+                                ) {
+                                    withAnimation(AppAnimation.quick) {
+                                        selectedType = type
+                                    }
+                                }
                             }
                         }
+                        .padding(.horizontal, AppSpacing.screenPadding)
                     }
-                    .padding(.vertical, 4)
-                }
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
 
-                if filteredModules.isEmpty {
-                    ContentUnavailableView(
-                        "No Modules",
-                        systemImage: "square.stack.3d.up",
-                        description: Text("Create a module to organize your exercises")
-                    )
-                } else {
-                    ForEach(filteredModules) { module in
-                        NavigationLink(destination: ModuleDetailView(module: module)) {
-                            ModuleRow(module: module)
+                    // Modules list
+                    if filteredModules.isEmpty {
+                        EmptyStateView(
+                            icon: "square.stack.3d.up",
+                            title: "No Modules",
+                            message: "Create a module to organize your exercises",
+                            buttonTitle: "Create Module"
+                        ) {
+                            showingAddModule = true
                         }
-                    }
-                    .onDelete { offsets in
-                        let modulesToDelete = offsets.map { filteredModules[$0] }
-                        for module in modulesToDelete {
-                            moduleViewModel.deleteModule(module)
+                        .padding(.top, AppSpacing.xxl)
+                    } else {
+                        LazyVStack(spacing: AppSpacing.md) {
+                            ForEach(filteredModules) { module in
+                                NavigationLink(destination: ModuleDetailView(module: module)) {
+                                    ModuleListCard(module: module)
+                                }
+                                .buttonStyle(.plain)
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        moduleViewModel.deleteModule(module)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            }
                         }
+                        .padding(.horizontal, AppSpacing.screenPadding)
                     }
                 }
+                .padding(.vertical, AppSpacing.md)
             }
-            .listStyle(.insetGrouped)
+            .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Modules")
             .searchable(text: $searchText, prompt: "Search modules")
             .toolbar {
@@ -80,7 +95,9 @@ struct ModulesListView: View {
                     Button {
                         showingAddModule = true
                     } label: {
-                        Image(systemName: "plus")
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3)
+                            .foregroundColor(AppColors.accentBlue)
                     }
                 }
             }
@@ -96,64 +113,107 @@ struct ModulesListView: View {
     }
 }
 
-// MARK: - Supporting Views
+// MARK: - Filter Pill
 
 struct FilterPill: View {
     let title: String
     let isSelected: Bool
-    var color: Color = .blue
+    var color: Color = AppColors.accentBlue
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(isSelected ? color.opacity(0.2) : Color(.systemGray5))
-                .foregroundStyle(isSelected ? color : .primary)
-                .clipShape(Capsule())
+                .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.sm)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? color.opacity(0.2) : AppColors.cardBackground)
+                        .overlay(
+                            Capsule()
+                                .stroke(isSelected ? color.opacity(0.5) : AppColors.border.opacity(0.5), lineWidth: 1)
+                        )
+                )
+                .foregroundColor(isSelected ? color : AppColors.textSecondary)
         }
         .buttonStyle(.plain)
     }
 }
 
-struct ModuleRow: View {
+// MARK: - Module List Card
+
+struct ModuleListCard: View {
     let module: Module
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: module.type.icon)
-                .font(.title2)
-                .foregroundStyle(Color(module.type.color))
-                .frame(width: 40)
+        HStack(spacing: AppSpacing.md) {
+            // Icon
+            ZStack {
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .fill(AppColors.moduleColor(module.type).opacity(0.15))
+                    .frame(width: 48, height: 48)
 
-            VStack(alignment: .leading, spacing: 4) {
+                Image(systemName: module.type.icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(AppColors.moduleColor(module.type))
+            }
+
+            // Content
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(module.name)
                     .font(.headline)
+                    .foregroundColor(AppColors.textPrimary)
 
-                HStack(spacing: 8) {
+                HStack(spacing: AppSpacing.sm) {
+                    // Type badge
                     Text(module.type.displayName)
-                        .font(.caption)
-                        .padding(.horizontal, 8)
+                        .font(.caption.weight(.medium))
+                        .foregroundColor(AppColors.moduleColor(module.type))
+                        .padding(.horizontal, AppSpacing.sm)
                         .padding(.vertical, 2)
-                        .background(Color(module.type.color).opacity(0.2))
-                        .clipShape(Capsule())
+                        .background(
+                            Capsule()
+                                .fill(AppColors.moduleColor(module.type).opacity(0.15))
+                        )
 
-                    Text("\(module.exercises.count) exercises")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    // Exercise count
+                    HStack(spacing: 4) {
+                        Image(systemName: "list.bullet")
+                            .font(.system(size: 10))
+                        Text("\(module.exercises.count)")
+                    }
+                    .font(.caption)
+                    .foregroundColor(AppColors.textSecondary)
 
+                    // Duration
                     if let duration = module.estimatedDuration {
-                        Text("\(duration) min")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock")
+                                .font(.system(size: 10))
+                            Text("\(duration)m")
+                        }
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
                     }
                 }
             }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(AppColors.textTertiary)
         }
-        .padding(.vertical, 4)
+        .padding(AppSpacing.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .fill(AppColors.cardBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .stroke(AppColors.moduleColor(module.type).opacity(0.2), lineWidth: 1)
+                )
+        )
     }
 }
 

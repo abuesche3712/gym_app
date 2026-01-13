@@ -21,7 +21,6 @@ struct HistoryView: View {
     var filteredSessions: [Session] {
         var sessions = sessionViewModel.sessions
 
-        // Apply date filter
         let now = Date()
         let calendar = Calendar.current
 
@@ -36,7 +35,6 @@ struct HistoryView: View {
             sessions = sessions.filter { $0.date >= startOfMonth }
         }
 
-        // Apply search filter
         if !searchText.isEmpty {
             sessions = sessions.filter {
                 $0.workoutName.localizedCaseInsensitiveContains(searchText)
@@ -72,49 +70,69 @@ struct HistoryView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                // Filter pills
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(HistoryFilter.allCases, id: \.self) { filter in
-                            FilterPill(
-                                title: filter.rawValue,
-                                isSelected: selectedFilter == filter
-                            ) {
-                                selectedFilter = filter
+            ScrollView {
+                VStack(spacing: AppSpacing.lg) {
+                    // Filter pills
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: AppSpacing.sm) {
+                            ForEach(HistoryFilter.allCases, id: \.self) { filter in
+                                FilterPill(
+                                    title: filter.rawValue,
+                                    isSelected: selectedFilter == filter
+                                ) {
+                                    withAnimation(AppAnimation.quick) {
+                                        selectedFilter = filter
+                                    }
+                                }
                             }
                         }
+                        .padding(.horizontal, AppSpacing.screenPadding)
                     }
-                    .padding(.vertical, 4)
-                }
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
 
-                if filteredSessions.isEmpty {
-                    ContentUnavailableView(
-                        "No Sessions",
-                        systemImage: "clock.arrow.circlepath",
-                        description: Text("Complete a workout to see it here")
-                    )
-                } else {
-                    ForEach(groupedSessions, id: \.0) { month, sessions in
-                        Section(month) {
-                            ForEach(sessions) { session in
-                                NavigationLink(destination: SessionDetailView(session: session)) {
-                                    SessionHistoryRow(session: session)
-                                }
-                            }
-                            .onDelete { offsets in
-                                let sessionsToDelete = offsets.map { sessions[$0] }
-                                for session in sessionsToDelete {
-                                    sessionViewModel.deleteSession(session)
+                    if filteredSessions.isEmpty {
+                        EmptyStateView(
+                            icon: "clock.arrow.circlepath",
+                            title: "No Sessions",
+                            message: "Complete a workout to see it here"
+                        )
+                        .padding(.top, AppSpacing.xxl)
+                    } else {
+                        LazyVStack(spacing: AppSpacing.lg) {
+                            ForEach(groupedSessions, id: \.0) { month, sessions in
+                                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                                    Text(month)
+                                        .font(.title3.bold())
+                                        .foregroundColor(AppColors.textPrimary)
+                                        .padding(.horizontal, AppSpacing.screenPadding)
+
+                                    VStack(spacing: 0) {
+                                        ForEach(Array(sessions.enumerated()), id: \.element.id) { index, session in
+                                            NavigationLink(destination: SessionDetailView(session: session)) {
+                                                SessionHistoryRow(session: session)
+                                            }
+                                            .buttonStyle(.plain)
+
+                                            if index < sessions.count - 1 {
+                                                Divider()
+                                                    .background(AppColors.border)
+                                                    .padding(.leading, 60)
+                                            }
+                                        }
+                                    }
+                                    .padding(AppSpacing.cardPadding)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: AppCorners.large)
+                                            .fill(AppColors.cardBackground)
+                                    )
+                                    .padding(.horizontal, AppSpacing.screenPadding)
                                 }
                             }
                         }
                     }
                 }
+                .padding(.vertical, AppSpacing.md)
             }
-            .listStyle(.insetGrouped)
+            .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("History")
             .searchable(text: $searchText, prompt: "Search workouts")
             .refreshable {
@@ -130,57 +148,79 @@ struct SessionHistoryRow: View {
     let session: Session
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 6) {
+        HStack(spacing: AppSpacing.md) {
+            // Date indicator
+            VStack(spacing: 2) {
+                Text(dayOfWeek)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundColor(AppColors.accentBlue)
+                Text(dayNumber)
+                    .font(.title3.bold())
+                    .foregroundColor(AppColors.textPrimary)
+            }
+            .frame(width: 44)
+
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Text(session.workoutName)
                     .font(.headline)
+                    .foregroundColor(AppColors.textPrimary)
 
-                HStack(spacing: 12) {
-                    Text(formatDate(session.date))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
+                HStack(spacing: AppSpacing.md) {
                     if let duration = session.formattedDuration {
-                        Label(duration, systemImage: "clock")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock")
+                                .font(.system(size: 10))
+                            Text(duration)
+                        }
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
                     }
+
+                    Text("\(session.totalSetsCompleted) sets")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
                 }
 
-                // Module types completed
-                HStack(spacing: 4) {
-                    ForEach(session.completedModules.prefix(4)) { module in
-                        Image(systemName: module.moduleType.icon)
-                            .font(.caption2)
-                            .foregroundStyle(Color(module.moduleType.color))
+                // Module type indicators
+                HStack(spacing: AppSpacing.xs) {
+                    ForEach(session.completedModules.prefix(5)) { module in
+                        Circle()
+                            .fill(AppColors.moduleColor(module.moduleType))
+                            .frame(width: 8, height: 8)
                     }
-                    if session.completedModules.count > 4 {
-                        Text("+\(session.completedModules.count - 4)")
+                    if session.completedModules.count > 5 {
+                        Text("+\(session.completedModules.count - 5)")
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundColor(AppColors.textTertiary)
                     }
                 }
             }
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 4) {
+            VStack(alignment: .trailing, spacing: AppSpacing.xs) {
                 if let feeling = session.overallFeeling {
                     FeelingIndicator(feeling: feeling)
                 }
 
-                Text("\(session.totalSetsCompleted) sets")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12))
+                    .foregroundColor(AppColors.textTertiary)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, AppSpacing.sm)
     }
 
-    private func formatDate(_ date: Date) -> String {
+    private var dayOfWeek: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "EEE, MMM d"
-        return formatter.string(from: date)
+        formatter.dateFormat = "EEE"
+        return formatter.string(from: session.date).uppercased()
+    }
+
+    private var dayNumber: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d"
+        return formatter.string(from: session.date)
     }
 }
 

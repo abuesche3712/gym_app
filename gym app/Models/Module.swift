@@ -56,6 +56,61 @@ struct Module: Identifiable, Codable, Hashable {
             updatedAt = Date()
         }
     }
+
+    /// Groups exercises by superset, maintaining original order
+    /// Non-superset exercises are single-item arrays
+    var groupedExercises: [[Exercise]] {
+        var groups: [[Exercise]] = []
+        var processedIds: Set<UUID> = []
+
+        for exercise in exercises {
+            guard !processedIds.contains(exercise.id) else { continue }
+
+            if let supersetId = exercise.supersetGroupId {
+                // Find all exercises in this superset
+                let supersetExercises = exercises.filter { $0.supersetGroupId == supersetId }
+                groups.append(supersetExercises)
+                supersetExercises.forEach { processedIds.insert($0.id) }
+            } else {
+                // Single exercise (not in a superset)
+                groups.append([exercise])
+                processedIds.insert(exercise.id)
+            }
+        }
+
+        return groups
+    }
+
+    /// Link exercises together as a superset
+    mutating func createSuperset(exerciseIds: [UUID]) {
+        guard exerciseIds.count >= 2 else { return }
+        let supersetId = UUID()
+
+        for i in exercises.indices {
+            if exerciseIds.contains(exercises[i].id) {
+                exercises[i].supersetGroupId = supersetId
+            }
+        }
+        updatedAt = Date()
+    }
+
+    /// Remove an exercise from its superset
+    mutating func breakSuperset(exerciseId: UUID) {
+        if let index = exercises.firstIndex(where: { $0.id == exerciseId }) {
+            exercises[index].supersetGroupId = nil
+            updatedAt = Date()
+        }
+    }
+
+    /// Break all exercises in a superset
+    mutating func breakSupersetGroup(supersetGroupId: UUID) {
+        for i in exercises.indices {
+            if exercises[i].supersetGroupId == supersetGroupId {
+                exercises[i].supersetGroupId = nil
+            }
+        }
+        updatedAt = Date()
+    }
 }
 
 // MARK: - Sample Data
