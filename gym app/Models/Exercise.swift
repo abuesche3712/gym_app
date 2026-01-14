@@ -10,7 +10,10 @@ import Foundation
 struct Exercise: Identifiable, Codable, Hashable {
     var id: UUID
     var name: String
+    var templateId: UUID?  // Links to ExerciseLibrary for progress tracking
     var exerciseType: ExerciseType
+    var cardioMetric: CardioMetric  // Time-based or distance-based (for cardio)
+    var distanceUnit: DistanceUnit  // Unit for distance tracking
     var setGroups: [SetGroup]
     var trackingMetrics: [MetricType]
     var progressionType: ProgressionType
@@ -22,7 +25,10 @@ struct Exercise: Identifiable, Codable, Hashable {
     init(
         id: UUID = UUID(),
         name: String,
+        templateId: UUID? = nil,
         exerciseType: ExerciseType,
+        cardioMetric: CardioMetric = .time,
+        distanceUnit: DistanceUnit = .meters,
         setGroups: [SetGroup] = [],
         trackingMetrics: [MetricType]? = nil,
         progressionType: ProgressionType = .none,
@@ -33,7 +39,10 @@ struct Exercise: Identifiable, Codable, Hashable {
     ) {
         self.id = id
         self.name = name
+        self.templateId = templateId
         self.exerciseType = exerciseType
+        self.cardioMetric = cardioMetric
+        self.distanceUnit = distanceUnit
         self.setGroups = setGroups
         self.progressionType = progressionType
         self.supersetGroupId = supersetGroupId
@@ -47,6 +56,11 @@ struct Exercise: Identifiable, Codable, Hashable {
         } else {
             self.trackingMetrics = Exercise.defaultMetrics(for: exerciseType)
         }
+    }
+
+    /// Whether this cardio exercise tracks distance instead of time
+    var isDistanceBased: Bool {
+        exerciseType == .cardio && cardioMetric == .distance
     }
 
     var isInSuperset: Bool {
@@ -76,6 +90,8 @@ struct Exercise: Identifiable, Codable, Hashable {
         setGroups.map { group in
             if let reps = group.targetReps {
                 return "\(group.sets)x\(reps)"
+            } else if let distance = group.targetDistance, isDistanceBased {
+                return "\(group.sets)x\(formatDistance(distance))"
             } else if let duration = group.targetDuration {
                 return "\(group.sets)x\(duration)s"
             } else if let holdTime = group.targetHoldTime {
@@ -83,5 +99,12 @@ struct Exercise: Identifiable, Codable, Hashable {
             }
             return "\(group.sets) sets"
         }.joined(separator: " + ")
+    }
+
+    private func formatDistance(_ distance: Double) -> String {
+        if distance == floor(distance) {
+            return "\(Int(distance))\(distanceUnit.abbreviation)"
+        }
+        return String(format: "%.1f%@", distance, distanceUnit.abbreviation)
     }
 }

@@ -22,6 +22,7 @@
 		B63EBF122F15E73700D8C22D /* WorkoutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEE92F15E73700D8C22D /* WorkoutViewModel.swift */; };
 		B63EBF132F15E73700D8C22D /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEB2F15E73700D8C22D /* Enums.swift */; };
 		B63EBF142F15E73700D8C22D /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEC2F15E73700D8C22D /* Exercise.swift */; };
+		B63EBF302F15E73700D8C22D /* ExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */; };
 		B63EBF152F15E73700D8C22D /* Module.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEED2F15E73700D8C22D /* Module.swift */; };
 		B63EBF162F15E73700D8C22D /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEE2F15E73700D8C22D /* Session.swift */; };
 		B63EBF172F15E73700D8C22D /* SetGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEF2F15E73700D8C22D /* SetGroup.swift */; };
@@ -87,6 +88,7 @@
 		B63EBEE92F15E73700D8C22D /* WorkoutViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WorkoutViewModel.swift; sourceTree = "<group>"; };
 		B63EBEEB2F15E73700D8C22D /* Enums.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
 		B63EBEEC2F15E73700D8C22D /* Exercise.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
+		B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseLibrary.swift; sourceTree = "<group>"; };
 		B63EBEED2F15E73700D8C22D /* Module.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Module.swift; sourceTree = "<group>"; };
 		B63EBEEE2F15E73700D8C22D /* Session.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
 		B63EBEEF2F15E73700D8C22D /* SetGroup.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetGroup.swift; sourceTree = "<group>"; };
@@ -223,6 +225,7 @@
 			children = (
 				B63EBEEB2F15E73700D8C22D /* Enums.swift */,
 				B63EBEEC2F15E73700D8C22D /* Exercise.swift */,
+				B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */,
 				B63EBEED2F15E73700D8C22D /* Module.swift */,
 				B63EBEEE2F15E73700D8C22D /* Session.swift */,
 				B63EBEEF2F15E73700D8C22D /* SetGroup.swift */,
@@ -480,6 +483,7 @@
 				B63EBF262F15E73700D8C22D /* MainTabView.swift in Sources */,
 				B63EBF0F2F15E73700D8C22D /* AppState.swift in Sources */,
 				B63EBF142F15E73700D8C22D /* Exercise.swift in Sources */,
+				B63EBF302F15E73700D8C22D /* ExerciseLibrary.swift in Sources */,
 				B658B09E2F16903C00B2F84E /* AppTheme.swift in Sources */,
 				B63EBF1A2F15E73700D8C22D /* SessionDetailView.swift in Sources */,
 				B63EBF192F15E73700D8C22D /* HistoryView.swift in Sources */,

@@ -117,6 +117,9 @@ struct SessionExercise: Identifiable, Codable, Hashable {
     var exerciseId: UUID
     var exerciseName: String // Denormalized
     var exerciseType: ExerciseType
+    var cardioMetric: CardioMetric // Time or distance based
+    var distanceUnit: DistanceUnit // Unit for distance tracking
+    var supersetGroupId: UUID? // Links exercises that should alternate sets
     var completedSetGroups: [CompletedSetGroup]
     var notes: String?
 
@@ -125,6 +128,9 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         exerciseId: UUID,
         exerciseName: String,
         exerciseType: ExerciseType,
+        cardioMetric: CardioMetric = .time,
+        distanceUnit: DistanceUnit = .meters,
+        supersetGroupId: UUID? = nil,
         completedSetGroups: [CompletedSetGroup] = [],
         notes: String? = nil
     ) {
@@ -132,8 +138,19 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         self.exerciseId = exerciseId
         self.exerciseName = exerciseName
         self.exerciseType = exerciseType
+        self.cardioMetric = cardioMetric
+        self.distanceUnit = distanceUnit
+        self.supersetGroupId = supersetGroupId
         self.completedSetGroups = completedSetGroups
         self.notes = notes
+    }
+
+    var isInSuperset: Bool {
+        supersetGroupId != nil
+    }
+
+    var isDistanceBased: Bool {
+        exerciseType == .cardio && cardioMetric == .distance
     }
 
     var totalVolume: Double {
@@ -156,15 +173,18 @@ struct SessionExercise: Identifiable, Codable, Hashable {
 struct CompletedSetGroup: Identifiable, Codable, Hashable {
     var id: UUID
     var setGroupId: UUID
+    var restPeriod: Int?  // Target rest period from original SetGroup
     var sets: [SetData]
 
     init(
         id: UUID = UUID(),
         setGroupId: UUID,
+        restPeriod: Int? = nil,
         sets: [SetData] = []
     ) {
         self.id = id
         self.setGroupId = setGroupId
+        self.restPeriod = restPeriod
         self.sets = sets
     }
 }
@@ -234,11 +254,18 @@ struct SetData: Identifiable, Codable, Hashable {
 
     var formattedStrength: String? {
         guard let weight = weight, let reps = reps else { return nil }
-        var result = "\(Int(weight)) x \(reps)"
+        var result = "\(formatWeight(weight)) x \(reps)"
         if let rpe = rpe {
             result += " @ RPE \(rpe)"
         }
         return result
+    }
+
+    private func formatWeight(_ weight: Double) -> String {
+        if weight == floor(weight) {
+            return "\(Int(weight))"
+        }
+        return String(format: "%.1f", weight)
     }
 
     var formattedCardio: String? {

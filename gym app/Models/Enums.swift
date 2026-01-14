@@ -188,12 +188,18 @@ enum WeightUnit: String, Codable, CaseIterable {
 
 // MARK: - Distance Unit
 
-enum DistanceUnit: String, Codable, CaseIterable {
+enum DistanceUnit: String, Codable, CaseIterable, Identifiable {
+    case yards
+    case meters
     case miles
     case kilometers
 
+    var id: String { rawValue }
+
     var displayName: String {
         switch self {
+        case .yards: return "Yards"
+        case .meters: return "Meters"
         case .miles: return "Miles"
         case .kilometers: return "Kilometers"
         }
@@ -201,8 +207,43 @@ enum DistanceUnit: String, Codable, CaseIterable {
 
     var abbreviation: String {
         switch self {
+        case .yards: return "yd"
+        case .meters: return "m"
         case .miles: return "mi"
         case .kilometers: return "km"
+        }
+    }
+
+    /// Common presets for this unit
+    var presets: [Double] {
+        switch self {
+        case .yards: return [20, 40, 50, 100]
+        case .meters: return [100, 200, 400, 800]
+        case .miles: return [0.25, 0.5, 1, 2, 3]
+        case .kilometers: return [1, 2, 5, 10]
+        }
+    }
+}
+
+// MARK: - Cardio Metric Type
+
+enum CardioMetric: String, Codable, CaseIterable, Identifiable {
+    case time
+    case distance
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .time: return "Time-based"
+        case .distance: return "Distance-based"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .time: return "Track duration (e.g., 30 min run)"
+        case .distance: return "Track distance (e.g., 400m sprint)"
         }
     }
 }

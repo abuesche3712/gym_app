@@ -15,6 +15,7 @@ struct SetGroup: Identifiable, Codable, Hashable {
     var targetRPE: Int?
     var targetDuration: Int? // seconds
     var targetDistance: Double?
+    var targetDistanceUnit: DistanceUnit? // unit for distance-based cardio
     var targetHoldTime: Int? // seconds
     var restPeriod: Int? // seconds between sets
     var notes: String?
@@ -27,6 +28,7 @@ struct SetGroup: Identifiable, Codable, Hashable {
         targetRPE: Int? = nil,
         targetDuration: Int? = nil,
         targetDistance: Double? = nil,
+        targetDistanceUnit: DistanceUnit? = nil,
         targetHoldTime: Int? = nil,
         restPeriod: Int? = nil,
         notes: String? = nil
@@ -38,6 +40,7 @@ struct SetGroup: Identifiable, Codable, Hashable {
         self.targetRPE = targetRPE
         self.targetDuration = targetDuration
         self.targetDistance = targetDistance
+        self.targetDistanceUnit = targetDistanceUnit
         self.targetHoldTime = targetHoldTime
         self.restPeriod = restPeriod
         self.notes = notes
@@ -48,6 +51,8 @@ struct SetGroup: Identifiable, Codable, Hashable {
 
         if let reps = targetReps {
             parts.append("\(sets)x\(reps)")
+        } else if let distance = targetDistance {
+            parts.append("\(sets)x\(formatDistance(distance))")
         } else if let duration = targetDuration {
             parts.append("\(sets)x\(formatDuration(duration))")
         } else if let holdTime = targetHoldTime {
@@ -57,7 +62,7 @@ struct SetGroup: Identifiable, Codable, Hashable {
         }
 
         if let weight = targetWeight {
-            parts.append("@ \(Int(weight)) lbs")
+            parts.append("@ \(formatWeight(weight)) lbs")
         }
 
         if let rpe = targetRPE {
@@ -65,6 +70,21 @@ struct SetGroup: Identifiable, Codable, Hashable {
         }
 
         return parts.joined(separator: " ")
+    }
+
+    private func formatWeight(_ weight: Double) -> String {
+        if weight == floor(weight) {
+            return "\(Int(weight))"
+        }
+        return String(format: "%.1f", weight)
+    }
+
+    private func formatDistance(_ distance: Double) -> String {
+        let unit = targetDistanceUnit ?? .meters
+        if distance == floor(distance) {
+            return "\(Int(distance))\(unit.abbreviation)"
+        }
+        return String(format: "%.1f%@", distance, unit.abbreviation)
     }
 
     private func formatDuration(_ seconds: Int) -> String {

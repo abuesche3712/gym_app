@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import UIKit
 
 @MainActor
 class SessionViewModel: ObservableObject {
@@ -55,9 +56,13 @@ class SessionViewModel: ObservableObject {
                         exerciseId: exercise.id,
                         exerciseName: exercise.name,
                         exerciseType: exercise.exerciseType,
+                        cardioMetric: exercise.cardioMetric,
+                        distanceUnit: exercise.distanceUnit,
+                        supersetGroupId: exercise.supersetGroupId,
                         completedSetGroups: exercise.setGroups.map { setGroup in
                             CompletedSetGroup(
                                 setGroupId: setGroup.id,
+                                restPeriod: setGroup.restPeriod,
                                 sets: (1...setGroup.sets).map { setNum in
                                     // Pre-fill with target values for convenience
                                     SetData(
@@ -66,6 +71,7 @@ class SessionViewModel: ObservableObject {
                                         reps: setGroup.targetReps,
                                         completed: false,
                                         duration: setGroup.targetDuration,
+                                        distance: setGroup.targetDistance,
                                         holdTime: setGroup.targetHoldTime
                                     )
                                 }
@@ -169,6 +175,44 @@ class SessionViewModel: ObservableObject {
         let exercise = module.completedExercises[currentExerciseIndex]
         let setGroup = exercise.completedSetGroups[currentSetGroupIndex]
 
+        // Check if this exercise is in a superset
+        if let supersetId = exercise.supersetGroupId {
+            // Find all exercises in this superset
+            let supersetIndices = module.completedExercises.enumerated()
+                .filter { $0.element.supersetGroupId == supersetId }
+                .map { $0.offset }
+
+            guard let currentSupersetPosition = supersetIndices.firstIndex(of: currentExerciseIndex) else {
+                // Fallback to normal flow if something is wrong
+                advanceNormally(module: module, exercise: exercise, setGroup: setGroup, session: session)
+                return
+            }
+
+            let isLastInSuperset = currentSupersetPosition == supersetIndices.count - 1
+
+            if isLastInSuperset {
+                // We've done all exercises in the superset for this set
+                // Check if there are more sets
+                if currentSetIndex < setGroup.sets.count - 1 {
+                    // Go back to first exercise in superset, next set number
+                    currentExerciseIndex = supersetIndices[0]
+                    currentSetIndex += 1
+                } else {
+                    // Superset round complete, move to next set group or next non-superset exercise
+                    moveToNextAfterSuperset(module: module, supersetIndices: supersetIndices, session: session)
+                }
+            } else {
+                // Move to next exercise in superset, same set number
+                currentExerciseIndex = supersetIndices[currentSupersetPosition + 1]
+                // Keep same setGroupIndex and setIndex
+            }
+        } else {
+            // Normal (non-superset) flow
+            advanceNormally(module: module, exercise: exercise, setGroup: setGroup, session: session)
+        }
+    }
+
+    private func advanceNormally(module: CompletedModule, exercise: SessionExercise, setGroup: CompletedSetGroup, session: Session) {
         if currentSetIndex < setGroup.sets.count - 1 {
             // Next set in current set group
             currentSetIndex += 1
@@ -189,6 +233,80 @@ class SessionViewModel: ObservableObject {
             currentSetIndex = 0
         }
         // else: end of workout
+    }
+
+    private func moveToNextAfterSuperset(module: CompletedModule, supersetIndices: [Int], session: Session) {
+        // Find the first exercise index after the superset
+        let maxSupersetIndex = supersetIndices.max() ?? currentExerciseIndex
+
+        if maxSupersetIndex < module.completedExercises.count - 1 {
+            // Move to next exercise after superset
+            currentExerciseIndex = maxSupersetIndex + 1
+            currentSetGroupIndex = 0
+            currentSetIndex = 0
+        } else if currentModuleIndex < session.completedModules.count - 1 {
+            // Move to next module
+            currentModuleIndex += 1
+            currentExerciseIndex = 0
+            currentSetGroupIndex = 0
+            currentSetIndex = 0
+        }
+        // else: end of workout
+    }
+
+    /// Returns true if we just finished the last exercise in a superset round (time to rest)
+    var shouldRestAfterSuperset: Bool {
+        guard let module = currentModule,
+              let exercise = currentExercise,
+              let supersetId = exercise.supersetGroupId else {
+            return false
+        }
+
+        let supersetIndices = module.completedExercises.enumerated()
+            .filter { $0.element.supersetGroupId == supersetId }
+            .map { $0.offset }
+
+        guard let currentSupersetPosition = supersetIndices.firstIndex(of: currentExerciseIndex) else {
+            return false
+        }
+
+        // We should rest if we're at the last exercise in the superset
+        return currentSupersetPosition == supersetIndices.count - 1
+    }
+
+    /// Gets all exercises in the current superset (for display purposes)
+    var currentSupersetExercises: [SessionExercise]? {
+        guard let module = currentModule,
+              let exercise = currentExercise,
+              let supersetId = exercise.supersetGroupId else {
+            return nil
+        }
+
+        return module.completedExercises.filter { $0.supersetGroupId == supersetId }
+    }
+
+    /// Current position within the superset (1-based for display)
+    var supersetPosition: Int? {
+        guard let module = currentModule,
+              let exercise = currentExercise,
+              let supersetId = exercise.supersetGroupId else {
+            return nil
+        }
+
+        let supersetIndices = module.completedExercises.enumerated()
+            .filter { $0.element.supersetGroupId == supersetId }
+            .map { $0.offset }
+
+        guard let position = supersetIndices.firstIndex(of: currentExerciseIndex) else {
+            return nil
+        }
+
+        return position + 1
+    }
+
+    /// Total exercises in current superset
+    var supersetTotal: Int? {
+        currentSupersetExercises?.count
     }
 
     func skipExercise() {
@@ -292,17 +410,32 @@ class SessionViewModel: ObservableObject {
     }
 
     private func startSessionTimer() {
-        sessionElapsedSeconds = 0
+        updateElapsedTime()
 
         sessionTimerCancellable = Timer.publish(every: 1, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
-                self?.sessionElapsedSeconds += 1
+                self?.updateElapsedTime()
             }
+
+        // Also update when app returns to foreground
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateElapsedTime()
+        }
+    }
+
+    private func updateElapsedTime() {
+        guard let startTime = sessionStartTime else { return }
+        sessionElapsedSeconds = Int(Date().timeIntervalSince(startTime))
     }
 
     private func stopSessionTimer() {
         sessionTimerCancellable?.cancel()
+        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
     }
 
     // MARK: - History
