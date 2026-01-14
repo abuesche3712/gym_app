@@ -22,6 +22,9 @@ struct ActiveSessionView: View {
     @State private var checkScale: CGFloat = 0
     @State private var ringScale: CGFloat = 0.8
     @State private var statsOpacity: Double = 0
+    @State private var showRecentSets = false
+    @State private var showWorkoutOverview = false
+    @State private var showSubstituteExercise = false
 
     var body: some View {
         NavigationStack {
@@ -48,6 +51,11 @@ struct ActiveSessionView: View {
                                 // All Sets (expandable rows)
                                 allSetsSection
 
+                                // Rest Timer (inline)
+                                if sessionViewModel.isRestTimerRunning {
+                                    restTimerBar
+                                }
+
                                 // Previous Performance
                                 previousPerformanceSection(exerciseName: currentExercise.exerciseName)
                             }
@@ -56,11 +64,6 @@ struct ActiveSessionView: View {
                     } else {
                         // Workout complete
                         workoutCompleteView
-                    }
-
-                    // Rest Timer Overlay
-                    if sessionViewModel.isRestTimerRunning {
-                        restTimerOverlay
                     }
                 }
 
@@ -95,6 +98,12 @@ struct ActiveSessionView: View {
                 } else {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
+                            Button {
+                                showWorkoutOverview = true
+                            } label: {
+                                Label("Overview", systemImage: "list.bullet")
+                            }
+
                             Button {
                                 showingEndConfirmation = true
                             } label: {
@@ -135,6 +144,54 @@ struct ActiveSessionView: View {
                     sessionViewModel.endSession(feeling: feeling, notes: notes)
                     dismiss()
                 }
+            }
+            .sheet(isPresented: $showRecentSets) {
+                RecentSetsSheet(
+                    recentSets: getRecentSets(limit: 5),
+                    onUpdate: { recentSet, weight, reps, rpe, duration, holdTime, distance in
+                        updateRecentSet(recentSet, weight: weight, reps: reps, rpe: rpe, duration: duration, holdTime: holdTime, distance: distance)
+                    }
+                )
+            }
+            .sheet(isPresented: $showSubstituteExercise) {
+                SubstituteExerciseSheet(
+                    currentExercise: sessionViewModel.currentExercise,
+                    onSubstitute: { name, type, cardioMetric, distanceUnit in
+                        substituteCurrentExercise(name: name, type: type, cardioMetric: cardioMetric, distanceUnit: distanceUnit)
+                        showSubstituteExercise = false
+                    }
+                )
+            }
+            .sheet(isPresented: $showWorkoutOverview) {
+                WorkoutOverviewSheet(
+                    session: sessionViewModel.currentSession,
+                    currentModuleIndex: sessionViewModel.currentModuleIndex,
+                    currentExerciseIndex: sessionViewModel.currentExerciseIndex,
+                    onJumpTo: { moduleIndex, exerciseIndex in
+                        sessionViewModel.currentModuleIndex = moduleIndex
+                        sessionViewModel.currentExerciseIndex = exerciseIndex
+                        sessionViewModel.currentSetGroupIndex = 0
+                        sessionViewModel.currentSetIndex = 0
+                        showWorkoutOverview = false
+                    },
+                    onUpdateSet: { moduleIndex, exerciseIndex, setGroupIndex, setIndex, weight, reps, rpe, duration, holdTime, distance in
+                        updateSetAt(
+                            moduleIndex: moduleIndex,
+                            exerciseIndex: exerciseIndex,
+                            setGroupIndex: setGroupIndex,
+                            setIndex: setIndex,
+                            weight: weight,
+                            reps: reps,
+                            rpe: rpe,
+                            duration: duration,
+                            holdTime: holdTime,
+                            distance: distance
+                        )
+                    },
+                    onAddExercise: { moduleIndex, name, type, cardioMetric, distanceUnit in
+                        addExerciseToModule(moduleIndex: moduleIndex, name: name, type: type, cardioMetric: cardioMetric, distanceUnit: distanceUnit)
+                    }
+                )
             }
         }
     }
@@ -289,17 +346,50 @@ struct ActiveSessionView: View {
 
                 Spacer()
 
-                Button {
-                    sessionViewModel.skipExercise()
-                } label: {
-                    Image(systemName: "forward.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(AppColors.textTertiary)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            Circle()
-                                .fill(AppColors.surfaceLight)
-                        )
+                HStack(spacing: AppSpacing.sm) {
+                    // Substitute button
+                    Button {
+                        showSubstituteExercise = true
+                    } label: {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 14))
+                            .foregroundColor(AppColors.textTertiary)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(AppColors.surfaceLight)
+                            )
+                    }
+
+                    // Back button (if not first exercise)
+                    if canGoBack {
+                        Button {
+                            goToPreviousExercise()
+                        } label: {
+                            Image(systemName: "backward.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(AppColors.textTertiary)
+                                .frame(width: 36, height: 36)
+                                .background(
+                                    Circle()
+                                        .fill(AppColors.surfaceLight)
+                                )
+                        }
+                    }
+
+                    // Skip button
+                    Button {
+                        sessionViewModel.skipExercise()
+                    } label: {
+                        Image(systemName: "forward.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(AppColors.textTertiary)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(AppColors.surfaceLight)
+                            )
+                    }
                 }
             }
         }
@@ -325,6 +415,31 @@ struct ActiveSessionView: View {
     private var allSetsSection: some View {
         VStack(spacing: AppSpacing.md) {
             if let exercise = sessionViewModel.currentExercise {
+                // Recent sets button (if any completed sets exist)
+                if hasRecentSets {
+                    HStack {
+                        Spacer()
+                        Button {
+                            showRecentSets = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "clock.arrow.counterclockwise")
+                                    .font(.system(size: 12))
+                                Text("Recent")
+                                    .font(.caption.weight(.medium))
+                            }
+                            .foregroundColor(AppColors.textTertiary)
+                            .padding(.horizontal, AppSpacing.sm)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(AppColors.surfaceLight)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
                 // All sets list
                 ForEach(flattenedSets(exercise), id: \.id) { flatSet in
                     SetRowView(
@@ -353,6 +468,26 @@ struct ActiveSessionView: View {
                         }
                     )
                 }
+
+                // Add Set button
+                Button {
+                    addSetToCurrentExercise()
+                } label: {
+                    HStack(spacing: AppSpacing.sm) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .medium))
+                        Text("Add Set")
+                            .font(.subheadline.weight(.medium))
+                    }
+                    .foregroundColor(AppColors.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppSpacing.sm)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppCorners.small)
+                            .stroke(AppColors.border, style: StrokeStyle(lineWidth: 1, dash: [5]))
+                    )
+                }
+                .buttonStyle(.plain)
 
                 // Next Exercise button
                 Button {
@@ -425,6 +560,200 @@ struct ActiveSessionView: View {
         guard sessionViewModel.currentModuleIndex == lastModuleIndex else { return false }
         let module = session.completedModules[sessionViewModel.currentModuleIndex]
         return sessionViewModel.currentExerciseIndex == module.completedExercises.count - 1
+    }
+
+    private var canGoBack: Bool {
+        // Can go back if not at the very first exercise of the first module
+        sessionViewModel.currentModuleIndex > 0 || sessionViewModel.currentExerciseIndex > 0
+    }
+
+    private func goToPreviousExercise() {
+        if sessionViewModel.currentExerciseIndex > 0 {
+            // Go to previous exercise in same module
+            sessionViewModel.currentExerciseIndex -= 1
+            sessionViewModel.currentSetGroupIndex = 0
+            sessionViewModel.currentSetIndex = 0
+        } else if sessionViewModel.currentModuleIndex > 0 {
+            // Go to last exercise of previous module
+            sessionViewModel.currentModuleIndex -= 1
+            if let session = sessionViewModel.currentSession {
+                let previousModule = session.completedModules[sessionViewModel.currentModuleIndex]
+                sessionViewModel.currentExerciseIndex = previousModule.completedExercises.count - 1
+                sessionViewModel.currentSetGroupIndex = 0
+                sessionViewModel.currentSetIndex = 0
+            }
+        }
+    }
+
+    // MARK: - Add Set
+
+    private func addSetToCurrentExercise() {
+        guard var session = sessionViewModel.currentSession else { return }
+
+        var module = session.completedModules[sessionViewModel.currentModuleIndex]
+        var exercise = module.completedExercises[sessionViewModel.currentExerciseIndex]
+
+        // Find the last set group and its last set to copy targets from
+        guard let lastSetGroup = exercise.completedSetGroups.last,
+              let lastSet = lastSetGroup.sets.last else { return }
+
+        // Create new set with same targets
+        let newSetNumber = exercise.completedSetGroups.reduce(0) { $0 + $1.sets.count } + 1
+        let newSet = SetData(
+            setNumber: newSetNumber,
+            weight: lastSet.weight,
+            reps: lastSet.reps,
+            completed: false,
+            duration: lastSet.duration,
+            distance: lastSet.distance,
+            holdTime: lastSet.holdTime
+        )
+
+        // Add to the last set group
+        var updatedSetGroup = lastSetGroup
+        updatedSetGroup.sets.append(newSet)
+        exercise.completedSetGroups[exercise.completedSetGroups.count - 1] = updatedSetGroup
+
+        module.completedExercises[sessionViewModel.currentExerciseIndex] = exercise
+        session.completedModules[sessionViewModel.currentModuleIndex] = module
+
+        sessionViewModel.currentSession = session
+    }
+
+    // MARK: - Substitute Exercise
+
+    private func substituteCurrentExercise(name: String, type: ExerciseType, cardioMetric: CardioMetric, distanceUnit: DistanceUnit) {
+        guard var session = sessionViewModel.currentSession else { return }
+
+        var module = session.completedModules[sessionViewModel.currentModuleIndex]
+        var exercise = module.completedExercises[sessionViewModel.currentExerciseIndex]
+
+        // Store original name if not already a substitution
+        let originalName = exercise.isSubstitution ? exercise.originalExerciseName : exercise.exerciseName
+
+        // Update exercise with new info
+        exercise.originalExerciseName = originalName
+        exercise.isSubstitution = true
+        exercise.exerciseName = name
+        exercise.exerciseType = type
+        exercise.cardioMetric = cardioMetric
+        exercise.distanceUnit = distanceUnit
+
+        // If exercise type changed, we may need to adjust set data structure
+        // For now, keep the same sets but they'll need different inputs
+
+        module.completedExercises[sessionViewModel.currentExerciseIndex] = exercise
+        session.completedModules[sessionViewModel.currentModuleIndex] = module
+
+        sessionViewModel.currentSession = session
+    }
+
+    // MARK: - Add Exercise to Module
+
+    private func addExerciseToModule(moduleIndex: Int, name: String, type: ExerciseType, cardioMetric: CardioMetric, distanceUnit: DistanceUnit) {
+        guard var session = sessionViewModel.currentSession else { return }
+        guard moduleIndex < session.completedModules.count else { return }
+
+        // Create a new ad-hoc exercise with one set group (1 set)
+        let newExercise = SessionExercise(
+            exerciseId: UUID(),
+            exerciseName: name,
+            exerciseType: type,
+            cardioMetric: cardioMetric,
+            distanceUnit: distanceUnit,
+            completedSetGroups: [
+                CompletedSetGroup(
+                    setGroupId: UUID(),
+                    sets: [
+                        SetData(setNumber: 1, completed: false)
+                    ]
+                )
+            ],
+            isSubstitution: false,
+            originalExerciseName: nil,
+            isAdHoc: true
+        )
+
+        // Add to the specified module
+        session.completedModules[moduleIndex].completedExercises.append(newExercise)
+        sessionViewModel.currentSession = session
+    }
+
+    // MARK: - Recent Sets
+
+    private var hasRecentSets: Bool {
+        !getRecentSets(limit: 1).isEmpty
+    }
+
+    private func getRecentSets(limit: Int = 5) -> [RecentSet] {
+        guard let session = sessionViewModel.currentSession else { return [] }
+        var recentSets: [RecentSet] = []
+
+        // Iterate through all completed sets in reverse order (most recent first)
+        for (moduleIndex, module) in session.completedModules.enumerated().reversed() {
+            for (exerciseIndex, exercise) in module.completedExercises.enumerated().reversed() {
+                for (setGroupIndex, setGroup) in exercise.completedSetGroups.enumerated().reversed() {
+                    for (setIndex, setData) in setGroup.sets.enumerated().reversed() {
+                        if setData.completed {
+                            recentSets.append(RecentSet(
+                                moduleIndex: moduleIndex,
+                                exerciseIndex: exerciseIndex,
+                                setGroupIndex: setGroupIndex,
+                                setIndex: setIndex,
+                                exerciseName: exercise.exerciseName,
+                                exerciseType: exercise.exerciseType,
+                                setData: setData
+                            ))
+                            if recentSets.count >= limit {
+                                return recentSets
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return recentSets
+    }
+
+    private func updateRecentSet(_ recentSet: RecentSet, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?) {
+        updateSetAt(
+            moduleIndex: recentSet.moduleIndex,
+            exerciseIndex: recentSet.exerciseIndex,
+            setGroupIndex: recentSet.setGroupIndex,
+            setIndex: recentSet.setIndex,
+            weight: weight,
+            reps: reps,
+            rpe: rpe,
+            duration: duration,
+            holdTime: holdTime,
+            distance: distance
+        )
+    }
+
+    private func updateSetAt(moduleIndex: Int, exerciseIndex: Int, setGroupIndex: Int, setIndex: Int, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?, completed: Bool? = nil) {
+        guard var session = sessionViewModel.currentSession else { return }
+
+        var module = session.completedModules[moduleIndex]
+        var exercise = module.completedExercises[exerciseIndex]
+        var setGroup = exercise.completedSetGroups[setGroupIndex]
+        var setData = setGroup.sets[setIndex]
+
+        setData.weight = weight ?? setData.weight
+        setData.reps = reps ?? setData.reps
+        setData.rpe = rpe
+        setData.duration = duration ?? setData.duration
+        setData.holdTime = holdTime ?? setData.holdTime
+        setData.distance = distance ?? setData.distance
+        if let completed = completed {
+            setData.completed = completed
+        }
+
+        setGroup.sets[setIndex] = setData
+        exercise.completedSetGroups[setGroupIndex] = setGroup
+        module.completedExercises[exerciseIndex] = exercise
+        session.completedModules[moduleIndex] = module
+
+        sessionViewModel.currentSession = session
     }
 
     private func logSetAt(flatSet: FlatSet, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?) {
@@ -563,39 +892,64 @@ struct ActiveSessionView: View {
 
     // MARK: - Rest Timer Overlay
 
-    private var restTimerOverlay: some View {
-        VStack(spacing: AppSpacing.lg) {
-            Spacer()
+    private var restTimerBar: some View {
+        HStack(spacing: AppSpacing.md) {
+            // Progress ring (small)
+            ZStack {
+                Circle()
+                    .stroke(AppColors.surfaceLight, lineWidth: 3)
+                    .frame(width: 36, height: 36)
 
-            VStack(spacing: AppSpacing.md) {
-                Text("REST")
-                    .font(.caption.weight(.bold))
-                    .foregroundColor(AppColors.textSecondary)
-                    .tracking(2)
+                Circle()
+                    .trim(from: 0, to: CGFloat(sessionViewModel.restTimerSeconds) / CGFloat(max(sessionViewModel.restTimerTotal, 1)))
+                    .stroke(AppColors.accentTeal, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .frame(width: 36, height: 36)
+                    .rotationEffect(.degrees(-90))
 
-                SetTimerRing(
-                    timeRemaining: sessionViewModel.restTimerSeconds,
-                    totalTime: sessionViewModel.restTimerTotal,
-                    size: 120,
-                    isActive: true
-                )
-
-                Button {
-                    sessionViewModel.stopRestTimer()
-                } label: {
-                    Text("Skip Rest")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(AppColors.accentBlue)
-                }
+                Text("\(sessionViewModel.restTimerSeconds)")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundColor(AppColors.textPrimary)
             }
-            .padding(AppSpacing.xl)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: AppCorners.xl))
+
+            // Label
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Rest")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(AppColors.textPrimary)
+                Text("\(sessionViewModel.restTimerSeconds)s remaining")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
+            }
 
             Spacer()
+
+            // Skip button
+            Button {
+                sessionViewModel.stopRestTimer()
+            } label: {
+                Text("Skip")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(AppColors.accentBlue)
+                    .padding(.horizontal, AppSpacing.md)
+                    .padding(.vertical, AppSpacing.sm)
+                    .background(
+                        Capsule()
+                            .fill(AppColors.accentBlue.opacity(0.1))
+                    )
+            }
+            .buttonStyle(.plain)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black.opacity(0.6))
-        .transition(.opacity)
+        .padding(AppSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.medium)
+                .fill(AppColors.cardBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .stroke(AppColors.accentTeal.opacity(0.3), lineWidth: 1)
+                )
+        )
+        .transition(.opacity.combined(with: .move(edge: .top)))
+        .animation(.easeInOut(duration: 0.3), value: sessionViewModel.isRestTimerRunning)
     }
 
     // MARK: - Module Transition Overlay
@@ -762,440 +1116,6 @@ struct ActiveSessionView: View {
     }
 }
 
-// MARK: - Set Indicator
-
-struct SetIndicator: View {
-    let setNumber: Int
-    let isCompleted: Bool
-    let isCurrent: Bool
-    var restTime: Int = 90
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(backgroundColor)
-                .frame(width: 40, height: 40)
-
-            if isCompleted {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(AppColors.success)
-            } else {
-                Text("\(setNumber)")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(isCurrent ? AppColors.accentBlue : AppColors.textTertiary)
-            }
-        }
-        .overlay(
-            Circle()
-                .stroke(isCurrent ? AppColors.accentBlue : .clear, lineWidth: 2)
-        )
-        .animation(AppAnimation.quick, value: isCompleted)
-        .animation(AppAnimation.quick, value: isCurrent)
-    }
-
-    private var backgroundColor: Color {
-        if isCompleted {
-            return AppColors.success.opacity(0.15)
-        } else if isCurrent {
-            return AppColors.accentBlue.opacity(0.15)
-        } else {
-            return AppColors.surfaceLight
-        }
-    }
-}
-
-// MARK: - End Session Sheet
-
-struct EndSessionSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    let onSave: (Int?, String?) -> Void
-
-    @State private var feeling: Int = 3
-    @State private var notes: String = ""
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: AppSpacing.xl) {
-                // Feeling picker
-                VStack(spacing: AppSpacing.md) {
-                    Text("How did you feel?")
-                        .font(.headline)
-                        .foregroundColor(AppColors.textPrimary)
-
-                    HStack(spacing: AppSpacing.md) {
-                        ForEach(1...5, id: \.self) { value in
-                            Button {
-                                withAnimation(AppAnimation.quick) {
-                                    feeling = value
-                                }
-                            } label: {
-                                VStack(spacing: AppSpacing.xs) {
-                                    Text(feelingEmoji(value))
-                                        .font(.system(size: 36))
-                                    Text("\(value)")
-                                        .font(.caption)
-                                        .foregroundColor(feeling == value ? AppColors.textPrimary : AppColors.textTertiary)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, AppSpacing.md)
-                                .background(
-                                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                                        .fill(feeling == value ? AppColors.accentBlue.opacity(0.2) : AppColors.surfaceLight)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: AppCorners.medium)
-                                                .stroke(feeling == value ? AppColors.accentBlue : .clear, lineWidth: 2)
-                                        )
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-
-                // Notes
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("Notes (optional)")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundColor(AppColors.textSecondary)
-
-                    TextEditor(text: $notes)
-                        .font(.body)
-                        .foregroundColor(AppColors.textPrimary)
-                        .scrollContentBackground(.hidden)
-                        .padding(AppSpacing.md)
-                        .frame(minHeight: 100)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppCorners.medium)
-                                .fill(AppColors.surfaceLight)
-                        )
-                }
-
-                Spacer()
-            }
-            .padding(AppSpacing.screenPadding)
-            .background(AppColors.background.ignoresSafeArea())
-            .navigationTitle("Finish Workout")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundColor(AppColors.textSecondary)
-                }
-
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        onSave(feeling, notes.isEmpty ? nil : notes)
-                    }
-                    .fontWeight(.semibold)
-                    .foregroundColor(AppColors.accentBlue)
-                }
-            }
-        }
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.visible)
-    }
-
-    private func feelingEmoji(_ value: Int) -> String {
-        switch value {
-        case 1: return "😫"
-        case 2: return "😕"
-        case 3: return "😐"
-        case 4: return "🙂"
-        case 5: return "💪"
-        default: return "😐"
-        }
-    }
-}
-
-// MARK: - Flat Set (helper struct)
-
-struct FlatSet: Identifiable {
-    let id: String
-    let setGroupIndex: Int
-    let setIndex: Int
-    let setNumber: Int
-    let setData: SetData
-    let targetWeight: Double?
-    let targetReps: Int?
-    let targetDuration: Int?
-    let targetHoldTime: Int?
-    let targetDistance: Double?
-    let restPeriod: Int?
-}
-
-// MARK: - Set Row View (Expandable)
-
-struct SetRowView: View {
-    let flatSet: FlatSet
-    let exercise: SessionExercise
-    let isExpanded: Bool
-    let onTap: () -> Void
-    let onLog: (Double?, Int?, Int?, Int?, Int?, Double?) -> Void
-
-    @State private var inputWeight: String = ""
-    @State private var inputReps: String = ""
-    @State private var inputRPE: Int = 0
-    @State private var inputDuration: Int = 0
-    @State private var inputHoldTime: Int = 0
-    @State private var inputDistance: String = ""
-    @FocusState private var isInputFocused: Bool
-
-    var body: some View {
-        VStack(spacing: 0) {
-            // Collapsed row - always visible
-            Button(action: onTap) {
-                HStack(spacing: AppSpacing.md) {
-                    // Set number indicator
-                    ZStack {
-                        Circle()
-                            .fill(flatSet.setData.completed ? AppColors.success.opacity(0.15) : AppColors.surfaceLight)
-                            .frame(width: 36, height: 36)
-
-                        if flatSet.setData.completed {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(AppColors.success)
-                        } else {
-                            Text("\(flatSet.setNumber)")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-                    }
-
-                    // Set info
-                    VStack(alignment: .leading, spacing: 2) {
-                        if flatSet.setData.completed {
-                            Text(completedSummary)
-                                .font(.subheadline.weight(.medium))
-                                .foregroundColor(AppColors.textPrimary)
-                        } else {
-                            Text(targetSummary)
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-                    }
-
-                    Spacer()
-
-                    // Expand indicator
-                    if !flatSet.setData.completed {
-                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-                }
-                .padding(AppSpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(flatSet.setData.completed ? AppColors.success.opacity(0.05) : (isExpanded ? AppColors.accentBlue.opacity(0.05) : AppColors.surfaceLight))
-                )
-            }
-            .buttonStyle(.plain)
-            .disabled(flatSet.setData.completed)
-
-            // Expanded input section
-            if isExpanded && !flatSet.setData.completed {
-                VStack(spacing: AppSpacing.md) {
-                    inputFields
-
-                    // Log button
-                    Button {
-                        isInputFocused = false
-                        onLog(
-                            Double(inputWeight),
-                            Int(inputReps),
-                            inputRPE > 0 ? inputRPE : nil,
-                            inputDuration > 0 ? inputDuration : nil,
-                            inputHoldTime > 0 ? inputHoldTime : nil,
-                            Double(inputDistance)
-                        )
-                    } label: {
-                        HStack(spacing: AppSpacing.sm) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 14, weight: .semibold))
-                            Text("Log Set \(flatSet.setNumber)")
-                                .font(.subheadline.weight(.semibold))
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.md)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppCorners.medium)
-                                .fill(AppGradients.accentGradient)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(AppSpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(AppColors.cardBackground)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppCorners.medium)
-                                .stroke(AppColors.accentBlue.opacity(0.3), lineWidth: 1)
-                        )
-                )
-                .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .top)))
-            }
-        }
-        .onAppear { loadDefaults() }
-    }
-
-    private var targetSummary: String {
-        switch exercise.exerciseType {
-        case .strength:
-            let weight = flatSet.targetWeight.map { formatWeight($0) + " lbs" } ?? ""
-            let reps = flatSet.targetReps.map { "\($0) reps" } ?? ""
-            if !weight.isEmpty && !reps.isEmpty {
-                return "\(weight) × \(reps)"
-            }
-            return weight.isEmpty ? reps : weight
-        case .isometric:
-            return flatSet.targetHoldTime.map { "\($0)s hold" } ?? "Hold"
-        case .cardio:
-            if exercise.isDistanceBased {
-                return flatSet.targetDistance.map { "\(formatDistance($0)) \(exercise.distanceUnit.abbreviation)" } ?? "Distance"
-            }
-            return flatSet.targetDuration.map { formatDuration($0) } ?? "Duration"
-        case .mobility, .explosive:
-            return flatSet.targetReps.map { "\($0) reps" } ?? "Reps"
-        }
-    }
-
-    private var completedSummary: String {
-        let set = flatSet.setData
-        switch exercise.exerciseType {
-        case .strength:
-            return set.formattedStrength ?? "Completed"
-        case .isometric:
-            return set.formattedIsometric ?? "Completed"
-        case .cardio:
-            return set.formattedCardio ?? "Completed"
-        case .mobility, .explosive:
-            return set.reps.map { "\($0) reps" } ?? "Completed"
-        }
-    }
-
-    @ViewBuilder
-    private var inputFields: some View {
-        switch exercise.exerciseType {
-        case .strength:
-            HStack(spacing: AppSpacing.md) {
-                // Weight
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("WEIGHT")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                    TextField("0", text: $inputWeight)
-                        .keyboardType(.decimalPad)
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .padding(AppSpacing.sm)
-                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfaceLight))
-                        .focused($isInputFocused)
-                }
-
-                // Reps
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("REPS")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                    TextField("0", text: $inputReps)
-                        .keyboardType(.numberPad)
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .padding(AppSpacing.sm)
-                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfaceLight))
-                        .focused($isInputFocused)
-                }
-
-                // RPE
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("RPE")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                    Picker("RPE", selection: $inputRPE) {
-                        Text("--").tag(0)
-                        ForEach(5...10, id: \.self) { rpe in
-                            Text("\(rpe)").tag(rpe)
-                        }
-                    }
-                    .pickerStyle(.wheel)
-                    .frame(height: 60)
-                    .clipped()
-                }
-            }
-
-        case .isometric:
-            TimePickerView(totalSeconds: $inputHoldTime, maxMinutes: 5, label: "Hold Time")
-
-        case .cardio:
-            if exercise.isDistanceBased {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("DISTANCE (\(exercise.distanceUnit.abbreviation.uppercased()))")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                    TextField("0", text: $inputDistance)
-                        .keyboardType(.decimalPad)
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .padding(AppSpacing.sm)
-                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfaceLight))
-                        .focused($isInputFocused)
-                }
-            } else {
-                TimePickerView(totalSeconds: $inputDuration, maxMinutes: 60, label: "Duration")
-            }
-
-        case .mobility, .explosive:
-            VStack(alignment: .leading, spacing: 4) {
-                Text("REPS")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundColor(AppColors.textTertiary)
-                TextField("0", text: $inputReps)
-                    .keyboardType(.numberPad)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundColor(AppColors.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .padding(AppSpacing.sm)
-                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfaceLight))
-                    .focused($isInputFocused)
-            }
-        }
-    }
-
-    private func loadDefaults() {
-        inputWeight = flatSet.targetWeight.map { formatWeight($0) } ?? ""
-        inputReps = flatSet.targetReps.map { "\($0)" } ?? ""
-        inputDuration = flatSet.targetDuration ?? 0
-        inputHoldTime = flatSet.targetHoldTime ?? 0
-        inputDistance = flatSet.targetDistance.map { formatDistance($0) } ?? ""
-        inputRPE = 0
-    }
-
-    private func formatWeight(_ weight: Double) -> String {
-        if weight == floor(weight) { return "\(Int(weight))" }
-        return String(format: "%.1f", weight)
-    }
-
-    private func formatDistance(_ distance: Double) -> String {
-        if distance == floor(distance) { return "\(Int(distance))" }
-        return String(format: "%.2f", distance)
-    }
-
-    private func formatDuration(_ seconds: Int) -> String {
-        let mins = seconds / 60
-        let secs = seconds % 60
-        if mins > 0 {
-            return String(format: "%d:%02d", mins, secs)
-        }
-        return "\(secs)s"
-    }
-}
 
 #Preview {
     ActiveSessionView()

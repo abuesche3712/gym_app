@@ -73,6 +73,16 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
         case .explosive: return "Explosive"
         }
     }
+
+    var icon: String {
+        switch self {
+        case .strength: return "dumbbell"
+        case .cardio: return "figure.run"
+        case .mobility: return "figure.flexibility"
+        case .isometric: return "hand.raised"
+        case .explosive: return "bolt"
+        }
+    }
 }
 
 // MARK: - Metric Types

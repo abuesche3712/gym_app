@@ -123,6 +123,11 @@ struct SessionExercise: Identifiable, Codable, Hashable {
     var completedSetGroups: [CompletedSetGroup]
     var notes: String?
 
+    // Ad-hoc modifications during session
+    var isSubstitution: Bool
+    var originalExerciseName: String? // Original name if substituted
+    var isAdHoc: Bool // True if added during session
+
     init(
         id: UUID = UUID(),
         exerciseId: UUID,
@@ -132,7 +137,10 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         distanceUnit: DistanceUnit = .meters,
         supersetGroupId: UUID? = nil,
         completedSetGroups: [CompletedSetGroup] = [],
-        notes: String? = nil
+        notes: String? = nil,
+        isSubstitution: Bool = false,
+        originalExerciseName: String? = nil,
+        isAdHoc: Bool = false
     ) {
         self.id = id
         self.exerciseId = exerciseId
@@ -143,6 +151,9 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         self.supersetGroupId = supersetGroupId
         self.completedSetGroups = completedSetGroups
         self.notes = notes
+        self.isSubstitution = isSubstitution
+        self.originalExerciseName = originalExerciseName
+        self.isAdHoc = isAdHoc
     }
 
     var isInSuperset: Bool {
