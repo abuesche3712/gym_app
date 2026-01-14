@@ -62,6 +62,7 @@ struct PersistenceController {
         let completedSetGroupEntity = createCompletedSetGroupEntity()
         let setDataEntity = createSetDataEntity()
         let syncQueueEntity = createSyncQueueEntity()
+        let customExerciseTemplateEntity = createCustomExerciseTemplateEntity()
 
         // Set up relationships
         setupRelationships(
@@ -81,7 +82,8 @@ struct PersistenceController {
             moduleEntity, exerciseEntity, setGroupEntity,
             workoutEntity, moduleReferenceEntity,
             sessionEntity, completedModuleEntity, sessionExerciseEntity,
-            completedSetGroupEntity, setDataEntity, syncQueueEntity
+            completedSetGroupEntity, setDataEntity, syncQueueEntity,
+            customExerciseTemplateEntity
         ]
 
         return model
@@ -144,7 +146,11 @@ struct PersistenceController {
             createAttribute("targetHoldTime", type: .integer32AttributeType, optional: true),
             createAttribute("restPeriod", type: .integer32AttributeType, optional: true),
             createAttribute("notes", type: .stringAttributeType, optional: true),
-            createAttribute("orderIndex", type: .integer32AttributeType)
+            createAttribute("orderIndex", type: .integer32AttributeType),
+            // Interval mode fields
+            createAttribute("isInterval", type: .booleanAttributeType, optional: true),
+            createAttribute("workDuration", type: .integer32AttributeType, optional: true),
+            createAttribute("intervalRestDuration", type: .integer32AttributeType, optional: true)
         ]
 
         return entity
@@ -234,6 +240,8 @@ struct PersistenceController {
             createAttribute("exerciseId", type: .UUIDAttributeType),
             createAttribute("exerciseName", type: .stringAttributeType),
             createAttribute("exerciseTypeRaw", type: .stringAttributeType),
+            createAttribute("cardioMetricRaw", type: .stringAttributeType, optional: true),
+            createAttribute("distanceUnitRaw", type: .stringAttributeType, optional: true),
             createAttribute("notes", type: .stringAttributeType, optional: true),
             createAttribute("orderIndex", type: .integer32AttributeType)
         ]
@@ -249,7 +257,12 @@ struct PersistenceController {
         entity.properties = [
             createAttribute("id", type: .UUIDAttributeType),
             createAttribute("setGroupId", type: .UUIDAttributeType),
-            createAttribute("orderIndex", type: .integer32AttributeType)
+            createAttribute("orderIndex", type: .integer32AttributeType),
+            createAttribute("restPeriod", type: .integer32AttributeType, optional: true),
+            // Interval mode fields
+            createAttribute("isInterval", type: .booleanAttributeType, optional: true),
+            createAttribute("workDuration", type: .integer32AttributeType, optional: true),
+            createAttribute("intervalRestDuration", type: .integer32AttributeType, optional: true)
         ]
 
         return entity
@@ -295,6 +308,24 @@ struct PersistenceController {
             createAttribute("attempts", type: .integer32AttributeType),
             createAttribute("createdAt", type: .dateAttributeType),
             createAttribute("lastAttemptAt", type: .dateAttributeType, optional: true)
+        ]
+
+        return entity
+    }
+
+    private static func createCustomExerciseTemplateEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "CustomExerciseTemplateEntity"
+        entity.managedObjectClassName = "CustomExerciseTemplateEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("name", type: .stringAttributeType),
+            createAttribute("categoryRaw", type: .stringAttributeType),
+            createAttribute("exerciseTypeRaw", type: .stringAttributeType),
+            createAttribute("primaryMusclesRaw", type: .stringAttributeType, optional: true),
+            createAttribute("secondaryMusclesRaw", type: .stringAttributeType, optional: true),
+            createAttribute("createdAt", type: .dateAttributeType)
         ]
 
         return entity

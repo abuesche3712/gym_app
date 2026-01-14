@@ -92,6 +92,11 @@ public class SetGroupEntity: NSManagedObject {
     @NSManaged public var notes: String?
     @NSManaged public var orderIndex: Int32
     @NSManaged public var exercise: ExerciseEntity?
+
+    // Interval mode fields
+    @NSManaged public var isInterval: Bool
+    @NSManaged public var workDuration: Int32
+    @NSManaged public var intervalRestDuration: Int32
 }
 
 // MARK: - Workout Entity
@@ -198,6 +203,8 @@ public class SessionExerciseEntity: NSManagedObject {
     @NSManaged public var exerciseId: UUID
     @NSManaged public var exerciseName: String
     @NSManaged public var exerciseTypeRaw: String
+    @NSManaged public var cardioMetricRaw: String?
+    @NSManaged public var distanceUnitRaw: String?
     @NSManaged public var notes: String?
     @NSManaged public var orderIndex: Int32
     @NSManaged public var completedModule: CompletedModuleEntity?
@@ -206,6 +213,16 @@ public class SessionExerciseEntity: NSManagedObject {
     var exerciseType: ExerciseType {
         get { ExerciseType(rawValue: exerciseTypeRaw) ?? .strength }
         set { exerciseTypeRaw = newValue.rawValue }
+    }
+
+    var cardioMetric: CardioMetric {
+        get { CardioMetric(rawValue: cardioMetricRaw ?? "time") ?? .timeOnly }
+        set { cardioMetricRaw = newValue.rawValue }
+    }
+
+    var distanceUnit: DistanceUnit {
+        get { DistanceUnit(rawValue: distanceUnitRaw ?? "meters") ?? .meters }
+        set { distanceUnitRaw = newValue.rawValue }
     }
 
     var completedSetGroupArray: [CompletedSetGroupEntity] {
@@ -222,6 +239,12 @@ public class CompletedSetGroupEntity: NSManagedObject {
     @NSManaged public var orderIndex: Int32
     @NSManaged public var sessionExercise: SessionExerciseEntity?
     @NSManaged public var sets: NSOrderedSet?
+
+    // Interval mode fields
+    @NSManaged public var isInterval: Bool
+    @NSManaged public var workDuration: Int32
+    @NSManaged public var intervalRestDuration: Int32
+    @NSManaged public var restPeriod: Int32
 
     var setArray: [SetDataEntity] {
         sets?.array as? [SetDataEntity] ?? []
@@ -266,5 +289,48 @@ public class SyncQueueEntity: NSManagedObject {
     var operation: SyncOperation {
         get { SyncOperation(rawValue: operationRaw) ?? .create }
         set { operationRaw = newValue.rawValue }
+    }
+}
+
+// MARK: - Custom Exercise Template Entity
+
+@objc(CustomExerciseTemplateEntity)
+public class CustomExerciseTemplateEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var name: String
+    @NSManaged public var categoryRaw: String
+    @NSManaged public var exerciseTypeRaw: String
+    @NSManaged public var primaryMusclesRaw: String?
+    @NSManaged public var secondaryMusclesRaw: String?
+    @NSManaged public var createdAt: Date
+
+    var category: ExerciseCategory {
+        get { ExerciseCategory(rawValue: categoryRaw) ?? .fullBody }
+        set { categoryRaw = newValue.rawValue }
+    }
+
+    var exerciseType: ExerciseType {
+        get { ExerciseType(rawValue: exerciseTypeRaw) ?? .strength }
+        set { exerciseTypeRaw = newValue.rawValue }
+    }
+
+    var primaryMuscles: [MuscleGroup] {
+        get {
+            guard let raw = primaryMusclesRaw else { return [] }
+            return raw.split(separator: ",").compactMap { MuscleGroup(rawValue: String($0)) }
+        }
+        set {
+            primaryMusclesRaw = newValue.isEmpty ? nil : newValue.map { $0.rawValue }.joined(separator: ",")
+        }
+    }
+
+    var secondaryMuscles: [MuscleGroup] {
+        get {
+            guard let raw = secondaryMusclesRaw else { return [] }
+            return raw.split(separator: ",").compactMap { MuscleGroup(rawValue: String($0)) }
+        }
+        set {
+            secondaryMusclesRaw = newValue.isEmpty ? nil : newValue.map { $0.rawValue }.joined(separator: ",")
+        }
     }
 }

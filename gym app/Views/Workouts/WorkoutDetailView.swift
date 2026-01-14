@@ -113,24 +113,28 @@ struct WorkoutDetailView: View {
                 }
             }
 
-            // Danger Zone
-            Section {
-                Button(role: .destructive) {
-                    showingDeleteConfirmation = true
-                } label: {
-                    Label("Delete Workout", systemImage: "trash")
-                }
-            }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Workout")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showingEditWorkout = true
+                Menu {
+                    Button {
+                        showingEditWorkout = true
+                    } label: {
+                        Label("Edit Workout", systemImage: "pencil")
+                    }
+
+                    Divider()
+
+                    Button(role: .destructive) {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        Label("Delete Workout", systemImage: "trash")
+                    }
                 } label: {
-                    Text("Edit")
+                    Image(systemName: "ellipsis.circle")
                 }
             }
         }

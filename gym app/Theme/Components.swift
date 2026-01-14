@@ -381,6 +381,7 @@ struct TimePickerView: View {
     var maxMinutes: Int = 10
     var label: String = "Time"
     var compact: Bool = false
+    var secondsStep: Int = 5  // Step size for seconds (1 for fine control, 5 for quick selection)
 
     private var minutes: Binding<Int> {
         Binding(
@@ -394,6 +395,10 @@ struct TimePickerView: View {
             get: { totalSeconds % 60 },
             set: { totalSeconds = (totalSeconds / 60) * 60 + $0 }
         )
+    }
+
+    private var secondsRange: [Int] {
+        Array(stride(from: 0, through: 59, by: secondsStep))
     }
 
     var body: some View {
@@ -420,9 +425,9 @@ struct TimePickerView: View {
                     .foregroundColor(AppColors.textSecondary)
                     .frame(width: 30)
 
-                // Seconds picker (0, 5, 10, 15... 55)
+                // Seconds picker
                 Picker("Seconds", selection: seconds) {
-                    ForEach(Array(stride(from: 0, through: 55, by: 5)), id: \.self) { sec in
+                    ForEach(secondsRange, id: \.self) { sec in
                         Text(String(format: "%02d", sec)).tag(sec)
                     }
                 }

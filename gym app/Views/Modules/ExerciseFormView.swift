@@ -23,7 +23,8 @@ struct ExerciseFormView: View {
     @State private var name: String = ""
     @State private var selectedTemplate: ExerciseTemplate?
     @State private var exerciseType: ExerciseType = .strength
-    @State private var cardioMetric: CardioMetric = .time
+    @State private var trackTime: Bool = true
+    @State private var trackDistance: Bool = false
     @State private var distanceUnit: DistanceUnit = .meters
     @State private var progressionType: ProgressionType = .none
     @State private var notes: String = ""
@@ -32,95 +33,25 @@ struct ExerciseFormView: View {
     @State private var showingAddSetGroup = false
     @State private var editingSetGroup: EditingIndex?
     @State private var showingExercisePicker = false
-    @State private var searchText = ""
 
     private var isEditing: Bool { exercise != nil }
 
+    /// Computed CardioTracking from toggle states
+    private var cardioMetric: CardioTracking {
+        if trackTime && trackDistance {
+            return .both
+        } else if trackDistance {
+            return .distanceOnly
+        } else {
+            return .timeOnly
+        }
+    }
+
     var body: some View {
         Form {
-            Section("Exercise") {
-                // Exercise selection button
-                Button {
-                    showingExercisePicker = true
-                } label: {
-                    HStack {
-                        Text("Exercise")
-                            .foregroundColor(.primary)
-                        Spacer()
-                        Text(name.isEmpty ? "Select or type..." : name)
-                            .foregroundColor(name.isEmpty ? .secondary : .primary)
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-
-                Picker("Type", selection: $exerciseType) {
-                    ForEach(ExerciseType.allCases) { type in
-                        Text(type.displayName).tag(type)
-                    }
-                }
-
-                // Cardio-specific options
-                if exerciseType == .cardio {
-                    Picker("Tracking", selection: $cardioMetric) {
-                        ForEach(CardioMetric.allCases) { metric in
-                            Text(metric.displayName).tag(metric)
-                        }
-                    }
-
-                    if cardioMetric == .distance {
-                        Picker("Distance Unit", selection: $distanceUnit) {
-                            ForEach(DistanceUnit.allCases) { unit in
-                                Text(unit.displayName).tag(unit)
-                            }
-                        }
-                    }
-                }
-
-                Picker("Progression", selection: $progressionType) {
-                    ForEach(ProgressionType.allCases, id: \.self) { type in
-                        Text(type.displayName).tag(type)
-                    }
-                }
-            }
-
-            Section {
-                if setGroups.isEmpty {
-                    Text("No sets defined - tap + to add")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(Array(setGroups.enumerated()), id: \.element.id) { index, setGroup in
-                        Button {
-                            editingSetGroup = EditingIndex(id: index)
-                        } label: {
-                            SetGroupEditRow(setGroup: binding(for: index), index: index + 1)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .onDelete(perform: deleteSetGroup)
-                    .onMove(perform: moveSetGroup)
-                }
-
-                Button {
-                    showingAddSetGroup = true
-                } label: {
-                    Label("Add Set Group", systemImage: "plus.circle")
-                }
-            } header: {
-                HStack {
-                    Text("Sets")
-                    Spacer()
-                    Text("Tap to edit")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Section("Notes") {
-                TextEditor(text: $notes)
-                    .frame(minHeight: 60)
-            }
+            exerciseSection
+            setsSection
+            notesSection
         }
         .navigationTitle(isEditing ? "Edit Exercise" : "New Exercise")
         .navigationBarTitleDisplayMode(.inline)
@@ -176,21 +107,125 @@ struct ExerciseFormView: View {
             )
         }
         .onAppear {
-            if let exercise = exercise {
-                name = exercise.name
-                exerciseType = exercise.exerciseType
-                cardioMetric = exercise.cardioMetric
-                distanceUnit = exercise.distanceUnit
-                progressionType = exercise.progressionType
-                notes = exercise.notes ?? ""
-                setGroups = exercise.setGroups
-                // Load template if exists
-                if let templateId = exercise.templateId {
-                    selectedTemplate = ExerciseLibrary.shared.template(id: templateId)
+            loadExistingExercise()
+        }
+    }
+
+    // MARK: - Exercise Section
+
+    private var exerciseSection: some View {
+        Section("Exercise") {
+            // Exercise selection button
+            Button {
+                showingExercisePicker = true
+            } label: {
+                HStack {
+                    Text("Exercise")
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Text(name.isEmpty ? "Select or type..." : name)
+                        .foregroundColor(name.isEmpty ? .secondary : .primary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            Picker("Type", selection: $exerciseType) {
+                ForEach(ExerciseType.allCases) { type in
+                    Text(type.displayName).tag(type)
+                }
+            }
+
+            // Cardio-specific options
+            if exerciseType == .cardio {
+                cardioOptionsSection
+            }
+
+            Picker("Progression", selection: $progressionType) {
+                ForEach(ProgressionType.allCases, id: \.self) { type in
+                    Text(type.displayName).tag(type)
                 }
             }
         }
     }
+
+    @ViewBuilder
+    private var cardioOptionsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Track During Workout")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+
+            Toggle("Time", isOn: $trackTime)
+            Toggle("Distance", isOn: $trackDistance)
+                .onChange(of: trackDistance) { _, newValue in
+                    if !newValue && !trackTime {
+                        trackTime = true
+                    }
+                }
+                .onChange(of: trackTime) { _, newValue in
+                    if !newValue && !trackDistance {
+                        trackDistance = true
+                    }
+                }
+        }
+
+        if trackDistance {
+            Picker("Distance Unit", selection: $distanceUnit) {
+                ForEach(DistanceUnit.allCases) { unit in
+                    Text(unit.displayName).tag(unit)
+                }
+            }
+        }
+    }
+
+    // MARK: - Sets Section
+
+    private var setsSection: some View {
+        Section {
+            if setGroups.isEmpty {
+                Text("No sets defined - tap + to add")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(Array(setGroups.enumerated()), id: \.element.id) { index, setGroup in
+                    Button {
+                        editingSetGroup = EditingIndex(id: index)
+                    } label: {
+                        SetGroupEditRow(setGroup: binding(for: index), index: index + 1)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .onDelete(perform: deleteSetGroup)
+                .onMove(perform: moveSetGroup)
+            }
+
+            Button {
+                showingAddSetGroup = true
+            } label: {
+                Label("Add Set Group", systemImage: "plus.circle")
+            }
+        } header: {
+            HStack {
+                Text("Sets")
+                Spacer()
+                Text("Tap to edit")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    // MARK: - Notes Section
+
+    private var notesSection: some View {
+        Section("Notes") {
+            TextEditor(text: $notes)
+                .frame(minHeight: 60)
+        }
+    }
+
+    // MARK: - Helpers
 
     private func binding(for index: Int) -> Binding<SetGroup> {
         Binding(
@@ -205,6 +240,22 @@ struct ExerciseFormView: View {
 
     private func moveSetGroup(from source: IndexSet, to destination: Int) {
         setGroups.move(fromOffsets: source, toOffset: destination)
+    }
+
+    private func loadExistingExercise() {
+        if let exercise = exercise {
+            name = exercise.name
+            exerciseType = exercise.exerciseType
+            trackTime = exercise.cardioMetric.tracksTime
+            trackDistance = exercise.cardioMetric.tracksDistance
+            distanceUnit = exercise.distanceUnit
+            progressionType = exercise.progressionType
+            notes = exercise.notes ?? ""
+            setGroups = exercise.setGroups
+            if let templateId = exercise.templateId {
+                selectedTemplate = ExerciseLibrary.shared.template(id: templateId)
+            }
+        }
     }
 
     private func saveExercise() {
@@ -249,148 +300,6 @@ struct ExerciseFormView: View {
     }
 }
 
-// MARK: - Exercise Picker View
-
-struct ExercisePickerView: View {
-    @Environment(\.dismiss) private var dismiss
-    @Binding var selectedTemplate: ExerciseTemplate?
-    @Binding var customName: String
-    let onSelect: (ExerciseTemplate?) -> Void
-
-    @State private var searchText = ""
-    @State private var selectedCategory: ExerciseCategory?
-
-    private var filteredExercises: [ExerciseTemplate] {
-        var exercises = ExerciseLibrary.shared.exercises
-
-        if let category = selectedCategory {
-            exercises = exercises.filter { $0.category == category }
-        }
-
-        if !searchText.isEmpty {
-            exercises = exercises.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-        }
-
-        return exercises
-    }
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Category filter
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        CategoryPill(title: "All", isSelected: selectedCategory == nil) {
-                            selectedCategory = nil
-                        }
-
-                        ForEach(ExerciseCategory.allCases) { category in
-                            CategoryPill(title: category.rawValue, isSelected: selectedCategory == category) {
-                                selectedCategory = category
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 12)
-                }
-                .background(Color(.systemGroupedBackground))
-
-                List {
-                    // Custom exercise option
-                    Section {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                                .foregroundColor(.blue)
-                            TextField("Type custom exercise name...", text: $customName)
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            // Allow typing
-                        }
-
-                        if !customName.isEmpty {
-                            Button {
-                                selectedTemplate = nil
-                                onSelect(nil)
-                                dismiss()
-                            } label: {
-                                HStack {
-                                    Text("Use \"\(customName)\"")
-                                        .foregroundColor(.primary)
-                                    Spacer()
-                                    Text("Custom")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                        }
-                    } header: {
-                        Text("Custom Exercise")
-                    }
-
-                    // Library exercises
-                    Section {
-                        ForEach(filteredExercises) { template in
-                            Button {
-                                onSelect(template)
-                                dismiss()
-                            } label: {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(template.name)
-                                            .foregroundColor(.primary)
-                                        Text(template.category.rawValue)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-
-                                    Spacer()
-
-                                    if selectedTemplate?.id == template.id {
-                                        Image(systemName: "checkmark")
-                                            .foregroundColor(.blue)
-                                    }
-                                }
-                            }
-                        }
-                    } header: {
-                        Text("Exercise Library (\(filteredExercises.count))")
-                    }
-                }
-                .listStyle(.insetGrouped)
-            }
-            .navigationTitle("Select Exercise")
-            .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $searchText, prompt: "Search exercises...")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
-
-struct CategoryPill: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.subheadline)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(isSelected ? Color.blue : Color(.systemGray5))
-                .foregroundColor(isSelected ? .white : .primary)
-                .clipShape(Capsule())
-        }
-    }
-}
-
 // MARK: - Set Group Edit Row
 
 struct SetGroupEditRow: View {
@@ -423,162 +332,6 @@ struct SetGroupEditRow: View {
             }
         }
         .padding(.vertical, 4)
-    }
-}
-
-// MARK: - Set Group Form
-
-struct SetGroupFormView: View {
-    @Environment(\.dismiss) private var dismiss
-
-    let exerciseType: ExerciseType
-    let cardioMetric: CardioMetric
-    let distanceUnit: DistanceUnit
-    let existingSetGroup: SetGroup?
-    let onSave: (SetGroup) -> Void
-
-    @State private var sets: Int = 1
-    @State private var targetReps: Int = 0
-    @State private var targetWeight: String = ""
-    @State private var targetRPE: Int = 0
-    @State private var targetDuration: Int = 0
-    @State private var targetDistance: String = ""
-    @State private var targetHoldTime: Int = 0
-    @State private var restPeriod: Int = 90
-    @State private var notes: String = ""
-
-    private var isEditing: Bool { existingSetGroup != nil }
-    private var isDistanceBased: Bool { exerciseType == .cardio && cardioMetric == .distance }
-
-    var body: some View {
-        Form {
-            Section("Sets") {
-                Stepper("Sets: \(sets)", value: $sets, in: 1...20)
-            }
-
-            Section("Target") {
-                switch exerciseType {
-                case .strength:
-                    Stepper("Reps: \(targetReps)", value: $targetReps, in: 0...100)
-                    TextField("Target Weight (lbs)", text: $targetWeight)
-                        .keyboardType(.decimalPad)
-                    Picker("RPE", selection: $targetRPE) {
-                        Text("None").tag(0)
-                        ForEach(5...10, id: \.self) { rpe in
-                            Text("\(rpe)").tag(rpe)
-                        }
-                    }
-
-                case .cardio:
-                    if isDistanceBased {
-                        // Distance-based cardio
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Distance (\(distanceUnit.abbreviation))")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            TextField("Enter distance", text: $targetDistance)
-                                .keyboardType(.decimalPad)
-                                .font(.title2)
-
-                            // Quick presets
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    ForEach(distanceUnit.presets, id: \.self) { preset in
-                                        Button {
-                                            targetDistance = formatPreset(preset)
-                                        } label: {
-                                            Text("\(formatPreset(preset))\(distanceUnit.abbreviation)")
-                                                .font(.caption)
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 6)
-                                                .background(Color(.systemGray5))
-                                                .clipShape(Capsule())
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        // Time-based cardio
-                        TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, label: "Duration")
-                    }
-
-                case .isometric:
-                    TimePickerView(totalSeconds: $targetHoldTime, maxMinutes: 5, label: "Hold Time")
-
-                case .mobility:
-                    Stepper("Reps: \(targetReps)", value: $targetReps, in: 1...50)
-
-                case .explosive:
-                    Stepper("Reps: \(targetReps)", value: $targetReps, in: 1...20)
-                }
-            }
-
-            Section("Rest Between Sets") {
-                TimePickerView(totalSeconds: $restPeriod, maxMinutes: 5, label: "Rest Period", compact: true)
-            }
-
-            Section("Notes") {
-                TextField("Notes (e.g., 'top set', 'back-off')", text: $notes)
-            }
-        }
-        .navigationTitle(isEditing ? "Edit Set Group" : "Add Set Group")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") {
-                    dismiss()
-                }
-            }
-
-            ToolbarItem(placement: .confirmationAction) {
-                Button(isEditing ? "Save" : "Add") {
-                    let setGroup = SetGroup(
-                        id: existingSetGroup?.id ?? UUID(),
-                        sets: sets,
-                        targetReps: exerciseType == .strength || exerciseType == .mobility || exerciseType == .explosive ? (targetReps > 0 ? targetReps : nil) : nil,
-                        targetWeight: Double(targetWeight),
-                        targetRPE: targetRPE > 0 ? targetRPE : nil,
-                        targetDuration: !isDistanceBased && targetDuration > 0 ? targetDuration : nil,
-                        targetDistance: isDistanceBased ? Double(targetDistance) : nil,
-                        targetDistanceUnit: isDistanceBased ? distanceUnit : nil,
-                        targetHoldTime: targetHoldTime > 0 ? targetHoldTime : nil,
-                        restPeriod: restPeriod,
-                        notes: notes.isEmpty ? nil : notes
-                    )
-                    onSave(setGroup)
-                    dismiss()
-                }
-            }
-        }
-        .onAppear {
-            if let existing = existingSetGroup {
-                sets = existing.sets
-                targetReps = existing.targetReps ?? 0
-                targetWeight = existing.targetWeight.map { formatWeight($0) } ?? ""
-                targetRPE = existing.targetRPE ?? 0
-                targetDuration = existing.targetDuration ?? 0
-                targetDistance = existing.targetDistance.map { formatPreset($0) } ?? ""
-                targetHoldTime = existing.targetHoldTime ?? 0
-                restPeriod = existing.restPeriod ?? 90
-                notes = existing.notes ?? ""
-            }
-        }
-    }
-
-    private func formatPreset(_ value: Double) -> String {
-        if value == floor(value) {
-            return "\(Int(value))"
-        }
-        return String(format: "%.2f", value)
-    }
-
-    private func formatWeight(_ weight: Double) -> String {
-        if weight == floor(weight) {
-            return "\(Int(weight))"
-        }
-        return String(format: "%.1f", weight)
     }
 }
 

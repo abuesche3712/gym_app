@@ -70,11 +70,14 @@ class SessionViewModel: ObservableObject {
                                         weight: setGroup.targetWeight,
                                         reps: setGroup.targetReps,
                                         completed: false,
-                                        duration: setGroup.targetDuration,
+                                        duration: setGroup.isInterval ? setGroup.workDuration : setGroup.targetDuration,
                                         distance: setGroup.targetDistance,
                                         holdTime: setGroup.targetHoldTime
                                     )
-                                }
+                                },
+                                isInterval: setGroup.isInterval,
+                                workDuration: setGroup.workDuration,
+                                intervalRestDuration: setGroup.intervalRestDuration
                             )
                         }
                     )

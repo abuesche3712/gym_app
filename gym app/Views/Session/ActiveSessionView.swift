@@ -25,6 +25,8 @@ struct ActiveSessionView: View {
     @State private var showRecentSets = false
     @State private var showWorkoutOverview = false
     @State private var showSubstituteExercise = false
+    @State private var showIntervalTimer = false
+    @State private var intervalSetGroupIndex: Int = 0
 
     var body: some View {
         NavigationStack {
@@ -161,6 +163,24 @@ struct ActiveSessionView: View {
                         showSubstituteExercise = false
                     }
                 )
+            }
+            .fullScreenCover(isPresented: $showIntervalTimer) {
+                if let exercise = sessionViewModel.currentExercise,
+                   intervalSetGroupIndex < exercise.completedSetGroups.count {
+                    let setGroup = exercise.completedSetGroups[intervalSetGroupIndex]
+                    IntervalTimerView(
+                        rounds: setGroup.rounds,
+                        workDuration: setGroup.workDuration ?? 30,
+                        restDuration: setGroup.intervalRestDuration ?? 30,
+                        exerciseName: exercise.exerciseName,
+                        onComplete: { durations in
+                            logIntervalCompletion(setGroupIndex: intervalSetGroupIndex, durations: durations)
+                        },
+                        onCancel: {
+                            // Just dismiss, no logging
+                        }
+                    )
+                }
             }
             .sheet(isPresented: $showWorkoutOverview) {
                 WorkoutOverviewSheet(
@@ -440,33 +460,41 @@ struct ActiveSessionView: View {
                     }
                 }
 
-                // All sets list
-                ForEach(flattenedSets(exercise), id: \.id) { flatSet in
-                    SetRowView(
-                        flatSet: flatSet,
-                        exercise: exercise,
-                        isExpanded: expandedSetId == flatSet.id,
-                        onTap: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                if expandedSetId == flatSet.id {
-                                    expandedSetId = nil
-                                } else {
-                                    expandedSetId = flatSet.id
+                // Check for interval set groups
+                ForEach(Array(exercise.completedSetGroups.enumerated()), id: \.element.id) { groupIndex, setGroup in
+                    if setGroup.isInterval {
+                        // Interval set group - show special UI
+                        intervalSetGroupRow(setGroup: setGroup, groupIndex: groupIndex)
+                    } else {
+                        // Regular sets
+                        ForEach(flattenedSetsForGroup(exercise: exercise, groupIndex: groupIndex), id: \.id) { flatSet in
+                            SetRowView(
+                                flatSet: flatSet,
+                                exercise: exercise,
+                                isExpanded: expandedSetId == flatSet.id,
+                                onTap: {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        if expandedSetId == flatSet.id {
+                                            expandedSetId = nil
+                                        } else {
+                                            expandedSetId = flatSet.id
+                                        }
+                                    }
+                                },
+                                onLog: { weight, reps, rpe, duration, holdTime, distance in
+                                    logSetAt(flatSet: flatSet, weight: weight, reps: reps, rpe: rpe, duration: duration, holdTime: holdTime, distance: distance)
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        expandedSetId = nil
+                                    }
+                                    // Start rest timer
+                                    let restPeriod = flatSet.restPeriod ?? appState.defaultRestTime
+                                    if !allSetsCompleted(exercise) {
+                                        sessionViewModel.startRestTimer(seconds: restPeriod)
+                                    }
                                 }
-                            }
-                        },
-                        onLog: { weight, reps, rpe, duration, holdTime, distance in
-                            logSetAt(flatSet: flatSet, weight: weight, reps: reps, rpe: rpe, duration: duration, holdTime: holdTime, distance: distance)
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                expandedSetId = nil
-                            }
-                            // Start rest timer
-                            let restPeriod = flatSet.restPeriod ?? appState.defaultRestTime
-                            if !allSetsCompleted(exercise) {
-                                sessionViewModel.startRestTimer(seconds: restPeriod)
-                            }
+                            )
                         }
-                    )
+                    }
                 }
 
                 // Add Set button
@@ -521,7 +549,148 @@ struct ActiveSessionView: View {
         )
     }
 
-    // Uses FlatSet defined below
+    // MARK: - Interval Set Group Row
+
+    private func intervalSetGroupRow(setGroup: CompletedSetGroup, groupIndex: Int) -> some View {
+        let allCompleted = setGroup.sets.allSatisfy { $0.completed }
+        let completedCount = setGroup.sets.filter { $0.completed }.count
+
+        return VStack(spacing: AppSpacing.md) {
+            // Header
+            HStack {
+                Image(systemName: "timer")
+                    .font(.system(size: 16))
+                    .foregroundColor(.orange)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Interval")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(AppColors.textPrimary)
+
+                    Text("\(setGroup.rounds) rounds: \(formatDuration(setGroup.workDuration ?? 30)) on / \(formatDuration(setGroup.intervalRestDuration ?? 30)) off")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+
+                Spacer()
+
+                if allCompleted {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(AppColors.success)
+                } else if completedCount > 0 {
+                    Text("\(completedCount)/\(setGroup.rounds)")
+                        .font(.caption.weight(.medium))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            }
+
+            // Start button or completion summary
+            if allCompleted {
+                // Show completed rounds summary
+                VStack(spacing: AppSpacing.sm) {
+                    ForEach(Array(setGroup.sets.enumerated()), id: \.element.id) { index, set in
+                        HStack {
+                            Text("Round \(index + 1)")
+                                .font(.caption)
+                                .foregroundColor(AppColors.textTertiary)
+
+                            Spacer()
+
+                            if let duration = set.duration {
+                                Text(formatDuration(duration))
+                                    .font(.caption.weight(.medium))
+                                    .foregroundColor(AppColors.textSecondary)
+                            }
+
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(AppColors.success)
+                        }
+                    }
+                }
+                .padding(AppSpacing.sm)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.small)
+                        .fill(AppColors.success.opacity(0.05))
+                )
+            } else {
+                // Start interval button
+                Button {
+                    startIntervalTimer(setGroupIndex: groupIndex)
+                } label: {
+                    HStack(spacing: AppSpacing.sm) {
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 14))
+                        Text("Start Interval")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppSpacing.md)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppCorners.medium)
+                            .fill(LinearGradient(
+                                colors: [.orange, .orange.opacity(0.8)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ))
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(AppSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.medium)
+                .fill(AppColors.cardBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .stroke(allCompleted ? AppColors.success.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1)
+                )
+        )
+    }
+
+    private func formatDuration(_ seconds: Int) -> String {
+        let mins = seconds / 60
+        let secs = seconds % 60
+        if mins > 0 {
+            return String(format: "%d:%02d", mins, secs)
+        }
+        return "\(secs)s"
+    }
+
+    // Uses FlatSet defined in SessionModels
+
+    private func flattenedSetsForGroup(exercise: SessionExercise, groupIndex: Int) -> [FlatSet] {
+        guard groupIndex < exercise.completedSetGroups.count else { return [] }
+        let setGroup = exercise.completedSetGroups[groupIndex]
+
+        // Calculate running set number by counting sets in previous groups
+        var runningSetNumber = 1
+        for i in 0..<groupIndex {
+            runningSetNumber += exercise.completedSetGroups[i].sets.count
+        }
+
+        var result: [FlatSet] = []
+        for (setIndex, setData) in setGroup.sets.enumerated() {
+            result.append(FlatSet(
+                id: "\(groupIndex)-\(setIndex)",
+                setGroupIndex: groupIndex,
+                setIndex: setIndex,
+                setNumber: runningSetNumber,
+                setData: setData,
+                targetWeight: setData.weight,
+                targetReps: setData.reps,
+                targetDuration: setData.duration,
+                targetHoldTime: setData.holdTime,
+                targetDistance: setData.distance,
+                restPeriod: setGroup.restPeriod
+            ))
+            runningSetNumber += 1
+        }
+        return result
+    }
 
     private func flattenedSets(_ exercise: SessionExercise) -> [FlatSet] {
         var result: [FlatSet] = []
@@ -778,6 +947,40 @@ struct ActiveSessionView: View {
         session.completedModules[sessionViewModel.currentModuleIndex] = module
 
         sessionViewModel.currentSession = session
+    }
+
+    // MARK: - Interval Logging
+
+    private func logIntervalCompletion(setGroupIndex: Int, durations: [Int]) {
+        guard var session = sessionViewModel.currentSession else { return }
+
+        var module = session.completedModules[sessionViewModel.currentModuleIndex]
+        var exercise = module.completedExercises[sessionViewModel.currentExerciseIndex]
+        var setGroup = exercise.completedSetGroups[setGroupIndex]
+
+        // Mark each round as completed with its duration
+        for (index, duration) in durations.enumerated() {
+            if index < setGroup.sets.count {
+                setGroup.sets[index].duration = duration
+                setGroup.sets[index].completed = true
+            }
+        }
+
+        exercise.completedSetGroups[setGroupIndex] = setGroup
+        module.completedExercises[sessionViewModel.currentExerciseIndex] = exercise
+        session.completedModules[sessionViewModel.currentModuleIndex] = module
+
+        sessionViewModel.currentSession = session
+
+        // If all sets in this exercise are complete, start rest timer
+        if allSetsCompleted(exercise), let restPeriod = setGroup.restPeriod {
+            sessionViewModel.startRestTimer(seconds: restPeriod)
+        }
+    }
+
+    private func startIntervalTimer(setGroupIndex: Int) {
+        intervalSetGroupIndex = setGroupIndex
+        showIntervalTimer = true
     }
 
     private func advanceToNextExercise() {

@@ -178,12 +178,16 @@ struct SetRowView: View {
             }
             return weight.isEmpty ? reps : weight
         case .isometric:
-            return flatSet.targetHoldTime.map { "\($0)s hold" } ?? "Hold"
+            return flatSet.targetHoldTime.map { formatDuration($0) + " hold" } ?? "Hold"
         case .cardio:
-            if exercise.isDistanceBased {
-                return flatSet.targetDistance.map { "\(formatDistance($0)) \(exercise.distanceUnit.abbreviation)" } ?? "Distance"
+            var parts: [String] = []
+            if exercise.tracksTime, let duration = flatSet.targetDuration {
+                parts.append(formatDuration(duration))
             }
-            return flatSet.targetDuration.map { formatDuration($0) } ?? "Duration"
+            if exercise.tracksDistance, let distance = flatSet.targetDistance {
+                parts.append("\(formatDistance(distance)) \(exercise.distanceUnit.abbreviation)")
+            }
+            return parts.isEmpty ? "Cardio" : parts.joined(separator: " / ")
         case .mobility, .explosive:
             return flatSet.targetReps.map { "\($0) reps" } ?? "Reps"
         }
@@ -197,16 +201,14 @@ struct SetRowView: View {
         case .isometric:
             return set.formattedIsometric ?? "Completed"
         case .cardio:
-            if exercise.isDistanceBased {
-                if let duration = set.duration {
-                    return formatDuration(duration)
-                }
-            } else {
-                if let distance = set.distance {
-                    return "\(formatDistance(distance)) \(exercise.distanceUnit.abbreviation)"
-                }
+            var parts: [String] = []
+            if exercise.tracksTime, let duration = set.duration {
+                parts.append(formatDuration(duration))
             }
-            return "Completed"
+            if exercise.tracksDistance, let distance = set.distance {
+                parts.append("\(formatDistance(distance)) \(exercise.distanceUnit.abbreviation)")
+            }
+            return parts.isEmpty ? "Completed" : parts.joined(separator: " / ")
         case .mobility, .explosive:
             return set.reps.map { "\($0) reps" } ?? "Completed"
         }
@@ -265,21 +267,25 @@ struct SetRowView: View {
             TimePickerView(totalSeconds: $inputHoldTime, maxMinutes: 5, label: "Hold Time")
 
         case .cardio:
-            if exercise.isDistanceBased {
-                TimePickerView(totalSeconds: $inputDuration, maxMinutes: 60, label: "Time")
-            } else {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("DISTANCE (\(exercise.distanceUnit.abbreviation.uppercased()))")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                    TextField("0", text: $inputDistance)
-                        .keyboardType(.decimalPad)
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .padding(AppSpacing.sm)
-                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfaceLight))
-                        .focused($isInputFocused)
+            VStack(spacing: AppSpacing.md) {
+                if exercise.tracksTime {
+                    TimePickerView(totalSeconds: $inputDuration, maxMinutes: 60, label: "Time", secondsStep: 1)
+                }
+
+                if exercise.tracksDistance {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("DISTANCE (\(exercise.distanceUnit.abbreviation.uppercased()))")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundColor(AppColors.textTertiary)
+                        TextField("0", text: $inputDistance)
+                            .keyboardType(.decimalPad)
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundColor(AppColors.textPrimary)
+                            .multilineTextAlignment(.center)
+                            .padding(AppSpacing.sm)
+                            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfaceLight))
+                            .focused($isInputFocused)
+                    }
                 }
             }
 
@@ -307,8 +313,9 @@ struct SetRowView: View {
         inputRPE = 0
 
         if exercise.exerciseType == .cardio {
-            inputDuration = 0
-            inputDistance = ""
+            // Pre-fill targets if set, but start at 0 for logging
+            inputDuration = flatSet.targetDuration ?? 0
+            inputDistance = flatSet.targetDistance.map { formatDistance($0) } ?? ""
         } else {
             inputDuration = flatSet.targetDuration ?? 0
             inputDistance = flatSet.targetDistance.map { formatDistance($0) } ?? ""

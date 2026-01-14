@@ -27,7 +27,7 @@ struct Exercise: Identifiable, Codable, Hashable {
         name: String,
         templateId: UUID? = nil,
         exerciseType: ExerciseType,
-        cardioMetric: CardioMetric = .time,
+        cardioMetric: CardioMetric = .timeOnly,
         distanceUnit: DistanceUnit = .meters,
         setGroups: [SetGroup] = [],
         trackingMetrics: [MetricType]? = nil,
@@ -58,9 +58,19 @@ struct Exercise: Identifiable, Codable, Hashable {
         }
     }
 
-    /// Whether this cardio exercise tracks distance instead of time
+    /// Whether this cardio exercise should log time
+    var tracksTime: Bool {
+        exerciseType == .cardio && cardioMetric.tracksTime
+    }
+
+    /// Whether this cardio exercise should log distance
+    var tracksDistance: Bool {
+        exerciseType == .cardio && cardioMetric.tracksDistance
+    }
+
+    /// Legacy: Whether this is primarily distance-based (for target display)
     var isDistanceBased: Bool {
-        exerciseType == .cardio && cardioMetric == .distance
+        exerciseType == .cardio && cardioMetric == .distanceOnly
     }
 
     var isInSuperset: Bool {
@@ -93,9 +103,9 @@ struct Exercise: Identifiable, Codable, Hashable {
             } else if let distance = group.targetDistance, isDistanceBased {
                 return "\(group.sets)x\(formatDistance(distance))"
             } else if let duration = group.targetDuration {
-                return "\(group.sets)x\(duration)s"
+                return "\(group.sets)x\(formatDuration(duration))"
             } else if let holdTime = group.targetHoldTime {
-                return "\(group.sets)x\(holdTime)s hold"
+                return "\(group.sets)x\(formatDuration(holdTime)) hold"
             }
             return "\(group.sets) sets"
         }.joined(separator: " + ")
@@ -106,5 +116,17 @@ struct Exercise: Identifiable, Codable, Hashable {
             return "\(Int(distance))\(distanceUnit.abbreviation)"
         }
         return String(format: "%.1f%@", distance, distanceUnit.abbreviation)
+    }
+
+    private func formatDuration(_ seconds: Int) -> String {
+        if seconds >= 60 {
+            let mins = seconds / 60
+            let secs = seconds % 60
+            if secs > 0 {
+                return String(format: "%d:%02d", mins, secs)
+            }
+            return "\(mins) min"
+        }
+        return "\(seconds)s"
     }
 }

@@ -235,25 +235,39 @@ enum DistanceUnit: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - Cardio Metric Type
+// MARK: - Cardio Tracking Options
 
-enum CardioMetric: String, Codable, CaseIterable, Identifiable {
-    case time
-    case distance
+enum CardioTracking: String, Codable, CaseIterable, Identifiable {
+    case timeOnly = "time"
+    case distanceOnly = "distance"
+    case both = "both"
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .time: return "Time-based"
-        case .distance: return "Distance-based"
+        case .timeOnly: return "Time only"
+        case .distanceOnly: return "Distance only"
+        case .both: return "Both"
         }
     }
 
     var description: String {
         switch self {
-        case .time: return "Track duration (e.g., 30 min run)"
-        case .distance: return "Track distance (e.g., 400m sprint)"
+        case .timeOnly: return "Just log duration (e.g., 5 min warmup)"
+        case .distanceOnly: return "Just log distance (e.g., 1 mile run)"
+        case .both: return "Log both time and distance"
         }
     }
+
+    var tracksTime: Bool {
+        self != .distanceOnly
+    }
+
+    var tracksDistance: Bool {
+        self != .timeOnly
+    }
 }
+
+// Legacy alias for backward compatibility
+typealias CardioMetric = CardioTracking

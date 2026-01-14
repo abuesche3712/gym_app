@@ -213,6 +213,10 @@ class DataRepository: ObservableObject {
                 sgEntity.notes = setGroup.notes
                 sgEntity.orderIndex = Int32(sgIndex)
                 sgEntity.exercise = exerciseEntity
+                // Interval fields
+                sgEntity.isInterval = setGroup.isInterval
+                sgEntity.workDuration = Int32(setGroup.workDuration ?? 0)
+                sgEntity.intervalRestDuration = Int32(setGroup.intervalRestDuration ?? 0)
                 return sgEntity
             }
             exerciseEntity.setGroups = NSOrderedSet(array: setGroupEntities)
@@ -234,7 +238,10 @@ class DataRepository: ObservableObject {
                     targetDistance: sgEntity.targetDistance > 0 ? sgEntity.targetDistance : nil,
                     targetHoldTime: sgEntity.targetHoldTime > 0 ? Int(sgEntity.targetHoldTime) : nil,
                     restPeriod: sgEntity.restPeriod > 0 ? Int(sgEntity.restPeriod) : nil,
-                    notes: sgEntity.notes
+                    notes: sgEntity.notes,
+                    isInterval: sgEntity.isInterval,
+                    workDuration: sgEntity.workDuration > 0 ? Int(sgEntity.workDuration) : nil,
+                    intervalRestDuration: sgEntity.intervalRestDuration > 0 ? Int(sgEntity.intervalRestDuration) : nil
                 )
             }
 
@@ -389,6 +396,8 @@ class DataRepository: ObservableObject {
                 exerciseEntity.exerciseId = sessionExercise.exerciseId
                 exerciseEntity.exerciseName = sessionExercise.exerciseName
                 exerciseEntity.exerciseType = sessionExercise.exerciseType
+                exerciseEntity.cardioMetric = sessionExercise.cardioMetric
+                exerciseEntity.distanceUnit = sessionExercise.distanceUnit
                 exerciseEntity.notes = sessionExercise.notes
                 exerciseEntity.orderIndex = Int32(exIndex)
                 exerciseEntity.completedModule = moduleEntity
@@ -399,6 +408,10 @@ class DataRepository: ObservableObject {
                     sgEntity.id = completedSetGroup.id
                     sgEntity.setGroupId = completedSetGroup.setGroupId
                     sgEntity.orderIndex = Int32(sgIndex)
+                    sgEntity.restPeriod = Int32(completedSetGroup.restPeriod ?? 0)
+                    sgEntity.isInterval = completedSetGroup.isInterval
+                    sgEntity.workDuration = Int32(completedSetGroup.workDuration ?? 0)
+                    sgEntity.intervalRestDuration = Int32(completedSetGroup.intervalRestDuration ?? 0)
                     sgEntity.sessionExercise = exerciseEntity
 
                     // Add set data
@@ -460,7 +473,11 @@ class DataRepository: ObservableObject {
                     return CompletedSetGroup(
                         id: sgEntity.id,
                         setGroupId: sgEntity.setGroupId,
-                        sets: sets
+                        restPeriod: sgEntity.restPeriod > 0 ? Int(sgEntity.restPeriod) : nil,
+                        sets: sets,
+                        isInterval: sgEntity.isInterval,
+                        workDuration: sgEntity.workDuration > 0 ? Int(sgEntity.workDuration) : nil,
+                        intervalRestDuration: sgEntity.intervalRestDuration > 0 ? Int(sgEntity.intervalRestDuration) : nil
                     )
                 }
 
@@ -469,6 +486,8 @@ class DataRepository: ObservableObject {
                     exerciseId: exerciseEntity.exerciseId,
                     exerciseName: exerciseEntity.exerciseName,
                     exerciseType: exerciseEntity.exerciseType,
+                    cardioMetric: exerciseEntity.cardioMetric,
+                    distanceUnit: exerciseEntity.distanceUnit,
                     completedSetGroups: completedSetGroups,
                     notes: exerciseEntity.notes
                 )

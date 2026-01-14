@@ -12,6 +12,7 @@ struct ModulesListView: View {
     @State private var showingAddModule = false
     @State private var searchText = ""
     @State private var selectedType: ModuleType?
+    @State private var navigateToModule: Module?
 
     var filteredModules: [Module] {
         var modules = moduleViewModel.modules
@@ -103,8 +104,13 @@ struct ModulesListView: View {
             }
             .sheet(isPresented: $showingAddModule) {
                 NavigationStack {
-                    ModuleFormView(module: nil)
+                    ModuleFormView(module: nil) { createdModule in
+                        navigateToModule = createdModule
+                    }
                 }
+            }
+            .navigationDestination(item: $navigateToModule) { module in
+                ModuleDetailView(module: module)
             }
             .refreshable {
                 moduleViewModel.loadModules()

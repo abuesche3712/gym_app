@@ -23,6 +23,7 @@
 		B63EBF132F15E73700D8C22D /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEB2F15E73700D8C22D /* Enums.swift */; };
 		B63EBF142F15E73700D8C22D /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEC2F15E73700D8C22D /* Exercise.swift */; };
 		B63EBF302F15E73700D8C22D /* ExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */; };
+		A0B1C2D3E4F5067890123457 /* CustomExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */; };
 		B63EBF152F15E73700D8C22D /* Module.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEED2F15E73700D8C22D /* Module.swift */; };
 		B63EBF162F15E73700D8C22D /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEE2F15E73700D8C22D /* Session.swift */; };
 		B63EBF172F15E73700D8C22D /* SetGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEF2F15E73700D8C22D /* SetGroup.swift */; };
@@ -31,6 +32,8 @@
 		B63EBF1A2F15E73700D8C22D /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF32F15E73700D8C22D /* SessionDetailView.swift */; };
 		B63EBF1B2F15E73700D8C22D /* ExerciseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF52F15E73700D8C22D /* ExerciseDetailView.swift */; };
 		B63EBF1C2F15E73700D8C22D /* ExerciseFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF62F15E73700D8C22D /* ExerciseFormView.swift */; };
+		C2D4E6F8A1B3C5D7E9F0A2B4 /* SetGroupFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E5F7A9B1C3D5E7F9A1B3C5 /* SetGroupFormView.swift */; };
+		E4F6A8C0B2D4E6F8A0C2D4E6 /* ExercisePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A7B9D1C3E5F7A9B1D3E5F7 /* ExercisePickerView.swift */; };
 		B63EBF1D2F15E73700D8C22D /* ModuleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF72F15E73700D8C22D /* ModuleDetailView.swift */; };
 		B63EBF1E2F15E73700D8C22D /* ModuleFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF82F15E73700D8C22D /* ModuleFormView.swift */; };
 		B63EBF1F2F15E73700D8C22D /* ModulesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF92F15E73700D8C22D /* ModulesListView.swift */; };
@@ -54,6 +57,7 @@
 		B693104E2F15E12A0021CB0F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B693104B2F15E12A0021CB0F /* GoogleService-Info.plist */; };
 		827E4547CA7D42C1BCD2A93B /* SessionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7892D49050054B958D767C66 /* SessionModels.swift */; };
 		7C388C9A41484932BBDDF97C /* SessionComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 831F4BF6DCA940DF8F46BD55 /* SessionComponents.swift */; };
+		F9E8D7C6B5A443218765432B /* IntervalTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F647890123456A /* IntervalTimerView.swift */; };
 		39DB3468001A45CEA0E01B1F /* EndSessionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C0101650AF44AEA8A6F8A1 /* EndSessionSheet.swift */; };
 		809C1B452DCD4B8AB156DBCE /* RecentSetsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41BC86B3BCEE40829E96B24B /* RecentSetsSheet.swift */; };
 		7E3A26543EA449B5824C3A63 /* WorkoutOverviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */; };
@@ -95,6 +99,7 @@
 		B63EBEEB2F15E73700D8C22D /* Enums.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
 		B63EBEEC2F15E73700D8C22D /* Exercise.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
 		B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseLibrary.swift; sourceTree = "<group>"; };
+		A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CustomExerciseLibrary.swift; sourceTree = "<group>"; };
 		B63EBEED2F15E73700D8C22D /* Module.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Module.swift; sourceTree = "<group>"; };
 		B63EBEEE2F15E73700D8C22D /* Session.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
 		B63EBEEF2F15E73700D8C22D /* SetGroup.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetGroup.swift; sourceTree = "<group>"; };
@@ -103,6 +108,8 @@
 		B63EBEF32F15E73700D8C22D /* SessionDetailView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
 		B63EBEF52F15E73700D8C22D /* ExerciseDetailView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseDetailView.swift; sourceTree = "<group>"; };
 		B63EBEF62F15E73700D8C22D /* ExerciseFormView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseFormView.swift; sourceTree = "<group>"; };
+		D3E5F7A9B1C3D5E7F9A1B3C5 /* SetGroupFormView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetGroupFormView.swift; sourceTree = "<group>"; };
+		F5A7B9D1C3E5F7A9B1D3E5F7 /* ExercisePickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExercisePickerView.swift; sourceTree = "<group>"; };
 		B63EBEF72F15E73700D8C22D /* ModuleDetailView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModuleDetailView.swift; sourceTree = "<group>"; };
 		B63EBEF82F15E73700D8C22D /* ModuleFormView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModuleFormView.swift; sourceTree = "<group>"; };
 		B63EBEF92F15E73700D8C22D /* ModulesListView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModulesListView.swift; sourceTree = "<group>"; };
@@ -128,6 +135,7 @@
 		41BC86B3BCEE40829E96B24B /* RecentSetsSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecentSetsSheet.swift; sourceTree = "<group>"; };
 		819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WorkoutOverviewSheet.swift; sourceTree = "<group>"; };
 		4EA5B70D29F142CF8BE80E2D /* ExerciseModificationSheets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseModificationSheets.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F647890123456A /* IntervalTimerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IntervalTimerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -235,6 +243,7 @@
 		B63EBEF12F15E73700D8C22D /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */,
 				B63EBEEB2F15E73700D8C22D /* Enums.swift */,
 				B63EBEEC2F15E73700D8C22D /* Exercise.swift */,
 				B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */,
@@ -260,6 +269,8 @@
 			children = (
 				B63EBEF52F15E73700D8C22D /* ExerciseDetailView.swift */,
 				B63EBEF62F15E73700D8C22D /* ExerciseFormView.swift */,
+				D3E5F7A9B1C3D5E7F9A1B3C5 /* SetGroupFormView.swift */,
+				F5A7B9D1C3E5F7A9B1D3E5F7 /* ExercisePickerView.swift */,
 				B63EBEF72F15E73700D8C22D /* ModuleDetailView.swift */,
 				B63EBEF82F15E73700D8C22D /* ModuleFormView.swift */,
 				B63EBEF92F15E73700D8C22D /* ModulesListView.swift */,
@@ -273,6 +284,7 @@
 				B63EBEFB2F15E73700D8C22D /* ActiveSessionView.swift */,
 				7892D49050054B958D767C66 /* SessionModels.swift */,
 				831F4BF6DCA940DF8F46BD55 /* SessionComponents.swift */,
+				A1B2C3D4E5F647890123456A /* IntervalTimerView.swift */,
 				C8C0101650AF44AEA8A6F8A1 /* EndSessionSheet.swift */,
 				41BC86B3BCEE40829E96B24B /* RecentSetsSheet.swift */,
 				819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */,
@@ -502,11 +514,14 @@
 				B63EBF0F2F15E73700D8C22D /* AppState.swift in Sources */,
 				B63EBF142F15E73700D8C22D /* Exercise.swift in Sources */,
 				B63EBF302F15E73700D8C22D /* ExerciseLibrary.swift in Sources */,
+				A0B1C2D3E4F5067890123457 /* CustomExerciseLibrary.swift in Sources */,
 				B658B09E2F16903C00B2F84E /* AppTheme.swift in Sources */,
 				B63EBF1A2F15E73700D8C22D /* SessionDetailView.swift in Sources */,
 				B63EBF192F15E73700D8C22D /* HistoryView.swift in Sources */,
 				B63EBF152F15E73700D8C22D /* Module.swift in Sources */,
 				B63EBF1C2F15E73700D8C22D /* ExerciseFormView.swift in Sources */,
+				C2D4E6F8A1B3C5D7E9F0A2B4 /* SetGroupFormView.swift in Sources */,
+				E4F6A8C0B2D4E6F8A0C2D4E6 /* ExercisePickerView.swift in Sources */,
 				B63EBF112F15E73700D8C22D /* SessionViewModel.swift in Sources */,
 				B63EBF282F15E73700D8C22D /* PersistenceController.swift in Sources */,
 				B63EBF2A2F15E73700D8C22D /* FirebaseService.swift in Sources */,
@@ -526,6 +541,7 @@
 				B658B09F2F16903C00B2F84E /* Components.swift in Sources */,
 				827E4547CA7D42C1BCD2A93B /* SessionModels.swift in Sources */,
 				7C388C9A41484932BBDDF97C /* SessionComponents.swift in Sources */,
+				F9E8D7C6B5A443218765432B /* IntervalTimerView.swift in Sources */,
 				39DB3468001A45CEA0E01B1F /* EndSessionSheet.swift in Sources */,
 				809C1B452DCD4B8AB156DBCE /* RecentSetsSheet.swift in Sources */,
 				7E3A26543EA449B5824C3A63 /* WorkoutOverviewSheet.swift in Sources */,

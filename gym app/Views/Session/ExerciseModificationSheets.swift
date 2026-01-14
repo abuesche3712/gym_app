@@ -12,11 +12,11 @@ import SwiftUI
 struct SubstituteExerciseSheet: View {
     @Environment(\.dismiss) private var dismiss
     let currentExercise: SessionExercise?
-    let onSubstitute: (String, ExerciseType, CardioMetric, DistanceUnit) -> Void
+    let onSubstitute: (String, ExerciseType, CardioTracking, DistanceUnit) -> Void
 
     @State private var exerciseName: String = ""
     @State private var exerciseType: ExerciseType = .strength
-    @State private var cardioMetric: CardioMetric = .time
+    @State private var cardioMetric: CardioTracking = .timeOnly
     @State private var distanceUnit: DistanceUnit = .meters
 
     var body: some View {
@@ -64,15 +64,18 @@ struct SubstituteExerciseSheet: View {
     private var cardioSettingsSection: some View {
         if exerciseType == .cardio {
             Section("Cardio Settings") {
-                Picker("Track By", selection: $cardioMetric) {
-                    ForEach(CardioMetric.allCases) { metric in
-                        Text(metric.rawValue.capitalized).tag(metric)
-                    }
+                Picker("Track", selection: $cardioMetric) {
+                    Text("Time").tag(CardioTracking.timeOnly)
+                    Text("Distance").tag(CardioTracking.distanceOnly)
+                    Text("Both").tag(CardioTracking.both)
                 }
                 .pickerStyle(.segmented)
-                Picker("Distance Unit", selection: $distanceUnit) {
-                    ForEach(DistanceUnit.allCases) { unit in
-                        Text(unit.rawValue.capitalized).tag(unit)
+
+                if cardioMetric.tracksDistance {
+                    Picker("Distance Unit", selection: $distanceUnit) {
+                        ForEach(DistanceUnit.allCases) { unit in
+                            Text(unit.rawValue.capitalized).tag(unit)
+                        }
                     }
                 }
             }
@@ -182,11 +185,11 @@ struct SubstituteExerciseSheet: View {
 struct AddExerciseToModuleSheet: View {
     @Environment(\.dismiss) private var dismiss
     let moduleName: String
-    let onAdd: (String, ExerciseType, CardioMetric, DistanceUnit) -> Void
+    let onAdd: (String, ExerciseType, CardioTracking, DistanceUnit) -> Void
 
     @State private var exerciseName: String = ""
     @State private var exerciseType: ExerciseType = .strength
-    @State private var cardioMetric: CardioMetric = .time
+    @State private var cardioMetric: CardioTracking = .timeOnly
     @State private var distanceUnit: DistanceUnit = .meters
 
     var body: some View {
@@ -230,15 +233,18 @@ struct AddExerciseToModuleSheet: View {
     private var cardioSettingsSection: some View {
         if exerciseType == .cardio {
             Section("Cardio Settings") {
-                Picker("Track By", selection: $cardioMetric) {
-                    ForEach(CardioMetric.allCases) { metric in
-                        Text(metric.rawValue.capitalized).tag(metric)
-                    }
+                Picker("Track", selection: $cardioMetric) {
+                    Text("Time").tag(CardioTracking.timeOnly)
+                    Text("Distance").tag(CardioTracking.distanceOnly)
+                    Text("Both").tag(CardioTracking.both)
                 }
                 .pickerStyle(.segmented)
-                Picker("Distance Unit", selection: $distanceUnit) {
-                    ForEach(DistanceUnit.allCases) { unit in
-                        Text(unit.rawValue.capitalized).tag(unit)
+
+                if cardioMetric.tracksDistance {
+                    Picker("Distance Unit", selection: $distanceUnit) {
+                        ForEach(DistanceUnit.allCases) { unit in
+                            Text(unit.rawValue.capitalized).tag(unit)
+                        }
                     }
                 }
             }

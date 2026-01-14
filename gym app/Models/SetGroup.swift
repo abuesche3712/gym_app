@@ -9,7 +9,7 @@ import Foundation
 
 struct SetGroup: Identifiable, Codable, Hashable {
     var id: UUID
-    var sets: Int
+    var sets: Int  // Also used as "rounds" for interval mode
     var targetReps: Int?
     var targetWeight: Double?
     var targetRPE: Int?
@@ -19,6 +19,11 @@ struct SetGroup: Identifiable, Codable, Hashable {
     var targetHoldTime: Int? // seconds
     var restPeriod: Int? // seconds between sets
     var notes: String?
+
+    // Interval mode fields
+    var isInterval: Bool
+    var workDuration: Int?  // seconds of work per round
+    var intervalRestDuration: Int?  // seconds of rest between rounds
 
     init(
         id: UUID = UUID(),
@@ -31,7 +36,10 @@ struct SetGroup: Identifiable, Codable, Hashable {
         targetDistanceUnit: DistanceUnit? = nil,
         targetHoldTime: Int? = nil,
         restPeriod: Int? = nil,
-        notes: String? = nil
+        notes: String? = nil,
+        isInterval: Bool = false,
+        workDuration: Int? = nil,
+        intervalRestDuration: Int? = nil
     ) {
         self.id = id
         self.sets = sets
@@ -44,9 +52,24 @@ struct SetGroup: Identifiable, Codable, Hashable {
         self.targetHoldTime = targetHoldTime
         self.restPeriod = restPeriod
         self.notes = notes
+        self.isInterval = isInterval
+        self.workDuration = workDuration
+        self.intervalRestDuration = intervalRestDuration
+    }
+
+    /// Total duration of the interval workout (all rounds)
+    var totalIntervalDuration: Int? {
+        guard isInterval, let work = workDuration, let rest = intervalRestDuration else { return nil }
+        // Work for all rounds + rest between rounds (no rest after last round)
+        return (work * sets) + (rest * max(0, sets - 1))
     }
 
     var formattedTarget: String {
+        // Interval mode has special formatting
+        if isInterval, let work = workDuration, let rest = intervalRestDuration {
+            return "\(sets) rounds: \(formatDuration(work)) on / \(formatDuration(rest)) off"
+        }
+
         var parts: [String] = []
 
         if let reps = targetReps {
@@ -56,7 +79,7 @@ struct SetGroup: Identifiable, Codable, Hashable {
         } else if let duration = targetDuration {
             parts.append("\(sets)x\(formatDuration(duration))")
         } else if let holdTime = targetHoldTime {
-            parts.append("\(sets)x\(holdTime)s hold")
+            parts.append("\(sets)x\(formatDuration(holdTime)) hold")
         } else {
             parts.append("\(sets) sets")
         }

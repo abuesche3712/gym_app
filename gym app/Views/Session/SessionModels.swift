@@ -22,6 +22,43 @@ struct FlatSet: Identifiable {
     let targetHoldTime: Int?
     let targetDistance: Double?
     let restPeriod: Int?
+
+    // Interval mode fields
+    let isInterval: Bool
+    let workDuration: Int?
+    let intervalRestDuration: Int?
+
+    init(
+        id: String,
+        setGroupIndex: Int,
+        setIndex: Int,
+        setNumber: Int,
+        setData: SetData,
+        targetWeight: Double? = nil,
+        targetReps: Int? = nil,
+        targetDuration: Int? = nil,
+        targetHoldTime: Int? = nil,
+        targetDistance: Double? = nil,
+        restPeriod: Int? = nil,
+        isInterval: Bool = false,
+        workDuration: Int? = nil,
+        intervalRestDuration: Int? = nil
+    ) {
+        self.id = id
+        self.setGroupIndex = setGroupIndex
+        self.setIndex = setIndex
+        self.setNumber = setNumber
+        self.setData = setData
+        self.targetWeight = targetWeight
+        self.targetReps = targetReps
+        self.targetDuration = targetDuration
+        self.targetHoldTime = targetHoldTime
+        self.targetDistance = targetDistance
+        self.restPeriod = restPeriod
+        self.isInterval = isInterval
+        self.workDuration = workDuration
+        self.intervalRestDuration = intervalRestDuration
+    }
 }
 
 // MARK: - Recent Set

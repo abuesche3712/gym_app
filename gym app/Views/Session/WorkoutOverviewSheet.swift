@@ -305,14 +305,26 @@ struct WorkoutOverviewSheet: View {
             let r = set.reps.map { "\($0)r" } ?? ""
             return [w, r].filter { !$0.isEmpty }.joined(separator: " × ")
         case .isometric:
-            return set.holdTime.map { "\($0)s" } ?? "Hold"
+            return set.holdTime.map { formatDuration($0) } ?? "Hold"
         case .cardio:
             if let d = set.distance { return "\(Int(d))" }
-            if let t = set.duration { return "\(t)s" }
+            if let t = set.duration { return formatDuration(t) }
             return "—"
         case .mobility, .explosive:
             return set.reps.map { "\($0) reps" } ?? "—"
         }
+    }
+
+    private func formatDuration(_ seconds: Int) -> String {
+        if seconds >= 60 {
+            let mins = seconds / 60
+            let secs = seconds % 60
+            if secs > 0 {
+                return String(format: "%d:%02d", mins, secs)
+            }
+            return "\(mins) min"
+        }
+        return "\(seconds)s"
     }
 }
 

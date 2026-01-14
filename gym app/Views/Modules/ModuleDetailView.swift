@@ -132,14 +132,6 @@ struct ModuleDetailView: View {
                 }
             }
 
-            // Danger Zone
-            Section {
-                Button(role: .destructive) {
-                    showingDeleteConfirmation = true
-                } label: {
-                    Label("Delete Module", systemImage: "trash")
-                }
-            }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Module")
@@ -168,6 +160,14 @@ struct ModuleDetailView: View {
                         } label: {
                             Label("Create Superset", systemImage: "link")
                         }
+                    }
+
+                    Divider()
+
+                    Button(role: .destructive) {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        Label("Delete Module", systemImage: "trash")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")

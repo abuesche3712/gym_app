@@ -133,7 +133,7 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         exerciseId: UUID,
         exerciseName: String,
         exerciseType: ExerciseType,
-        cardioMetric: CardioMetric = .time,
+        cardioMetric: CardioMetric = .timeOnly,
         distanceUnit: DistanceUnit = .meters,
         supersetGroupId: UUID? = nil,
         completedSetGroups: [CompletedSetGroup] = [],
@@ -160,8 +160,19 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         supersetGroupId != nil
     }
 
+    /// Whether this cardio exercise should log time
+    var tracksTime: Bool {
+        exerciseType == .cardio && cardioMetric.tracksTime
+    }
+
+    /// Whether this cardio exercise should log distance
+    var tracksDistance: Bool {
+        exerciseType == .cardio && cardioMetric.tracksDistance
+    }
+
+    /// Legacy: Whether this is primarily distance-based (for target display)
     var isDistanceBased: Bool {
-        exerciseType == .cardio && cardioMetric == .distance
+        exerciseType == .cardio && cardioMetric == .distanceOnly
     }
 
     var totalVolume: Double {
@@ -187,16 +198,32 @@ struct CompletedSetGroup: Identifiable, Codable, Hashable {
     var restPeriod: Int?  // Target rest period from original SetGroup
     var sets: [SetData]
 
+    // Interval mode fields
+    var isInterval: Bool
+    var workDuration: Int?  // seconds of work per round
+    var intervalRestDuration: Int?  // seconds of rest between rounds
+
     init(
         id: UUID = UUID(),
         setGroupId: UUID,
         restPeriod: Int? = nil,
-        sets: [SetData] = []
+        sets: [SetData] = [],
+        isInterval: Bool = false,
+        workDuration: Int? = nil,
+        intervalRestDuration: Int? = nil
     ) {
         self.id = id
         self.setGroupId = setGroupId
         self.restPeriod = restPeriod
         self.sets = sets
+        self.isInterval = isInterval
+        self.workDuration = workDuration
+        self.intervalRestDuration = intervalRestDuration
+    }
+
+    /// Total rounds (for interval mode, equals number of sets)
+    var rounds: Int {
+        sets.count
     }
 }
 
@@ -292,7 +319,7 @@ struct SetData: Identifiable, Codable, Hashable {
 
     var formattedIsometric: String? {
         guard let holdTime = holdTime else { return nil }
-        var result = "\(holdTime)s hold"
+        var result = formatDuration(holdTime) + " hold"
         if let intensity = intensity {
             result += " @ \(intensity)/10"
         }

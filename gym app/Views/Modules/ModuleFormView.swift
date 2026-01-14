@@ -12,6 +12,7 @@ struct ModuleFormView: View {
     @Environment(\.dismiss) private var dismiss
 
     let module: Module?
+    var onCreated: ((Module) -> Void)?
 
     @State private var name: String = ""
     @State private var type: ModuleType = .strength
@@ -92,6 +93,7 @@ struct ModuleFormView: View {
             existingModule.estimatedDuration = duration
             existingModule.updatedAt = Date()
             moduleViewModel.saveModule(existingModule)
+            dismiss()
         } else {
             // Create new module
             let newModule = Module(
@@ -101,9 +103,13 @@ struct ModuleFormView: View {
                 estimatedDuration: duration
             )
             moduleViewModel.saveModule(newModule)
-        }
+            dismiss()
 
-        dismiss()
+            // Navigate to the new module for editing
+            if onCreated != nil {
+                onCreated?(newModule)
+            }
+        }
     }
 }
 
