@@ -9,12 +9,19 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
+    @ObservedObject private var authService = AuthService.shared
+    @ObservedObject private var dataRepository = DataRepository.shared
     @State private var showingAbout = false
+    @State private var showingSignIn = false
+    @State private var showingDeleteConfirmation = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
+                    // Account Section
+                    accountSection
+
                     // Units Section
                     SettingsSection(title: "Units") {
                         SettingsRow(icon: "scalemass", title: "Weight") {
@@ -45,34 +52,9 @@ struct SettingsView: View {
                         }
                     }
 
-                    // Sync Section
-                    SettingsSection(title: "Cloud Sync", footer: "Cloud sync coming soon. Your data is stored locally.") {
-                        SettingsRow(icon: "icloud", title: "Sync Status") {
-                            HStack(spacing: AppSpacing.sm) {
-                                Image(systemName: "icloud.slash")
-                                    .foregroundColor(AppColors.textTertiary)
-                                Text("Local Only")
-                                    .foregroundColor(AppColors.textSecondary)
-                            }
-                            .font(.subheadline)
-                        }
-
-                        Button {
-                            Task {
-                                await appState.triggerSync()
-                            }
-                        } label: {
-                            HStack {
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                                    .foregroundColor(AppColors.textTertiary)
-                                    .frame(width: 28)
-                                Text("Sync Now")
-                                    .foregroundColor(AppColors.textTertiary)
-                                Spacer()
-                            }
-                        }
-                        .disabled(true)
-                        .padding(.vertical, AppSpacing.sm)
+                    // Cloud Sync Section (only show when signed in)
+                    if authService.isAuthenticated {
+                        cloudSyncSection
                     }
 
                     // Data Section
@@ -112,6 +94,148 @@ struct SettingsView: View {
             .sheet(isPresented: $showingAbout) {
                 AboutView()
             }
+            .sheet(isPresented: $showingSignIn) {
+                SignInView()
+            }
+            .alert("Delete Account", isPresented: $showingDeleteConfirmation) {
+                Button("Cancel", role: .cancel) { }
+                Button("Delete", role: .destructive) {
+                    Task {
+                        try? await authService.deleteAccount()
+                    }
+                }
+            } message: {
+                Text("This will permanently delete your account and all cloud data. Local data will remain on this device. This cannot be undone.")
+            }
+        }
+    }
+
+    // MARK: - Account Section
+
+    private var accountSection: some View {
+        SettingsSection(title: "Account") {
+            if authService.isAuthenticated {
+                // Signed in state
+                SettingsRow(icon: "person.circle.fill", title: "Signed In") {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        if let user = authService.currentUser {
+                            Text(user.displayName ?? user.email ?? "Apple ID")
+                                .font(.subheadline)
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+                        Text("via Apple")
+                            .font(.caption2)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+
+                Button(role: .destructive) {
+                    try? authService.signOut()
+                } label: {
+                    HStack {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .foregroundColor(.red)
+                            .frame(width: 28)
+                        Text("Sign Out")
+                            .foregroundColor(.red)
+                        Spacer()
+                    }
+                }
+                .padding(.vertical, AppSpacing.sm)
+
+                Button(role: .destructive) {
+                    showingDeleteConfirmation = true
+                } label: {
+                    HStack {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                            .frame(width: 28)
+                        Text("Delete Account")
+                            .foregroundColor(.red)
+                        Spacer()
+                    }
+                }
+                .padding(.vertical, AppSpacing.sm)
+            } else {
+                // Not signed in state
+                SettingsRow(icon: "person.circle", title: "Not Signed In") {
+                    Text("Local Only")
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+
+                Button {
+                    showingSignIn = true
+                } label: {
+                    HStack {
+                        Image(systemName: "apple.logo")
+                            .frame(width: 28)
+                        Text("Sign in with Apple")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+                .padding(.vertical, AppSpacing.sm)
+            }
+        }
+    }
+
+    // MARK: - Cloud Sync Section
+
+    private var cloudSyncSection: some View {
+        SettingsSection(title: "Cloud Sync", footer: "Data syncs automatically when connected to the internet.") {
+            SettingsRow(icon: "icloud.fill", title: "Sync Status") {
+                HStack(spacing: AppSpacing.sm) {
+                    if dataRepository.isSyncing {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Text("Syncing...")
+                            .foregroundColor(AppColors.textSecondary)
+                    } else {
+                        Image(systemName: "checkmark.icloud")
+                            .foregroundColor(.green)
+                        Text("Up to date")
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                }
+                .font(.subheadline)
+            }
+
+            Button {
+                Task {
+                    await dataRepository.syncFromCloud()
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .foregroundColor(AppColors.accentBlue)
+                        .frame(width: 28)
+                    Text("Sync Now")
+                        .foregroundColor(AppColors.textPrimary)
+                    Spacer()
+                }
+            }
+            .disabled(dataRepository.isSyncing)
+            .padding(.vertical, AppSpacing.sm)
+
+            Button {
+                Task {
+                    await dataRepository.pushAllToCloud()
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "icloud.and.arrow.up")
+                        .foregroundColor(AppColors.accentBlue)
+                        .frame(width: 28)
+                    Text("Push All to Cloud")
+                        .foregroundColor(AppColors.textPrimary)
+                    Spacer()
+                }
+            }
+            .disabled(dataRepository.isSyncing)
+            .padding(.vertical, AppSpacing.sm)
         }
     }
 }

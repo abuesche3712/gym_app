@@ -22,6 +22,10 @@ struct Exercise: Identifiable, Codable, Hashable {
     var createdAt: Date
     var updatedAt: Date
 
+    // New library system fields
+    var muscleGroupIds: Set<UUID>  // Links to MuscleGroupEntity
+    var implementIds: Set<UUID>    // Links to ImplementEntity
+
     init(
         id: UUID = UUID(),
         name: String,
@@ -35,7 +39,9 @@ struct Exercise: Identifiable, Codable, Hashable {
         supersetGroupId: UUID? = nil,
         notes: String? = nil,
         createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        updatedAt: Date = Date(),
+        muscleGroupIds: Set<UUID> = [],
+        implementIds: Set<UUID> = []
     ) {
         self.id = id
         self.name = name
@@ -49,6 +55,8 @@ struct Exercise: Identifiable, Codable, Hashable {
         self.notes = notes
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.muscleGroupIds = muscleGroupIds
+        self.implementIds = implementIds
 
         // Set default tracking metrics based on exercise type
         if let metrics = trackingMetrics {

@@ -15,13 +15,19 @@ struct ExerciseTemplate: Identifiable, Hashable {
     let primaryMuscles: [MuscleGroup]
     let secondaryMuscles: [MuscleGroup]
 
+    // New library system fields
+    var muscleGroupIds: Set<UUID>
+    var implementIds: Set<UUID>
+
     init(
         id: UUID = UUID(),
         name: String,
         category: ExerciseCategory,
         exerciseType: ExerciseType = .strength,
         primary: [MuscleGroup] = [],
-        secondary: [MuscleGroup] = []
+        secondary: [MuscleGroup] = [],
+        muscleGroupIds: Set<UUID> = [],
+        implementIds: Set<UUID> = []
     ) {
         self.id = id
         self.name = name
@@ -29,6 +35,8 @@ struct ExerciseTemplate: Identifiable, Hashable {
         self.exerciseType = exerciseType
         self.primaryMuscles = primary
         self.secondaryMuscles = secondary
+        self.muscleGroupIds = muscleGroupIds
+        self.implementIds = implementIds
     }
 
     var allMuscles: [MuscleGroup] {

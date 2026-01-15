@@ -38,7 +38,9 @@ class CustomExerciseLibrary: ObservableObject {
                     category: entity.category,
                     exerciseType: entity.exerciseType,
                     primary: entity.primaryMuscles,
-                    secondary: entity.secondaryMuscles
+                    secondary: entity.secondaryMuscles,
+                    muscleGroupIds: entity.muscleGroupIds,
+                    implementIds: entity.implementIds
                 )
             }
         } catch {
@@ -53,7 +55,9 @@ class CustomExerciseLibrary: ObservableObject {
         category: ExerciseCategory,
         exerciseType: ExerciseType,
         primaryMuscles: [MuscleGroup] = [],
-        secondaryMuscles: [MuscleGroup] = []
+        secondaryMuscles: [MuscleGroup] = [],
+        muscleGroupIds: Set<UUID> = [],
+        implementIds: Set<UUID> = []
     ) {
         // Check if exercise with same name already exists
         guard !exercises.contains(where: { $0.name.lowercased() == name.lowercased() }) else {
@@ -67,6 +71,8 @@ class CustomExerciseLibrary: ObservableObject {
         entity.exerciseType = exerciseType
         entity.primaryMuscles = primaryMuscles
         entity.secondaryMuscles = secondaryMuscles
+        entity.muscleGroupIds = muscleGroupIds
+        entity.implementIds = implementIds
         entity.createdAt = Date()
 
         save()
@@ -79,8 +85,33 @@ class CustomExerciseLibrary: ObservableObject {
             category: template.category,
             exerciseType: template.exerciseType,
             primaryMuscles: template.primaryMuscles,
-            secondaryMuscles: template.secondaryMuscles
+            secondaryMuscles: template.secondaryMuscles,
+            muscleGroupIds: template.muscleGroupIds,
+            implementIds: template.implementIds
         )
+    }
+
+    // MARK: - Update
+
+    func updateExercise(_ template: ExerciseTemplate) {
+        let request = NSFetchRequest<CustomExerciseTemplateEntity>(entityName: "CustomExerciseTemplateEntity")
+        request.predicate = NSPredicate(format: "id == %@", template.id as CVarArg)
+
+        do {
+            if let entity = try viewContext.fetch(request).first {
+                entity.name = template.name
+                entity.category = template.category
+                entity.exerciseType = template.exerciseType
+                entity.primaryMuscles = template.primaryMuscles
+                entity.secondaryMuscles = template.secondaryMuscles
+                entity.muscleGroupIds = template.muscleGroupIds
+                entity.implementIds = template.implementIds
+                save()
+                loadExercises()
+            }
+        } catch {
+            print("Error updating custom exercise: \(error)")
+        }
     }
 
     // MARK: - Delete

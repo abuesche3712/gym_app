@@ -43,6 +43,9 @@ struct PersistenceController {
 
         container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+
+        // Seed default data on first launch
+        seedDataIfNeeded()
     }
 
     // MARK: - Model Creation
@@ -352,7 +355,10 @@ struct PersistenceController {
             createAttribute("exerciseTypeRaw", type: .stringAttributeType),
             createAttribute("primaryMusclesRaw", type: .stringAttributeType, optional: true),
             createAttribute("secondaryMusclesRaw", type: .stringAttributeType, optional: true),
-            createAttribute("createdAt", type: .dateAttributeType)
+            createAttribute("createdAt", type: .dateAttributeType),
+            // New library system fields
+            createAttribute("muscleGroupIdsRaw", type: .stringAttributeType, optional: true),
+            createAttribute("implementIdsRaw", type: .stringAttributeType, optional: true)
         ]
 
         return entity
@@ -381,7 +387,8 @@ struct PersistenceController {
             createAttribute("name", type: .stringAttributeType),
             createAttribute("unit", type: .stringAttributeType),
             createAttribute("defaultValue", type: .doubleAttributeType, optional: true),
-            createAttribute("hasDefaultValue", type: .booleanAttributeType, defaultValue: false)
+            createAttribute("hasDefaultValue", type: .booleanAttributeType, defaultValue: false),
+            createAttribute("isStringBased", type: .booleanAttributeType, defaultValue: false)
         ]
 
         return entity
@@ -422,7 +429,8 @@ struct PersistenceController {
             createAttribute("id", type: .UUIDAttributeType),
             createAttribute("measurableName", type: .stringAttributeType),
             createAttribute("measurableUnit", type: .stringAttributeType),
-            createAttribute("targetValue", type: .doubleAttributeType)
+            createAttribute("targetValue", type: .doubleAttributeType),
+            createAttribute("stringValue", type: .stringAttributeType, optional: true)
         ]
 
         return entity
@@ -437,7 +445,8 @@ struct PersistenceController {
             createAttribute("id", type: .UUIDAttributeType),
             createAttribute("measurableName", type: .stringAttributeType),
             createAttribute("measurableUnit", type: .stringAttributeType),
-            createAttribute("actualValue", type: .doubleAttributeType)
+            createAttribute("actualValue", type: .doubleAttributeType),
+            createAttribute("stringValue", type: .stringAttributeType, optional: true)
         ]
 
         return entity
@@ -804,5 +813,12 @@ struct PersistenceController {
                 print("Error saving context: \(nsError), \(nsError.userInfo)")
             }
         }
+    }
+
+    // MARK: - Data Seeding
+
+    func seedDataIfNeeded() {
+        let seeder = DataSeeder(context: container.viewContext)
+        seeder.seedIfNeeded()
     }
 }

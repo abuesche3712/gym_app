@@ -36,6 +36,29 @@ struct ExerciseDetailView: View {
                 }
             }
 
+            // Muscles & Equipment
+            if !currentExercise.muscleGroupIds.isEmpty || !currentExercise.implementIds.isEmpty {
+                Section("Muscles & Equipment") {
+                    if !currentExercise.muscleGroupIds.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Muscles")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            ExerciseMuscleGroupsDisplay(muscleGroupIds: currentExercise.muscleGroupIds)
+                        }
+                    }
+
+                    if !currentExercise.implementIds.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Equipment")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            ExerciseImplementsDisplay(implementIds: currentExercise.implementIds)
+                        }
+                    }
+                }
+            }
+
             // Set Groups
             Section("Sets") {
                 if currentExercise.setGroups.isEmpty {
@@ -168,6 +191,60 @@ struct FlowLayout: Layout {
             }
 
             self.size = CGSize(width: width, height: y + rowHeight)
+        }
+    }
+}
+
+// MARK: - Muscle Groups Display
+
+struct ExerciseMuscleGroupsDisplay: View {
+    let muscleGroupIds: Set<UUID>
+    @StateObject private var libraryService = LibraryService.shared
+
+    private var muscleNames: [String] {
+        muscleGroupIds.compactMap { id in
+            libraryService.getMuscleGroup(id: id)?.name
+        }.sorted()
+    }
+
+    var body: some View {
+        FlowLayout(spacing: 6) {
+            ForEach(muscleNames, id: \.self) { name in
+                Text(name)
+                    .font(.caption)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color.blue.opacity(0.15))
+                    .foregroundColor(.blue)
+                    .clipShape(Capsule())
+            }
+        }
+    }
+}
+
+// MARK: - Implements Display
+
+struct ExerciseImplementsDisplay: View {
+    let implementIds: Set<UUID>
+    @StateObject private var libraryService = LibraryService.shared
+
+    private var implementNames: [String] {
+        implementIds.compactMap { id in
+            libraryService.getImplement(id: id)?.name
+        }.sorted()
+    }
+
+    var body: some View {
+        FlowLayout(spacing: 6) {
+            ForEach(implementNames, id: \.self) { name in
+                Text(name)
+                    .font(.caption)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color.teal.opacity(0.15))
+                    .foregroundColor(.teal)
+                    .clipShape(Capsule())
+            }
         }
     }
 }

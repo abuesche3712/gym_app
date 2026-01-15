@@ -153,8 +153,22 @@ public class TargetValueEntity: NSManagedObject {
     @NSManaged public var id: UUID
     @NSManaged public var measurableName: String  // Matches MeasurableEntity.name
     @NSManaged public var measurableUnit: String  // Copied from MeasurableEntity.unit for display
-    @NSManaged public var targetValue: Double
+    @NSManaged public var targetValue: Double     // For numeric measurables
+    @NSManaged public var stringValue: String?    // For text-based measurables (e.g., band color)
     @NSManaged public var setGroup: SetGroupEntity?
+
+    /// Whether this target uses string value (for text-based measurables like band color)
+    var isStringBased: Bool {
+        stringValue != nil
+    }
+
+    /// Display value - returns string value if present, otherwise formatted numeric value
+    var displayValue: String {
+        if let str = stringValue {
+            return str
+        }
+        return "\(targetValue) \(measurableUnit)"
+    }
 }
 
 // MARK: - Workout Entity
@@ -358,8 +372,22 @@ public class ActualValueEntity: NSManagedObject {
     @NSManaged public var id: UUID
     @NSManaged public var measurableName: String  // Matches MeasurableEntity.name
     @NSManaged public var measurableUnit: String  // Copied from MeasurableEntity.unit for display
-    @NSManaged public var actualValue: Double
+    @NSManaged public var actualValue: Double     // For numeric measurables
+    @NSManaged public var stringValue: String?    // For text-based measurables (e.g., band color)
     @NSManaged public var setData: SetDataEntity?
+
+    /// Whether this actual uses string value (for text-based measurables like band color)
+    var isStringBased: Bool {
+        stringValue != nil
+    }
+
+    /// Display value - returns string value if present, otherwise formatted numeric value
+    var displayValue: String {
+        if let str = stringValue {
+            return str
+        }
+        return "\(actualValue) \(measurableUnit)"
+    }
 }
 
 // MARK: - Sync Queue Entity
@@ -393,6 +421,10 @@ public class CustomExerciseTemplateEntity: NSManagedObject {
     @NSManaged public var secondaryMusclesRaw: String?
     @NSManaged public var createdAt: Date
 
+    // New library system fields
+    @NSManaged public var muscleGroupIdsRaw: String?
+    @NSManaged public var implementIdsRaw: String?
+
     var category: ExerciseCategory {
         get { ExerciseCategory(rawValue: categoryRaw) ?? .fullBody }
         set { categoryRaw = newValue.rawValue }
@@ -420,6 +452,27 @@ public class CustomExerciseTemplateEntity: NSManagedObject {
         }
         set {
             secondaryMusclesRaw = newValue.isEmpty ? nil : newValue.map { $0.rawValue }.joined(separator: ",")
+        }
+    }
+
+    // New library system accessors
+    var muscleGroupIds: Set<UUID> {
+        get {
+            guard let raw = muscleGroupIdsRaw else { return [] }
+            return Set(raw.split(separator: ",").compactMap { UUID(uuidString: String($0)) })
+        }
+        set {
+            muscleGroupIdsRaw = newValue.isEmpty ? nil : newValue.map { $0.uuidString }.joined(separator: ",")
+        }
+    }
+
+    var implementIds: Set<UUID> {
+        get {
+            guard let raw = implementIdsRaw else { return [] }
+            return Set(raw.split(separator: ",").compactMap { UUID(uuidString: String($0)) })
+        }
+        set {
+            implementIdsRaw = newValue.isEmpty ? nil : newValue.map { $0.uuidString }.joined(separator: ",")
         }
     }
 }
@@ -451,6 +504,7 @@ public class MeasurableEntity: NSManagedObject {
     @NSManaged public var unit: String
     @NSManaged public var defaultValue: Double
     @NSManaged public var hasDefaultValue: Bool  // Track if defaultValue is set (since Double can't be nil)
+    @NSManaged public var isStringBased: Bool    // True for text-based measurables (e.g., band color)
     @NSManaged public var implement: ImplementEntity?  // Optional - nil if intrinsic
     @NSManaged public var exerciseLibrary: ExerciseLibraryEntity?  // Optional - for intrinsic measurables
 

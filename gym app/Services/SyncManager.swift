@@ -3,25 +3,34 @@
 //  gym app
 //
 //  Manages local-first data sync with Firebase
-//  NOTE: Firebase disabled for now - local-only mode
+//  Now uses AuthService and FirestoreService
 //
 
 import Foundation
 import Network
 import Combine
 
+@MainActor
 class SyncManager: ObservableObject {
     static let shared = SyncManager()
 
-    private let firebaseService = FirebaseService.shared
+    private let authService = AuthService.shared
+    private let dataRepository = DataRepository.shared
     private let networkMonitor = NWPathMonitor()
     private let monitorQueue = DispatchQueue(label: "NetworkMonitor")
 
     @Published var isOnline = true
-    @Published var isSyncing = false
     @Published var lastSyncDate: Date?
     @Published var pendingSyncCount = 0
-    @Published var syncEnabled = false  // Disabled until Firebase works
+
+    /// Sync is enabled when user is authenticated
+    var syncEnabled: Bool {
+        authService.isAuthenticated
+    }
+
+    var isSyncing: Bool {
+        dataRepository.isSyncing
+    }
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -34,14 +43,14 @@ class SyncManager: ObservableObject {
 
     private func setupNetworkMonitoring() {
         networkMonitor.pathUpdateHandler = { [weak self] path in
-            DispatchQueue.main.async {
-                self?.isOnline = path.status == .satisfied
+            let isOnline = path.status == .satisfied
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                self.isOnline = isOnline
 
-                // Auto-sync when coming back online (if enabled)
-                if path.status == .satisfied && self?.syncEnabled == true {
-                    Task {
-                        await self?.syncIfNeeded()
-                    }
+                // Auto-sync when coming back online (if authenticated)
+                if isOnline && self.syncEnabled {
+                    await self.syncIfNeeded()
                 }
             }
         }
@@ -50,10 +59,9 @@ class SyncManager: ObservableObject {
 
     // MARK: - Sync Operations
 
-    @MainActor
     func syncAll() async {
         guard syncEnabled else {
-            print("Sync disabled - local only mode")
+            print("Sync disabled - not authenticated")
             return
         }
 
@@ -67,38 +75,11 @@ class SyncManager: ObservableObject {
             return
         }
 
-        isSyncing = true
-        defer {
-            isSyncing = false
-            lastSyncDate = Date()
-            saveLastSyncDate()
-        }
-
-        do {
-            // Ensure authenticated
-            if !firebaseService.isAuthenticated {
-                try await firebaseService.signInAnonymously()
-            }
-
-            // Get local data
-            let repository = DataRepository.shared
-
-            // Sync modules
-            try await firebaseService.syncModules(repository.modules)
-
-            // Sync workouts
-            try await firebaseService.syncWorkouts(repository.workouts)
-
-            // Sync sessions
-            try await firebaseService.syncSessions(repository.sessions)
-
-            print("Sync completed successfully")
-        } catch {
-            print("Sync failed: \(error.localizedDescription)")
-        }
+        await dataRepository.syncFromCloud()
+        lastSyncDate = Date()
+        saveLastSyncDate()
     }
 
-    @MainActor
     func syncIfNeeded() async {
         guard syncEnabled else { return }
 
@@ -111,57 +92,18 @@ class SyncManager: ObservableObject {
         await syncAll()
     }
 
-    @MainActor
     func pullFromCloud() async {
         guard syncEnabled else { return }
         guard isOnline else { return }
 
-        do {
-            if !firebaseService.isAuthenticated {
-                try await firebaseService.signInAnonymously()
-            }
+        await dataRepository.syncFromCloud()
+    }
 
-            // Fetch from cloud
-            let remoteModules = try await firebaseService.fetchModules()
-            let remoteWorkouts = try await firebaseService.fetchWorkouts()
-            let remoteSessions = try await firebaseService.fetchSessions()
+    func pushToCloud() async {
+        guard syncEnabled else { return }
+        guard isOnline else { return }
 
-            // Merge with local (last-write-wins for MVP)
-            let repository = DataRepository.shared
-
-            for remoteModule in remoteModules {
-                if let localModule = repository.getModule(id: remoteModule.id) {
-                    if remoteModule.updatedAt > localModule.updatedAt {
-                        repository.saveModule(remoteModule)
-                    }
-                } else {
-                    repository.saveModule(remoteModule)
-                }
-            }
-
-            for remoteWorkout in remoteWorkouts {
-                if let localWorkout = repository.getWorkout(id: remoteWorkout.id) {
-                    if remoteWorkout.updatedAt > localWorkout.updatedAt {
-                        repository.saveWorkout(remoteWorkout)
-                    }
-                } else {
-                    repository.saveWorkout(remoteWorkout)
-                }
-            }
-
-            // Sessions are immutable, so just add any missing ones
-            let localSessionIds = Set(repository.sessions.map { $0.id })
-            for remoteSession in remoteSessions {
-                if !localSessionIds.contains(remoteSession.id) {
-                    repository.saveSession(remoteSession)
-                }
-            }
-
-            repository.loadAllData()
-
-        } catch {
-            print("Pull from cloud failed: \(error.localizedDescription)")
-        }
+        await dataRepository.pushAllToCloud()
     }
 
     // MARK: - Persistence

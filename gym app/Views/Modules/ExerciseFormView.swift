@@ -30,6 +30,10 @@ struct ExerciseFormView: View {
     @State private var notes: String = ""
     @State private var setGroups: [SetGroup] = []
 
+    // Library system fields
+    @State private var muscleGroupIds: Set<UUID> = []
+    @State private var implementIds: Set<UUID> = []
+
     @State private var showingAddSetGroup = false
     @State private var editingSetGroup: EditingIndex?
     @State private var showingExercisePicker = false
@@ -50,6 +54,7 @@ struct ExerciseFormView: View {
     var body: some View {
         Form {
             exerciseSection
+            musclesAndEquipmentSection
             setsSection
             notesSection
         }
@@ -103,6 +108,16 @@ struct ExerciseFormView: View {
                         exerciseType = template.exerciseType
                         selectedTemplate = template
                     }
+                },
+                onSelectWithDetails: { template, muscles, implements in
+                    if let template = template {
+                        name = template.name
+                        exerciseType = template.exerciseType
+                        selectedTemplate = template
+                    }
+                    // Merge with any existing selections
+                    muscleGroupIds.formUnion(muscles)
+                    implementIds.formUnion(implements)
                 }
             )
         }
@@ -180,6 +195,46 @@ struct ExerciseFormView: View {
         }
     }
 
+    // MARK: - Muscles & Equipment Section
+
+    private var musclesAndEquipmentSection: some View {
+        Section("Muscles & Equipment") {
+            // Muscle Groups
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack {
+                    Text("Muscles Worked")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    if !muscleGroupIds.isEmpty {
+                        Text("\(muscleGroupIds.count) selected")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                    }
+                }
+                MuscleGroupGridCompact(selectedIds: $muscleGroupIds)
+            }
+            .padding(.vertical, 4)
+
+            // Equipment
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack {
+                    Text("Equipment")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    if !implementIds.isEmpty {
+                        Text("\(implementIds.count) selected")
+                            .font(.caption)
+                            .foregroundColor(.teal)
+                    }
+                }
+                ImplementGridCompact(selectedIds: $implementIds)
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
     // MARK: - Sets Section
 
     private var setsSection: some View {
@@ -252,6 +307,8 @@ struct ExerciseFormView: View {
             progressionType = exercise.progressionType
             notes = exercise.notes ?? ""
             setGroups = exercise.setGroups
+            muscleGroupIds = exercise.muscleGroupIds
+            implementIds = exercise.implementIds
             if let templateId = exercise.templateId {
                 selectedTemplate = ExerciseLibrary.shared.template(id: templateId)
             }
@@ -274,6 +331,8 @@ struct ExerciseFormView: View {
             existingExercise.progressionType = progressionType
             existingExercise.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
             existingExercise.setGroups = setGroups
+            existingExercise.muscleGroupIds = muscleGroupIds
+            existingExercise.implementIds = implementIds
             existingExercise.updatedAt = Date()
 
             if let index = module.exercises.firstIndex(where: { $0.id == existingExercise.id }) {
@@ -289,7 +348,9 @@ struct ExerciseFormView: View {
                 distanceUnit: distanceUnit,
                 setGroups: setGroups,
                 progressionType: progressionType,
-                notes: trimmedNotes.isEmpty ? nil : trimmedNotes
+                notes: trimmedNotes.isEmpty ? nil : trimmedNotes,
+                muscleGroupIds: muscleGroupIds,
+                implementIds: implementIds
             )
             module.exercises.append(newExercise)
         }

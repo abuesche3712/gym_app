@@ -13,6 +13,9 @@ class DataRepository: ObservableObject {
     static let shared = DataRepository()
 
     private let persistence = PersistenceController.shared
+    private let firestoreService = FirestoreService.shared
+    private let authService = AuthService.shared
+
     private var viewContext: NSManagedObjectContext {
         persistence.container.viewContext
     }
@@ -20,9 +23,123 @@ class DataRepository: ObservableObject {
     @Published var modules: [Module] = []
     @Published var workouts: [Workout] = []
     @Published var sessions: [Session] = []
+    @Published var isSyncing = false
 
     init() {
         loadAllData()
+    }
+
+    // MARK: - Cloud Sync
+
+    /// Sync data from Firestore on app launch (if authenticated)
+    func syncFromCloud() async {
+        guard authService.isAuthenticated else {
+            print("syncFromCloud: Not authenticated, skipping")
+            return
+        }
+
+        print("syncFromCloud: Starting sync...")
+        isSyncing = true
+
+        do {
+            let cloudData = try await firestoreService.fetchAllUserData()
+            print("syncFromCloud: Fetched \(cloudData.modules.count) modules, \(cloudData.workouts.count) workouts, \(cloudData.sessions.count) sessions, \(cloudData.exercises.count) exercises")
+
+            // Merge cloud modules (last-write-wins based on updatedAt)
+            for cloudModule in cloudData.modules {
+                if let local = modules.first(where: { $0.id == cloudModule.id }) {
+                    // If cloud is newer, update local
+                    if cloudModule.updatedAt > local.updatedAt {
+                        saveModuleLocally(cloudModule)
+                    }
+                } else {
+                    // New from cloud, save locally
+                    saveModuleLocally(cloudModule)
+                }
+            }
+
+            // Merge cloud workouts
+            for cloudWorkout in cloudData.workouts {
+                if let local = workouts.first(where: { $0.id == cloudWorkout.id }) {
+                    if cloudWorkout.updatedAt > local.updatedAt {
+                        saveWorkoutLocally(cloudWorkout)
+                    }
+                } else {
+                    saveWorkoutLocally(cloudWorkout)
+                }
+            }
+
+            // Merge cloud sessions
+            for cloudSession in cloudData.sessions {
+                if !sessions.contains(where: { $0.id == cloudSession.id }) {
+                    saveSessionLocally(cloudSession)
+                }
+            }
+
+            // Merge custom exercises
+            let customLibrary = CustomExerciseLibrary.shared
+            for cloudExercise in cloudData.exercises {
+                if !customLibrary.exercises.contains(where: { $0.id == cloudExercise.id }) {
+                    customLibrary.addExercise(cloudExercise)
+                }
+            }
+
+            // Reload all data after merge
+            loadAllData()
+
+            print("syncFromCloud: Completed successfully")
+        } catch {
+            print("syncFromCloud: Failed with error: \(error)")
+        }
+
+        isSyncing = false
+        print("syncFromCloud: isSyncing set to false")
+    }
+
+    /// Push all local data to cloud (useful for initial sync after sign-in)
+    func pushAllToCloud() async {
+        guard authService.isAuthenticated else {
+            print("pushAllToCloud: Not authenticated, skipping")
+            return
+        }
+
+        print("pushAllToCloud: Starting push...")
+        print("pushAllToCloud: \(modules.count) modules, \(workouts.count) workouts, \(sessions.count) sessions")
+        isSyncing = true
+
+        do {
+            // Push all modules
+            for module in modules {
+                print("pushAllToCloud: Saving module \(module.name)")
+                try await firestoreService.saveModule(module)
+            }
+
+            // Push all workouts
+            for workout in workouts {
+                print("pushAllToCloud: Saving workout \(workout.name)")
+                try await firestoreService.saveWorkout(workout)
+            }
+
+            // Push all sessions
+            for session in sessions {
+                print("pushAllToCloud: Saving session \(session.id)")
+                try await firestoreService.saveSession(session)
+            }
+
+            // Push custom exercises
+            let customLibrary = CustomExerciseLibrary.shared
+            for exercise in customLibrary.exercises {
+                print("pushAllToCloud: Saving custom exercise \(exercise.name)")
+                try await firestoreService.saveCustomExercise(exercise)
+            }
+
+            print("pushAllToCloud: Completed successfully")
+        } catch {
+            print("pushAllToCloud: Failed with error: \(error)")
+        }
+
+        isSyncing = false
+        print("pushAllToCloud: isSyncing set to false")
     }
 
     // MARK: - Load All Data
@@ -48,6 +165,22 @@ class DataRepository: ObservableObject {
     }
 
     func saveModule(_ module: Module) {
+        saveModuleLocally(module)
+
+        // Sync to cloud if authenticated
+        if authService.isAuthenticated {
+            Task {
+                do {
+                    try await firestoreService.saveModule(module)
+                } catch {
+                    print("Failed to sync module to cloud: \(error)")
+                }
+            }
+        }
+    }
+
+    /// Save module to CoreData only (used during cloud sync to avoid loops)
+    private func saveModuleLocally(_ module: Module) {
         let entity = findOrCreateModuleEntity(id: module.id)
         updateModuleEntity(entity, from: module)
         save()
@@ -59,6 +192,17 @@ class DataRepository: ObservableObject {
             viewContext.delete(entity)
             save()
             loadModules()
+
+            // Delete from cloud if authenticated
+            if authService.isAuthenticated {
+                Task {
+                    do {
+                        try await firestoreService.deleteModule(module.id)
+                    } catch {
+                        print("Failed to delete module from cloud: \(error)")
+                    }
+                }
+            }
         }
     }
 
@@ -82,6 +226,22 @@ class DataRepository: ObservableObject {
     }
 
     func saveWorkout(_ workout: Workout) {
+        saveWorkoutLocally(workout)
+
+        // Sync to cloud if authenticated
+        if authService.isAuthenticated {
+            Task {
+                do {
+                    try await firestoreService.saveWorkout(workout)
+                } catch {
+                    print("Failed to sync workout to cloud: \(error)")
+                }
+            }
+        }
+    }
+
+    /// Save workout to CoreData only (used during cloud sync to avoid loops)
+    private func saveWorkoutLocally(_ workout: Workout) {
         let entity = findOrCreateWorkoutEntity(id: workout.id)
         updateWorkoutEntity(entity, from: workout)
         save()
@@ -93,6 +253,17 @@ class DataRepository: ObservableObject {
             viewContext.delete(entity)
             save()
             loadWorkouts()
+
+            // Delete from cloud if authenticated
+            if authService.isAuthenticated {
+                Task {
+                    do {
+                        try await firestoreService.deleteWorkout(workout.id)
+                    } catch {
+                        print("Failed to delete workout from cloud: \(error)")
+                    }
+                }
+            }
         }
     }
 
@@ -115,6 +286,22 @@ class DataRepository: ObservableObject {
     }
 
     func saveSession(_ session: Session) {
+        saveSessionLocally(session)
+
+        // Sync to cloud if authenticated
+        if authService.isAuthenticated {
+            Task {
+                do {
+                    try await firestoreService.saveSession(session)
+                } catch {
+                    print("Failed to sync session to cloud: \(error)")
+                }
+            }
+        }
+    }
+
+    /// Save session to CoreData only (used during cloud sync to avoid loops)
+    private func saveSessionLocally(_ session: Session) {
         let entity = findOrCreateSessionEntity(id: session.id)
         updateSessionEntity(entity, from: session)
         save()
@@ -126,6 +313,17 @@ class DataRepository: ObservableObject {
             viewContext.delete(entity)
             save()
             loadSessions()
+
+            // Delete from cloud if authenticated
+            if authService.isAuthenticated {
+                Task {
+                    do {
+                        try await firestoreService.deleteSession(session.id)
+                    } catch {
+                        print("Failed to delete session from cloud: \(error)")
+                    }
+                }
+            }
         }
     }
 

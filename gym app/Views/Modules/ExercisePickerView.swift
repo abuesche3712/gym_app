@@ -10,13 +10,24 @@ import SwiftUI
 struct ExercisePickerView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var customLibrary = CustomExerciseLibrary.shared
+    @StateObject private var libraryService = LibraryService.shared
     @Binding var selectedTemplate: ExerciseTemplate?
     @Binding var customName: String
     let onSelect: (ExerciseTemplate?) -> Void
+    var onSelectWithDetails: ((ExerciseTemplate?, Set<UUID>, Set<UUID>) -> Void)?
 
     @State private var searchText = ""
     @State private var selectedCategory: ExerciseCategory?
     @State private var saveToLibrary = true
+
+    // New library system fields
+    @State private var selectedMuscleGroups: Set<UUID> = []
+    @State private var selectedImplements: Set<UUID> = []
+    @State private var showingAdvancedOptions = false
+
+    // Edit exercise state
+    @State private var editingTemplate: ExerciseTemplate?
+    @State private var editingIsCustom: Bool = false
 
     private var filteredLibraryExercises: [ExerciseTemplate] {
         var exercises = ExerciseLibrary.shared.exercises
@@ -68,6 +79,12 @@ struct ExercisePickerView: View {
                     }
                 }
             }
+            .sheet(item: $editingTemplate) { template in
+                LibraryExerciseEditView(
+                    template: template,
+                    isCustomExercise: editingIsCustom
+                )
+            }
         }
     }
 
@@ -111,6 +128,7 @@ struct ExercisePickerView: View {
 
     private var customExerciseSection: some View {
         Section {
+            // Exercise name input
             HStack {
                 TextField("Type custom exercise name...", text: $customName)
 
@@ -129,7 +147,51 @@ struct ExercisePickerView: View {
                 }
             }
 
+            // Show advanced options when name is entered
             if !customName.isEmpty && !isNameInLibrary {
+                // Toggle for advanced options
+                Button {
+                    withAnimation {
+                        showingAdvancedOptions.toggle()
+                    }
+                } label: {
+                    HStack {
+                        Text("Muscle Groups & Equipment")
+                            .foregroundColor(.primary)
+                        Spacer()
+                        if !selectedMuscleGroups.isEmpty || !selectedImplements.isEmpty {
+                            Text("\(selectedMuscleGroups.count + selectedImplements.count) selected")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Image(systemName: showingAdvancedOptions ? "chevron.up" : "chevron.down")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                if showingAdvancedOptions {
+                    // Muscle Group Selection
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("Muscles Worked")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(.secondary)
+
+                        MuscleGroupGridCompact(selectedIds: $selectedMuscleGroups)
+                    }
+                    .padding(.vertical, AppSpacing.sm)
+
+                    // Implement Selection
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("Equipment")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(.secondary)
+
+                        ImplementGridCompact(selectedIds: $selectedImplements)
+                    }
+                    .padding(.vertical, AppSpacing.sm)
+                }
+
                 Toggle("Save to My Exercises", isOn: $saveToLibrary)
                     .font(.subheadline)
             }
@@ -192,11 +254,35 @@ struct ExercisePickerView: View {
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(template.name)
-                        .foregroundColor(.primary)
-                    Text(template.category.rawValue)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 4) {
+                        Text(template.name)
+                            .foregroundColor(.primary)
+
+                        // Show indicators if exercise has muscles/equipment set
+                        if !template.muscleGroupIds.isEmpty || !template.implementIds.isEmpty {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption2)
+                                .foregroundColor(.green)
+                        }
+                    }
+
+                    HStack(spacing: 4) {
+                        Text(template.category.rawValue)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+
+                        // Show muscle/equipment count if set
+                        if !template.muscleGroupIds.isEmpty {
+                            Text("\(template.muscleGroupIds.count) muscles")
+                                .font(.caption2)
+                                .foregroundColor(.blue)
+                        }
+                        if !template.implementIds.isEmpty {
+                            Text("\(template.implementIds.count) equip")
+                                .font(.caption2)
+                                .foregroundColor(.teal)
+                        }
+                    }
                 }
 
                 Spacer()
@@ -206,6 +292,15 @@ struct ExercisePickerView: View {
                         .foregroundColor(.blue)
                 }
             }
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            Button {
+                editingIsCustom = isCustom
+                editingTemplate = template
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+            .tint(.orange)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             if isCustom {
@@ -229,7 +324,13 @@ struct ExercisePickerView: View {
             )
         }
         selectedTemplate = nil
-        onSelect(nil)
+
+        // Use the detailed callback if provided, otherwise use the simple one
+        if let detailedCallback = onSelectWithDetails {
+            detailedCallback(nil, selectedMuscleGroups, selectedImplements)
+        } else {
+            onSelect(nil)
+        }
         dismiss()
     }
 
@@ -257,5 +358,97 @@ struct CategoryPill: View {
                 .foregroundColor(isSelected ? .white : .primary)
                 .clipShape(Capsule())
         }
+    }
+}
+
+// MARK: - Compact Selection Grids
+
+struct MuscleGroupGridCompact: View {
+    @StateObject private var libraryService = LibraryService.shared
+    @Binding var selectedIds: Set<UUID>
+
+    private let columns = [
+        GridItem(.flexible()),
+        GridItem(.flexible()),
+        GridItem(.flexible())
+    ]
+
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: 6) {
+            ForEach(libraryService.muscleGroups, id: \.id) { muscleGroup in
+                SelectableChip(
+                    text: muscleGroup.name,
+                    isSelected: selectedIds.contains(muscleGroup.id),
+                    color: .blue
+                ) {
+                    toggleSelection(muscleGroup.id)
+                }
+            }
+        }
+    }
+
+    private func toggleSelection(_ id: UUID) {
+        if selectedIds.contains(id) {
+            selectedIds.remove(id)
+        } else {
+            selectedIds.insert(id)
+        }
+    }
+}
+
+struct ImplementGridCompact: View {
+    @StateObject private var libraryService = LibraryService.shared
+    @Binding var selectedIds: Set<UUID>
+
+    private let columns = [
+        GridItem(.flexible()),
+        GridItem(.flexible()),
+        GridItem(.flexible())
+    ]
+
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: 6) {
+            ForEach(libraryService.implements, id: \.id) { implement in
+                SelectableChip(
+                    text: implement.name,
+                    isSelected: selectedIds.contains(implement.id),
+                    color: .teal
+                ) {
+                    toggleSelection(implement.id)
+                }
+            }
+        }
+    }
+
+    private func toggleSelection(_ id: UUID) {
+        if selectedIds.contains(id) {
+            selectedIds.remove(id)
+        } else {
+            selectedIds.insert(id)
+        }
+    }
+}
+
+struct SelectableChip: View {
+    let text: String
+    let isSelected: Bool
+    var color: Color = .blue
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(text)
+                .font(.caption)
+                .lineLimit(1)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(isSelected ? color : Color(.systemGray5))
+                )
+                .foregroundColor(isSelected ? .white : .primary)
+        }
+        .buttonStyle(.plain)
     }
 }
