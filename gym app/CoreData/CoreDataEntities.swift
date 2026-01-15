@@ -109,12 +109,6 @@ public class ExerciseEntity: NSManagedObject {
 public class SetGroupEntity: NSManagedObject {
     @NSManaged public var id: UUID
     @NSManaged public var sets: Int32
-    @NSManaged public var targetReps: Int32
-    @NSManaged public var targetWeight: Double
-    @NSManaged public var targetRPE: Int32
-    @NSManaged public var targetDuration: Int32
-    @NSManaged public var targetDistance: Double
-    @NSManaged public var targetHoldTime: Int32
     @NSManaged public var restPeriod: Int32
     @NSManaged public var notes: String?
     @NSManaged public var orderIndex: Int32
@@ -124,6 +118,43 @@ public class SetGroupEntity: NSManagedObject {
     @NSManaged public var isInterval: Bool
     @NSManaged public var workDuration: Int32
     @NSManaged public var intervalRestDuration: Int32
+
+    // Dynamic measurable targets (new system)
+    @NSManaged public var targetValues: NSSet?
+
+    // DEPRECATED: Flat fields kept for backward compatibility with existing workouts
+    // New workouts should use targetValues instead
+    @NSManaged public var targetReps: Int32
+    @NSManaged public var targetWeight: Double
+    @NSManaged public var targetRPE: Int32
+    @NSManaged public var targetDuration: Int32
+    @NSManaged public var targetDistance: Double
+    @NSManaged public var targetHoldTime: Int32
+
+    var targetValueArray: [TargetValueEntity] {
+        targetValues?.allObjects as? [TargetValueEntity] ?? []
+    }
+
+    /// Get target value for a specific measurable by name
+    func targetValue(for measurableName: String) -> Double? {
+        targetValueArray.first { $0.measurableName == measurableName }?.targetValue
+    }
+
+    /// Check if this set group uses the dynamic measurable system
+    var usesDynamicMeasurables: Bool {
+        !targetValueArray.isEmpty
+    }
+}
+
+// MARK: - Target Value Entity (Dynamic Measurable Targets)
+
+@objc(TargetValueEntity)
+public class TargetValueEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var measurableName: String  // Matches MeasurableEntity.name
+    @NSManaged public var measurableUnit: String  // Copied from MeasurableEntity.unit for display
+    @NSManaged public var targetValue: Double
+    @NSManaged public var setGroup: SetGroupEntity?
 }
 
 // MARK: - Workout Entity
@@ -284,10 +315,18 @@ public class CompletedSetGroupEntity: NSManagedObject {
 public class SetDataEntity: NSManagedObject {
     @NSManaged public var id: UUID
     @NSManaged public var setNumber: Int32
+    @NSManaged public var completed: Bool
+    @NSManaged public var restAfter: Int32
+    @NSManaged public var completedSetGroup: CompletedSetGroupEntity?
+
+    // Dynamic measurable actuals (new system)
+    @NSManaged public var actualValues: NSSet?
+
+    // DEPRECATED: Flat fields kept for backward compatibility with existing workouts
+    // New workouts should use actualValues instead
     @NSManaged public var weight: Double
     @NSManaged public var reps: Int32
     @NSManaged public var rpe: Int32
-    @NSManaged public var completed: Bool
     @NSManaged public var duration: Int32
     @NSManaged public var distance: Double
     @NSManaged public var pace: Double
@@ -296,8 +335,31 @@ public class SetDataEntity: NSManagedObject {
     @NSManaged public var intensity: Int32
     @NSManaged public var height: Double
     @NSManaged public var quality: Int32
-    @NSManaged public var restAfter: Int32
-    @NSManaged public var completedSetGroup: CompletedSetGroupEntity?
+
+    var actualValueArray: [ActualValueEntity] {
+        actualValues?.allObjects as? [ActualValueEntity] ?? []
+    }
+
+    /// Get actual value for a specific measurable by name
+    func actualValue(for measurableName: String) -> Double? {
+        actualValueArray.first { $0.measurableName == measurableName }?.actualValue
+    }
+
+    /// Check if this set data uses the dynamic measurable system
+    var usesDynamicMeasurables: Bool {
+        !actualValueArray.isEmpty
+    }
+}
+
+// MARK: - Actual Value Entity (Dynamic Measurable Actuals)
+
+@objc(ActualValueEntity)
+public class ActualValueEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var measurableName: String  // Matches MeasurableEntity.name
+    @NSManaged public var measurableUnit: String  // Copied from MeasurableEntity.unit for display
+    @NSManaged public var actualValue: Double
+    @NSManaged public var setData: SetDataEntity?
 }
 
 // MARK: - Sync Queue Entity

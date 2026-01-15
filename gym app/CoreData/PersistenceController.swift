@@ -70,6 +70,10 @@ struct PersistenceController {
         let muscleGroupEntity = createMuscleGroupEntity()
         let exerciseLibraryEntity = createExerciseLibraryEntity()
 
+        // Create dynamic measurable entities
+        let targetValueEntity = createTargetValueEntity()
+        let actualValueEntity = createActualValueEntity()
+
         // Set up relationships
         setupRelationships(
             moduleEntity: moduleEntity,
@@ -81,7 +85,9 @@ struct PersistenceController {
             completedModuleEntity: completedModuleEntity,
             sessionExerciseEntity: sessionExerciseEntity,
             completedSetGroupEntity: completedSetGroupEntity,
-            setDataEntity: setDataEntity
+            setDataEntity: setDataEntity,
+            targetValueEntity: targetValueEntity,
+            actualValueEntity: actualValueEntity
         )
 
         // Set up library relationships
@@ -99,8 +105,10 @@ struct PersistenceController {
             sessionEntity, completedModuleEntity, sessionExerciseEntity,
             completedSetGroupEntity, setDataEntity, syncQueueEntity,
             customExerciseTemplateEntity,
-            // New library entities
-            implementEntity, measurableEntity, muscleGroupEntity, exerciseLibraryEntity
+            // Library entities
+            implementEntity, measurableEntity, muscleGroupEntity, exerciseLibraryEntity,
+            // Dynamic measurable entities
+            targetValueEntity, actualValueEntity
         ]
 
         return model
@@ -405,6 +413,36 @@ struct PersistenceController {
         return entity
     }
 
+    private static func createTargetValueEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "TargetValueEntity"
+        entity.managedObjectClassName = "TargetValueEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("measurableName", type: .stringAttributeType),
+            createAttribute("measurableUnit", type: .stringAttributeType),
+            createAttribute("targetValue", type: .doubleAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createActualValueEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "ActualValueEntity"
+        entity.managedObjectClassName = "ActualValueEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("measurableName", type: .stringAttributeType),
+            createAttribute("measurableUnit", type: .stringAttributeType),
+            createAttribute("actualValue", type: .doubleAttributeType)
+        ]
+
+        return entity
+    }
+
     // MARK: - Relationship Setup
 
     private static func setupRelationships(
@@ -417,7 +455,9 @@ struct PersistenceController {
         completedModuleEntity: NSEntityDescription,
         sessionExerciseEntity: NSEntityDescription,
         completedSetGroupEntity: NSEntityDescription,
-        setDataEntity: NSEntityDescription
+        setDataEntity: NSEntityDescription,
+        targetValueEntity: NSEntityDescription,
+        actualValueEntity: NSEntityDescription
     ) {
         // Module <-> Exercise (one-to-many)
         let moduleToExercises = NSRelationshipDescription()
@@ -572,6 +612,48 @@ struct PersistenceController {
 
         completedSetGroupEntity.properties.append(completedSetGroupToSets)
         setDataEntity.properties.append(setDataToSetGroup)
+
+        // SetGroup <-> TargetValue (one-to-many, dynamic measurable targets)
+        let setGroupToTargetValues = NSRelationshipDescription()
+        setGroupToTargetValues.name = "targetValues"
+        setGroupToTargetValues.destinationEntity = targetValueEntity
+        setGroupToTargetValues.minCount = 0
+        setGroupToTargetValues.maxCount = 0
+        setGroupToTargetValues.deleteRule = .cascadeDeleteRule
+
+        let targetValueToSetGroup = NSRelationshipDescription()
+        targetValueToSetGroup.name = "setGroup"
+        targetValueToSetGroup.destinationEntity = setGroupEntity
+        targetValueToSetGroup.minCount = 0
+        targetValueToSetGroup.maxCount = 1
+        targetValueToSetGroup.deleteRule = .nullifyDeleteRule
+
+        setGroupToTargetValues.inverseRelationship = targetValueToSetGroup
+        targetValueToSetGroup.inverseRelationship = setGroupToTargetValues
+
+        setGroupEntity.properties.append(setGroupToTargetValues)
+        targetValueEntity.properties.append(targetValueToSetGroup)
+
+        // SetData <-> ActualValue (one-to-many, dynamic measurable actuals)
+        let setDataToActualValues = NSRelationshipDescription()
+        setDataToActualValues.name = "actualValues"
+        setDataToActualValues.destinationEntity = actualValueEntity
+        setDataToActualValues.minCount = 0
+        setDataToActualValues.maxCount = 0
+        setDataToActualValues.deleteRule = .cascadeDeleteRule
+
+        let actualValueToSetData = NSRelationshipDescription()
+        actualValueToSetData.name = "setData"
+        actualValueToSetData.destinationEntity = setDataEntity
+        actualValueToSetData.minCount = 0
+        actualValueToSetData.maxCount = 1
+        actualValueToSetData.deleteRule = .nullifyDeleteRule
+
+        setDataToActualValues.inverseRelationship = actualValueToSetData
+        actualValueToSetData.inverseRelationship = setDataToActualValues
+
+        setDataEntity.properties.append(setDataToActualValues)
+        actualValueEntity.properties.append(actualValueToSetData)
     }
 
     // MARK: - Library Relationship Setup
