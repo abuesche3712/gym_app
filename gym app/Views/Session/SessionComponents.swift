@@ -220,64 +220,67 @@ struct SetRowView: View {
 
     private var strengthInputs: some View {
         HStack(spacing: AppSpacing.md) {
-            // Weight input box (with BW prefix for bodyweight exercises)
-            HStack(spacing: 4) {
-                if exercise.isBodyweight {
-                    Text("BW +")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundColor(AppColors.accentBlue)
+            // Primary inputs: weight × reps
+            HStack(spacing: AppSpacing.sm) {
+                // Weight input box (with BW prefix for bodyweight exercises)
+                HStack(spacing: 4) {
+                    if exercise.isBodyweight {
+                        Text("BW +")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundColor(AppColors.accentBlue)
+                    }
+
+                    VStack(spacing: 4) {
+                        TextField(exercise.isBodyweight ? "0" : "0", text: $inputWeight)
+                            .keyboardType(.decimalPad)
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundColor(AppColors.textPrimary)
+                            .multilineTextAlignment(.center)
+                            .frame(minWidth: 44)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 8)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                            .focused($focusedField, equals: .weight)
+
+                        Text("lbs")
+                            .font(.caption2.weight(.medium))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
                 }
 
+                Text("×")
+                    .font(.title3.weight(.medium))
+                    .foregroundColor(AppColors.textTertiary)
+
+                // Reps input box
                 VStack(spacing: 4) {
-                    TextField(exercise.isBodyweight ? "0" : "0", text: $inputWeight)
-                        .keyboardType(.decimalPad)
+                    TextField("0", text: $inputReps)
+                        .keyboardType(.numberPad)
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
-                        .frame(minWidth: exercise.isBodyweight ? 50 : 60)
+                        .frame(minWidth: 40)
                         .padding(.vertical, 10)
                         .padding(.horizontal, 8)
                         .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                        .focused($focusedField, equals: .weight)
+                        .focused($focusedField, equals: .reps)
 
-                    Text("lbs")
+                    Text("reps")
                         .font(.caption2.weight(.medium))
                         .foregroundColor(AppColors.textTertiary)
                 }
             }
+            .frame(minWidth: 150, alignment: .leading)
 
-            Text("×")
-                .font(.title3.weight(.medium))
-                .foregroundColor(AppColors.textTertiary)
+            Spacer(minLength: 0)
 
-            // Reps input box
-            VStack(spacing: 4) {
-                TextField("0", text: $inputReps)
-                    .keyboardType(.numberPad)
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                    .foregroundColor(AppColors.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .frame(minWidth: 50)
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 8)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                    .focused($focusedField, equals: .reps)
-
-                Text("reps")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
-            }
-
-            Spacer()
-
-            // RPE input box
+            // Secondary input: RPE
             VStack(spacing: 4) {
                 TextField("-", text: $inputRPE)
                     .keyboardType(.numberPad)
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
-                    .frame(minWidth: 44)
                     .padding(.vertical, 10)
                     .padding(.horizontal, 8)
                     .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
@@ -293,6 +296,7 @@ struct SetRowView: View {
                     .font(.caption2.weight(.medium))
                     .foregroundColor(AppColors.textTertiary)
             }
+            .frame(width: 60)
         }
     }
 
@@ -301,124 +305,128 @@ struct SetRowView: View {
 
     private var cardioInputs: some View {
         HStack(spacing: AppSpacing.md) {
-            // Time input box
-            VStack(spacing: 4) {
-                HStack(spacing: 8) {
-                    if let targetDuration = flatSet.targetDuration, targetDuration > 0 {
-                        // Has time target - show countdown timer
-                        if timerRunning {
-                            Text(formatDuration(timerSecondsRemaining))
-                                .font(.system(size: 18, weight: .bold, design: .rounded))
-                                .foregroundColor(timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.accentBlue)
-                                .monospacedDigit()
-                                .frame(minWidth: 60)
-                                .padding(.vertical, 10)
-                                .padding(.horizontal, 8)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                        } else {
-                            // Tappable to manually edit time
-                            Button {
-                                showTimePicker = true
-                            } label: {
-                                Text(formatDuration(inputDuration))
-                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                    .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
-                                    .frame(minWidth: 60)
+            // Primary inputs: time + distance
+            HStack(spacing: AppSpacing.sm) {
+                // Time input box
+                VStack(spacing: 4) {
+                    HStack(spacing: 8) {
+                        if let targetDuration = flatSet.targetDuration, targetDuration > 0 {
+                            // Has time target - show countdown timer
+                            if timerRunning {
+                                Text(formatDuration(timerSecondsRemaining))
+                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .foregroundColor(timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.accentBlue)
+                                    .monospacedDigit()
+                                    .frame(minWidth: 50)
                                     .padding(.vertical, 10)
                                     .padding(.horizontal, 8)
                                     .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                            } else {
+                                // Tappable to manually edit time
+                                Button {
+                                    showTimePicker = true
+                                } label: {
+                                    Text(formatDuration(inputDuration))
+                                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                        .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
+                                        .frame(minWidth: 50)
+                                        .padding(.vertical, 10)
+                                        .padding(.horizontal, 8)
+                                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            Button {
+                                toggleTimer()
+                            } label: {
+                                Image(systemName: timerRunning ? "stop.fill" : "play.fill")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentBlue)
+                                    .frame(width: 36, height: 36)
+                                    .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentBlue.opacity(0.15)))
                             }
                             .buttonStyle(.plain)
-                        }
-
-                        Button {
-                            toggleTimer()
-                        } label: {
-                            Image(systemName: timerRunning ? "stop.fill" : "play.fill")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentBlue)
-                                .frame(width: 36, height: 36)
-                                .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentBlue.opacity(0.15)))
-                        }
-                        .buttonStyle(.plain)
-                    } else {
-                        // No time target (distance-based) - show stopwatch to time the run
-                        if timerRunning {
-                            Text(formatDuration(stopwatchSeconds))
-                                .font(.system(size: 18, weight: .bold, design: .rounded))
-                                .foregroundColor(AppColors.accentBlue)
-                                .monospacedDigit()
-                                .frame(minWidth: 60)
-                                .padding(.vertical, 10)
-                                .padding(.horizontal, 8)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
                         } else {
-                            Button {
-                                showTimePicker = true
-                            } label: {
-                                Text(formatDuration(inputDuration))
-                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                    .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
-                                    .frame(minWidth: 60)
+                            // No time target (distance-based) - show stopwatch to time the run
+                            if timerRunning {
+                                Text(formatDuration(stopwatchSeconds))
+                                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                    .foregroundColor(AppColors.accentBlue)
+                                    .monospacedDigit()
+                                    .frame(minWidth: 50)
                                     .padding(.vertical, 10)
                                     .padding(.horizontal, 8)
                                     .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                            } else {
+                                Button {
+                                    showTimePicker = true
+                                } label: {
+                                    Text(formatDuration(inputDuration))
+                                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                        .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
+                                        .frame(minWidth: 50)
+                                        .padding(.vertical, 10)
+                                        .padding(.horizontal, 8)
+                                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            Button {
+                                toggleStopwatch()
+                            } label: {
+                                Image(systemName: timerRunning ? "stop.fill" : "stopwatch")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentTeal)
+                                    .frame(width: 36, height: 36)
+                                    .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentTeal.opacity(0.15)))
                             }
                             .buttonStyle(.plain)
                         }
-
-                        Button {
-                            toggleStopwatch()
-                        } label: {
-                            Image(systemName: timerRunning ? "stop.fill" : "stopwatch")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentTeal)
-                                .frame(width: 36, height: 36)
-                                .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentTeal.opacity(0.15)))
-                        }
-                        .buttonStyle(.plain)
                     }
+
+                    Text("time")
+                        .font(.caption2.weight(.medium))
+                        .foregroundColor(AppColors.textTertiary)
                 }
 
-                Text("time")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
-            }
-
-            // Distance input box
-            VStack(spacing: 4) {
-                HStack(spacing: 4) {
-                    TextField("0", text: $inputDistance)
-                        .keyboardType(.decimalPad)
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .foregroundColor(AppColors.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .frame(minWidth: 50)
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 8)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                        .focused($focusedField, equals: .distance)
-
-                    // Tappable unit selector
-                    Button {
-                        showDistanceUnitPicker = true
-                    } label: {
-                        Text(exercise.distanceUnit.abbreviation)
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(AppColors.accentBlue)
-                            .padding(.horizontal, 10)
+                // Distance input box
+                VStack(spacing: 4) {
+                    HStack(spacing: 4) {
+                        TextField("0", text: $inputDistance)
+                            .keyboardType(.decimalPad)
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundColor(AppColors.textPrimary)
+                            .multilineTextAlignment(.center)
+                            .frame(minWidth: 40)
                             .padding(.vertical, 10)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.accentBlue.opacity(0.1)))
+                            .padding(.horizontal, 8)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                            .focused($focusedField, equals: .distance)
+
+                        // Tappable unit selector
+                        Button {
+                            showDistanceUnitPicker = true
+                        } label: {
+                            Text(exercise.distanceUnit.abbreviation)
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(AppColors.accentBlue)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 10)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.accentBlue.opacity(0.1)))
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+
+                    Text("distance")
+                        .font(.caption2.weight(.medium))
+                        .foregroundColor(AppColors.textTertiary)
                 }
-
-                Text("distance")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
             }
+            .frame(minWidth: 150, alignment: .leading)
 
-            Spacer()
+            Spacer(minLength: 0)
         }
         .confirmationDialog("Distance Unit", isPresented: $showDistanceUnitPicker, titleVisibility: .visible) {
             ForEach(DistanceUnit.allCases) { unit in
@@ -434,48 +442,51 @@ struct SetRowView: View {
 
     private var isometricInputs: some View {
         HStack(spacing: AppSpacing.md) {
-            // Hold time input box
-            VStack(spacing: 4) {
-                HStack(spacing: 8) {
-                    if timerRunning {
-                        Text(formatDuration(timerSecondsRemaining))
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundColor(timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.accentBlue)
-                            .monospacedDigit()
-                            .frame(minWidth: 60)
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 8)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                    } else {
-                        Text(formatDuration(inputHoldTime))
-                            .font(.system(size: 18, weight: .semibold, design: .rounded))
-                            .foregroundColor(AppColors.textPrimary)
-                            .frame(minWidth: 60)
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 8)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                    }
-
-                    if hasTimedTarget {
-                        Button {
-                            toggleTimer()
-                        } label: {
-                            Image(systemName: timerRunning ? "stop.fill" : "play.fill")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentBlue)
-                                .frame(width: 36, height: 36)
-                                .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentBlue.opacity(0.15)))
+            // Primary inputs: hold time
+            HStack(spacing: AppSpacing.sm) {
+                VStack(spacing: 4) {
+                    HStack(spacing: 8) {
+                        if timerRunning {
+                            Text(formatDuration(timerSecondsRemaining))
+                                .font(.system(size: 18, weight: .bold, design: .rounded))
+                                .foregroundColor(timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.accentBlue)
+                                .monospacedDigit()
+                                .frame(minWidth: 50)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 8)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                        } else {
+                            Text(formatDuration(inputHoldTime))
+                                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                .foregroundColor(AppColors.textPrimary)
+                                .frame(minWidth: 50)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 8)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
                         }
-                        .buttonStyle(.plain)
+
+                        if hasTimedTarget {
+                            Button {
+                                toggleTimer()
+                            } label: {
+                                Image(systemName: timerRunning ? "stop.fill" : "play.fill")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentBlue)
+                                    .frame(width: 36, height: 36)
+                                    .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentBlue.opacity(0.15)))
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
+
+                    Text("hold")
+                        .font(.caption2.weight(.medium))
+                        .foregroundColor(AppColors.textTertiary)
                 }
-
-                Text("hold")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
             }
+            .frame(minWidth: 150, alignment: .leading)
 
-            Spacer()
+            Spacer(minLength: 0)
         }
     }
 
@@ -483,25 +494,28 @@ struct SetRowView: View {
 
     private var repsOnlyInputs: some View {
         HStack(spacing: AppSpacing.md) {
-            // Reps input box
-            VStack(spacing: 4) {
-                TextField("0", text: $inputReps)
-                    .keyboardType(.numberPad)
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                    .foregroundColor(AppColors.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .frame(minWidth: 50)
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 8)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                    .focused($focusedField, equals: .reps)
+            // Primary inputs: reps only
+            HStack(spacing: AppSpacing.sm) {
+                VStack(spacing: 4) {
+                    TextField("0", text: $inputReps)
+                        .keyboardType(.numberPad)
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundColor(AppColors.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .frame(minWidth: 40)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 8)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                        .focused($focusedField, equals: .reps)
 
-                Text("reps")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    Text("reps")
+                        .font(.caption2.weight(.medium))
+                        .foregroundColor(AppColors.textTertiary)
+                }
             }
+            .frame(minWidth: 150, alignment: .leading)
 
-            Spacer()
+            Spacer(minLength: 0)
         }
     }
 
@@ -509,45 +523,49 @@ struct SetRowView: View {
 
     private var explosiveInputs: some View {
         HStack(spacing: AppSpacing.md) {
-            // Reps input box
-            VStack(spacing: 4) {
-                TextField("0", text: $inputReps)
-                    .keyboardType(.numberPad)
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                    .foregroundColor(AppColors.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .frame(minWidth: 50)
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 8)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                    .focused($focusedField, equals: .reps)
+            // Primary inputs: reps + height
+            HStack(spacing: AppSpacing.sm) {
+                // Reps input box
+                VStack(spacing: 4) {
+                    TextField("0", text: $inputReps)
+                        .keyboardType(.numberPad)
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundColor(AppColors.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .frame(minWidth: 40)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 8)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                        .focused($focusedField, equals: .reps)
 
-                Text("reps")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    Text("reps")
+                        .font(.caption2.weight(.medium))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+
+                // Height input box
+                VStack(spacing: 4) {
+                    TextField("0", text: $inputHeight)
+                        .keyboardType(.decimalPad)
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundColor(AppColors.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .frame(minWidth: 40)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 8)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                        .focused($focusedField, equals: .height)
+
+                    Text("in")
+                        .font(.caption2.weight(.medium))
+                        .foregroundColor(AppColors.textTertiary)
+                }
             }
+            .frame(minWidth: 150, alignment: .leading)
 
-            // Height input box
-            VStack(spacing: 4) {
-                TextField("0", text: $inputHeight)
-                    .keyboardType(.decimalPad)
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                    .foregroundColor(AppColors.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .frame(minWidth: 50)
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 8)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                    .focused($focusedField, equals: .height)
+            Spacer(minLength: 0)
 
-                Text("in")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
-            }
-
-            Spacer()
-
-            // Quality picker (1-5)
+            // Secondary input: Quality picker (1-5)
             VStack(spacing: 4) {
                 Menu {
                     Button("--") { inputQuality = 0 }
@@ -558,7 +576,6 @@ struct SetRowView: View {
                     Text(inputQuality > 0 ? "\(inputQuality)" : "-")
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                         .foregroundColor(inputQuality > 0 ? AppColors.textPrimary : AppColors.textTertiary)
-                        .frame(minWidth: 44)
                         .padding(.vertical, 10)
                         .padding(.horizontal, 8)
                         .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
@@ -568,6 +585,7 @@ struct SetRowView: View {
                     .font(.caption2.weight(.medium))
                     .foregroundColor(AppColors.textTertiary)
             }
+            .frame(width: 60)
         }
     }
 
@@ -575,52 +593,56 @@ struct SetRowView: View {
 
     private var recoveryInputs: some View {
         HStack(spacing: AppSpacing.md) {
-            // Activity type indicator
-            if let activityType = exercise.recoveryActivityType {
-                HStack(spacing: 4) {
-                    Image(systemName: activityType.icon)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(Color.teal)
-                    Text(activityType.displayName)
-                        .font(.caption.weight(.medium))
-                        .foregroundColor(AppColors.textSecondary)
-                }
-            }
-
-            // Duration with timer/stopwatch
-            VStack(spacing: 4) {
-                Button {
-                    toggleStopwatch()
-                } label: {
+            // Primary inputs: activity type + duration
+            HStack(spacing: AppSpacing.sm) {
+                // Activity type indicator
+                if let activityType = exercise.recoveryActivityType {
                     HStack(spacing: 4) {
-                        if timerRunning {
-                            Image(systemName: "stop.fill")
-                                .font(.system(size: 12))
-                                .foregroundColor(AppColors.error)
-                        } else {
-                            Image(systemName: "play.fill")
-                                .font(.system(size: 12))
-                                .foregroundColor(AppColors.success)
-                        }
-                        Text(timerRunning ? formatDuration(stopwatchSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
-                            .font(.system(size: 18, weight: .semibold, design: .rounded))
-                            .foregroundColor(timerRunning ? AppColors.accentBlue : AppColors.textPrimary)
+                        Image(systemName: activityType.icon)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Color.teal)
+                        Text(activityType.displayName)
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(AppColors.textSecondary)
                     }
-                    .frame(minWidth: 80)
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 12)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(timerRunning ? AppColors.accentBlue.opacity(0.1) : AppColors.cardBackground))
                 }
-                .buttonStyle(.plain)
 
-                Text("duration")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                // Duration with timer/stopwatch
+                VStack(spacing: 4) {
+                    Button {
+                        toggleStopwatch()
+                    } label: {
+                        HStack(spacing: 4) {
+                            if timerRunning {
+                                Image(systemName: "stop.fill")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(AppColors.error)
+                            } else {
+                                Image(systemName: "play.fill")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(AppColors.success)
+                            }
+                            Text(timerRunning ? formatDuration(stopwatchSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
+                                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                .foregroundColor(timerRunning ? AppColors.accentBlue : AppColors.textPrimary)
+                        }
+                        .frame(minWidth: 70)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 12)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(timerRunning ? AppColors.accentBlue.opacity(0.1) : AppColors.cardBackground))
+                    }
+                    .buttonStyle(.plain)
+
+                    Text("duration")
+                        .font(.caption2.weight(.medium))
+                        .foregroundColor(AppColors.textTertiary)
+                }
             }
+            .frame(minWidth: 150, alignment: .leading)
 
-            Spacer()
+            Spacer(minLength: 0)
 
-            // Temperature input (only for sauna/cold plunge)
+            // Secondary input: Temperature (only for sauna/cold plunge)
             if let activityType = exercise.recoveryActivityType, activityType.supportsTemperature {
                 VStack(spacing: 4) {
                     TextField(activityType == .sauna ? "180" : "50", text: $inputTemperature)
@@ -628,7 +650,6 @@ struct SetRowView: View {
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
-                        .frame(minWidth: 50)
                         .padding(.vertical, 10)
                         .padding(.horizontal, 8)
                         .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
@@ -638,6 +659,7 @@ struct SetRowView: View {
                         .font(.caption2.weight(.medium))
                         .foregroundColor(AppColors.textTertiary)
                 }
+                .frame(width: 60)
             }
         }
     }

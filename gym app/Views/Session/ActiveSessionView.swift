@@ -45,26 +45,29 @@ struct ActiveSessionView: View {
                     if let currentModule = sessionViewModel.currentModule,
                        let currentExercise = sessionViewModel.currentExercise {
 
-                        ScrollView {
-                            VStack(spacing: AppSpacing.lg) {
-                                // Module indicator
-                                moduleIndicator(currentModule)
+                        GeometryReader { geometry in
+                            ScrollView {
+                                VStack(spacing: AppSpacing.lg) {
+                                    // Module indicator
+                                    moduleIndicator(currentModule)
 
-                                // Exercise Card header
-                                exerciseCard(currentExercise)
+                                    // Exercise Card header
+                                    exerciseCard(currentExercise)
 
-                                // All Sets (expandable rows)
-                                allSetsSection
+                                    // All Sets (expandable rows)
+                                    allSetsSection
 
-                                // Rest Timer (inline)
-                                if sessionViewModel.isRestTimerRunning {
-                                    restTimerBar
+                                    // Rest Timer (inline)
+                                    if sessionViewModel.isRestTimerRunning {
+                                        restTimerBar
+                                    }
+
+                                    // Previous Performance
+                                    previousPerformanceSection(exerciseName: currentExercise.exerciseName)
                                 }
-
-                                // Previous Performance
-                                previousPerformanceSection(exerciseName: currentExercise.exerciseName)
+                                .padding(AppSpacing.screenPadding)
+                                .frame(width: geometry.size.width)
                             }
-                            .padding(AppSpacing.screenPadding)
                         }
                     } else {
                         // Workout complete
@@ -381,17 +384,42 @@ struct ActiveSessionView: View {
             // Header
             HStack {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text(exercise.exerciseName)
-                        .font(.title2.bold())
-                        .foregroundColor(AppColors.textPrimary)
+                    HStack(spacing: AppSpacing.sm) {
+                        Text(exercise.exerciseName)
+                            .font(.title3.bold())
+                            .foregroundColor(AppColors.textPrimary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        // Swap button inline with exercise name
+                        Button {
+                            showSubstituteExercise = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.2.squarepath")
+                                    .font(.system(size: 12))
+                                Text("Swap")
+                                    .font(.caption.weight(.medium))
+                            }
+                            .foregroundColor(AppColors.textTertiary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(AppColors.surfaceLight)
+                            )
+                        }
+                        .fixedSize()
+                    }
 
                     Text(exerciseSetsSummary(exercise))
                         .font(.subheadline)
                         .foregroundColor(AppColors.textSecondary)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                Spacer()
-
+                // Fixed-width button group to prevent layout shift
                 HStack(spacing: AppSpacing.sm) {
                     // Edit button
                     Button {
@@ -407,40 +435,20 @@ struct ActiveSessionView: View {
                             )
                     }
 
-                    // Substitute button
+                    // Back button (always reserve space)
                     Button {
-                        showSubstituteExercise = true
+                        goToPreviousExercise()
                     } label: {
-                        VStack(spacing: 2) {
-                            Image(systemName: "arrow.2.squarepath")
-                                .font(.system(size: 14))
-                                .foregroundColor(AppColors.textTertiary)
-                                .frame(width: 36, height: 36)
-                                .background(
-                                    Circle()
-                                        .fill(AppColors.surfaceLight)
-                                )
-                            Text("Swap")
-                                .font(.caption2.weight(.medium))
-                                .foregroundColor(AppColors.textTertiary)
-                        }
+                        Image(systemName: "backward.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(canGoBack ? AppColors.textTertiary : AppColors.textTertiary.opacity(0.3))
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(AppColors.surfaceLight)
+                            )
                     }
-
-                    // Back button (if not first exercise)
-                    if canGoBack {
-                        Button {
-                            goToPreviousExercise()
-                        } label: {
-                            Image(systemName: "backward.fill")
-                                .font(.system(size: 14))
-                                .foregroundColor(AppColors.textTertiary)
-                                .frame(width: 36, height: 36)
-                                .background(
-                                    Circle()
-                                        .fill(AppColors.surfaceLight)
-                                )
-                        }
-                    }
+                    .disabled(!canGoBack)
 
                     // Skip button
                     Button {
@@ -456,9 +464,11 @@ struct ActiveSessionView: View {
                             )
                     }
                 }
+                .fixedSize()
             }
         }
         .padding(AppSpacing.cardPadding)
+        .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.large)
                 .fill(AppColors.cardBackground)
@@ -610,6 +620,7 @@ struct ActiveSessionView: View {
             }
         }
         .padding(AppSpacing.cardPadding)
+        .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.large)
                 .fill(AppColors.cardBackground)
@@ -1374,8 +1385,7 @@ struct ActiveSessionView: View {
                     }
                 }
             }
-
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.vertical, 4)
     }

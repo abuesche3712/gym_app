@@ -35,16 +35,11 @@ struct HomeView: View {
                     // Week Calendar
                     weekCalendarSection
 
-                    // Recent Accomplishments
-                    recentAccomplishmentsSection
+                    // Week in Review
+                    weekInReviewSection
 
                     // Best Performances (TODO)
                     bestPerformancesSection
-
-                    // Recent Sessions
-                    if !sessionViewModel.sessions.isEmpty {
-                        recentSessionsSection
-                    }
                 }
                 .padding(AppSpacing.screenPadding)
             }
@@ -60,6 +55,7 @@ struct HomeView: View {
                     ScheduleWorkoutSheet(
                         date: date,
                         workouts: workoutViewModel.workouts,
+                        modules: moduleViewModel.modules,
                         scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date),
                         sessions: sessionsForDate(date),
                         onSchedule: { workout in
@@ -114,24 +110,103 @@ struct HomeView: View {
 
     // MARK: - Today's Workout Bar
 
+    private var todaysSessions: [Session] {
+        sessionsForDate(Date())
+    }
+
     private var todayWorkoutBar: some View {
         Group {
-            if let scheduled = workoutViewModel.getTodaySchedule() {
+            // Priority 1: Show completed workout if done today
+            if let completedSession = todaysSessions.first {
+                completedTodayBar(session: completedSession)
+            }
+            // Priority 2: Check for scheduled items
+            else if let scheduled = workoutViewModel.getTodaySchedule() {
                 if scheduled.isRestDay {
-                    // Rest day scheduled
                     restDayBar(scheduled: scheduled)
                 } else if let workoutId = scheduled.workoutId,
                           let workout = workoutViewModel.getWorkout(id: workoutId) {
-                    // Workout scheduled
                     scheduledWorkoutBar(workout: workout, scheduled: scheduled)
                 } else {
-                    // No schedule - show option to add
                     noScheduleBar
                 }
-            } else {
-                // No schedule for today
+            }
+            // Priority 3: Nothing scheduled
+            else {
                 noScheduleBar
             }
+        }
+    }
+
+    private func completedTodayBar(session: Session) -> some View {
+        NavigationLink(destination: SessionDetailView(session: session)) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack {
+                    Text("Today")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(AppColors.success)
+
+                    Spacer()
+
+                    Label("Completed", systemImage: "checkmark.circle.fill")
+                        .font(.caption.weight(.medium))
+                        .foregroundColor(AppColors.success)
+                }
+
+                HStack(spacing: AppSpacing.md) {
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        Text(session.workoutName)
+                            .font(.headline)
+                            .foregroundColor(AppColors.textPrimary)
+
+                        HStack(spacing: AppSpacing.md) {
+                            Label("\(session.completedModules.count) modules", systemImage: "square.stack.3d.up")
+                            Label("\(session.totalSetsCompleted) sets", systemImage: "checkmark.circle")
+                            if let duration = session.formattedDuration {
+                                Label(duration, systemImage: "clock")
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                    }
+
+                    Spacer()
+
+                    // Rating badge
+                    if let feeling = session.overallFeeling {
+                        Text("\(feeling)")
+                            .font(.title3.bold())
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(feelingColor(feeling))
+                            .clipShape(Circle())
+                    }
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            }
+            .padding(AppSpacing.cardPadding)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppColors.success.opacity(0.1))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppCorners.large)
+                            .stroke(AppColors.success.opacity(0.3), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func feelingColor(_ rating: Int) -> Color {
+        switch rating {
+        case 1...3: return AppColors.error
+        case 4...5: return AppColors.warning
+        case 6...7: return AppColors.accentBlue
+        case 8...10: return AppColors.success
+        default: return AppColors.textTertiary
         }
     }
 
@@ -447,34 +522,67 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Recent Accomplishments Section
+    // MARK: - Week in Review Section
 
-    private var recentAccomplishmentsSection: some View {
+    private var weekInReviewSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            SectionHeader(title: "Recent Accomplishments")
+            SectionHeader(title: "Week in Review")
 
-            HStack(spacing: AppSpacing.md) {
-                StatCard(
-                    title: "Workouts",
-                    value: "\(sessionsThisWeek)",
-                    icon: "flame.fill",
-                    color: AppColors.warning
-                )
+            HStack(spacing: 0) {
+                // Completed stat
+                VStack(spacing: AppSpacing.xs) {
+                    Text("\(sessionsThisWeek)")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundColor(AppColors.success)
 
-                StatCard(
-                    title: "Sets",
-                    value: "\(setsThisWeek)",
-                    icon: "square.stack.fill",
-                    color: AppColors.accentBlue
-                )
+                    Text("completed")
+                        .font(.caption.weight(.medium))
+                        .foregroundColor(AppColors.textSecondary)
+                        .textCase(.uppercase)
+                }
+                .frame(maxWidth: .infinity)
 
-                StatCard(
-                    title: "Volume",
-                    value: formatVolume(volumeThisWeek),
-                    icon: "scalemass.fill",
-                    color: AppColors.accentTeal
-                )
+                // Divider
+                Rectangle()
+                    .fill(AppColors.border)
+                    .frame(width: 1, height: 50)
+
+                // Scheduled stat
+                VStack(spacing: AppSpacing.xs) {
+                    Text("\(scheduledThisWeek)")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundColor(AppColors.accentBlue)
+
+                    Text("scheduled")
+                        .font(.caption.weight(.medium))
+                        .foregroundColor(AppColors.textSecondary)
+                        .textCase(.uppercase)
+                }
+                .frame(maxWidth: .infinity)
+
+                // Divider
+                Rectangle()
+                    .fill(AppColors.border)
+                    .frame(width: 1, height: 50)
+
+                // Volume stat
+                VStack(spacing: AppSpacing.xs) {
+                    Text(formatVolumeShort(volumeThisWeek))
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundColor(AppColors.accentTeal)
+
+                    Text("volume")
+                        .font(.caption.weight(.medium))
+                        .foregroundColor(AppColors.textSecondary)
+                        .textCase(.uppercase)
+                }
+                .frame(maxWidth: .infinity)
             }
+            .padding(.vertical, AppSpacing.lg)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppColors.cardBackground)
+            )
         }
     }
 
@@ -508,36 +616,6 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Recent Sessions Section
-
-    private var recentSessionsSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            SectionHeader(title: "Recent Activity") {
-                // Navigate to history
-            }
-
-            VStack(spacing: 0) {
-                ForEach(Array(sessionViewModel.getRecentSessions(limit: 5).enumerated()), id: \.element.id) { index, session in
-                    NavigationLink(destination: SessionDetailView(session: session)) {
-                        HomeSessionRow(session: session)
-                    }
-                    .buttonStyle(.plain)
-
-                    if index < min(sessionViewModel.sessions.count - 1, 4) {
-                        Divider()
-                            .background(AppColors.border)
-                            .padding(.leading, 48)
-                    }
-                }
-            }
-            .padding(AppSpacing.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.cardBackground)
-            )
-        }
-    }
-
     // MARK: - Computed Properties
 
     private var sessionsThisWeek: Int {
@@ -561,6 +639,24 @@ struct HomeView: View {
             .reduce(0) { $0 + $1.totalVolume }
     }
 
+    private var scheduledThisWeek: Int {
+        let weekDates = workoutViewModel.getWeekDates(for: Date())
+        guard let startOfWeek = weekDates.first, let endOfWeek = weekDates.last else { return 0 }
+        return workoutViewModel.scheduledWorkouts.filter { scheduled in
+            !scheduled.isRestDay &&
+            scheduled.completedSessionId == nil &&
+            scheduled.scheduledDate >= startOfWeek &&
+            scheduled.scheduledDate <= endOfWeek
+        }.count
+    }
+
+    private func formatVolumeShort(_ volume: Double) -> String {
+        if volume >= 1000 {
+            return String(format: "%.0fk", volume / 1000)
+        }
+        return String(format: "%.0f", volume)
+    }
+
     // MARK: - Helper Functions
 
     private func startWorkout(_ workout: Workout) {
@@ -570,56 +666,6 @@ struct HomeView: View {
 
         sessionViewModel.startSession(workout: workout, modules: modules)
         showingActiveSession = true
-    }
-}
-
-// MARK: - Home Session Row
-
-struct HomeSessionRow: View {
-    let session: Session
-
-    var body: some View {
-        HStack(spacing: AppSpacing.md) {
-            // Date indicator
-            VStack(spacing: 2) {
-                Text(dayOfWeek)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundColor(AppColors.accentBlue)
-                Text(dayNumber)
-                    .font(.headline)
-                    .foregroundColor(AppColors.textPrimary)
-            }
-            .frame(width: 36)
-
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text(session.workoutName)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(AppColors.textPrimary)
-
-                Text("\(session.completedModules.count) modules • \(session.totalSetsCompleted) sets")
-                    .font(.caption)
-                    .foregroundColor(AppColors.textSecondary)
-            }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12))
-                .foregroundColor(AppColors.textTertiary)
-        }
-        .padding(.vertical, AppSpacing.sm)
-    }
-
-    private var dayOfWeek: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEE"
-        return formatter.string(from: session.date).uppercased()
-    }
-
-    private var dayNumber: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d"
-        return formatter.string(from: session.date)
     }
 }
 
@@ -714,6 +760,7 @@ struct WeekDayCell: View {
 struct ScheduleWorkoutSheet: View {
     let date: Date
     let workouts: [Workout]
+    let modules: [Module]
     let scheduledWorkouts: [ScheduledWorkout]
     let sessions: [Session]
     let onSchedule: (Workout) -> Void
@@ -737,11 +784,15 @@ struct ScheduleWorkoutSheet: View {
         Calendar.current.isDateInToday(date)
     }
 
+    private var hasCompletedSession: Bool {
+        !sessions.isEmpty
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.xl) {
-                    // Completed Sessions
+                    // Completed Sessions (tappable to view details)
                     if !sessions.isEmpty {
                         VStack(alignment: .leading, spacing: AppSpacing.md) {
                             Label("Completed", systemImage: "checkmark.circle.fill")
@@ -749,12 +800,15 @@ struct ScheduleWorkoutSheet: View {
                                 .foregroundColor(AppColors.success)
 
                             ForEach(sessions) { session in
-                                CompletedSessionRow(session: session)
+                                NavigationLink(destination: SessionDetailView(session: session)) {
+                                    CompletedSessionRow(session: session)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
 
-                    // Scheduled Workouts
+                    // Scheduled Workouts (tappable to view workout)
                     if !scheduledWorkouts.isEmpty {
                         VStack(alignment: .leading, spacing: AppSpacing.md) {
                             Label("Scheduled", systemImage: "calendar")
@@ -762,83 +816,90 @@ struct ScheduleWorkoutSheet: View {
                                 .foregroundColor(AppColors.accentBlue)
 
                             ForEach(scheduledWorkouts) { scheduled in
-                                ScheduledWorkoutRow(
-                                    scheduled: scheduled,
-                                    isToday: isToday,
-                                    onStart: {
-                                        if let workout = workouts.first(where: { $0.id == scheduled.workoutId }) {
-                                            onStartWorkout(workout)
-                                        }
-                                    },
-                                    onRemove: {
-                                        onUnschedule(scheduled)
-                                    }
-                                )
+                                if let workout = workouts.first(where: { $0.id == scheduled.workoutId }) {
+                                    ScheduledWorkoutDetailRow(
+                                        scheduled: scheduled,
+                                        workout: workout,
+                                        modules: modules,
+                                        isToday: isToday,
+                                        onStart: { onStartWorkout(workout) },
+                                        onRemove: { onUnschedule(scheduled) }
+                                    )
+                                } else {
+                                    ScheduledWorkoutRow(
+                                        scheduled: scheduled,
+                                        isToday: isToday,
+                                        onStart: {},
+                                        onRemove: { onUnschedule(scheduled) }
+                                    )
+                                }
                             }
                         }
                     }
 
-                    // Schedule New Workout
-                    VStack(alignment: .leading, spacing: AppSpacing.md) {
-                        Label("Schedule Workout", systemImage: "plus.circle")
-                            .font(.headline)
-                            .foregroundColor(AppColors.textPrimary)
+                    // Schedule New Workout - only show if no completed sessions
+                    if !hasCompletedSession {
+                        VStack(alignment: .leading, spacing: AppSpacing.md) {
+                            Label("Schedule Workout", systemImage: "plus.circle")
+                                .font(.headline)
+                                .foregroundColor(AppColors.textPrimary)
 
-                        if workouts.isEmpty {
-                            Text("No workouts available. Create a workout first.")
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.textSecondary)
-                                .padding()
-                        } else {
-                            ForEach(workouts) { workout in
+                            if workouts.isEmpty {
+                                Text("No workouts available. Create a workout first.")
+                                    .font(.subheadline)
+                                    .foregroundColor(AppColors.textSecondary)
+                                    .padding()
+                            } else {
+                                ForEach(workouts) { workout in
+                                    Button {
+                                        onSchedule(workout)
+                                    } label: {
+                                        HStack {
+                                            Text(workout.name)
+                                                .font(.subheadline.weight(.medium))
+                                                .foregroundColor(AppColors.textPrimary)
+
+                                            Spacer()
+
+                                            Image(systemName: "plus.circle")
+                                                .foregroundColor(AppColors.accentBlue)
+                                        }
+                                        .padding(AppSpacing.md)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: AppCorners.medium)
+                                                .fill(AppColors.cardBackground)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+
+                            // Rest day option
+                            if !hasRestDay {
                                 Button {
-                                    onSchedule(workout)
+                                    onScheduleRest()
                                 } label: {
                                     HStack {
-                                        Text(workout.name)
+                                        Image(systemName: "moon.zzz.fill")
+                                            .foregroundColor(AppColors.accentTeal)
+
+                                        Text("Rest Day")
                                             .font(.subheadline.weight(.medium))
                                             .foregroundColor(AppColors.textPrimary)
 
                                         Spacer()
 
                                         Image(systemName: "plus.circle")
-                                            .foregroundColor(AppColors.accentBlue)
+                                            .foregroundColor(AppColors.accentTeal)
                                     }
                                     .padding(AppSpacing.md)
                                     .background(
                                         RoundedRectangle(cornerRadius: AppCorners.medium)
-                                            .fill(AppColors.cardBackground)
+                                            .fill(AppColors.accentTeal.opacity(0.1))
                                     )
                                 }
                                 .buttonStyle(.plain)
                             }
-                        }
-
-                        // Rest day option
-                        if !hasRestDay {
-                            Button {
-                                onScheduleRest()
-                            } label: {
-                                HStack {
-                                    Image(systemName: "moon.zzz.fill")
-                                        .foregroundColor(AppColors.accentTeal)
-
-                                    Text("Rest Day")
-                                        .font(.subheadline.weight(.medium))
-                                        .foregroundColor(AppColors.textPrimary)
-
-                                    Spacer()
-
-                                    Image(systemName: "plus.circle")
-                                        .foregroundColor(AppColors.accentTeal)
-                                }
-                                .padding(AppSpacing.md)
-                                .background(
-                                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                                        .fill(AppColors.accentTeal.opacity(0.1))
-                                )
-                            }
-                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -962,6 +1023,95 @@ struct ScheduledWorkoutRow: View {
         .background(
             RoundedRectangle(cornerRadius: AppCorners.medium)
                 .fill(iconColor.opacity(0.1))
+        )
+    }
+}
+
+// MARK: - Scheduled Workout Detail Row (with navigation to workout)
+
+struct ScheduledWorkoutDetailRow: View {
+    let scheduled: ScheduledWorkout
+    let workout: Workout
+    let modules: [Module]
+    let isToday: Bool
+    let onStart: () -> Void
+    let onRemove: () -> Void
+
+    private var workoutModules: [Module] {
+        workout.moduleReferences
+            .sorted { $0.order < $1.order }
+            .compactMap { ref in modules.first { $0.id == ref.moduleId } }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Main content - tappable to view workout details
+            NavigationLink(destination: WorkoutDetailView(workout: workout)) {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "calendar.badge.clock")
+                        .foregroundColor(AppColors.accentBlue)
+                        .font(.title3)
+
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        Text(scheduled.workoutName)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(AppColors.textPrimary)
+
+                        // Module summary
+                        HStack(spacing: AppSpacing.xs) {
+                            ForEach(workoutModules.prefix(3)) { module in
+                                Circle()
+                                    .fill(AppColors.moduleColor(module.type))
+                                    .frame(width: 8, height: 8)
+                            }
+                            Text("\(workoutModules.count) modules")
+                                .font(.caption)
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            }
+            .buttonStyle(.plain)
+
+            // Action buttons
+            HStack(spacing: AppSpacing.md) {
+                if isToday && !scheduled.isCompleted {
+                    Button(action: onStart) {
+                        Text("Start Workout")
+                            .font(.caption.bold())
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, AppSpacing.sm)
+                            .background(AppGradients.accentGradient)
+                            .clipShape(Capsule())
+                    }
+                }
+
+                Button(action: onRemove) {
+                    Text("Remove")
+                        .font(.caption.weight(.medium))
+                        .foregroundColor(AppColors.textTertiary)
+                        .frame(maxWidth: isToday && !scheduled.isCompleted ? nil : .infinity)
+                        .padding(.vertical, AppSpacing.sm)
+                        .padding(.horizontal, AppSpacing.md)
+                        .background(
+                            Capsule()
+                                .fill(AppColors.surfaceLight)
+                        )
+                }
+            }
+            .padding(.top, AppSpacing.sm)
+        }
+        .padding(AppSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.medium)
+                .fill(AppColors.accentBlue.opacity(0.1))
         )
     }
 }
