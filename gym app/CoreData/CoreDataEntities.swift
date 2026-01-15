@@ -334,3 +334,88 @@ public class CustomExerciseTemplateEntity: NSManagedObject {
         }
     }
 }
+
+// MARK: - Implement Entity
+
+@objc(ImplementEntity)
+public class ImplementEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var name: String
+    @NSManaged public var measurables: NSSet?
+    @NSManaged public var exercises: NSSet?  // Inverse of ExerciseLibraryEntity.implements
+
+    var measurableArray: [MeasurableEntity] {
+        measurables?.allObjects as? [MeasurableEntity] ?? []
+    }
+
+    var exerciseArray: [ExerciseLibraryEntity] {
+        exercises?.allObjects as? [ExerciseLibraryEntity] ?? []
+    }
+}
+
+// MARK: - Measurable Entity
+
+@objc(MeasurableEntity)
+public class MeasurableEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var name: String
+    @NSManaged public var unit: String
+    @NSManaged public var defaultValue: Double
+    @NSManaged public var hasDefaultValue: Bool  // Track if defaultValue is set (since Double can't be nil)
+    @NSManaged public var implement: ImplementEntity?  // Optional - nil if intrinsic
+    @NSManaged public var exerciseLibrary: ExerciseLibraryEntity?  // Optional - for intrinsic measurables
+
+    var optionalDefaultValue: Double? {
+        get { hasDefaultValue ? defaultValue : nil }
+        set {
+            if let value = newValue {
+                defaultValue = value
+                hasDefaultValue = true
+            } else {
+                defaultValue = 0
+                hasDefaultValue = false
+            }
+        }
+    }
+}
+
+// MARK: - Muscle Group Entity
+
+@objc(MuscleGroupEntity)
+public class MuscleGroupEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var name: String
+    @NSManaged public var exercises: NSSet?
+
+    var exerciseArray: [ExerciseLibraryEntity] {
+        exercises?.allObjects as? [ExerciseLibraryEntity] ?? []
+    }
+}
+
+// MARK: - Exercise Library Entity
+
+@objc(ExerciseLibraryEntity)
+public class ExerciseLibraryEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var name: String
+    @NSManaged public var muscleGroups: NSSet?
+    @NSManaged public var intrinsicMeasurables: NSSet?  // For cardio exercises
+    @NSManaged public var implements: NSSet?  // Optional
+
+    var muscleGroupArray: [MuscleGroupEntity] {
+        muscleGroups?.allObjects as? [MuscleGroupEntity] ?? []
+    }
+
+    var intrinsicMeasurableArray: [MeasurableEntity] {
+        intrinsicMeasurables?.allObjects as? [MeasurableEntity] ?? []
+    }
+
+    var implementArray: [ImplementEntity] {
+        implements?.allObjects as? [ImplementEntity] ?? []
+    }
+
+    /// Validation: must have either intrinsicMeasurables or implements
+    var isValid: Bool {
+        !intrinsicMeasurableArray.isEmpty || !implementArray.isEmpty
+    }
+}

@@ -64,6 +64,12 @@ struct PersistenceController {
         let syncQueueEntity = createSyncQueueEntity()
         let customExerciseTemplateEntity = createCustomExerciseTemplateEntity()
 
+        // Create new library entities
+        let implementEntity = createImplementEntity()
+        let measurableEntity = createMeasurableEntity()
+        let muscleGroupEntity = createMuscleGroupEntity()
+        let exerciseLibraryEntity = createExerciseLibraryEntity()
+
         // Set up relationships
         setupRelationships(
             moduleEntity: moduleEntity,
@@ -78,12 +84,22 @@ struct PersistenceController {
             setDataEntity: setDataEntity
         )
 
+        // Set up library relationships
+        setupLibraryRelationships(
+            implementEntity: implementEntity,
+            measurableEntity: measurableEntity,
+            muscleGroupEntity: muscleGroupEntity,
+            exerciseLibraryEntity: exerciseLibraryEntity
+        )
+
         model.entities = [
             moduleEntity, exerciseEntity, setGroupEntity,
             workoutEntity, moduleReferenceEntity,
             sessionEntity, completedModuleEntity, sessionExerciseEntity,
             completedSetGroupEntity, setDataEntity, syncQueueEntity,
-            customExerciseTemplateEntity
+            customExerciseTemplateEntity,
+            // New library entities
+            implementEntity, measurableEntity, muscleGroupEntity, exerciseLibraryEntity
         ]
 
         return model
@@ -331,6 +347,61 @@ struct PersistenceController {
         return entity
     }
 
+    private static func createImplementEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "ImplementEntity"
+        entity.managedObjectClassName = "ImplementEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("name", type: .stringAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createMeasurableEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "MeasurableEntity"
+        entity.managedObjectClassName = "MeasurableEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("name", type: .stringAttributeType),
+            createAttribute("unit", type: .stringAttributeType),
+            createAttribute("defaultValue", type: .doubleAttributeType, optional: true),
+            createAttribute("hasDefaultValue", type: .booleanAttributeType, defaultValue: false)
+        ]
+
+        return entity
+    }
+
+    private static func createMuscleGroupEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "MuscleGroupEntity"
+        entity.managedObjectClassName = "MuscleGroupEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("name", type: .stringAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createExerciseLibraryEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "ExerciseLibraryEntity"
+        entity.managedObjectClassName = "ExerciseLibraryEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("name", type: .stringAttributeType)
+        ]
+
+        return entity
+    }
+
     // MARK: - Relationship Setup
 
     private static func setupRelationships(
@@ -498,6 +569,101 @@ struct PersistenceController {
 
         completedSetGroupEntity.properties.append(completedSetGroupToSets)
         setDataEntity.properties.append(setDataToSetGroup)
+    }
+
+    // MARK: - Library Relationship Setup
+
+    private static func setupLibraryRelationships(
+        implementEntity: NSEntityDescription,
+        measurableEntity: NSEntityDescription,
+        muscleGroupEntity: NSEntityDescription,
+        exerciseLibraryEntity: NSEntityDescription
+    ) {
+        // Implement <-> Measurable (one-to-many)
+        let implementToMeasurables = NSRelationshipDescription()
+        implementToMeasurables.name = "measurables"
+        implementToMeasurables.destinationEntity = measurableEntity
+        implementToMeasurables.minCount = 0
+        implementToMeasurables.maxCount = 0  // unlimited
+        implementToMeasurables.deleteRule = .cascadeDeleteRule
+
+        let measurableToImplement = NSRelationshipDescription()
+        measurableToImplement.name = "implement"
+        measurableToImplement.destinationEntity = implementEntity
+        measurableToImplement.minCount = 0
+        measurableToImplement.maxCount = 1
+        measurableToImplement.isOptional = true
+        measurableToImplement.deleteRule = .nullifyDeleteRule
+
+        implementToMeasurables.inverseRelationship = measurableToImplement
+        measurableToImplement.inverseRelationship = implementToMeasurables
+
+        implementEntity.properties.append(implementToMeasurables)
+        measurableEntity.properties.append(measurableToImplement)
+
+        // MuscleGroup <-> ExerciseLibrary (many-to-many)
+        let muscleGroupToExercises = NSRelationshipDescription()
+        muscleGroupToExercises.name = "exercises"
+        muscleGroupToExercises.destinationEntity = exerciseLibraryEntity
+        muscleGroupToExercises.minCount = 0
+        muscleGroupToExercises.maxCount = 0
+        muscleGroupToExercises.deleteRule = .nullifyDeleteRule
+
+        let exerciseToMuscleGroups = NSRelationshipDescription()
+        exerciseToMuscleGroups.name = "muscleGroups"
+        exerciseToMuscleGroups.destinationEntity = muscleGroupEntity
+        exerciseToMuscleGroups.minCount = 0
+        exerciseToMuscleGroups.maxCount = 0
+        exerciseToMuscleGroups.deleteRule = .nullifyDeleteRule
+
+        muscleGroupToExercises.inverseRelationship = exerciseToMuscleGroups
+        exerciseToMuscleGroups.inverseRelationship = muscleGroupToExercises
+
+        muscleGroupEntity.properties.append(muscleGroupToExercises)
+        exerciseLibraryEntity.properties.append(exerciseToMuscleGroups)
+
+        // ExerciseLibrary <-> Measurable (one-to-many for intrinsicMeasurables)
+        let exerciseToIntrinsicMeasurables = NSRelationshipDescription()
+        exerciseToIntrinsicMeasurables.name = "intrinsicMeasurables"
+        exerciseToIntrinsicMeasurables.destinationEntity = measurableEntity
+        exerciseToIntrinsicMeasurables.minCount = 0
+        exerciseToIntrinsicMeasurables.maxCount = 0
+        exerciseToIntrinsicMeasurables.deleteRule = .cascadeDeleteRule
+
+        let measurableToExerciseLibrary = NSRelationshipDescription()
+        measurableToExerciseLibrary.name = "exerciseLibrary"
+        measurableToExerciseLibrary.destinationEntity = exerciseLibraryEntity
+        measurableToExerciseLibrary.minCount = 0
+        measurableToExerciseLibrary.maxCount = 1
+        measurableToExerciseLibrary.isOptional = true
+        measurableToExerciseLibrary.deleteRule = .nullifyDeleteRule
+
+        exerciseToIntrinsicMeasurables.inverseRelationship = measurableToExerciseLibrary
+        measurableToExerciseLibrary.inverseRelationship = exerciseToIntrinsicMeasurables
+
+        exerciseLibraryEntity.properties.append(exerciseToIntrinsicMeasurables)
+        measurableEntity.properties.append(measurableToExerciseLibrary)
+
+        // ExerciseLibrary <-> Implement (many-to-many)
+        let exerciseToImplements = NSRelationshipDescription()
+        exerciseToImplements.name = "implements"
+        exerciseToImplements.destinationEntity = implementEntity
+        exerciseToImplements.minCount = 0
+        exerciseToImplements.maxCount = 0
+        exerciseToImplements.deleteRule = .nullifyDeleteRule
+
+        let implementToExercises = NSRelationshipDescription()
+        implementToExercises.name = "exercises"
+        implementToExercises.destinationEntity = exerciseLibraryEntity
+        implementToExercises.minCount = 0
+        implementToExercises.maxCount = 0
+        implementToExercises.deleteRule = .nullifyDeleteRule
+
+        exerciseToImplements.inverseRelationship = implementToExercises
+        implementToExercises.inverseRelationship = exerciseToImplements
+
+        exerciseLibraryEntity.properties.append(exerciseToImplements)
+        implementEntity.properties.append(implementToExercises)
     }
 
     // MARK: - Helper Functions
