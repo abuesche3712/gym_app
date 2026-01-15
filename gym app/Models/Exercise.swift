@@ -16,7 +16,6 @@ struct Exercise: Identifiable, Codable, Hashable {
     var distanceUnit: DistanceUnit  // Unit for distance tracking
     var setGroups: [SetGroup]
     var trackingMetrics: [MetricType]
-    var progressionType: ProgressionType
     var supersetGroupId: UUID?  // Exercises with same ID are in a superset
     var notes: String?
     var createdAt: Date
@@ -35,7 +34,6 @@ struct Exercise: Identifiable, Codable, Hashable {
         distanceUnit: DistanceUnit = .meters,
         setGroups: [SetGroup] = [],
         trackingMetrics: [MetricType]? = nil,
-        progressionType: ProgressionType = .none,
         supersetGroupId: UUID? = nil,
         notes: String? = nil,
         createdAt: Date = Date(),
@@ -50,7 +48,6 @@ struct Exercise: Identifiable, Codable, Hashable {
         self.cardioMetric = cardioMetric
         self.distanceUnit = distanceUnit
         self.setGroups = setGroups
-        self.progressionType = progressionType
         self.supersetGroupId = supersetGroupId
         self.notes = notes
         self.createdAt = createdAt

@@ -148,36 +148,6 @@ enum SyncOperation: String, Codable {
     case delete
 }
 
-// MARK: - Progression Rule Types
-
-enum ProgressionType: String, Codable, CaseIterable {
-    case none
-    case linear
-    case doubleProgression
-    case rpeBased
-    case wave
-    case topSetBackoff
-    case durationIncrease
-    case intervalProgression
-    case qualityGated
-    case manualConservative
-
-    var displayName: String {
-        switch self {
-        case .none: return "None"
-        case .linear: return "Linear"
-        case .doubleProgression: return "Double Progression"
-        case .rpeBased: return "RPE Based"
-        case .wave: return "Wave"
-        case .topSetBackoff: return "Top Set + Back-off"
-        case .durationIncrease: return "Duration Increase"
-        case .intervalProgression: return "Interval Progression"
-        case .qualityGated: return "Quality Gated"
-        case .manualConservative: return "Manual (Conservative)"
-        }
-    }
-}
-
 // MARK: - Weight Unit
 
 enum WeightUnit: String, Codable, CaseIterable {

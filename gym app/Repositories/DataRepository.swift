@@ -387,14 +387,19 @@ class DataRepository: ObservableObject {
             let exerciseEntity = ExerciseEntity(context: viewContext)
             exerciseEntity.id = exercise.id
             exerciseEntity.name = exercise.name
+            exerciseEntity.templateId = exercise.templateId
             exerciseEntity.exerciseType = exercise.exerciseType
+            exerciseEntity.cardioMetric = exercise.cardioMetric
+            exerciseEntity.distanceUnit = exercise.distanceUnit
             exerciseEntity.trackingMetrics = exercise.trackingMetrics
-            exerciseEntity.progressionType = exercise.progressionType
             exerciseEntity.notes = exercise.notes
             exerciseEntity.orderIndex = Int32(index)
             exerciseEntity.createdAt = exercise.createdAt
             exerciseEntity.updatedAt = exercise.updatedAt
             exerciseEntity.module = entity
+            // Library system fields
+            exerciseEntity.muscleGroupIds = exercise.muscleGroupIds
+            exerciseEntity.implementIds = exercise.implementIds
 
             // Add set groups
             let setGroupEntities = exercise.setGroups.enumerated().map { sgIndex, setGroup in
@@ -415,6 +420,11 @@ class DataRepository: ObservableObject {
                 sgEntity.isInterval = setGroup.isInterval
                 sgEntity.workDuration = Int32(setGroup.workDuration ?? 0)
                 sgEntity.intervalRestDuration = Int32(setGroup.intervalRestDuration ?? 0)
+                // Implement measurable fields
+                sgEntity.implementMeasurableLabel = setGroup.implementMeasurableLabel
+                sgEntity.implementMeasurableUnit = setGroup.implementMeasurableUnit
+                sgEntity.implementMeasurableValue = setGroup.implementMeasurableValue ?? 0
+                sgEntity.implementMeasurableStringValue = setGroup.implementMeasurableStringValue
                 return sgEntity
             }
             exerciseEntity.setGroups = NSOrderedSet(array: setGroupEntities)
@@ -439,20 +449,28 @@ class DataRepository: ObservableObject {
                     notes: sgEntity.notes,
                     isInterval: sgEntity.isInterval,
                     workDuration: sgEntity.workDuration > 0 ? Int(sgEntity.workDuration) : nil,
-                    intervalRestDuration: sgEntity.intervalRestDuration > 0 ? Int(sgEntity.intervalRestDuration) : nil
+                    intervalRestDuration: sgEntity.intervalRestDuration > 0 ? Int(sgEntity.intervalRestDuration) : nil,
+                    implementMeasurableLabel: sgEntity.implementMeasurableLabel,
+                    implementMeasurableUnit: sgEntity.implementMeasurableUnit,
+                    implementMeasurableValue: sgEntity.implementMeasurableValue > 0 ? sgEntity.implementMeasurableValue : nil,
+                    implementMeasurableStringValue: sgEntity.implementMeasurableStringValue
                 )
             }
 
             return Exercise(
                 id: exerciseEntity.id,
                 name: exerciseEntity.name,
+                templateId: exerciseEntity.templateId,
                 exerciseType: exerciseEntity.exerciseType,
+                cardioMetric: exerciseEntity.cardioMetric,
+                distanceUnit: exerciseEntity.distanceUnit,
                 setGroups: setGroups,
                 trackingMetrics: exerciseEntity.trackingMetrics,
-                progressionType: exerciseEntity.progressionType,
                 notes: exerciseEntity.notes,
                 createdAt: exerciseEntity.createdAt,
-                updatedAt: exerciseEntity.updatedAt
+                updatedAt: exerciseEntity.updatedAt,
+                muscleGroupIds: exerciseEntity.muscleGroupIds,
+                implementIds: exerciseEntity.implementIds
             )
         }
 

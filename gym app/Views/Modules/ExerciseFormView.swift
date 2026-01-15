@@ -26,7 +26,6 @@ struct ExerciseFormView: View {
     @State private var trackTime: Bool = true
     @State private var trackDistance: Bool = false
     @State private var distanceUnit: DistanceUnit = .meters
-    @State private var progressionType: ProgressionType = .none
     @State private var notes: String = ""
     @State private var setGroups: [SetGroup] = []
 
@@ -80,6 +79,7 @@ struct ExerciseFormView: View {
                     exerciseType: exerciseType,
                     cardioMetric: cardioMetric,
                     distanceUnit: distanceUnit,
+                    implementIds: implementIds,
                     existingSetGroup: nil
                 ) { newSetGroup in
                     setGroups.append(newSetGroup)
@@ -92,6 +92,7 @@ struct ExerciseFormView: View {
                     exerciseType: exerciseType,
                     cardioMetric: cardioMetric,
                     distanceUnit: distanceUnit,
+                    implementIds: implementIds,
                     existingSetGroup: setGroups[editing.index]
                 ) { updatedSetGroup in
                     setGroups[editing.index] = updatedSetGroup
@@ -155,12 +156,6 @@ struct ExerciseFormView: View {
             // Cardio-specific options
             if exerciseType == .cardio {
                 cardioOptionsSection
-            }
-
-            Picker("Progression", selection: $progressionType) {
-                ForEach(ProgressionType.allCases, id: \.self) { type in
-                    Text(type.displayName).tag(type)
-                }
             }
         }
     }
@@ -304,7 +299,6 @@ struct ExerciseFormView: View {
             trackTime = exercise.cardioMetric.tracksTime
             trackDistance = exercise.cardioMetric.tracksDistance
             distanceUnit = exercise.distanceUnit
-            progressionType = exercise.progressionType
             notes = exercise.notes ?? ""
             setGroups = exercise.setGroups
             muscleGroupIds = exercise.muscleGroupIds
@@ -328,7 +322,6 @@ struct ExerciseFormView: View {
             existingExercise.exerciseType = exerciseType
             existingExercise.cardioMetric = cardioMetric
             existingExercise.distanceUnit = distanceUnit
-            existingExercise.progressionType = progressionType
             existingExercise.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
             existingExercise.setGroups = setGroups
             existingExercise.muscleGroupIds = muscleGroupIds
@@ -347,7 +340,6 @@ struct ExerciseFormView: View {
                 cardioMetric: cardioMetric,
                 distanceUnit: distanceUnit,
                 setGroups: setGroups,
-                progressionType: progressionType,
                 notes: trimmedNotes.isEmpty ? nil : trimmedNotes,
                 muscleGroupIds: muscleGroupIds,
                 implementIds: implementIds

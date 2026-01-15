@@ -25,6 +25,12 @@ struct SetGroup: Identifiable, Codable, Hashable {
     var workDuration: Int?  // seconds of work per round
     var intervalRestDuration: Int?  // seconds of rest between rounds
 
+    // Implement-specific measurable fields
+    var implementMeasurableLabel: String?  // e.g., "Height", "Color"
+    var implementMeasurableUnit: String?   // e.g., "in", "cm", ""
+    var implementMeasurableValue: Double?  // numeric value (height, etc)
+    var implementMeasurableStringValue: String?  // string value (band color)
+
     init(
         id: UUID = UUID(),
         sets: Int,
@@ -39,7 +45,11 @@ struct SetGroup: Identifiable, Codable, Hashable {
         notes: String? = nil,
         isInterval: Bool = false,
         workDuration: Int? = nil,
-        intervalRestDuration: Int? = nil
+        intervalRestDuration: Int? = nil,
+        implementMeasurableLabel: String? = nil,
+        implementMeasurableUnit: String? = nil,
+        implementMeasurableValue: Double? = nil,
+        implementMeasurableStringValue: String? = nil
     ) {
         self.id = id
         self.sets = sets
@@ -55,6 +65,10 @@ struct SetGroup: Identifiable, Codable, Hashable {
         self.isInterval = isInterval
         self.workDuration = workDuration
         self.intervalRestDuration = intervalRestDuration
+        self.implementMeasurableLabel = implementMeasurableLabel
+        self.implementMeasurableUnit = implementMeasurableUnit
+        self.implementMeasurableValue = implementMeasurableValue
+        self.implementMeasurableStringValue = implementMeasurableStringValue
     }
 
     /// Total duration of the interval workout (all rounds)
@@ -84,7 +98,15 @@ struct SetGroup: Identifiable, Codable, Hashable {
             parts.append("\(sets) sets")
         }
 
-        if let weight = targetWeight {
+        // Show implement-specific measurable OR weight
+        if let label = implementMeasurableLabel {
+            if let stringVal = implementMeasurableStringValue, !stringVal.isEmpty {
+                parts.append("@ \(stringVal) \(label)")
+            } else if let numVal = implementMeasurableValue {
+                let unit = implementMeasurableUnit ?? ""
+                parts.append("@ \(formatWeight(numVal))\(unit)")
+            }
+        } else if let weight = targetWeight {
             parts.append("@ \(formatWeight(weight)) lbs")
         }
 

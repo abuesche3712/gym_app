@@ -44,7 +44,6 @@ public class ExerciseEntity: NSManagedObject {
     @NSManaged public var name: String
     @NSManaged public var exerciseTypeRaw: String
     @NSManaged public var trackingMetricsRaw: String
-    @NSManaged public var progressionTypeRaw: String
     @NSManaged public var notes: String?
     @NSManaged public var orderIndex: Int32
     @NSManaged public var createdAt: Date
@@ -56,14 +55,48 @@ public class ExerciseEntity: NSManagedObject {
     @NSManaged public var exerciseLibraryId: UUID?
     @NSManaged public var exerciseLibrary: ExerciseLibraryEntity?
 
+    // Library system fields (direct storage for muscle groups and implements)
+    @NSManaged public var muscleGroupIdsRaw: String?
+    @NSManaged public var implementIdsRaw: String?
+
+    // Additional exercise fields
+    @NSManaged public var templateId: UUID?
+    @NSManaged public var cardioMetricRaw: String?
+    @NSManaged public var distanceUnitRaw: String?
+
+    var cardioMetric: CardioMetric {
+        get { CardioMetric(rawValue: cardioMetricRaw ?? "") ?? .timeOnly }
+        set { cardioMetricRaw = newValue.rawValue }
+    }
+
+    var distanceUnit: DistanceUnit {
+        get { DistanceUnit(rawValue: distanceUnitRaw ?? "") ?? .meters }
+        set { distanceUnitRaw = newValue.rawValue }
+    }
+
+    var muscleGroupIds: Set<UUID> {
+        get {
+            guard let raw = muscleGroupIdsRaw else { return [] }
+            return Set(raw.split(separator: ",").compactMap { UUID(uuidString: String($0)) })
+        }
+        set {
+            muscleGroupIdsRaw = newValue.isEmpty ? nil : newValue.map { $0.uuidString }.joined(separator: ",")
+        }
+    }
+
+    var implementIds: Set<UUID> {
+        get {
+            guard let raw = implementIdsRaw else { return [] }
+            return Set(raw.split(separator: ",").compactMap { UUID(uuidString: String($0)) })
+        }
+        set {
+            implementIdsRaw = newValue.isEmpty ? nil : newValue.map { $0.uuidString }.joined(separator: ",")
+        }
+    }
+
     var exerciseType: ExerciseType {
         get { ExerciseType(rawValue: exerciseTypeRaw) ?? .strength }
         set { exerciseTypeRaw = newValue.rawValue }
-    }
-
-    var progressionType: ProgressionType {
-        get { ProgressionType(rawValue: progressionTypeRaw) ?? .none }
-        set { progressionTypeRaw = newValue.rawValue }
     }
 
     var trackingMetrics: [MetricType] {
@@ -130,6 +163,12 @@ public class SetGroupEntity: NSManagedObject {
     @NSManaged public var targetDuration: Int32
     @NSManaged public var targetDistance: Double
     @NSManaged public var targetHoldTime: Int32
+
+    // Implement-specific measurable fields
+    @NSManaged public var implementMeasurableLabel: String?
+    @NSManaged public var implementMeasurableUnit: String?
+    @NSManaged public var implementMeasurableValue: Double
+    @NSManaged public var implementMeasurableStringValue: String?
 
     var targetValueArray: [TargetValueEntity] {
         targetValues?.allObjects as? [TargetValueEntity] ?? []

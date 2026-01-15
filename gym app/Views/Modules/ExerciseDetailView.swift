@@ -30,10 +30,6 @@ struct ExerciseDetailView: View {
             Section("Info") {
                 LabeledContent("Name", value: currentExercise.name)
                 LabeledContent("Type", value: currentExercise.exerciseType.displayName)
-
-                if currentExercise.progressionType != .none {
-                    LabeledContent("Progression", value: currentExercise.progressionType.displayName)
-                }
             }
 
             // Muscles & Equipment

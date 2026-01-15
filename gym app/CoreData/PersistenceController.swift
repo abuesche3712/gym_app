@@ -148,13 +148,19 @@ struct PersistenceController {
             createAttribute("name", type: .stringAttributeType),
             createAttribute("exerciseTypeRaw", type: .stringAttributeType),
             createAttribute("trackingMetricsRaw", type: .stringAttributeType),
-            createAttribute("progressionTypeRaw", type: .stringAttributeType),
             createAttribute("notes", type: .stringAttributeType, optional: true),
             createAttribute("orderIndex", type: .integer32AttributeType),
             createAttribute("createdAt", type: .dateAttributeType),
             createAttribute("updatedAt", type: .dateAttributeType),
             // Library system reference (optional for backward compatibility)
-            createAttribute("exerciseLibraryId", type: .UUIDAttributeType, optional: true)
+            createAttribute("exerciseLibraryId", type: .UUIDAttributeType, optional: true),
+            // Library system fields (direct storage for muscle groups and implements)
+            createAttribute("muscleGroupIdsRaw", type: .stringAttributeType, optional: true),
+            createAttribute("implementIdsRaw", type: .stringAttributeType, optional: true),
+            // Additional exercise fields
+            createAttribute("templateId", type: .UUIDAttributeType, optional: true),
+            createAttribute("cardioMetricRaw", type: .stringAttributeType, optional: true),
+            createAttribute("distanceUnitRaw", type: .stringAttributeType, optional: true)
         ]
 
         return entity
@@ -180,7 +186,12 @@ struct PersistenceController {
             // Interval mode fields
             createAttribute("isInterval", type: .booleanAttributeType, optional: true),
             createAttribute("workDuration", type: .integer32AttributeType, optional: true),
-            createAttribute("intervalRestDuration", type: .integer32AttributeType, optional: true)
+            createAttribute("intervalRestDuration", type: .integer32AttributeType, optional: true),
+            // Implement-specific measurable fields
+            createAttribute("implementMeasurableLabel", type: .stringAttributeType, optional: true),
+            createAttribute("implementMeasurableUnit", type: .stringAttributeType, optional: true),
+            createAttribute("implementMeasurableValue", type: .doubleAttributeType, optional: true),
+            createAttribute("implementMeasurableStringValue", type: .stringAttributeType, optional: true)
         ]
 
         return entity
