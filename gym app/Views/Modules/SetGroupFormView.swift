@@ -13,6 +13,7 @@ struct SetGroupFormView: View {
 
     let exerciseType: ExerciseType
     let cardioMetric: CardioMetric
+    let mobilityTracking: MobilityTracking
     let distanceUnit: DistanceUnit
     let implementIds: Set<UUID>
     let existingSetGroup: SetGroup?
@@ -201,7 +202,12 @@ struct SetGroupFormView: View {
             implementMeasurableField
 
         case .mobility:
-            Stepper("Reps: \(targetReps)", value: $targetReps, in: 1...50)
+            if mobilityTracking.tracksReps {
+                Stepper("Reps: \(targetReps)", value: $targetReps, in: 1...50)
+            }
+            if mobilityTracking.tracksDuration {
+                TimePickerView(totalSeconds: $targetDuration, maxMinutes: 10, label: "Duration")
+            }
             implementMeasurableField
 
         case .explosive:
@@ -274,10 +280,10 @@ struct SetGroupFormView: View {
         let setGroup = SetGroup(
             id: existingSetGroup?.id ?? UUID(),
             sets: sets,
-            targetReps: !isInterval && (exerciseType == .strength || exerciseType == .mobility || exerciseType == .explosive) ? (targetReps > 0 ? targetReps : nil) : nil,
+            targetReps: !isInterval && (exerciseType == .strength || (exerciseType == .mobility && mobilityTracking.tracksReps) || exerciseType == .explosive) ? (targetReps > 0 ? targetReps : nil) : nil,
             targetWeight: !isInterval ? weightValue : nil,
             targetRPE: !isInterval && targetRPE > 0 ? targetRPE : nil,
-            targetDuration: !isInterval && cardioMetric.tracksTime && targetDuration > 0 ? targetDuration : nil,
+            targetDuration: !isInterval && ((exerciseType == .cardio && cardioMetric.tracksTime) || (exerciseType == .mobility && mobilityTracking.tracksDuration) || exerciseType == .recovery) && targetDuration > 0 ? targetDuration : nil,
             targetDistance: !isInterval && cardioMetric.tracksDistance ? Double(targetDistance) : nil,
             targetDistanceUnit: !isInterval && cardioMetric.tracksDistance ? distanceUnit : nil,
             targetHoldTime: !isInterval && targetHoldTime > 0 ? targetHoldTime : nil,

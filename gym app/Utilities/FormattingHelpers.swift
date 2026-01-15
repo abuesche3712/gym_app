@@ -63,6 +63,17 @@ func formatDistance(_ distance: Double) -> String {
     return String(format: "%.2f", distance)
 }
 
+// MARK: - Height Formatting
+
+/// Formats height in inches with feet conversion for display
+/// e.g., 24.0 -> "24\"", 36.5 -> "36.5\""
+func formatHeight(_ height: Double) -> String {
+    if height == floor(height) {
+        return "\(Int(height))\""
+    }
+    return String(format: "%.1f\"", height)
+}
+
 // MARK: - Volume Formatting
 
 /// Formats volume with "k" suffix for thousands

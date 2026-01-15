@@ -26,8 +26,8 @@ enum ModuleType: String, Codable, CaseIterable, Identifiable {
         case .prehab: return "Prehab"
         case .explosive: return "Explosive"
         case .strength: return "Strength"
-        case .cardioLong: return "Cardio (Long)"
-        case .cardioSpeed: return "Cardio (Speed)"
+        case .cardioLong: return "Cardio"
+        case .cardioSpeed: return "High Intensity"
         case .recovery: return "Recovery"
         }
     }
@@ -306,3 +306,63 @@ enum CardioTracking: String, Codable, CaseIterable, Identifiable {
 
 // Legacy alias for backward compatibility
 typealias CardioMetric = CardioTracking
+
+// MARK: - Mobility Tracking Options
+
+enum MobilityTracking: String, Codable, CaseIterable, Identifiable {
+    case repsOnly = "reps"
+    case durationOnly = "duration"
+    case both = "both"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .repsOnly: return "Reps Only"
+        case .durationOnly: return "Duration Only"
+        case .both: return "Reps & Duration"
+        }
+    }
+
+    var tracksReps: Bool {
+        self != .durationOnly
+    }
+
+    var tracksDuration: Bool {
+        self != .repsOnly
+    }
+}
+
+// MARK: - Progression Recommendation
+
+enum ProgressionRecommendation: String, Codable, CaseIterable, Identifiable {
+    case regress
+    case stay
+    case progress
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .regress: return "Regress"
+        case .stay: return "Stay"
+        case .progress: return "Progress"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .regress: return "arrow.down.circle"
+        case .stay: return "equal.circle"
+        case .progress: return "arrow.up.circle"
+        }
+    }
+
+    var color: String {
+        switch self {
+        case .regress: return "orange"
+        case .stay: return "blue"
+        case .progress: return "green"
+        }
+    }
+}

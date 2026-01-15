@@ -130,6 +130,9 @@ struct SessionExercise: Identifiable, Codable, Hashable {
     var originalExerciseName: String? // Original name if substituted
     var isAdHoc: Bool // True if added during session
 
+    // Progression tracking
+    var progressionRecommendation: ProgressionRecommendation? // User's recommendation for next session
+
     init(
         id: UUID = UUID(),
         exerciseId: UUID,
@@ -144,7 +147,8 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         recoveryActivityType: RecoveryActivityType? = nil,
         isSubstitution: Bool = false,
         originalExerciseName: String? = nil,
-        isAdHoc: Bool = false
+        isAdHoc: Bool = false,
+        progressionRecommendation: ProgressionRecommendation? = nil
     ) {
         self.id = id
         self.exerciseId = exerciseId
@@ -160,6 +164,7 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         self.isSubstitution = isSubstitution
         self.originalExerciseName = originalExerciseName
         self.isAdHoc = isAdHoc
+        self.progressionRecommendation = progressionRecommendation
     }
 
     var isInSuperset: Bool {

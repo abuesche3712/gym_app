@@ -144,7 +144,7 @@ struct ActiveSessionView: View {
                 Text("Are you sure you want to cancel? Your progress will not be saved.")
             }
             .sheet(isPresented: $showingEndConfirmation) {
-                EndSessionSheet { feeling, notes in
+                EndSessionSheet(session: $sessionViewModel.currentSession) { feeling, notes in
                     sessionViewModel.endSession(feeling: feeling, notes: notes)
                     dismiss()
                 }
@@ -1248,25 +1248,31 @@ struct ActiveSessionView: View {
                         Text("Last Session")
                             .font(.subheadline.weight(.semibold))
                             .foregroundColor(AppColors.textSecondary)
+
+                        Spacer()
+
+                        // Show progression recommendation if set
+                        if let progression = lastData.progressionRecommendation {
+                            HStack(spacing: 4) {
+                                Image(systemName: progression.icon)
+                                    .font(.system(size: 12))
+                                Text(progression.displayName)
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .foregroundColor(Color(progression.color))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(Color(progression.color).opacity(0.15))
+                            )
+                        }
                     }
 
                     VStack(spacing: AppSpacing.sm) {
                         ForEach(lastData.completedSetGroups) { setGroup in
                             ForEach(setGroup.sets) { set in
-                                if let formatted = set.formattedStrength ?? set.formattedIsometric ?? set.formattedCardio {
-                                    HStack {
-                                        Text("Set \(set.setNumber)")
-                                            .font(.caption)
-                                            .foregroundColor(AppColors.textTertiary)
-                                            .frame(width: 50, alignment: .leading)
-
-                                        Text(formatted)
-                                            .font(.subheadline.weight(.medium))
-                                            .foregroundColor(AppColors.textSecondary)
-
-                                        Spacer()
-                                    }
-                                }
+                                previousSetRow(set: set, exercise: lastData)
                             }
                         }
                     }
@@ -1278,6 +1284,110 @@ struct ActiveSessionView: View {
                 )
             }
         }
+    }
+
+    @ViewBuilder
+    private func previousSetRow(set: SetData, exercise: SessionExercise) -> some View {
+        HStack(spacing: AppSpacing.sm) {
+            // Set number badge
+            Text("\(set.setNumber)")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(AppColors.textTertiary)
+                .frame(width: 20, height: 20)
+                .background(Circle().fill(AppColors.surfaceLight))
+
+            // Metrics based on exercise type
+            HStack(spacing: AppSpacing.sm) {
+                switch exercise.exerciseType {
+                case .strength:
+                    if exercise.isBodyweight {
+                        if let reps = set.reps {
+                            if let weight = set.weight, weight > 0 {
+                                metricPill(value: "BW+\(formatWeight(weight))", label: nil, color: AppColors.accentBlue)
+                            } else {
+                                metricPill(value: "BW", label: nil, color: AppColors.accentBlue)
+                            }
+                            metricPill(value: "\(reps)", label: "reps", color: AppColors.accentTeal)
+                        }
+                    } else {
+                        if let weight = set.weight {
+                            metricPill(value: formatWeight(weight), label: "lbs", color: AppColors.accentBlue)
+                        }
+                        if let reps = set.reps {
+                            metricPill(value: "\(reps)", label: "reps", color: AppColors.accentTeal)
+                        }
+                    }
+                    if let rpe = set.rpe {
+                        metricPill(value: "\(rpe)", label: "RPE", color: AppColors.warning)
+                    }
+
+                case .isometric:
+                    if let holdTime = set.holdTime {
+                        metricPill(value: formatDuration(holdTime), label: "hold", color: AppColors.accentBlue)
+                    }
+                    if let intensity = set.intensity {
+                        metricPill(value: "\(intensity)/10", label: nil, color: AppColors.warning)
+                    }
+
+                case .cardio:
+                    if let duration = set.duration, duration > 0 {
+                        metricPill(value: formatDuration(duration), label: "time", color: AppColors.accentBlue)
+                    }
+                    if let distance = set.distance, distance > 0 {
+                        metricPill(value: formatDistance(distance), label: exercise.distanceUnit.abbreviation, color: AppColors.accentTeal)
+                    }
+
+                case .explosive:
+                    if let reps = set.reps {
+                        metricPill(value: "\(reps)", label: "reps", color: AppColors.accentTeal)
+                    }
+                    if let height = set.height {
+                        metricPill(value: formatHeight(height), label: nil, color: AppColors.accentBlue)
+                    }
+                    if let quality = set.quality {
+                        metricPill(value: "\(quality)/5", label: nil, color: AppColors.warning)
+                    }
+
+                case .mobility:
+                    if let reps = set.reps {
+                        metricPill(value: "\(reps)", label: "reps", color: AppColors.accentTeal)
+                    }
+                    if let duration = set.duration, duration > 0 {
+                        metricPill(value: formatDuration(duration), label: nil, color: AppColors.accentBlue)
+                    }
+
+                case .recovery:
+                    if let duration = set.duration {
+                        metricPill(value: formatDuration(duration), label: nil, color: AppColors.accentBlue)
+                    }
+                    if let temp = set.temperature {
+                        metricPill(value: "\(temp)°F", label: nil, color: AppColors.warning)
+                    }
+                }
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func metricPill(value: String, label: String?, color: Color) -> some View {
+        HStack(spacing: 2) {
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(color)
+            if let label = label {
+                Text(label)
+                    .font(.caption2)
+                    .foregroundColor(AppColors.textTertiary)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(color.opacity(0.1))
+        )
     }
 
     // MARK: - Rest Timer Overlay

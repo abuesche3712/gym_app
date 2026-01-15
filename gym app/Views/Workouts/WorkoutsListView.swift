@@ -15,6 +15,7 @@ struct WorkoutsListView: View {
     @State private var showingAddWorkout = false
     @State private var searchText = ""
     @State private var selectedWorkout: Workout?
+    @State private var editingWorkout: Workout?
     @State private var showingActiveSession = false
 
     var filteredWorkouts: [Workout] {
@@ -54,7 +55,7 @@ struct WorkoutsListView: View {
                             )
                             .contextMenu {
                                 Button {
-                                    selectedWorkout = workout
+                                    editingWorkout = workout
                                 } label: {
                                     Label("Edit", systemImage: "pencil")
                                 }
@@ -100,6 +101,11 @@ struct WorkoutsListView: View {
             .sheet(item: $selectedWorkout) { workout in
                 NavigationStack {
                     WorkoutDetailView(workout: workout)
+                }
+            }
+            .sheet(item: $editingWorkout) { workout in
+                NavigationStack {
+                    WorkoutFormView(workout: workout)
                 }
             }
             .fullScreenCover(isPresented: $showingActiveSession) {

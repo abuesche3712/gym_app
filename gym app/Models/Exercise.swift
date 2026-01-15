@@ -13,6 +13,7 @@ struct Exercise: Identifiable, Codable, Hashable {
     var templateId: UUID?  // Links to ExerciseLibrary for progress tracking
     var exerciseType: ExerciseType
     var cardioMetric: CardioMetric  // Time-based or distance-based (for cardio)
+    var mobilityTracking: MobilityTracking  // Reps, duration, or both (for mobility)
     var distanceUnit: DistanceUnit  // Unit for distance tracking
     var setGroups: [SetGroup]
     var trackingMetrics: [MetricType]
@@ -35,6 +36,7 @@ struct Exercise: Identifiable, Codable, Hashable {
         templateId: UUID? = nil,
         exerciseType: ExerciseType,
         cardioMetric: CardioMetric = .timeOnly,
+        mobilityTracking: MobilityTracking = .repsOnly,
         distanceUnit: DistanceUnit = .meters,
         setGroups: [SetGroup] = [],
         trackingMetrics: [MetricType]? = nil,
@@ -52,6 +54,7 @@ struct Exercise: Identifiable, Codable, Hashable {
         self.templateId = templateId
         self.exerciseType = exerciseType
         self.cardioMetric = cardioMetric
+        self.mobilityTracking = mobilityTracking
         self.distanceUnit = distanceUnit
         self.setGroups = setGroups
         self.supersetGroupId = supersetGroupId
@@ -84,6 +87,16 @@ struct Exercise: Identifiable, Codable, Hashable {
     /// Legacy: Whether this is primarily distance-based (for target display)
     var isDistanceBased: Bool {
         exerciseType == .cardio && cardioMetric == .distanceOnly
+    }
+
+    /// Whether this mobility exercise should log reps
+    var mobilityTracksReps: Bool {
+        exerciseType == .mobility && mobilityTracking.tracksReps
+    }
+
+    /// Whether this mobility exercise should log duration
+    var mobilityTracksDuration: Bool {
+        exerciseType == .mobility && mobilityTracking.tracksDuration
     }
 
     var isInSuperset: Bool {

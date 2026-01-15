@@ -372,7 +372,7 @@ struct QuickExerciseFormView: View {
                             }
                         }
                         if cardioMetric.tracksTime {
-                            Stepper("Duration: \(targetDuration / 60):\(String(format: "%02d", targetDuration % 60))", value: $targetDuration, in: 10...3600, step: 30)
+                            TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, label: "Duration")
                         }
                         if cardioMetric.tracksDistance {
                             HStack {
@@ -392,13 +392,13 @@ struct QuickExerciseFormView: View {
                         }
 
                     case .isometric:
-                        Stepper("Hold: \(targetHoldTime)s", value: $targetHoldTime, in: 5...300, step: 5)
+                        TimePickerView(totalSeconds: $targetHoldTime, maxMinutes: 5, label: "Hold Time")
 
                     case .mobility, .explosive:
                         Stepper("Reps: \(reps)", value: $reps, in: 1...100)
 
                     case .recovery:
-                        Stepper("Duration: \(targetDuration / 60):\(String(format: "%02d", targetDuration % 60))", value: $targetDuration, in: 30...3600, step: 30)
+                        TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, label: "Duration")
                     }
 
                     Stepper("Rest: \(restPeriod)s", value: $restPeriod, in: 0...300, step: 15)

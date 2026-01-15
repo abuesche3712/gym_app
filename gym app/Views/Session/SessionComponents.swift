@@ -316,13 +316,19 @@ struct SetRowView: View {
                                 .padding(.horizontal, 8)
                                 .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
                         } else {
-                            Text(formatDuration(inputDuration))
-                                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
-                                .frame(minWidth: 60)
-                                .padding(.vertical, 10)
-                                .padding(.horizontal, 8)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                            // Tappable to manually edit time
+                            Button {
+                                showTimePicker = true
+                            } label: {
+                                Text(formatDuration(inputDuration))
+                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                    .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
+                                    .frame(minWidth: 60)
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 8)
+                                    .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                            }
+                            .buttonStyle(.plain)
                         }
 
                         Button {

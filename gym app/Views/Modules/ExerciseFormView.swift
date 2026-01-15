@@ -26,6 +26,8 @@ struct ExerciseFormView: View {
     @State private var trackTime: Bool = true
     @State private var trackDistance: Bool = false
     @State private var distanceUnit: DistanceUnit = .meters
+    @State private var trackReps: Bool = true
+    @State private var trackDuration: Bool = false
     @State private var notes: String = ""
     @State private var setGroups: [SetGroup] = []
 
@@ -58,6 +60,17 @@ struct ExerciseFormView: View {
         }
     }
 
+    /// Computed MobilityTracking from toggle states
+    private var mobilityTracking: MobilityTracking {
+        if trackReps && trackDuration {
+            return .both
+        } else if trackDuration {
+            return .durationOnly
+        } else {
+            return .repsOnly
+        }
+    }
+
     var body: some View {
         Form {
             exerciseSection
@@ -86,6 +99,7 @@ struct ExerciseFormView: View {
                 SetGroupFormView(
                     exerciseType: exerciseType,
                     cardioMetric: cardioMetric,
+                    mobilityTracking: mobilityTracking,
                     distanceUnit: distanceUnit,
                     implementIds: implementIds,
                     existingSetGroup: nil
@@ -99,6 +113,7 @@ struct ExerciseFormView: View {
                 SetGroupFormView(
                     exerciseType: exerciseType,
                     cardioMetric: cardioMetric,
+                    mobilityTracking: mobilityTracking,
                     distanceUnit: distanceUnit,
                     implementIds: implementIds,
                     existingSetGroup: setGroups[editing.index]
@@ -165,6 +180,11 @@ struct ExerciseFormView: View {
             if exerciseType == .cardio {
                 cardioOptionsSection
             }
+
+            // Mobility-specific options
+            if exerciseType == .mobility {
+                mobilityOptionsSection
+            }
         }
     }
 
@@ -195,6 +215,28 @@ struct ExerciseFormView: View {
                     Text(unit.displayName).tag(unit)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var mobilityOptionsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Track During Workout")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+
+            Toggle("Reps", isOn: $trackReps)
+                .onChange(of: trackReps) { _, newValue in
+                    if !newValue && !trackDuration {
+                        trackDuration = true
+                    }
+                }
+            Toggle("Duration", isOn: $trackDuration)
+                .onChange(of: trackDuration) { _, newValue in
+                    if !newValue && !trackReps {
+                        trackReps = true
+                    }
+                }
         }
     }
 
@@ -306,6 +348,8 @@ struct ExerciseFormView: View {
             exerciseType = exercise.exerciseType
             trackTime = exercise.cardioMetric.tracksTime
             trackDistance = exercise.cardioMetric.tracksDistance
+            trackReps = exercise.mobilityTracking.tracksReps
+            trackDuration = exercise.mobilityTracking.tracksDuration
             distanceUnit = exercise.distanceUnit
             notes = exercise.notes ?? ""
             setGroups = exercise.setGroups
@@ -329,6 +373,7 @@ struct ExerciseFormView: View {
             existingExercise.templateId = selectedTemplate?.id
             existingExercise.exerciseType = exerciseType
             existingExercise.cardioMetric = cardioMetric
+            existingExercise.mobilityTracking = mobilityTracking
             existingExercise.distanceUnit = distanceUnit
             existingExercise.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
             existingExercise.setGroups = setGroups
@@ -347,6 +392,7 @@ struct ExerciseFormView: View {
                 templateId: selectedTemplate?.id,
                 exerciseType: exerciseType,
                 cardioMetric: cardioMetric,
+                mobilityTracking: mobilityTracking,
                 distanceUnit: distanceUnit,
                 setGroups: setGroups,
                 notes: trimmedNotes.isEmpty ? nil : trimmedNotes,

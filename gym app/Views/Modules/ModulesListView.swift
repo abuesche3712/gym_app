@@ -71,7 +71,7 @@ struct ModulesListView: View {
                         LazyVStack(spacing: AppSpacing.md) {
                             ForEach(filteredModules) { module in
                                 NavigationLink(destination: ModuleDetailView(module: module)) {
-                                    ModuleListCard(module: module)
+                                    ModuleListCard(module: module, showExercises: selectedType != nil)
                                 }
                                 .buttonStyle(.plain)
                                 .contextMenu {
@@ -151,67 +151,111 @@ struct FilterPill: View {
 
 struct ModuleListCard: View {
     let module: Module
+    var showExercises: Bool = false
 
     var body: some View {
-        HStack(spacing: AppSpacing.md) {
-            // Icon
-            ZStack {
-                RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(AppColors.moduleColor(module.type).opacity(0.15))
-                    .frame(width: 48, height: 48)
+        VStack(alignment: .leading, spacing: 0) {
+            // Header row
+            HStack(spacing: AppSpacing.md) {
+                // Icon
+                ZStack {
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .fill(AppColors.moduleColor(module.type).opacity(0.15))
+                        .frame(width: 48, height: 48)
 
-                Image(systemName: module.type.icon)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(AppColors.moduleColor(module.type))
-            }
-
-            // Content
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text(module.name)
-                    .font(.headline)
-                    .foregroundColor(AppColors.textPrimary)
-
-                HStack(spacing: AppSpacing.sm) {
-                    // Type badge
-                    Text(module.type.displayName)
-                        .font(.caption.weight(.medium))
+                    Image(systemName: module.type.icon)
+                        .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(AppColors.moduleColor(module.type))
-                        .padding(.horizontal, AppSpacing.sm)
-                        .padding(.vertical, 2)
-                        .background(
-                            Capsule()
-                                .fill(AppColors.moduleColor(module.type).opacity(0.15))
-                        )
+                }
 
-                    // Exercise count
-                    HStack(spacing: 4) {
-                        Image(systemName: "list.bullet")
-                            .font(.system(size: 10))
-                        Text("\(module.exercises.count)")
-                    }
-                    .font(.caption)
-                    .foregroundColor(AppColors.textSecondary)
+                // Content
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text(module.name)
+                        .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
 
-                    // Duration
-                    if let duration = module.estimatedDuration {
+                    HStack(spacing: AppSpacing.sm) {
+                        // Type badge
+                        Text(module.type.displayName)
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(AppColors.moduleColor(module.type))
+                            .padding(.horizontal, AppSpacing.sm)
+                            .padding(.vertical, 2)
+                            .background(
+                                Capsule()
+                                    .fill(AppColors.moduleColor(module.type).opacity(0.15))
+                            )
+
+                        // Exercise count
                         HStack(spacing: 4) {
-                            Image(systemName: "clock")
+                            Image(systemName: "list.bullet")
                                 .font(.system(size: 10))
-                            Text("\(duration)m")
+                            Text("\(module.exercises.count)")
                         }
                         .font(.caption)
                         .foregroundColor(AppColors.textSecondary)
+
+                        // Duration
+                        if let duration = module.estimatedDuration {
+                            HStack(spacing: 4) {
+                                Image(systemName: "clock")
+                                    .font(.system(size: 10))
+                                Text("\(duration)m")
+                            }
+                            .font(.caption)
+                            .foregroundColor(AppColors.textSecondary)
+                        }
                     }
                 }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(AppColors.textTertiary)
             }
+            .padding(AppSpacing.cardPadding)
 
-            Spacer()
+            // Exercise list (only when filtered to specific type)
+            if showExercises && !module.exercises.isEmpty {
+                Divider()
+                    .background(AppColors.border.opacity(0.5))
+                    .padding(.horizontal, AppSpacing.cardPadding)
 
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(AppColors.textTertiary)
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    ForEach(module.exercises.prefix(5)) { exercise in
+                        HStack(spacing: AppSpacing.sm) {
+                            Image(systemName: exercise.exerciseType.icon)
+                                .font(.system(size: 12))
+                                .foregroundColor(AppColors.textTertiary)
+                                .frame(width: 16)
+
+                            Text(exercise.name)
+                                .font(.subheadline)
+                                .foregroundColor(AppColors.textSecondary)
+                                .lineLimit(1)
+
+                            Spacer()
+
+                            if !exercise.formattedSetScheme.isEmpty {
+                                Text(exercise.formattedSetScheme)
+                                    .font(.caption)
+                                    .foregroundColor(AppColors.textTertiary)
+                            }
+                        }
+                    }
+
+                    if module.exercises.count > 5 {
+                        Text("+\(module.exercises.count - 5) more")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.bottom, AppSpacing.cardPadding)
+                .padding(.top, AppSpacing.sm)
+            }
         }
-        .padding(AppSpacing.cardPadding)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.large)
                 .fill(AppColors.cardBackground)
