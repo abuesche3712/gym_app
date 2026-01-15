@@ -86,6 +86,7 @@ struct PersistenceController {
 
         // Set up library relationships
         setupLibraryRelationships(
+            exerciseEntity: exerciseEntity,
             implementEntity: implementEntity,
             measurableEntity: measurableEntity,
             muscleGroupEntity: muscleGroupEntity,
@@ -140,7 +141,9 @@ struct PersistenceController {
             createAttribute("notes", type: .stringAttributeType, optional: true),
             createAttribute("orderIndex", type: .integer32AttributeType),
             createAttribute("createdAt", type: .dateAttributeType),
-            createAttribute("updatedAt", type: .dateAttributeType)
+            createAttribute("updatedAt", type: .dateAttributeType),
+            // Library system reference (optional for backward compatibility)
+            createAttribute("exerciseLibraryId", type: .UUIDAttributeType, optional: true)
         ]
 
         return entity
@@ -574,11 +577,34 @@ struct PersistenceController {
     // MARK: - Library Relationship Setup
 
     private static func setupLibraryRelationships(
+        exerciseEntity: NSEntityDescription,
         implementEntity: NSEntityDescription,
         measurableEntity: NSEntityDescription,
         muscleGroupEntity: NSEntityDescription,
         exerciseLibraryEntity: NSEntityDescription
     ) {
+        // ExerciseEntity <-> ExerciseLibraryEntity (many-to-one, optional)
+        let exerciseToLibrary = NSRelationshipDescription()
+        exerciseToLibrary.name = "exerciseLibrary"
+        exerciseToLibrary.destinationEntity = exerciseLibraryEntity
+        exerciseToLibrary.minCount = 0
+        exerciseToLibrary.maxCount = 1
+        exerciseToLibrary.isOptional = true
+        exerciseToLibrary.deleteRule = .nullifyDeleteRule
+
+        let libraryToExercises = NSRelationshipDescription()
+        libraryToExercises.name = "usedByExercises"
+        libraryToExercises.destinationEntity = exerciseEntity
+        libraryToExercises.minCount = 0
+        libraryToExercises.maxCount = 0  // unlimited
+        libraryToExercises.deleteRule = .nullifyDeleteRule
+
+        exerciseToLibrary.inverseRelationship = libraryToExercises
+        libraryToExercises.inverseRelationship = exerciseToLibrary
+
+        exerciseEntity.properties.append(exerciseToLibrary)
+        exerciseLibraryEntity.properties.append(libraryToExercises)
+
         // Implement <-> Measurable (one-to-many)
         let implementToMeasurables = NSRelationshipDescription()
         implementToMeasurables.name = "measurables"

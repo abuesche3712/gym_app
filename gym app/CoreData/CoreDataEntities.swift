@@ -52,6 +52,10 @@ public class ExerciseEntity: NSManagedObject {
     @NSManaged public var module: ModuleEntity?
     @NSManaged public var setGroups: NSOrderedSet?
 
+    // Library system reference (optional for backward compatibility)
+    @NSManaged public var exerciseLibraryId: UUID?
+    @NSManaged public var exerciseLibrary: ExerciseLibraryEntity?
+
     var exerciseType: ExerciseType {
         get { ExerciseType(rawValue: exerciseTypeRaw) ?? .strength }
         set { exerciseTypeRaw = newValue.rawValue }
@@ -73,6 +77,29 @@ public class ExerciseEntity: NSManagedObject {
 
     var setGroupArray: [SetGroupEntity] {
         setGroups?.array as? [SetGroupEntity] ?? []
+    }
+
+    /// All available measurables from the linked library exercise
+    /// Combines intrinsic measurables + all measurables from implements
+    var availableMeasurables: [MeasurableEntity] {
+        guard let library = exerciseLibrary else { return [] }
+
+        var measurables: [MeasurableEntity] = []
+
+        // Add intrinsic measurables (for cardio exercises)
+        measurables.append(contentsOf: library.intrinsicMeasurableArray)
+
+        // Add measurables from all implements
+        for implement in library.implementArray {
+            measurables.append(contentsOf: implement.measurableArray)
+        }
+
+        return measurables
+    }
+
+    /// Whether this exercise has a library reference
+    var hasLibraryReference: Bool {
+        exerciseLibrary != nil || exerciseLibraryId != nil
     }
 }
 
@@ -401,6 +428,7 @@ public class ExerciseLibraryEntity: NSManagedObject {
     @NSManaged public var muscleGroups: NSSet?
     @NSManaged public var intrinsicMeasurables: NSSet?  // For cardio exercises
     @NSManaged public var implements: NSSet?  // Optional
+    @NSManaged public var usedByExercises: NSSet?  // Inverse of ExerciseEntity.exerciseLibrary
 
     var muscleGroupArray: [MuscleGroupEntity] {
         muscleGroups?.allObjects as? [MuscleGroupEntity] ?? []
@@ -414,8 +442,22 @@ public class ExerciseLibraryEntity: NSManagedObject {
         implements?.allObjects as? [ImplementEntity] ?? []
     }
 
+    var usedByExerciseArray: [ExerciseEntity] {
+        usedByExercises?.allObjects as? [ExerciseEntity] ?? []
+    }
+
     /// Validation: must have either intrinsicMeasurables or implements
     var isValid: Bool {
         !intrinsicMeasurableArray.isEmpty || !implementArray.isEmpty
+    }
+
+    /// All available measurables (intrinsic + from implements)
+    var allMeasurables: [MeasurableEntity] {
+        var measurables: [MeasurableEntity] = []
+        measurables.append(contentsOf: intrinsicMeasurableArray)
+        for implement in implementArray {
+            measurables.append(contentsOf: implement.measurableArray)
+        }
+        return measurables
     }
 }
