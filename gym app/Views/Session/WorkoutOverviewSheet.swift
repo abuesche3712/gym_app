@@ -328,13 +328,15 @@ struct WorkoutOverviewSheet: View {
             return set.formattedCardio ?? "Done"
         case .mobility, .explosive:
             return set.reps.map { "\($0) reps" } ?? "Done"
+        case .recovery:
+            return set.formattedRecovery ?? "Done"
         }
     }
 
     private func formatTargetData(_ set: SetData, exerciseType: ExerciseType) -> String {
         switch exerciseType {
         case .strength:
-            let w = set.weight.map { "\(Int($0))lbs" } ?? ""
+            let w = set.weight.map { "\(formatWeight($0))lbs" } ?? ""
             let r = set.reps.map { "\($0)r" } ?? ""
             return [w, r].filter { !$0.isEmpty }.joined(separator: " × ")
         case .isometric:
@@ -343,10 +345,12 @@ struct WorkoutOverviewSheet: View {
             // Show both time and distance targets if they exist
             var parts: [String] = []
             if let t = set.duration, t > 0 { parts.append(formatDuration(t)) }
-            if let d = set.distance, d > 0 { parts.append("\(Int(d))") }
+            if let d = set.distance, d > 0 { parts.append(formatDistance(d)) }
             return parts.isEmpty ? "—" : parts.joined(separator: " / ")
         case .mobility, .explosive:
             return set.reps.map { "\($0) reps" } ?? "—"
+        case .recovery:
+            return set.duration.map { formatDuration($0) } ?? "—"
         }
     }
 
@@ -499,6 +503,18 @@ struct EditSetSheet: View {
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
+                    .padding(AppSpacing.sm)
+                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.cardBackground))
+            }
+
+        case .recovery:
+            VStack(alignment: .leading, spacing: 4) {
+                Text("DURATION")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundColor(AppColors.textTertiary)
+                Text(inputDuration > 0 ? formatDuration(inputDuration) : "--")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(AppColors.textPrimary)
                     .padding(AppSpacing.sm)
                     .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.cardBackground))
             }

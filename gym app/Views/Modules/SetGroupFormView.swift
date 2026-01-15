@@ -207,6 +207,9 @@ struct SetGroupFormView: View {
         case .explosive:
             Stepper("Reps: \(targetReps)", value: $targetReps, in: 1...20)
             implementMeasurableField
+
+        case .recovery:
+            TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, label: "Duration")
         }
     }
 

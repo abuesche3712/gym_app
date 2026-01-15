@@ -25,8 +25,10 @@ struct ActiveSessionView: View {
     @State private var showRecentSets = false
     @State private var showWorkoutOverview = false
     @State private var showSubstituteExercise = false
+    @State private var showEditExercise = false
     @State private var showIntervalTimer = false
     @State private var intervalSetGroupIndex: Int = 0
+    @State private var highlightNextSet = false
 
     var body: some View {
         NavigationStack {
@@ -163,6 +165,18 @@ struct ActiveSessionView: View {
                         showSubstituteExercise = false
                     }
                 )
+            }
+            .sheet(isPresented: $showEditExercise) {
+                if let exercise = sessionViewModel.currentExercise {
+                    EditExerciseSheet(
+                        exercise: exercise,
+                        moduleIndex: sessionViewModel.currentModuleIndex,
+                        exerciseIndex: sessionViewModel.currentExerciseIndex,
+                        onSave: { moduleIndex, exerciseIndex, updatedExercise in
+                            updateExerciseAt(moduleIndex: moduleIndex, exerciseIndex: exerciseIndex, exercise: updatedExercise)
+                        }
+                    )
+                }
             }
             .fullScreenCover(isPresented: $showIntervalTimer) {
                 if let exercise = sessionViewModel.currentExercise,
@@ -370,11 +384,11 @@ struct ActiveSessionView: View {
                 Spacer()
 
                 HStack(spacing: AppSpacing.sm) {
-                    // Substitute button
+                    // Edit button
                     Button {
-                        showSubstituteExercise = true
+                        showEditExercise = true
                     } label: {
-                        Image(systemName: "arrow.triangle.2.circlepath")
+                        Image(systemName: "pencil")
                             .font(.system(size: 14))
                             .foregroundColor(AppColors.textTertiary)
                             .frame(width: 36, height: 36)
@@ -382,6 +396,25 @@ struct ActiveSessionView: View {
                                 Circle()
                                     .fill(AppColors.surfaceLight)
                             )
+                    }
+
+                    // Substitute button
+                    Button {
+                        showSubstituteExercise = true
+                    } label: {
+                        VStack(spacing: 2) {
+                            Image(systemName: "arrow.2.squarepath")
+                                .font(.system(size: 14))
+                                .foregroundColor(AppColors.textTertiary)
+                                .frame(width: 36, height: 36)
+                                .background(
+                                    Circle()
+                                        .fill(AppColors.surfaceLight)
+                                )
+                            Text("Swap")
+                                .font(.caption2.weight(.medium))
+                                .foregroundColor(AppColors.textTertiary)
+                        }
                     }
 
                     // Back button (if not first exercise)
@@ -421,6 +454,9 @@ struct ActiveSessionView: View {
             RoundedRectangle(cornerRadius: AppCorners.large)
                 .fill(AppColors.cardBackground)
         )
+        .onLongPressGesture {
+            showEditExercise = true
+        }
     }
 
     private func exerciseSetsSummary(_ exercise: SessionExercise) -> String {
@@ -471,10 +507,12 @@ struct ActiveSessionView: View {
                     } else {
                         // Regular sets
                         ForEach(flattenedSetsForGroup(exercise: exercise, groupIndex: groupIndex), id: \.id) { flatSet in
+                            let isFirstIncomplete = isFirstIncompleteSet(flatSet, in: exercise)
                             SetRowView(
                                 flatSet: flatSet,
                                 exercise: exercise,
                                 isExpanded: expandedSetId == flatSet.id,
+                                isHighlighted: highlightNextSet && isFirstIncomplete,
                                 onTap: {
                                     withAnimation(.easeInOut(duration: 0.2)) {
                                         if expandedSetId == flatSet.id {
@@ -484,22 +522,38 @@ struct ActiveSessionView: View {
                                         }
                                     }
                                 },
-                                onLog: { weight, reps, rpe, duration, holdTime, distance in
-                                    logSetAt(flatSet: flatSet, weight: weight, reps: reps, rpe: rpe, duration: duration, holdTime: holdTime, distance: distance)
+                                onLog: { weight, reps, rpe, duration, holdTime, distance, height, quality, intensity, temperature in
+                                    logSetAt(flatSet: flatSet, weight: weight, reps: reps, rpe: rpe, duration: duration, holdTime: holdTime, distance: distance, height: height, quality: quality, intensity: intensity, temperature: temperature)
                                     withAnimation(.easeInOut(duration: 0.2)) {
                                         expandedSetId = nil
                                     }
-                                    // Start rest timer
-                                    let restPeriod = flatSet.restPeriod ?? appState.defaultRestTime
-                                    if !allSetsCompleted(exercise) {
-                                        sessionViewModel.startRestTimer(seconds: restPeriod)
+                                    // Clear highlight when logging
+                                    highlightNextSet = false
+                                    // Start rest timer (skip for recovery activities)
+                                    if exercise.exerciseType != .recovery {
+                                        let restPeriod = flatSet.restPeriod ?? appState.defaultRestTime
+                                        if !allSetsCompleted(exercise) {
+                                            sessionViewModel.startRestTimer(seconds: restPeriod)
+                                        }
                                     }
                                 },
                                 onDelete: canDeleteSet(exercise: exercise) ? {
                                     withAnimation(.easeInOut(duration: 0.2)) {
                                         deleteSetAt(flatSet: flatSet)
                                     }
-                                } : nil
+                                } : nil,
+                                onDistanceUnitChange: exercise.exerciseType == .cardio ? { newUnit in
+                                    sessionViewModel.updateExerciseDistanceUnit(
+                                        moduleIndex: sessionViewModel.currentModuleIndex,
+                                        exerciseIndex: sessionViewModel.currentExerciseIndex,
+                                        unit: newUnit
+                                    )
+                                } : nil,
+                                onUncheck: {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        uncheckSetAt(flatSet: flatSet)
+                                    }
+                                }
                             )
                         }
                     }
@@ -722,6 +776,19 @@ struct ActiveSessionView: View {
         }
     }
 
+    private func isFirstIncompleteSet(_ flatSet: FlatSet, in exercise: SessionExercise) -> Bool {
+        // Find the first incomplete set in the exercise
+        for setGroup in exercise.completedSetGroups {
+            for set in setGroup.sets {
+                if !set.completed {
+                    // This is the first incomplete set - check if it matches our flatSet
+                    return set.id == flatSet.setData.id
+                }
+            }
+        }
+        return false
+    }
+
     private var isLastExercise: Bool {
         guard let session = sessionViewModel.currentSession else { return true }
         let lastModuleIndex = session.completedModules.count - 1
@@ -826,6 +893,32 @@ struct ActiveSessionView: View {
         session.completedModules[sessionViewModel.currentModuleIndex] = module
 
         sessionViewModel.currentSession = session
+    }
+
+    // MARK: - Update Exercise
+
+    private func updateExerciseAt(moduleIndex: Int, exerciseIndex: Int, exercise: SessionExercise) {
+        guard var session = sessionViewModel.currentSession else { return }
+        guard moduleIndex < session.completedModules.count else { return }
+        guard exerciseIndex < session.completedModules[moduleIndex].completedExercises.count else { return }
+
+        session.completedModules[moduleIndex].completedExercises[exerciseIndex] = exercise
+        sessionViewModel.currentSession = session
+
+        // Reset set indices if we're on the current exercise
+        if moduleIndex == sessionViewModel.currentModuleIndex && exerciseIndex == sessionViewModel.currentExerciseIndex {
+            sessionViewModel.currentSetGroupIndex = 0
+            // Find first incomplete set
+            for (groupIndex, setGroup) in exercise.completedSetGroups.enumerated() {
+                for (setIndex, set) in setGroup.sets.enumerated() {
+                    if !set.completed {
+                        sessionViewModel.currentSetGroupIndex = groupIndex
+                        sessionViewModel.currentSetIndex = setIndex
+                        return
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Substitute Exercise
@@ -995,7 +1088,7 @@ struct ActiveSessionView: View {
         sessionViewModel.currentSession = session
     }
 
-    private func logSetAt(flatSet: FlatSet, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?) {
+    private func logSetAt(flatSet: FlatSet, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?, height: Double? = nil, quality: Int? = nil, intensity: Int? = nil, temperature: Int? = nil) {
         guard var session = sessionViewModel.currentSession else { return }
 
         var module = session.completedModules[sessionViewModel.currentModuleIndex]
@@ -1009,7 +1102,31 @@ struct ActiveSessionView: View {
         setData.duration = duration ?? setData.duration
         setData.holdTime = holdTime ?? setData.holdTime
         setData.distance = distance ?? setData.distance
+        setData.height = height ?? setData.height
+        setData.quality = quality
+        setData.intensity = intensity
+        setData.temperature = temperature
         setData.completed = true
+
+        setGroup.sets[flatSet.setIndex] = setData
+        exercise.completedSetGroups[flatSet.setGroupIndex] = setGroup
+        module.completedExercises[sessionViewModel.currentExerciseIndex] = exercise
+        session.completedModules[sessionViewModel.currentModuleIndex] = module
+
+        sessionViewModel.currentSession = session
+    }
+
+    /// Uncheck a completed set to allow editing
+    private func uncheckSetAt(flatSet: FlatSet) {
+        guard var session = sessionViewModel.currentSession else { return }
+
+        var module = session.completedModules[sessionViewModel.currentModuleIndex]
+        var exercise = module.completedExercises[sessionViewModel.currentExerciseIndex]
+        var setGroup = exercise.completedSetGroups[flatSet.setGroupIndex]
+        var setData = setGroup.sets[flatSet.setIndex]
+
+        // Mark as incomplete so user can edit
+        setData.completed = false
 
         setGroup.sets[flatSet.setIndex] = setData
         exercise.completedSetGroups[flatSet.setGroupIndex] = setGroup
@@ -1199,6 +1316,7 @@ struct ActiveSessionView: View {
             // Skip button
             Button {
                 sessionViewModel.stopRestTimer()
+                highlightNextSet = true
             } label: {
                 Text("Skip")
                     .font(.subheadline.weight(.medium))
@@ -1223,6 +1341,12 @@ struct ActiveSessionView: View {
         )
         .transition(.opacity.combined(with: .move(edge: .top)))
         .animation(.easeInOut(duration: 0.3), value: sessionViewModel.isRestTimerRunning)
+        .onChange(of: sessionViewModel.isRestTimerRunning) { wasRunning, isRunning in
+            // Highlight next set when rest timer naturally ends
+            if wasRunning && !isRunning {
+                highlightNextSet = true
+            }
+        }
     }
 
     // MARK: - Module Transition Overlay

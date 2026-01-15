@@ -24,6 +24,10 @@ struct Exercise: Identifiable, Codable, Hashable {
     // New library system fields
     var muscleGroupIds: Set<UUID>  // Links to MuscleGroupEntity
     var implementIds: Set<UUID>    // Links to ImplementEntity
+    var isBodyweight: Bool  // True for bodyweight exercises (pull-ups, dips) - shows "BW + X" format
+
+    // Recovery-specific fields
+    var recoveryActivityType: RecoveryActivityType?  // Type of recovery activity (only for recovery exercises)
 
     init(
         id: UUID = UUID(),
@@ -39,7 +43,9 @@ struct Exercise: Identifiable, Codable, Hashable {
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         muscleGroupIds: Set<UUID> = [],
-        implementIds: Set<UUID> = []
+        implementIds: Set<UUID> = [],
+        isBodyweight: Bool = false,
+        recoveryActivityType: RecoveryActivityType? = nil
     ) {
         self.id = id
         self.name = name
@@ -54,6 +60,8 @@ struct Exercise: Identifiable, Codable, Hashable {
         self.updatedAt = updatedAt
         self.muscleGroupIds = muscleGroupIds
         self.implementIds = implementIds
+        self.isBodyweight = isBodyweight
+        self.recoveryActivityType = recoveryActivityType
 
         // Set default tracking metrics based on exercise type
         if let metrics = trackingMetrics {
@@ -94,6 +102,8 @@ struct Exercise: Identifiable, Codable, Hashable {
             return [.holdTime, .rpe]
         case .explosive:
             return [.reps, .height]
+        case .recovery:
+            return [.duration]  // Recovery is primarily time-based
         }
     }
 

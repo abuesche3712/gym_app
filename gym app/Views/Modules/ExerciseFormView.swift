@@ -39,6 +39,14 @@ struct ExerciseFormView: View {
 
     private var isEditing: Bool { exercise != nil }
 
+    /// Check if Bodyweight implement is selected
+    private var hasBodyweightImplement: Bool {
+        let libraryService = LibraryService.shared
+        return implementIds.contains { id in
+            libraryService.getImplement(id: id)?.name.lowercased() == "bodyweight"
+        }
+    }
+
     /// Computed CardioTracking from toggle states
     private var cardioMetric: CardioTracking {
         if trackTime && trackDistance {
@@ -326,6 +334,7 @@ struct ExerciseFormView: View {
             existingExercise.setGroups = setGroups
             existingExercise.muscleGroupIds = muscleGroupIds
             existingExercise.implementIds = implementIds
+            existingExercise.isBodyweight = hasBodyweightImplement
             existingExercise.updatedAt = Date()
 
             if let index = module.exercises.firstIndex(where: { $0.id == existingExercise.id }) {
@@ -342,7 +351,8 @@ struct ExerciseFormView: View {
                 setGroups: setGroups,
                 notes: trimmedNotes.isEmpty ? nil : trimmedNotes,
                 muscleGroupIds: muscleGroupIds,
-                implementIds: implementIds
+                implementIds: implementIds,
+                isBodyweight: hasBodyweightImplement
             )
             module.exercises.append(newExercise)
         }

@@ -165,4 +165,33 @@ extension Module {
         ],
         estimatedDuration: 60
     )
+
+    static let sampleRecovery = Module(
+        name: "Post-Workout Recovery",
+        type: .recovery,
+        exercises: [
+            Exercise(
+                name: "Cool Down Walk",
+                exerciseType: .recovery,
+                setGroups: [SetGroup(sets: 1, targetDuration: 300)],
+                recoveryActivityType: .cooldown
+            ),
+            Exercise(
+                name: "Foam Rolling",
+                exerciseType: .recovery,
+                setGroups: [SetGroup(sets: 1, targetDuration: 600)],
+                notes: "Focus on quads, hamstrings, glutes",
+                recoveryActivityType: .foamRolling
+            ),
+            Exercise(
+                name: "Static Stretching",
+                exerciseType: .recovery,
+                setGroups: [SetGroup(sets: 1, targetDuration: 300)],
+                notes: "Hold each stretch 30s",
+                recoveryActivityType: .stretching
+            )
+        ],
+        notes: "Complete after every workout",
+        estimatedDuration: 20
+    )
 }

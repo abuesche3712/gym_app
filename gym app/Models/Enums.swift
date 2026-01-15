@@ -16,6 +16,7 @@ enum ModuleType: String, Codable, CaseIterable, Identifiable {
     case strength
     case cardioLong = "cardio_long"
     case cardioSpeed = "cardio_speed"
+    case recovery
 
     var id: String { rawValue }
 
@@ -27,6 +28,7 @@ enum ModuleType: String, Codable, CaseIterable, Identifiable {
         case .strength: return "Strength"
         case .cardioLong: return "Cardio (Long)"
         case .cardioSpeed: return "Cardio (Speed)"
+        case .recovery: return "Recovery"
         }
     }
 
@@ -38,6 +40,7 @@ enum ModuleType: String, Codable, CaseIterable, Identifiable {
         case .strength: return "dumbbell"
         case .cardioLong: return "figure.run"
         case .cardioSpeed: return "timer"
+        case .recovery: return "heart.circle"
         }
     }
 
@@ -49,6 +52,7 @@ enum ModuleType: String, Codable, CaseIterable, Identifiable {
         case .strength: return "red"
         case .cardioLong: return "blue"
         case .cardioSpeed: return "purple"
+        case .recovery: return "teal"
         }
     }
 }
@@ -61,6 +65,7 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
     case mobility
     case isometric
     case explosive
+    case recovery  // For recovery-specific activities
 
     var id: String { rawValue }
 
@@ -71,6 +76,7 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
         case .mobility: return "Mobility"
         case .isometric: return "Isometric"
         case .explosive: return "Explosive"
+        case .recovery: return "Recovery"
         }
     }
 
@@ -81,6 +87,65 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
         case .mobility: return "figure.flexibility"
         case .isometric: return "hand.raised"
         case .explosive: return "bolt"
+        case .recovery: return "heart.circle"
+        }
+    }
+}
+
+// MARK: - Recovery Activity Types
+
+enum RecoveryActivityType: String, Codable, CaseIterable, Identifiable {
+    case cooldown
+    case stretching
+    case foamRolling = "foam_rolling"
+    case sauna
+    case coldPlunge = "cold_plunge"
+    case massage
+    case meditation
+    case breathwork
+    case other
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .cooldown: return "Cooldown"
+        case .stretching: return "Stretching"
+        case .foamRolling: return "Foam Rolling"
+        case .sauna: return "Sauna"
+        case .coldPlunge: return "Cold Plunge"
+        case .massage: return "Massage"
+        case .meditation: return "Meditation"
+        case .breathwork: return "Breathwork"
+        case .other: return "Other"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .cooldown: return "wind"
+        case .stretching: return "figure.flexibility"
+        case .foamRolling: return "cylinder"
+        case .sauna: return "thermometer.sun"
+        case .coldPlunge: return "snowflake"
+        case .massage: return "hand.wave"
+        case .meditation: return "brain.head.profile"
+        case .breathwork: return "lungs"
+        case .other: return "ellipsis.circle"
+        }
+    }
+
+    /// Whether this activity type supports temperature logging
+    var supportsTemperature: Bool {
+        self == .sauna || self == .coldPlunge
+    }
+
+    /// Default temperature unit for this activity
+    var defaultTemperature: Int? {
+        switch self {
+        case .sauna: return 180  // °F
+        case .coldPlunge: return 50  // °F
+        default: return nil
         }
     }
 }

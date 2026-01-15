@@ -118,7 +118,9 @@ class SessionViewModel: ObservableObject {
                     workDuration: setGroup.workDuration,
                     intervalRestDuration: setGroup.intervalRestDuration
                 )
-            }
+            },
+            isBodyweight: exercise.isBodyweight,
+            recoveryActivityType: exercise.recoveryActivityType
         )
     }
 
@@ -347,6 +349,16 @@ class SessionViewModel: ObservableObject {
             currentSetGroupIndex = 0
             currentSetIndex = 0
         }
+    }
+
+    /// Update the distance unit for an exercise during the active session
+    func updateExerciseDistanceUnit(moduleIndex: Int, exerciseIndex: Int, unit: DistanceUnit) {
+        guard var session = currentSession,
+              moduleIndex < session.completedModules.count,
+              exerciseIndex < session.completedModules[moduleIndex].completedExercises.count else { return }
+
+        session.completedModules[moduleIndex].completedExercises[exerciseIndex].distanceUnit = unit
+        currentSession = session
     }
 
     func skipModule() {

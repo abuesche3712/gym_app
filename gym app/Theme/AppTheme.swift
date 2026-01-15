@@ -44,6 +44,7 @@ struct AppColors {
         case .strength: return Color(hex: "FF4757")
         case .cardioLong: return accentBlue
         case .cardioSpeed: return Color(hex: "A855F7")
+        case .recovery: return Color.teal
         }
     }
 }

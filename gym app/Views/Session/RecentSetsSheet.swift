@@ -89,6 +89,8 @@ struct RecentSetsSheet: View {
             return set.formattedCardio ?? "Completed"
         case .mobility, .explosive:
             return set.reps.map { "\($0) reps" } ?? "Completed"
+        case .recovery:
+            return set.formattedRecovery ?? "Completed"
         }
     }
 }
@@ -235,6 +237,18 @@ struct EditRecentSetSheet: View {
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
+                    .padding(AppSpacing.sm)
+                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.cardBackground))
+            }
+
+        case .recovery:
+            VStack(alignment: .leading, spacing: 4) {
+                Text("DURATION")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundColor(AppColors.textTertiary)
+                Text(inputDuration > 0 ? formatDuration(inputDuration) : "--")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(AppColors.textPrimary)
                     .padding(AppSpacing.sm)
                     .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.cardBackground))
             }

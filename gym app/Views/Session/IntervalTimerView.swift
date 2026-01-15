@@ -8,12 +8,14 @@
 import SwiftUI
 
 enum IntervalPhase {
+    case getReady
     case work
     case rest
     case complete
 
     var label: String {
         switch self {
+        case .getReady: return "GET READY"
         case .work: return "WORK"
         case .rest: return "REST"
         case .complete: return "DONE"
@@ -22,12 +24,15 @@ enum IntervalPhase {
 
     var color: Color {
         switch self {
+        case .getReady: return .orange
         case .work: return AppColors.accentBlue
         case .rest: return AppColors.accentTeal
         case .complete: return AppColors.accentBlue
         }
     }
 }
+
+private let leadInDuration: Int = 10  // seconds
 
 struct IntervalTimerView: View {
     let rounds: Int
@@ -38,8 +43,8 @@ struct IntervalTimerView: View {
     let onCancel: () -> Void
 
     @State private var currentRound: Int = 1
-    @State private var phase: IntervalPhase = .work
-    @State private var secondsRemaining: Int = 0
+    @State private var phase: IntervalPhase = .getReady
+    @State private var secondsRemaining: Int = leadInDuration
     @State private var isPaused: Bool = false
     @State private var timer: Timer?
     @State private var roundDurations: [Int] = []  // Actual work duration for each round
@@ -106,7 +111,7 @@ struct IntervalTimerView: View {
             }
         }
         .onAppear {
-            secondsRemaining = workDuration
+            secondsRemaining = leadInDuration
             startTimer()
         }
         .onDisappear {
@@ -132,27 +137,35 @@ struct IntervalTimerView: View {
                 .contentTransition(.numericText())
                 .animation(.easeInOut(duration: 0.1), value: secondsRemaining)
 
-            // Round indicator
-            HStack(spacing: AppSpacing.sm) {
-                ForEach(1...rounds, id: \.self) { round in
-                    Circle()
-                        .fill(roundColor(for: round))
-                        .frame(width: 12, height: 12)
-                        .animation(.easeInOut(duration: 0.2), value: currentRound)
+            if phase == .getReady {
+                // Show what's coming up
+                Text("\(rounds) rounds of \(formatTime(workDuration)) work / \(formatTime(restDuration)) rest")
+                    .font(.title3.weight(.medium))
+                    .foregroundColor(AppColors.textSecondary)
+                    .multilineTextAlignment(.center)
+            } else {
+                // Round indicator
+                HStack(spacing: AppSpacing.sm) {
+                    ForEach(1...rounds, id: \.self) { round in
+                        Circle()
+                            .fill(roundColor(for: round))
+                            .frame(width: 12, height: 12)
+                            .animation(.easeInOut(duration: 0.2), value: currentRound)
+                    }
                 }
-            }
 
-            Text("Round \(currentRound) of \(rounds)")
-                .font(.title3.weight(.medium))
-                .foregroundColor(AppColors.textSecondary)
+                Text("Round \(currentRound) of \(rounds)")
+                    .font(.title3.weight(.medium))
+                    .foregroundColor(AppColors.textSecondary)
 
-            // Progress info
-            VStack(spacing: 4) {
-                let totalTime = (workDuration + restDuration) * rounds - restDuration
-                let elapsed = elapsedTime()
-                Text("Total: \(formatTime(totalTime - elapsed)) remaining")
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textTertiary)
+                // Progress info
+                VStack(spacing: 4) {
+                    let totalTime = (workDuration + restDuration) * rounds - restDuration
+                    let elapsed = elapsedTime()
+                    Text("Total: \(formatTime(totalTime - elapsed)) remaining")
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.textTertiary)
+                }
             }
         }
     }
@@ -321,7 +334,17 @@ struct IntervalTimerView: View {
         }
 
         let elapsed = Int(Date().timeIntervalSince(startTime) - totalPaused)
-        let phaseDuration = phase == .work ? workDuration : restDuration
+        let phaseDuration: Int
+        switch phase {
+        case .getReady:
+            phaseDuration = leadInDuration
+        case .work:
+            phaseDuration = workDuration
+        case .rest:
+            phaseDuration = restDuration
+        case .complete:
+            phaseDuration = 0
+        }
         let remaining = phaseDuration - elapsed
 
         if phase == .work {
@@ -340,6 +363,14 @@ struct IntervalTimerView: View {
         let generator = UINotificationFeedbackGenerator()
 
         switch phase {
+        case .getReady:
+            // Lead-in complete, start first work interval
+            phase = .work
+            secondsRemaining = workDuration
+            phaseStartTime = Date()
+            pausedTimeAccumulated = 0
+            generator.notificationOccurred(.warning)
+
         case .work:
             // Save work duration for this round
             roundDurations.append(currentWorkElapsed)
@@ -385,6 +416,7 @@ struct IntervalTimerView: View {
             roundDurations.append(currentWorkElapsed)
             currentWorkElapsed = 0
         }
+        // For getReady phase, just skip to work without logging anything
 
         secondsRemaining = 0
         transitionPhase()

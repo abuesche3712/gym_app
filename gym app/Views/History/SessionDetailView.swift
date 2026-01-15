@@ -124,9 +124,9 @@ struct ExerciseResultView: View {
                             .font(.subheadline)
                             .fontWeight(.medium)
 
-                        // Best set summary
-                        if let topSet = exercise.topSet, let formatted = topSet.formattedStrength {
-                            Text("Top: \(formatted)")
+                        // Summary based on exercise type
+                        if let summary = exerciseSummary {
+                            Text(summary)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -134,7 +134,7 @@ struct ExerciseResultView: View {
 
                     Spacer()
 
-                    Text("\(totalSets) sets")
+                    Text(setsLabel)
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
@@ -149,8 +149,13 @@ struct ExerciseResultView: View {
             if isExpanded {
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(exercise.completedSetGroups) { setGroup in
-                        ForEach(setGroup.sets) { set in
-                            setResultRow(set)
+                        if setGroup.isInterval {
+                            // Interval set group - show as a single row
+                            intervalResultRow(setGroup)
+                        } else {
+                            ForEach(setGroup.sets) { set in
+                                setResultRow(set)
+                            }
                         }
                     }
                 }
@@ -160,9 +165,117 @@ struct ExerciseResultView: View {
         .padding(.vertical, 4)
     }
 
-    private var totalSets: Int {
-        exercise.completedSetGroups.reduce(0) { $0 + $1.sets.count }
+    // MARK: - Summary Helpers
+
+    private var setsLabel: String {
+        let intervalCount = exercise.completedSetGroups.filter { $0.isInterval }.count
+        let regularSets = exercise.completedSetGroups.filter { !$0.isInterval }.reduce(0) { $0 + $1.sets.count }
+
+        if intervalCount > 0 && regularSets > 0 {
+            return "\(regularSets) sets + \(intervalCount) interval\(intervalCount > 1 ? "s" : "")"
+        } else if intervalCount > 0 {
+            let totalRounds = exercise.completedSetGroups.filter { $0.isInterval }.reduce(0) { $0 + $1.rounds }
+            return "\(totalRounds) rounds"
+        } else {
+            return "\(regularSets) sets"
+        }
     }
+
+    /// Get appropriate summary for the exercise type
+    private var exerciseSummary: String? {
+        switch exercise.exerciseType {
+        case .strength:
+            // Show top set for strength
+            if exercise.isBodyweight {
+                // For bodyweight, show top added weight or just best reps
+                if let topSet = exercise.topSet, let reps = topSet.reps {
+                    if let weight = topSet.weight, weight > 0 {
+                        var result = "Top: BW + \(formatWeight(weight)) × \(reps)"
+                        if let rpe = topSet.rpe { result += " @ RPE \(rpe)" }
+                        return result
+                    } else {
+                        // Just bodyweight
+                        let allSets = exercise.completedSetGroups.flatMap { $0.sets }
+                        if let maxReps = allSets.compactMap({ $0.reps }).max() {
+                            return "Best: BW × \(maxReps)"
+                        }
+                    }
+                }
+            } else if let topSet = exercise.topSet, let weight = topSet.weight, let reps = topSet.reps {
+                var result = "Top: \(formatWeight(weight)) × \(reps)"
+                if let rpe = topSet.rpe {
+                    result += " @ RPE \(rpe)"
+                }
+                return result
+            }
+
+        case .cardio:
+            // Show total distance or best time
+            let allSets = exercise.completedSetGroups.flatMap { $0.sets }
+            let totalDistance = allSets.compactMap { $0.distance }.reduce(0, +)
+            let totalDuration = allSets.compactMap { $0.duration }.reduce(0, +)
+
+            var parts: [String] = []
+            if totalDistance > 0 {
+                parts.append("\(formatDistance(totalDistance))\(exercise.distanceUnit.abbreviation)")
+            }
+            if totalDuration > 0 {
+                parts.append(formatDuration(totalDuration))
+            }
+            return parts.isEmpty ? nil : parts.joined(separator: " in ")
+
+        case .isometric:
+            // Show longest hold
+            let allSets = exercise.completedSetGroups.flatMap { $0.sets }
+            if let longestHold = allSets.compactMap({ $0.holdTime }).max() {
+                return "Best: \(formatDuration(longestHold)) hold"
+            }
+
+        case .explosive:
+            // Show best height or total reps
+            let allSets = exercise.completedSetGroups.flatMap { $0.sets }
+            if let bestHeight = allSets.compactMap({ $0.height }).max() {
+                return "Best: \(formatHeight(bestHeight))"
+            } else {
+                let totalReps = allSets.compactMap { $0.reps }.reduce(0, +)
+                if totalReps > 0 {
+                    return "\(totalReps) total reps"
+                }
+            }
+
+        case .mobility:
+            // Show total reps
+            let totalReps = exercise.completedSetGroups.flatMap { $0.sets }.compactMap { $0.reps }.reduce(0, +)
+            if totalReps > 0 {
+                return "\(totalReps) total reps"
+            }
+
+        case .recovery:
+            // Show total time and activity type
+            let allSets = exercise.completedSetGroups.flatMap { $0.sets }
+            let totalDuration = allSets.compactMap { $0.duration }.reduce(0, +)
+            if totalDuration > 0 {
+                var result = formatDuration(totalDuration)
+                if let activityType = exercise.recoveryActivityType {
+                    result = "\(activityType.displayName): \(result)"
+                }
+                return result
+            }
+        }
+
+        // Check for intervals
+        let intervalGroups = exercise.completedSetGroups.filter { $0.isInterval }
+        if !intervalGroups.isEmpty {
+            let totalRounds = intervalGroups.reduce(0) { $0 + $1.rounds }
+            if let first = intervalGroups.first, let work = first.workDuration, let rest = first.intervalRestDuration {
+                return "\(totalRounds) rounds × \(formatDuration(work))/\(formatDuration(rest))"
+            }
+        }
+
+        return nil
+    }
+
+    // MARK: - Row Views
 
     @ViewBuilder
     private func setResultRow(_ set: SetData) -> some View {
@@ -172,7 +285,7 @@ struct ExerciseResultView: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 50, alignment: .leading)
 
-            if let formatted = set.formattedStrength ?? set.formattedIsometric ?? set.formattedCardio {
+            if let formatted = formattedSetResult(set) {
                 Text(formatted)
                     .font(.caption)
             }
@@ -185,6 +298,160 @@ struct ExerciseResultView: View {
 
             Spacer()
         }
+    }
+
+    @ViewBuilder
+    private func intervalResultRow(_ setGroup: CompletedSetGroup) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Image(systemName: "timer")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                Text("Interval")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+
+            HStack {
+                Text("\(setGroup.rounds) rounds")
+                    .font(.caption)
+                    .fontWeight(.medium)
+
+                if let work = setGroup.workDuration, let rest = setGroup.intervalRestDuration {
+                    Text("•")
+                        .foregroundStyle(.secondary)
+                    Text("\(formatDuration(work)) work / \(formatDuration(rest)) rest")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    // MARK: - Formatting
+
+    /// Format set result based on exercise type
+    private func formattedSetResult(_ set: SetData) -> String? {
+        switch exercise.exerciseType {
+        case .strength:
+            if exercise.isBodyweight {
+                // Bodyweight format: "BW + 25 × 10" or "BW × 10"
+                if let reps = set.reps {
+                    if let weight = set.weight, weight > 0 {
+                        var result = "BW + \(formatWeight(weight)) × \(reps)"
+                        if let rpe = set.rpe { result += " @ RPE \(rpe)" }
+                        return result
+                    } else {
+                        var result = "BW × \(reps)"
+                        if let rpe = set.rpe { result += " @ RPE \(rpe)" }
+                        return result
+                    }
+                }
+                return nil
+            }
+            // Regular weight format: Weight × reps @ RPE
+            if let weight = set.weight, let reps = set.reps {
+                var result = "\(formatWeight(weight)) × \(reps)"
+                if let rpe = set.rpe {
+                    result += " @ RPE \(rpe)"
+                }
+                return result
+            }
+            // Fallback to just reps if no weight
+            if let reps = set.reps {
+                var result = "\(reps) reps"
+                if let rpe = set.rpe {
+                    result += " @ RPE \(rpe)"
+                }
+                return result
+            }
+
+        case .cardio:
+            var parts: [String] = []
+            if let duration = set.duration, duration > 0 {
+                parts.append(formatDuration(duration))
+            }
+            if let distance = set.distance, distance > 0 {
+                parts.append("\(formatDistance(distance))\(exercise.distanceUnit.abbreviation)")
+            }
+            if let pace = set.pace, pace > 0 {
+                parts.append("@ \(formatPace(pace))/\(exercise.distanceUnit.abbreviation)")
+            }
+            return parts.isEmpty ? nil : parts.joined(separator: " - ")
+
+        case .isometric:
+            if let holdTime = set.holdTime {
+                var result = formatDuration(holdTime) + " hold"
+                if let intensity = set.intensity {
+                    result += " @ \(intensity)/10"
+                }
+                return result
+            }
+
+        case .explosive:
+            var parts: [String] = []
+            if let reps = set.reps {
+                parts.append("\(reps) reps")
+            }
+            if let height = set.height {
+                parts.append("@ \(formatHeight(height))")
+            }
+            if let quality = set.quality {
+                parts.append("quality \(quality)/5")
+            }
+            return parts.isEmpty ? nil : parts.joined(separator: " ")
+
+        case .mobility:
+            if let reps = set.reps {
+                var result = "\(reps) reps"
+                if let duration = set.duration, duration > 0 {
+                    result += " (\(formatDuration(duration)))"
+                }
+                return result
+            }
+
+        case .recovery:
+            if let duration = set.duration {
+                var result = formatDuration(duration)
+                if let temp = set.temperature {
+                    result += " @ \(temp)°F"
+                }
+                return result
+            }
+        }
+
+        return nil
+    }
+
+    private func formatDistance(_ distance: Double) -> String {
+        if distance == floor(distance) {
+            return "\(Int(distance))"
+        }
+        return String(format: "%.2f", distance)
+    }
+
+    private func formatWeight(_ weight: Double) -> String {
+        if weight == floor(weight) {
+            return "\(Int(weight))"
+        }
+        return String(format: "%.1f", weight)
+    }
+
+    private func formatHeight(_ height: Double) -> String {
+        if height == floor(height) {
+            return "\(Int(height)) in"
+        }
+        return String(format: "%.1f in", height)
+    }
+
+    private func formatPace(_ pace: Double) -> String {
+        let minutes = Int(pace) / 60
+        let seconds = Int(pace) % 60
+        return String(format: "%d:%02d", minutes, seconds)
     }
 }
 

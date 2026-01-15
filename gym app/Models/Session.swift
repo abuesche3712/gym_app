@@ -122,6 +122,8 @@ struct SessionExercise: Identifiable, Codable, Hashable {
     var supersetGroupId: UUID? // Links exercises that should alternate sets
     var completedSetGroups: [CompletedSetGroup]
     var notes: String?
+    var isBodyweight: Bool // True for bodyweight exercises (pull-ups, dips) - shows "BW + X" format
+    var recoveryActivityType: RecoveryActivityType? // For recovery exercises
 
     // Ad-hoc modifications during session
     var isSubstitution: Bool
@@ -138,6 +140,8 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         supersetGroupId: UUID? = nil,
         completedSetGroups: [CompletedSetGroup] = [],
         notes: String? = nil,
+        isBodyweight: Bool = false,
+        recoveryActivityType: RecoveryActivityType? = nil,
         isSubstitution: Bool = false,
         originalExerciseName: String? = nil,
         isAdHoc: Bool = false
@@ -151,6 +155,8 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         self.supersetGroupId = supersetGroupId
         self.completedSetGroups = completedSetGroups
         self.notes = notes
+        self.isBodyweight = isBodyweight
+        self.recoveryActivityType = recoveryActivityType
         self.isSubstitution = isSubstitution
         self.originalExerciseName = originalExerciseName
         self.isAdHoc = isAdHoc
@@ -253,6 +259,9 @@ struct SetData: Identifiable, Codable, Hashable {
     var height: Double?
     var quality: Int? // 1-5
 
+    // Recovery metrics
+    var temperature: Int? // °F for sauna/cold plunge
+
     // Rest tracking
     var restAfter: Int? // seconds, actual rest taken
 
@@ -271,6 +280,7 @@ struct SetData: Identifiable, Codable, Hashable {
         intensity: Int? = nil,
         height: Double? = nil,
         quality: Int? = nil,
+        temperature: Int? = nil,
         restAfter: Int? = nil
     ) {
         self.id = id
@@ -287,6 +297,7 @@ struct SetData: Identifiable, Codable, Hashable {
         self.intensity = intensity
         self.height = height
         self.quality = quality
+        self.temperature = temperature
         self.restAfter = restAfter
     }
 
@@ -315,6 +326,15 @@ struct SetData: Identifiable, Codable, Hashable {
         var result = formatDuration(holdTime) + " hold"
         if let intensity = intensity {
             result += " @ \(intensity)/10"
+        }
+        return result
+    }
+
+    var formattedRecovery: String? {
+        guard let duration = duration else { return nil }
+        var result = formatDuration(duration)
+        if let temp = temperature {
+            result += " @ \(temp)°F"
         }
         return result
     }

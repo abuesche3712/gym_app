@@ -396,6 +396,9 @@ struct QuickExerciseFormView: View {
 
                     case .mobility, .explosive:
                         Stepper("Reps: \(reps)", value: $reps, in: 1...100)
+
+                    case .recovery:
+                        Stepper("Duration: \(targetDuration / 60):\(String(format: "%02d", targetDuration % 60))", value: $targetDuration, in: 30...3600, step: 30)
                     }
 
                     Stepper("Rest: \(restPeriod)s", value: $restPeriod, in: 0...300, step: 15)
@@ -451,6 +454,12 @@ struct QuickExerciseFormView: View {
                 sets: sets,
                 targetReps: reps,
                 restPeriod: restPeriod
+            )
+        case .recovery:
+            setGroup = SetGroup(
+                sets: sets,
+                targetDuration: targetDuration,
+                restPeriod: 0  // No rest for recovery activities
             )
         }
 
