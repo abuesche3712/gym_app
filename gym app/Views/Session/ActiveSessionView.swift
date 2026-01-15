@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ActiveSessionView: View {
     @EnvironmentObject var sessionViewModel: SessionViewModel
+    @EnvironmentObject var workoutViewModel: WorkoutViewModel
     @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) private var dismiss
 
@@ -145,6 +146,14 @@ struct ActiveSessionView: View {
             }
             .sheet(isPresented: $showingEndConfirmation) {
                 EndSessionSheet(session: $sessionViewModel.currentSession) { feeling, notes in
+                    // Capture session info before ending
+                    if let session = sessionViewModel.currentSession {
+                        workoutViewModel.markScheduledWorkoutsCompleted(
+                            workoutId: session.workoutId,
+                            sessionId: session.id,
+                            sessionDate: session.date
+                        )
+                    }
                     sessionViewModel.endSession(feeling: feeling, notes: notes)
                     dismiss()
                 }
