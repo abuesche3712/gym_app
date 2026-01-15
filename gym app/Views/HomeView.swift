@@ -14,8 +14,6 @@ struct HomeView: View {
     @EnvironmentObject var moduleViewModel: ModuleViewModel
 
     @State private var showingActiveSession = false
-    @State private var showingWorkoutPicker = false
-    @State private var selectedWorkout: Workout?
     @State private var selectedCalendarDate: Date = Date()
     @State private var showingScheduleSheet = false
     @State private var dayToSchedule: Date?
@@ -37,11 +35,11 @@ struct HomeView: View {
                     // Week Calendar
                     weekCalendarSection
 
-                    // Quick Start Section
-                    quickStartSection
+                    // Recent Accomplishments
+                    recentAccomplishmentsSection
 
-                    // Stats Summary
-                    statsSummarySection
+                    // Best Performances (TODO)
+                    bestPerformancesSection
 
                     // Recent Sessions
                     if !sessionViewModel.sessions.isEmpty {
@@ -52,19 +50,6 @@ struct HomeView: View {
             }
             .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Gym App")
-            .sheet(isPresented: $showingWorkoutPicker) {
-                WorkoutPickerSheet(
-                    workouts: workoutViewModel.workouts,
-                    modules: moduleViewModel.modules,
-                    onSelect: { workout in
-                        selectedWorkout = workout
-                        showingWorkoutPicker = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            startWorkout(workout)
-                        }
-                    }
-                )
-            }
             .fullScreenCover(isPresented: $showingActiveSession) {
                 if sessionViewModel.isSessionActive {
                     ActiveSessionView()
@@ -462,107 +447,11 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Quick Start Section
+    // MARK: - Recent Accomplishments Section
 
-    private var quickStartSection: some View {
+    private var recentAccomplishmentsSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            SectionHeader(title: "Quick Start")
-
-            if workoutViewModel.workouts.isEmpty {
-                emptyWorkoutsCard
-            } else {
-                // Main start button
-                Button(action: { showingWorkoutPicker = true }) {
-                    HStack(spacing: AppSpacing.md) {
-                        ZStack {
-                            Circle()
-                                .fill(AppGradients.accentGradient)
-                                .frame(width: 56, height: 56)
-
-                            Image(systemName: "play.fill")
-                                .font(.system(size: 20))
-                                .foregroundColor(.white)
-                        }
-                        .glowShadow()
-
-                        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                            Text("Start Workout")
-                                .font(.title3.bold())
-                                .foregroundColor(AppColors.textPrimary)
-
-                            Text("Choose from \(workoutViewModel.workouts.count) templates")
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-                    .padding(AppSpacing.lg)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppCorners.large)
-                            .fill(AppGradients.subtleGradient)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: AppCorners.large)
-                                    .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
-                            )
-                    )
-                }
-                .buttonStyle(.plain)
-
-                // Quick access cards
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: AppSpacing.md) {
-                        ForEach(workoutViewModel.workouts.prefix(4)) { workout in
-                            QuickStartCard(workout: workout, modules: moduleViewModel.modules) {
-                                startWorkout(workout)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private var emptyWorkoutsCard: some View {
-        NavigationLink(destination: WorkoutFormView(workout: nil)) {
-            HStack(spacing: AppSpacing.md) {
-                Image(systemName: "plus.circle.fill")
-                    .font(.title)
-                    .foregroundColor(AppColors.accentBlue)
-
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("Create your first workout")
-                        .font(.headline)
-                        .foregroundColor(AppColors.textPrimary)
-                    Text("Combine modules into a routine")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                }
-
-                Spacer()
-            }
-            .padding(AppSpacing.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.cardBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppCorners.large)
-                            .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [8]))
-                            .foregroundColor(AppColors.border)
-                    )
-            )
-        }
-    }
-
-    // MARK: - Stats Summary Section
-
-    private var statsSummarySection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            SectionHeader(title: "This Week")
+            SectionHeader(title: "Recent Accomplishments")
 
             HStack(spacing: AppSpacing.md) {
                 StatCard(
@@ -586,6 +475,36 @@ struct HomeView: View {
                     color: AppColors.accentTeal
                 )
             }
+        }
+    }
+
+    // MARK: - Best Performances Section
+
+    private var bestPerformancesSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            SectionHeader(title: "Best Performances")
+
+            // TODO: Show recent PRs and best performances
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: "trophy.fill")
+                    .font(.title2)
+                    .foregroundColor(AppColors.warning.opacity(0.5))
+
+                Text("Coming soon - track your PRs and best performances")
+                    .font(.subheadline)
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(AppSpacing.cardPadding)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppColors.cardBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppCorners.large)
+                            .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [8]))
+                            .foregroundColor(AppColors.border.opacity(0.5))
+                    )
+            )
         }
     }
 
@@ -654,70 +573,6 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Quick Start Card
-
-struct QuickStartCard: View {
-    let workout: Workout
-    let modules: [Module]
-    let action: () -> Void
-
-    private var workoutModules: [Module] {
-        workout.moduleReferences.compactMap { ref in
-            modules.first { $0.id == ref.moduleId }
-        }
-    }
-
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text(workout.name)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundColor(AppColors.textPrimary)
-                    .lineLimit(1)
-
-                // Module indicators
-                HStack(spacing: AppSpacing.xs) {
-                    ForEach(workoutModules.prefix(3)) { module in
-                        Circle()
-                            .fill(AppColors.moduleColor(module.type))
-                            .frame(width: 8, height: 8)
-                    }
-                    if workoutModules.count > 3 {
-                        Text("+\(workoutModules.count - 3)")
-                            .font(.caption2)
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-                }
-
-                Spacer()
-
-                HStack {
-                    if let duration = workout.estimatedDuration {
-                        Text("\(duration)m")
-                            .font(.caption)
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-                    Spacer()
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 12))
-                        .foregroundColor(AppColors.accentBlue)
-                }
-            }
-            .padding(AppSpacing.md)
-            .frame(width: 140, height: 100)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(AppColors.cardBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppCorners.medium)
-                            .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // MARK: - Home Session Row
 
 struct HomeSessionRow: View {
@@ -765,91 +620,6 @@ struct HomeSessionRow: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "d"
         return formatter.string(from: session.date)
-    }
-}
-
-// MARK: - Workout Picker Sheet
-
-struct WorkoutPickerSheet: View {
-    let workouts: [Workout]
-    let modules: [Module]
-    let onSelect: (Workout) -> Void
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: AppSpacing.md) {
-                    ForEach(workouts) { workout in
-                        WorkoutPickerCard(workout: workout, modules: modules) {
-                            onSelect(workout)
-                        }
-                    }
-                }
-                .padding(AppSpacing.screenPadding)
-            }
-            .background(AppColors.background.ignoresSafeArea())
-            .navigationTitle("Choose Workout")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundColor(AppColors.accentBlue)
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-    }
-}
-
-struct WorkoutPickerCard: View {
-    let workout: Workout
-    let modules: [Module]
-    let action: () -> Void
-
-    private var workoutModules: [Module] {
-        workout.moduleReferences.compactMap { ref in
-            modules.first { $0.id == ref.moduleId }
-        }
-    }
-
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                HStack {
-                    Text(workout.name)
-                        .font(.headline)
-                        .foregroundColor(AppColors.textPrimary)
-
-                    Spacer()
-
-                    Image(systemName: "play.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(AppColors.accentBlue)
-                }
-
-                if !workoutModules.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: AppSpacing.sm) {
-                            ForEach(workoutModules) { module in
-                                ModulePill(module: module)
-                            }
-                        }
-                    }
-                }
-            }
-            .padding(AppSpacing.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.cardBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppCorners.large)
-                            .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
-                    )
-            )
-        }
-        .buttonStyle(.plain)
     }
 }
 
