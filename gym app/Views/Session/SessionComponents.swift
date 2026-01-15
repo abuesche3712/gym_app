@@ -72,11 +72,13 @@ struct SetRowView: View {
         case weight, reps, distance
     }
 
-    // Inline timer state
+    // Inline timer state (countdown for time targets, stopwatch for distance targets)
     @State private var timerRunning: Bool = false
-    @State private var timerSecondsRemaining: Int = 0
+    @State private var timerSecondsRemaining: Int = 0  // For countdown timer
+    @State private var stopwatchSeconds: Int = 0  // For stopwatch (counts up)
     @State private var timer: Timer?
     @State private var timerStartTime: Date?
+    @State private var isStopwatchMode: Bool = false  // true = counting up, false = counting down
     @State private var showRPEPicker: Bool = false
 
     private var hasTimedTarget: Bool {
@@ -243,23 +245,23 @@ struct SetRowView: View {
 
     private var cardioInputs: some View {
         HStack(spacing: AppSpacing.sm) {
-            // Time display with timer - always shown for cardio
-            HStack(spacing: 4) {
-                if timerRunning {
-                    Text(formatDuration(timerSecondsRemaining))
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundColor(timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.accentBlue)
-                        .monospacedDigit()
-                        .frame(minWidth: 50)
-                } else {
-                    Text(formatDuration(inputDuration))
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
-                        .frame(minWidth: 50)
-                }
+            // Time section - either countdown timer (if time target) or manual input (if distance target)
+            if let targetDuration = flatSet.targetDuration, targetDuration > 0 {
+                // Has time target - show countdown timer
+                HStack(spacing: 4) {
+                    if timerRunning {
+                        Text(formatDuration(timerSecondsRemaining))
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.accentBlue)
+                            .monospacedDigit()
+                            .frame(minWidth: 50)
+                    } else {
+                        Text(formatDuration(inputDuration))
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
+                            .frame(minWidth: 50)
+                    }
 
-                // Timer button - show if there's a time target to count down from
-                if hasTimedTarget {
                     Button {
                         toggleTimer()
                     } label: {
@@ -268,6 +270,58 @@ struct SetRowView: View {
                             .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentBlue)
                             .frame(width: 28, height: 28)
                             .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentBlue.opacity(0.15)))
+                    }
+                    .buttonStyle(.plain)
+                }
+            } else {
+                // No time target (distance-based) - show stopwatch to time the run
+                HStack(spacing: 4) {
+                    if timerRunning {
+                        // Stopwatch counting up
+                        Text(formatDuration(stopwatchSeconds))
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(AppColors.accentBlue)
+                            .monospacedDigit()
+                            .frame(minWidth: 50)
+                    } else {
+                        // Manual input with +/- buttons
+                        Button {
+                            if inputDuration >= 5 { inputDuration -= 5 }
+                        } label: {
+                            Image(systemName: "minus")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(AppColors.textSecondary)
+                                .frame(width: 24, height: 24)
+                                .background(Circle().fill(AppColors.cardBackground))
+                        }
+                        .buttonStyle(.plain)
+
+                        Text(formatDuration(inputDuration))
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
+                            .frame(minWidth: 50)
+
+                        Button {
+                            inputDuration += 5
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(AppColors.textSecondary)
+                                .frame(width: 24, height: 24)
+                                .background(Circle().fill(AppColors.cardBackground))
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    // Stopwatch button to time the run
+                    Button {
+                        toggleStopwatch()
+                    } label: {
+                        Image(systemName: timerRunning ? "stop.fill" : "stopwatch")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentTeal)
+                            .frame(width: 28, height: 28)
+                            .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentTeal.opacity(0.15)))
                     }
                     .buttonStyle(.plain)
                 }
@@ -508,6 +562,56 @@ struct SetRowView: View {
         } else {
             inputDuration = targetTimerSeconds
         }
+    }
+
+    // MARK: - Stopwatch Functions (for distance-based cardio)
+
+    private func toggleStopwatch() {
+        if timerRunning {
+            stopStopwatch()
+        } else {
+            startStopwatch()
+        }
+    }
+
+    private func startStopwatch() {
+        timerStartTime = Date()
+        stopwatchSeconds = 0
+        timerRunning = true
+        isStopwatchMode = true
+
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            updateStopwatch()
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            updateStopwatch()
+        }
+    }
+
+    private func updateStopwatch() {
+        guard let startTime = timerStartTime else { return }
+        stopwatchSeconds = Int(Date().timeIntervalSince(startTime))
+    }
+
+    private func stopStopwatch() {
+        timer?.invalidate()
+        timer = nil
+        timerRunning = false
+        isStopwatchMode = false
+        inputDuration = stopwatchSeconds
+        timerStartTime = nil
+        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
+
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
     }
 
     // MARK: - Helpers
