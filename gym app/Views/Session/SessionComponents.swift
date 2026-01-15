@@ -80,6 +80,7 @@ struct SetRowView: View {
     @State private var timerStartTime: Date?
     @State private var isStopwatchMode: Bool = false  // true = counting up, false = counting down
     @State private var showRPEPicker: Bool = false
+    @State private var showTimePicker: Bool = false  // For manual time entry on distance-based cardio
 
     private var hasTimedTarget: Bool {
         (exercise.exerciseType == .cardio && exercise.tracksTime && flatSet.targetDuration != nil) ||
@@ -124,6 +125,9 @@ struct SetRowView: View {
         .animation(.easeInOut(duration: 0.2), value: flatSet.setData.completed)
         .onAppear { loadDefaults() }
         .onDisappear { stopTimer() }
+        .sheet(isPresented: $showTimePicker) {
+            TimePickerSheet(totalSeconds: $inputDuration, title: "Enter Time")
+        }
     }
 
     // MARK: - Subviews
@@ -284,31 +288,16 @@ struct SetRowView: View {
                             .monospacedDigit()
                             .frame(minWidth: 50)
                     } else {
-                        // Manual input with +/- buttons
+                        // Tappable time display - opens wheel picker
                         Button {
-                            if inputDuration >= 5 { inputDuration -= 5 }
+                            showTimePicker = true
                         } label: {
-                            Image(systemName: "minus")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(AppColors.textSecondary)
-                                .frame(width: 24, height: 24)
-                                .background(Circle().fill(AppColors.cardBackground))
-                        }
-                        .buttonStyle(.plain)
-
-                        Text(formatDuration(inputDuration))
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
-                            .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
-                            .frame(minWidth: 50)
-
-                        Button {
-                            inputDuration += 5
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(AppColors.textSecondary)
-                                .frame(width: 24, height: 24)
-                                .background(Circle().fill(AppColors.cardBackground))
+                            Text(formatDuration(inputDuration))
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 8)
+                                .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.cardBackground))
                         }
                         .buttonStyle(.plain)
                     }
@@ -623,5 +612,82 @@ struct SetRowView: View {
         inputDuration = flatSet.targetDuration ?? 0
         inputDistance = flatSet.targetDistance.map { formatDistance($0) } ?? ""
         inputRPE = 0
+    }
+}
+
+// MARK: - Time Picker Sheet
+
+struct TimePickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var totalSeconds: Int
+    var title: String = "Time"
+    var maxMinutes: Int = 30
+
+    @State private var minutes: Int = 0
+    @State private var seconds: Int = 0
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: AppSpacing.lg) {
+                HStack(spacing: 0) {
+                    // Minutes picker
+                    Picker("Minutes", selection: $minutes) {
+                        ForEach(0...maxMinutes, id: \.self) { min in
+                            Text("\(min)").tag(min)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(width: 80)
+                    .clipped()
+
+                    Text("min")
+                        .font(.headline)
+                        .foregroundColor(AppColors.textSecondary)
+                        .frame(width: 40)
+
+                    // Seconds picker
+                    Picker("Seconds", selection: $seconds) {
+                        ForEach(0..<60, id: \.self) { sec in
+                            Text(String(format: "%02d", sec)).tag(sec)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(width: 80)
+                    .clipped()
+
+                    Text("sec")
+                        .font(.headline)
+                        .foregroundColor(AppColors.textSecondary)
+                        .frame(width: 40)
+                }
+                .frame(height: 150)
+
+                Spacer()
+            }
+            .padding(AppSpacing.lg)
+            .background(AppColors.background.ignoresSafeArea())
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        totalSeconds = (minutes * 60) + seconds
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                    .foregroundColor(AppColors.accentBlue)
+                }
+            }
+            .onAppear {
+                minutes = totalSeconds / 60
+                seconds = totalSeconds % 60
+            }
+        }
+        .presentationDetents([.height(280)])
+        .presentationDragIndicator(.visible)
     }
 }
