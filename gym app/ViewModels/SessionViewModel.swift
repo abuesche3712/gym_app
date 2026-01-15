@@ -26,6 +26,10 @@ class SessionViewModel: ObservableObject {
     @Published var sessionStartTime: Date?
     @Published var sessionElapsedSeconds = 0
 
+    // Rest timer background support
+    private var restTimerStartTime: Date?
+    private var restTimerDuration: Int = 0
+
     // History
     @Published var sessions: [Session] = []
 
@@ -46,43 +50,28 @@ class SessionViewModel: ObservableObject {
     // MARK: - Session Management
 
     func startSession(workout: Workout, modules: [Module]) {
-        let completedModules = modules.map { module in
+        var completedModules = modules.map { module in
             CompletedModule(
                 moduleId: module.id,
                 moduleName: module.name,
                 moduleType: module.type,
                 completedExercises: module.exercises.map { exercise in
-                    SessionExercise(
-                        exerciseId: exercise.id,
-                        exerciseName: exercise.name,
-                        exerciseType: exercise.exerciseType,
-                        cardioMetric: exercise.cardioMetric,
-                        distanceUnit: exercise.distanceUnit,
-                        supersetGroupId: exercise.supersetGroupId,
-                        completedSetGroups: exercise.setGroups.map { setGroup in
-                            CompletedSetGroup(
-                                setGroupId: setGroup.id,
-                                restPeriod: setGroup.restPeriod,
-                                sets: (1...setGroup.sets).map { setNum in
-                                    // Pre-fill with target values for convenience
-                                    SetData(
-                                        setNumber: setNum,
-                                        weight: setGroup.targetWeight,
-                                        reps: setGroup.targetReps,
-                                        completed: false,
-                                        duration: setGroup.isInterval ? setGroup.workDuration : setGroup.targetDuration,
-                                        distance: setGroup.targetDistance,
-                                        holdTime: setGroup.targetHoldTime
-                                    )
-                                },
-                                isInterval: setGroup.isInterval,
-                                workDuration: setGroup.workDuration,
-                                intervalRestDuration: setGroup.intervalRestDuration
-                            )
-                        }
-                    )
+                    convertExerciseToSession(exercise)
                 }
             )
+        }
+
+        // Add standalone exercises as a pseudo-module if any exist
+        if !workout.standaloneExercises.isEmpty {
+            let standaloneModule = CompletedModule(
+                moduleId: UUID(),
+                moduleName: "Exercises",
+                moduleType: .strength,  // Default type for standalone exercises
+                completedExercises: workout.standaloneExercises
+                    .sorted { $0.order < $1.order }
+                    .map { convertExerciseToSession($0.exercise) }
+            )
+            completedModules.append(standaloneModule)
         }
 
         currentSession = Session(
@@ -99,6 +88,38 @@ class SessionViewModel: ObservableObject {
         isSessionActive = true
 
         startSessionTimer()
+    }
+
+    /// Converts an Exercise to a SessionExercise for use in an active session
+    private func convertExerciseToSession(_ exercise: Exercise) -> SessionExercise {
+        SessionExercise(
+            exerciseId: exercise.id,
+            exerciseName: exercise.name,
+            exerciseType: exercise.exerciseType,
+            cardioMetric: exercise.cardioMetric,
+            distanceUnit: exercise.distanceUnit,
+            supersetGroupId: exercise.supersetGroupId,
+            completedSetGroups: exercise.setGroups.map { setGroup in
+                CompletedSetGroup(
+                    setGroupId: setGroup.id,
+                    restPeriod: setGroup.restPeriod,
+                    sets: (1...max(setGroup.sets, 1)).map { setNum in
+                        SetData(
+                            setNumber: setNum,
+                            weight: setGroup.targetWeight,
+                            reps: setGroup.targetReps,
+                            completed: false,
+                            duration: setGroup.isInterval ? setGroup.workDuration : setGroup.targetDuration,
+                            distance: setGroup.targetDistance,
+                            holdTime: setGroup.targetHoldTime
+                        )
+                    },
+                    isInterval: setGroup.isInterval,
+                    workDuration: setGroup.workDuration,
+                    intervalRestDuration: setGroup.intervalRestDuration
+                )
+            }
+        )
     }
 
     func endSession(feeling: Int?, notes: String?) {
@@ -389,27 +410,49 @@ class SessionViewModel: ObservableObject {
     // MARK: - Timer Management
 
     func startRestTimer(seconds: Int) {
-        restTimerSeconds = seconds
+        restTimerDuration = seconds
         restTimerTotal = seconds
+        restTimerStartTime = Date()
         isRestTimerRunning = true
+        updateRestTimer()
 
         timerCancellable = Timer.publish(every: 1, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
-                guard let self = self else { return }
-                if self.restTimerSeconds > 0 {
-                    self.restTimerSeconds -= 1
-                } else {
-                    self.stopRestTimer()
-                }
+                self?.updateRestTimer()
             }
+
+        // Listen for foreground to update timer
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateRestTimer()
+        }
+    }
+
+    private func updateRestTimer() {
+        guard let startTime = restTimerStartTime else { return }
+        let elapsed = Int(Date().timeIntervalSince(startTime))
+        let remaining = restTimerDuration - elapsed
+
+        if remaining > 0 {
+            restTimerSeconds = remaining
+        } else {
+            restTimerSeconds = 0
+            stopRestTimer()
+        }
     }
 
     func stopRestTimer() {
         timerCancellable?.cancel()
+        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
         isRestTimerRunning = false
         restTimerSeconds = 0
         restTimerTotal = 0
+        restTimerStartTime = nil
+        restTimerDuration = 0
     }
 
     private func startSessionTimer() {

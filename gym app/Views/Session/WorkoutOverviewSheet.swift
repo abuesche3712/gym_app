@@ -17,12 +17,31 @@ struct WorkoutOverviewSheet: View {
     let onJumpTo: (Int, Int) -> Void
     let onUpdateSet: (Int, Int, Int, Int, Double?, Int?, Int?, Int?, Int?, Double?) -> Void
     let onAddExercise: (Int, String, ExerciseType, CardioMetric, DistanceUnit) -> Void
+    let onReorderExercise: ((Int, Int, Int) -> Void)?  // moduleIndex, fromIndex, toIndex
 
     @State private var expandedModules: Set<Int> = []
     @State private var expandedExercises: Set<String> = []
     @State private var editingSetLocation: SetLocation?
     @State private var addExerciseModuleIndex: Int? = nil
     @State private var showAddExerciseSheet = false
+
+    init(
+        session: Session?,
+        currentModuleIndex: Int,
+        currentExerciseIndex: Int,
+        onJumpTo: @escaping (Int, Int) -> Void,
+        onUpdateSet: @escaping (Int, Int, Int, Int, Double?, Int?, Int?, Int?, Int?, Double?) -> Void,
+        onAddExercise: @escaping (Int, String, ExerciseType, CardioMetric, DistanceUnit) -> Void,
+        onReorderExercise: ((Int, Int, Int) -> Void)? = nil
+    ) {
+        self.session = session
+        self.currentModuleIndex = currentModuleIndex
+        self.currentExerciseIndex = currentExerciseIndex
+        self.onJumpTo = onJumpTo
+        self.onUpdateSet = onUpdateSet
+        self.onAddExercise = onAddExercise
+        self.onReorderExercise = onReorderExercise
+    }
 
     var body: some View {
         NavigationStack {
@@ -54,6 +73,10 @@ struct WorkoutOverviewSheet: View {
             .navigationTitle("Workout Overview")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    EditButton()
+                        .foregroundColor(AppColors.accentBlue)
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                         .foregroundColor(AppColors.accentBlue)
@@ -132,6 +155,16 @@ struct WorkoutOverviewSheet: View {
                 }
             }
         }
+        .onMove { source, destination in
+            moveExercise(in: moduleIndex, from: source, to: destination)
+        }
+    }
+
+    private func moveExercise(in moduleIndex: Int, from source: IndexSet, to destination: Int) {
+        guard let fromIndex = source.first else { return }
+        // Adjust destination if moving down (List uses insert-before semantics)
+        let toIndex = fromIndex < destination ? destination - 1 : destination
+        onReorderExercise?(moduleIndex, fromIndex, toIndex)
     }
 
     private func exerciseRow(exercise: SessionExercise, moduleIndex: Int, exerciseIndex: Int, isCurrent: Bool, exerciseKey: String) -> some View {
@@ -307,9 +340,11 @@ struct WorkoutOverviewSheet: View {
         case .isometric:
             return set.holdTime.map { formatDuration($0) } ?? "Hold"
         case .cardio:
-            if let d = set.distance { return "\(Int(d))" }
-            if let t = set.duration { return formatDuration(t) }
-            return "—"
+            // Show both time and distance targets if they exist
+            var parts: [String] = []
+            if let t = set.duration, t > 0 { parts.append(formatDuration(t)) }
+            if let d = set.distance, d > 0 { parts.append("\(Int(d))") }
+            return parts.isEmpty ? "—" : parts.joined(separator: " / ")
         case .mobility, .explosive:
             return set.reps.map { "\($0) reps" } ?? "—"
         }

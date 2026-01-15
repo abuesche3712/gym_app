@@ -50,14 +50,15 @@ struct SetIndicator: View {
     }
 }
 
-// MARK: - Set Row View (Expandable)
+// MARK: - Set Row View (Inline Inputs)
 
 struct SetRowView: View {
     let flatSet: FlatSet
     let exercise: SessionExercise
-    let isExpanded: Bool
-    let onTap: () -> Void
+    let isExpanded: Bool  // Kept for API compatibility but not used
+    let onTap: () -> Void  // Kept for API compatibility but not used
     let onLog: (Double?, Int?, Int?, Int?, Int?, Double?) -> Void
+    var onDelete: (() -> Void)? = nil  // Optional delete callback
 
     @State private var inputWeight: String = ""
     @State private var inputReps: String = ""
@@ -65,133 +66,350 @@ struct SetRowView: View {
     @State private var inputDuration: Int = 0
     @State private var inputHoldTime: Int = 0
     @State private var inputDistance: String = ""
-    @FocusState private var isInputFocused: Bool
+    @FocusState private var focusedField: Field?
+
+    enum Field: Hashable {
+        case weight, reps, distance
+    }
+
+    // Inline timer state
+    @State private var timerRunning: Bool = false
+    @State private var timerSecondsRemaining: Int = 0
+    @State private var timer: Timer?
+    @State private var timerStartTime: Date?
+    @State private var showRPEPicker: Bool = false
+
+    private var hasTimedTarget: Bool {
+        (exercise.exerciseType == .cardio && exercise.tracksTime && flatSet.targetDuration != nil) ||
+        (exercise.exerciseType == .isometric && flatSet.targetHoldTime != nil)
+    }
+
+    private var targetTimerSeconds: Int {
+        if exercise.exerciseType == .isometric {
+            return flatSet.targetHoldTime ?? 0
+        }
+        return flatSet.targetDuration ?? 0
+    }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Collapsed row - always visible
-            Button(action: onTap) {
-                HStack(spacing: AppSpacing.md) {
-                    // Set number indicator
-                    ZStack {
-                        Circle()
-                            .fill(flatSet.setData.completed ? AppColors.success.opacity(0.15) : AppColors.surfaceLight)
-                            .frame(width: 36, height: 36)
+        HStack(spacing: AppSpacing.sm) {
+            // Set number indicator
+            setNumberBadge
 
-                        if flatSet.setData.completed {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(AppColors.success)
-                        } else {
-                            Text("\(flatSet.setNumber)")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-                    }
+            if flatSet.setData.completed {
+                // Completed state - show summary
+                completedView
+            } else {
+                // Input fields based on exercise type
+                inputFieldsView
 
-                    // Set info
-                    VStack(alignment: .leading, spacing: 2) {
-                        if flatSet.setData.completed {
-                            Text(completedSummary)
-                                .font(.subheadline.weight(.medium))
-                                .foregroundColor(AppColors.textPrimary)
-                        } else {
-                            Text(targetSummary)
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-                    }
-
-                    Spacer()
-
-                    // Expand indicator
-                    if !flatSet.setData.completed {
-                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(AppColors.textTertiary)
-                    }
+                // Delete button (if available and set not completed)
+                if let onDelete = onDelete {
+                    deleteButton(action: onDelete)
                 }
-                .padding(AppSpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(flatSet.setData.completed ? AppColors.success.opacity(0.05) : (isExpanded ? AppColors.accentBlue.opacity(0.05) : AppColors.surfaceLight))
-                )
+
+                // Log button
+                logButton
             }
-            .buttonStyle(.plain)
-            .disabled(flatSet.setData.completed)
+        }
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.medium)
+                .fill(backgroundColor)
+        )
+        .animation(.easeInOut(duration: 0.2), value: timerRunning)
+        .animation(.easeInOut(duration: 0.2), value: flatSet.setData.completed)
+        .onAppear { loadDefaults() }
+        .onDisappear { stopTimer() }
+    }
 
-            // Expanded input section
-            if isExpanded && !flatSet.setData.completed {
-                VStack(spacing: AppSpacing.md) {
-                    inputFields
+    // MARK: - Subviews
 
-                    // Log button
+    private var setNumberBadge: some View {
+        ZStack {
+            Circle()
+                .fill(flatSet.setData.completed ? AppColors.success.opacity(0.15) : AppColors.surfaceLight)
+                .frame(width: 32, height: 32)
+
+            if flatSet.setData.completed {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(AppColors.success)
+            } else {
+                Text("\(flatSet.setNumber)")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(AppColors.textSecondary)
+            }
+        }
+    }
+
+    private var backgroundColor: Color {
+        if flatSet.setData.completed {
+            return AppColors.success.opacity(0.05)
+        } else if timerRunning {
+            return AppColors.accentBlue.opacity(0.1)
+        }
+        return AppColors.surfaceLight
+    }
+
+    @ViewBuilder
+    private var completedView: some View {
+        Text(completedSummary)
+            .font(.subheadline.weight(.medium))
+            .foregroundColor(AppColors.textPrimary)
+        Spacer()
+    }
+
+    @ViewBuilder
+    private var inputFieldsView: some View {
+        switch exercise.exerciseType {
+        case .strength:
+            strengthInputs
+        case .cardio:
+            cardioInputs
+        case .isometric:
+            isometricInputs
+        case .mobility, .explosive:
+            repsOnlyInputs
+        }
+    }
+
+    // MARK: - Strength Inputs
+
+    private var strengthInputs: some View {
+        HStack(spacing: AppSpacing.sm) {
+            // Weight input
+            HStack(spacing: 2) {
+                TextField("0", text: $inputWeight)
+                    .keyboardType(.decimalPad)
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 50)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 4)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.cardBackground))
+                    .focused($focusedField, equals: .weight)
+
+                Text("lbs")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
+            }
+
+            Text("×")
+                .font(.subheadline)
+                .foregroundColor(AppColors.textTertiary)
+
+            // Reps input
+            HStack(spacing: 2) {
+                TextField("0", text: $inputReps)
+                    .keyboardType(.numberPad)
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 40)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 4)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.cardBackground))
+                    .focused($focusedField, equals: .reps)
+
+                Text("reps")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
+            }
+
+            Spacer()
+
+            // RPE button
+            Menu {
+                Button("--") { inputRPE = 0 }
+                ForEach(5...10, id: \.self) { rpe in
+                    Button("RPE \(rpe)") { inputRPE = rpe }
+                }
+            } label: {
+                Text(inputRPE > 0 ? "RPE \(inputRPE)" : "RPE")
+                    .font(.caption.weight(.medium))
+                    .foregroundColor(inputRPE > 0 ? AppColors.textPrimary : AppColors.textTertiary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.cardBackground))
+            }
+        }
+    }
+
+    // MARK: - Cardio Inputs
+    // Always show both time and distance inputs - user can log either or both
+
+    private var cardioInputs: some View {
+        HStack(spacing: AppSpacing.sm) {
+            // Time display with timer - always shown for cardio
+            HStack(spacing: 4) {
+                if timerRunning {
+                    Text(formatDuration(timerSecondsRemaining))
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundColor(timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.accentBlue)
+                        .monospacedDigit()
+                        .frame(minWidth: 50)
+                } else {
+                    Text(formatDuration(inputDuration))
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
+                        .frame(minWidth: 50)
+                }
+
+                // Timer button - show if there's a time target to count down from
+                if hasTimedTarget {
                     Button {
-                        isInputFocused = false
-                        onLog(
-                            Double(inputWeight),
-                            Int(inputReps),
-                            inputRPE > 0 ? inputRPE : nil,
-                            inputDuration > 0 ? inputDuration : nil,
-                            inputHoldTime > 0 ? inputHoldTime : nil,
-                            Double(inputDistance)
-                        )
+                        toggleTimer()
                     } label: {
-                        HStack(spacing: AppSpacing.sm) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 14, weight: .semibold))
-                            Text("Log Set \(flatSet.setNumber)")
-                                .font(.subheadline.weight(.semibold))
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.md)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppCorners.medium)
-                                .fill(AppGradients.accentGradient)
-                        )
+                        Image(systemName: timerRunning ? "stop.fill" : "play.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentBlue)
+                            .frame(width: 28, height: 28)
+                            .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentBlue.opacity(0.15)))
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(AppSpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(AppColors.cardBackground)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppCorners.medium)
-                                .stroke(AppColors.accentBlue.opacity(0.3), lineWidth: 1)
-                        )
-                )
-                .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .top)))
             }
+
+            Text("/")
+                .font(.subheadline)
+                .foregroundColor(AppColors.textTertiary)
+
+            // Distance input - always shown for cardio
+            HStack(spacing: 2) {
+                TextField("0", text: $inputDistance)
+                    .keyboardType(.decimalPad)
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 50)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 4)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.cardBackground))
+                    .focused($focusedField, equals: .distance)
+
+                Text(exercise.distanceUnit.abbreviation)
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
+            }
+
+            Spacer()
         }
-        .onAppear { loadDefaults() }
     }
 
-    private var targetSummary: String {
-        switch exercise.exerciseType {
-        case .strength:
-            let weight = flatSet.targetWeight.map { formatWeight($0) + " lbs" } ?? ""
-            let reps = flatSet.targetReps.map { "\($0) reps" } ?? ""
-            if !weight.isEmpty && !reps.isEmpty {
-                return "\(weight) × \(reps)"
+    // MARK: - Isometric Inputs
+
+    private var isometricInputs: some View {
+        HStack(spacing: AppSpacing.sm) {
+            HStack(spacing: 4) {
+                if timerRunning {
+                    Text(formatDuration(timerSecondsRemaining))
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundColor(timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.accentBlue)
+                        .monospacedDigit()
+                        .frame(minWidth: 50)
+                } else {
+                    Text(formatDuration(inputHoldTime))
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(AppColors.textPrimary)
+                        .frame(minWidth: 50)
+                }
+
+                Text("hold")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
+
+                if hasTimedTarget {
+                    Button {
+                        toggleTimer()
+                    } label: {
+                        Image(systemName: timerRunning ? "stop.fill" : "play.fill")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentBlue)
+                            .frame(width: 28, height: 28)
+                            .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentBlue.opacity(0.15)))
+                    }
+                    .buttonStyle(.plain)
+                }
             }
-            return weight.isEmpty ? reps : weight
-        case .isometric:
-            return flatSet.targetHoldTime.map { formatDuration($0) + " hold" } ?? "Hold"
-        case .cardio:
-            var parts: [String] = []
-            if exercise.tracksTime, let duration = flatSet.targetDuration {
-                parts.append(formatDuration(duration))
-            }
-            if exercise.tracksDistance, let distance = flatSet.targetDistance {
-                parts.append("\(formatDistance(distance)) \(exercise.distanceUnit.abbreviation)")
-            }
-            return parts.isEmpty ? "Cardio" : parts.joined(separator: " / ")
-        case .mobility, .explosive:
-            return flatSet.targetReps.map { "\($0) reps" } ?? "Reps"
+
+            Spacer()
         }
     }
+
+    // MARK: - Reps Only Inputs
+
+    private var repsOnlyInputs: some View {
+        HStack(spacing: AppSpacing.sm) {
+            HStack(spacing: 2) {
+                TextField("0", text: $inputReps)
+                    .keyboardType(.numberPad)
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 40)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 4)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.cardBackground))
+                    .focused($focusedField, equals: .reps)
+
+                Text("reps")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
+            }
+
+            Spacer()
+        }
+    }
+
+    // MARK: - Delete Button
+
+    private func deleteButton(action: @escaping () -> Void) -> some View {
+        Button {
+            focusedField = nil
+            action()
+        } label: {
+            Image(systemName: "trash")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(AppColors.error)
+                .frame(width: 32, height: 32)
+                .background(
+                    Circle()
+                        .fill(AppColors.error.opacity(0.1))
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Log Button
+
+    private var logButton: some View {
+        Button {
+            focusedField = nil
+            onLog(
+                Double(inputWeight),
+                Int(inputReps),
+                inputRPE > 0 ? inputRPE : nil,
+                inputDuration > 0 ? inputDuration : nil,
+                inputHoldTime > 0 ? inputHoldTime : nil,
+                Double(inputDistance)
+            )
+        } label: {
+            Image(systemName: "checkmark")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 36, height: 36)
+                .background(
+                    Circle()
+                        .fill(AppGradients.accentGradient)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Completed Summary
 
     private var completedSummary: String {
         let set = flatSet.setData
@@ -201,11 +419,12 @@ struct SetRowView: View {
         case .isometric:
             return set.formattedIsometric ?? "Completed"
         case .cardio:
+            // Show whatever was actually logged (time, distance, or both)
             var parts: [String] = []
-            if exercise.tracksTime, let duration = set.duration {
+            if let duration = set.duration, duration > 0 {
                 parts.append(formatDuration(duration))
             }
-            if exercise.tracksDistance, let distance = set.distance {
+            if let distance = set.distance, distance > 0 {
                 parts.append("\(formatDistance(distance)) \(exercise.distanceUnit.abbreviation)")
             }
             return parts.isEmpty ? "Completed" : parts.joined(separator: " / ")
@@ -214,112 +433,92 @@ struct SetRowView: View {
         }
     }
 
-    @ViewBuilder
-    private var inputFields: some View {
-        switch exercise.exerciseType {
-        case .strength:
-            HStack(spacing: AppSpacing.md) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("WEIGHT")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                    TextField("0", text: $inputWeight)
-                        .keyboardType(.decimalPad)
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .padding(AppSpacing.sm)
-                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfaceLight))
-                        .focused($isInputFocused)
-                }
+    // MARK: - Timer Functions
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("REPS")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                    TextField("0", text: $inputReps)
-                        .keyboardType(.numberPad)
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .padding(AppSpacing.sm)
-                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfaceLight))
-                        .focused($isInputFocused)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("RPE")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                    Picker("RPE", selection: $inputRPE) {
-                        Text("--").tag(0)
-                        ForEach(5...10, id: \.self) { rpe in
-                            Text("\(rpe)").tag(rpe)
-                        }
-                    }
-                    .pickerStyle(.wheel)
-                    .frame(height: 60)
-                    .clipped()
-                }
+    private func toggleTimer() {
+        if timerRunning {
+            stopTimer()
+            let elapsed = targetTimerSeconds - timerSecondsRemaining
+            if exercise.exerciseType == .isometric {
+                inputHoldTime = elapsed
+            } else {
+                inputDuration = elapsed
             }
-
-        case .isometric:
-            TimePickerView(totalSeconds: $inputHoldTime, maxMinutes: 5, label: "Hold Time")
-
-        case .cardio:
-            VStack(spacing: AppSpacing.md) {
-                if exercise.tracksTime {
-                    TimePickerView(totalSeconds: $inputDuration, maxMinutes: 60, label: "Time", secondsStep: 1)
-                }
-
-                if exercise.tracksDistance {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("DISTANCE (\(exercise.distanceUnit.abbreviation.uppercased()))")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundColor(AppColors.textTertiary)
-                        TextField("0", text: $inputDistance)
-                            .keyboardType(.decimalPad)
-                            .font(.system(size: 24, weight: .bold, design: .rounded))
-                            .foregroundColor(AppColors.textPrimary)
-                            .multilineTextAlignment(.center)
-                            .padding(AppSpacing.sm)
-                            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfaceLight))
-                            .focused($isInputFocused)
-                    }
-                }
-            }
-
-        case .mobility, .explosive:
-            VStack(alignment: .leading, spacing: 4) {
-                Text("REPS")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundColor(AppColors.textTertiary)
-                TextField("0", text: $inputReps)
-                    .keyboardType(.numberPad)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundColor(AppColors.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .padding(AppSpacing.sm)
-                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfaceLight))
-                    .focused($isInputFocused)
-            }
+        } else {
+            startTimer()
         }
     }
+
+    private func startTimer() {
+        timerStartTime = Date()
+        timerSecondsRemaining = targetTimerSeconds
+        timerRunning = true
+
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+
+        updateTimerFromStartTime()
+
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [self] _ in
+            updateTimerFromStartTime()
+        }
+
+        // Listen for foreground to update timer
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [self] _ in
+            updateTimerFromStartTime()
+        }
+    }
+
+    private func updateTimerFromStartTime() {
+        guard let startTime = timerStartTime else { return }
+        let elapsed = Int(Date().timeIntervalSince(startTime))
+        let remaining = targetTimerSeconds - elapsed
+
+        if remaining > 0 {
+            // Haptic for last 3 seconds
+            if remaining <= 3 && timerSecondsRemaining > 3 {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+            }
+            timerSecondsRemaining = remaining
+        } else {
+            timerComplete()
+        }
+    }
+
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+        timerRunning = false
+        timerStartTime = nil
+        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
+    }
+
+    private func timerComplete() {
+        stopTimer()
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+
+        if exercise.exerciseType == .isometric {
+            inputHoldTime = targetTimerSeconds
+        } else {
+            inputDuration = targetTimerSeconds
+        }
+    }
+
+    // MARK: - Helpers
 
     private func loadDefaults() {
         inputWeight = flatSet.targetWeight.map { formatWeight($0) } ?? ""
         inputReps = flatSet.targetReps.map { "\($0)" } ?? ""
         inputHoldTime = flatSet.targetHoldTime ?? 0
+        inputDuration = flatSet.targetDuration ?? 0
+        inputDistance = flatSet.targetDistance.map { formatDistance($0) } ?? ""
         inputRPE = 0
-
-        if exercise.exerciseType == .cardio {
-            // Pre-fill targets if set, but start at 0 for logging
-            inputDuration = flatSet.targetDuration ?? 0
-            inputDistance = flatSet.targetDistance.map { formatDistance($0) } ?? ""
-        } else {
-            inputDuration = flatSet.targetDuration ?? 0
-            inputDistance = flatSet.targetDistance.map { formatDistance($0) } ?? ""
-        }
     }
 
     private func formatWeight(_ weight: Double) -> String {

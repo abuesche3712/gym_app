@@ -210,6 +210,9 @@ struct ActiveSessionView: View {
                     },
                     onAddExercise: { moduleIndex, name, type, cardioMetric, distanceUnit in
                         addExerciseToModule(moduleIndex: moduleIndex, name: name, type: type, cardioMetric: cardioMetric, distanceUnit: distanceUnit)
+                    },
+                    onReorderExercise: { moduleIndex, fromIndex, toIndex in
+                        reorderExercise(in: moduleIndex, from: fromIndex, to: toIndex)
                     }
                 )
             }
@@ -491,7 +494,12 @@ struct ActiveSessionView: View {
                                     if !allSetsCompleted(exercise) {
                                         sessionViewModel.startRestTimer(seconds: restPeriod)
                                     }
-                                }
+                                },
+                                onDelete: canDeleteSet(exercise: exercise) ? {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        deleteSetAt(flatSet: flatSet)
+                                    }
+                                } : nil
                             )
                         }
                     }
@@ -789,6 +797,46 @@ struct ActiveSessionView: View {
         sessionViewModel.currentSession = session
     }
 
+    // MARK: - Delete Set
+
+    private func canDeleteSet(exercise: SessionExercise) -> Bool {
+        // Can delete if there's more than 1 set total in the exercise
+        let totalSets = exercise.completedSetGroups.reduce(0) { $0 + $1.sets.count }
+        return totalSets > 1
+    }
+
+    private func deleteSetAt(flatSet: FlatSet) {
+        guard var session = sessionViewModel.currentSession else { return }
+
+        var module = session.completedModules[sessionViewModel.currentModuleIndex]
+        var exercise = module.completedExercises[sessionViewModel.currentExerciseIndex]
+
+        // Find the set group and remove the set
+        guard flatSet.setGroupIndex < exercise.completedSetGroups.count else { return }
+        var setGroup = exercise.completedSetGroups[flatSet.setGroupIndex]
+
+        guard flatSet.setIndex < setGroup.sets.count else { return }
+
+        // Remove the set
+        setGroup.sets.remove(at: flatSet.setIndex)
+
+        // If the set group is now empty, remove it too
+        if setGroup.sets.isEmpty {
+            exercise.completedSetGroups.remove(at: flatSet.setGroupIndex)
+        } else {
+            // Update set numbers for remaining sets
+            for i in 0..<setGroup.sets.count {
+                setGroup.sets[i].setNumber = i + 1
+            }
+            exercise.completedSetGroups[flatSet.setGroupIndex] = setGroup
+        }
+
+        module.completedExercises[sessionViewModel.currentExerciseIndex] = exercise
+        session.completedModules[sessionViewModel.currentModuleIndex] = module
+
+        sessionViewModel.currentSession = session
+    }
+
     // MARK: - Substitute Exercise
 
     private func substituteCurrentExercise(name: String, type: ExerciseType, cardioMetric: CardioMetric, distanceUnit: DistanceUnit) {
@@ -846,6 +894,37 @@ struct ActiveSessionView: View {
         // Add to the specified module
         session.completedModules[moduleIndex].completedExercises.append(newExercise)
         sessionViewModel.currentSession = session
+    }
+
+    // MARK: - Reorder Exercise
+
+    private func reorderExercise(in moduleIndex: Int, from: Int, to: Int) {
+        guard var session = sessionViewModel.currentSession else { return }
+        guard moduleIndex < session.completedModules.count else { return }
+
+        var module = session.completedModules[moduleIndex]
+        guard from < module.completedExercises.count && to < module.completedExercises.count else { return }
+
+        // Move the exercise
+        let exercise = module.completedExercises.remove(at: from)
+        module.completedExercises.insert(exercise, at: to)
+
+        session.completedModules[moduleIndex] = module
+        sessionViewModel.currentSession = session
+
+        // Update current exercise index if needed
+        if moduleIndex == sessionViewModel.currentModuleIndex {
+            if sessionViewModel.currentExerciseIndex == from {
+                // We moved the current exercise
+                sessionViewModel.currentExerciseIndex = to
+            } else if from < sessionViewModel.currentExerciseIndex && to >= sessionViewModel.currentExerciseIndex {
+                // Moved an exercise from before to after current
+                sessionViewModel.currentExerciseIndex -= 1
+            } else if from > sessionViewModel.currentExerciseIndex && to <= sessionViewModel.currentExerciseIndex {
+                // Moved an exercise from after to before current
+                sessionViewModel.currentExerciseIndex += 1
+            }
+        }
     }
 
     // MARK: - Recent Sets

@@ -11,6 +11,7 @@ struct Workout: Identifiable, Codable, Hashable {
     var id: UUID
     var name: String
     var moduleReferences: [ModuleReference]
+    var standaloneExercises: [WorkoutExercise]  // Exercises added directly to workout
     var estimatedDuration: Int? // minutes
     var notes: String?
     var createdAt: Date
@@ -22,6 +23,7 @@ struct Workout: Identifiable, Codable, Hashable {
         id: UUID = UUID(),
         name: String,
         moduleReferences: [ModuleReference] = [],
+        standaloneExercises: [WorkoutExercise] = [],
         estimatedDuration: Int? = nil,
         notes: String? = nil,
         createdAt: Date = Date(),
@@ -32,6 +34,7 @@ struct Workout: Identifiable, Codable, Hashable {
         self.id = id
         self.name = name
         self.moduleReferences = moduleReferences
+        self.standaloneExercises = standaloneExercises
         self.estimatedDuration = estimatedDuration
         self.notes = notes
         self.createdAt = createdAt
@@ -63,6 +66,60 @@ struct Workout: Identifiable, Codable, Hashable {
             moduleReferences[i].order = i
         }
         updatedAt = Date()
+    }
+
+    // MARK: - Standalone Exercise Management
+
+    mutating func addStandaloneExercise(_ exercise: Exercise) {
+        let order = standaloneExercises.count
+        let workoutExercise = WorkoutExercise(exercise: exercise, order: order)
+        standaloneExercises.append(workoutExercise)
+        updatedAt = Date()
+    }
+
+    mutating func removeStandaloneExercise(at index: Int) {
+        standaloneExercises.remove(at: index)
+        // Reorder remaining exercises
+        for i in 0..<standaloneExercises.count {
+            standaloneExercises[i].order = i
+        }
+        updatedAt = Date()
+    }
+
+    mutating func reorderStandaloneExercises(from source: IndexSet, to destination: Int) {
+        standaloneExercises.move(fromOffsets: source, toOffset: destination)
+        // Update order values
+        for i in 0..<standaloneExercises.count {
+            standaloneExercises[i].order = i
+        }
+        updatedAt = Date()
+    }
+
+    /// Whether this workout has any standalone exercises
+    var hasStandaloneExercises: Bool {
+        !standaloneExercises.isEmpty
+    }
+}
+
+// MARK: - Workout Exercise (Standalone)
+
+/// An exercise added directly to a workout (not via a module)
+struct WorkoutExercise: Identifiable, Codable, Hashable {
+    var id: UUID
+    var exercise: Exercise
+    var order: Int
+    var notes: String?
+
+    init(
+        id: UUID = UUID(),
+        exercise: Exercise,
+        order: Int,
+        notes: String? = nil
+    ) {
+        self.id = id
+        self.exercise = exercise
+        self.order = order
+        self.notes = notes
     }
 }
 

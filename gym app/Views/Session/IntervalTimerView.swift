@@ -22,7 +22,7 @@ enum IntervalPhase {
 
     var color: Color {
         switch self {
-        case .work: return AppColors.success
+        case .work: return AppColors.accentBlue
         case .rest: return AppColors.accentTeal
         case .complete: return AppColors.accentBlue
         }
@@ -44,6 +44,11 @@ struct IntervalTimerView: View {
     @State private var timer: Timer?
     @State private var roundDurations: [Int] = []  // Actual work duration for each round
     @State private var currentWorkElapsed: Int = 0  // Time spent in current work phase
+
+    // Background-safe timing
+    @State private var phaseStartTime: Date?
+    @State private var pausedTimeAccumulated: TimeInterval = 0
+    @State private var pauseStartTime: Date?
 
     @Environment(\.dismiss) private var dismiss
 
@@ -225,17 +230,18 @@ struct IntervalTimerView: View {
             Button {
                 togglePause()
             } label: {
+                let buttonColor = isPaused ? AppColors.accentTeal : AppColors.accentBlue
                 VStack(spacing: 4) {
                     Image(systemName: isPaused ? "play.fill" : "pause.fill")
                         .font(.system(size: 32))
                     Text(isPaused ? "Resume" : "Pause")
                         .font(.caption.weight(.medium))
                 }
-                .foregroundColor(AppColors.accentBlue)
+                .foregroundColor(buttonColor)
                 .frame(width: 100, height: 100)
                 .background(
                     Circle()
-                        .fill(AppColors.accentBlue.opacity(0.15))
+                        .fill(buttonColor.opacity(0.15))
                 )
             }
 
@@ -262,32 +268,69 @@ struct IntervalTimerView: View {
     // MARK: - Timer Logic
 
     private func startTimer() {
+        phaseStartTime = Date()
+        pausedTimeAccumulated = 0
+
+        updateFromStartTime()
+
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             guard !isPaused else { return }
-            tick()
+            updateFromStartTime()
+        }
+
+        // Listen for foreground to update timer
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { _ in
+            updateFromStartTime()
         }
     }
 
     private func stopTimer() {
         timer?.invalidate()
         timer = nil
+        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
     }
 
     private func togglePause() {
+        if isPaused {
+            // Resuming - add paused time to accumulated
+            if let pauseStart = pauseStartTime {
+                pausedTimeAccumulated += Date().timeIntervalSince(pauseStart)
+            }
+            pauseStartTime = nil
+        } else {
+            // Pausing - record when pause started
+            pauseStartTime = Date()
+        }
         isPaused.toggle()
-        // Haptic for pause/resume
+
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
     }
 
-    private func tick() {
-        if phase == .work {
-            currentWorkElapsed += 1
+    private func updateFromStartTime() {
+        guard let startTime = phaseStartTime else { return }
+
+        // Calculate total paused time including current pause
+        var totalPaused = pausedTimeAccumulated
+        if isPaused, let pauseStart = pauseStartTime {
+            totalPaused += Date().timeIntervalSince(pauseStart)
         }
 
-        secondsRemaining -= 1
+        let elapsed = Int(Date().timeIntervalSince(startTime) - totalPaused)
+        let phaseDuration = phase == .work ? workDuration : restDuration
+        let remaining = phaseDuration - elapsed
 
-        if secondsRemaining <= 0 {
+        if phase == .work {
+            currentWorkElapsed = elapsed
+        }
+
+        if remaining > 0 {
+            secondsRemaining = remaining
+        } else {
             transitionPhase()
         }
     }
@@ -306,6 +349,9 @@ struct IntervalTimerView: View {
                 // Go to rest
                 phase = .rest
                 secondsRemaining = restDuration
+                // Reset timing for new phase
+                phaseStartTime = Date()
+                pausedTimeAccumulated = 0
                 generator.notificationOccurred(.success)
             } else {
                 // Last round complete
@@ -319,6 +365,9 @@ struct IntervalTimerView: View {
             currentRound += 1
             phase = .work
             secondsRemaining = workDuration
+            // Reset timing for new phase
+            phaseStartTime = Date()
+            pausedTimeAccumulated = 0
             generator.notificationOccurred(.warning)
 
         case .complete:

@@ -18,8 +18,10 @@ struct WorkoutFormView: View {
     @State private var notes: String = ""
     @State private var estimatedDuration: String = ""
     @State private var selectedModuleIds: [UUID] = []
+    @State private var standaloneExercises: [Exercise] = []
 
     @State private var showingModulePicker = false
+    @State private var showingExercisePicker = false
 
     private var isEditing: Bool { workout != nil }
 
@@ -73,9 +75,53 @@ struct WorkoutFormView: View {
                 HStack {
                     Text("Modules")
                     Spacer()
-                    EditButton()
-                        .font(.caption)
+                    if !selectedModuleIds.isEmpty {
+                        EditButton()
+                            .font(.caption)
+                    }
                 }
+            }
+
+            // Standalone Exercises Section
+            Section {
+                if standaloneExercises.isEmpty {
+                    Text("No exercises added")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(Array(standaloneExercises.enumerated()), id: \.element.id) { index, exercise in
+                        HStack {
+                            Image(systemName: exercise.exerciseType.icon)
+                                .foregroundStyle(AppColors.accentBlue)
+
+                            VStack(alignment: .leading) {
+                                Text(exercise.name)
+                                    .font(.subheadline)
+                                Text(exercise.formattedSetScheme.isEmpty ? "No sets" : exercise.formattedSetScheme)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .onDelete(perform: removeExercise)
+                    .onMove(perform: moveExercise)
+                }
+
+                Button {
+                    showingExercisePicker = true
+                } label: {
+                    Label("Add Exercise", systemImage: "plus.circle")
+                }
+            } header: {
+                HStack {
+                    Text("Standalone Exercises")
+                    Spacer()
+                    if !standaloneExercises.isEmpty {
+                        EditButton()
+                            .font(.caption)
+                    }
+                }
+            } footer: {
+                Text("Add exercises directly without creating a module")
             }
 
             Section("Notes") {
@@ -102,6 +148,11 @@ struct WorkoutFormView: View {
         .sheet(isPresented: $showingModulePicker) {
             ModulePickerView(selectedModuleIds: $selectedModuleIds)
         }
+        .sheet(isPresented: $showingExercisePicker) {
+            QuickExerciseFormView { exercise in
+                standaloneExercises.append(exercise)
+            }
+        }
         .onAppear {
             if let workout = workout {
                 name = workout.name
@@ -112,6 +163,9 @@ struct WorkoutFormView: View {
                 selectedModuleIds = workout.moduleReferences
                     .sorted { $0.order < $1.order }
                     .map { $0.moduleId }
+                standaloneExercises = workout.standaloneExercises
+                    .sorted { $0.order < $1.order }
+                    .map { $0.exercise }
             }
         }
     }
@@ -124,6 +178,14 @@ struct WorkoutFormView: View {
         selectedModuleIds.move(fromOffsets: source, toOffset: destination)
     }
 
+    private func removeExercise(at offsets: IndexSet) {
+        standaloneExercises.remove(atOffsets: offsets)
+    }
+
+    private func moveExercise(from source: IndexSet, to destination: Int) {
+        standaloneExercises.move(fromOffsets: source, toOffset: destination)
+    }
+
     private func saveWorkout() {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         let trimmedNotes = notes.trimmingCharacters(in: .whitespaces)
@@ -133,17 +195,23 @@ struct WorkoutFormView: View {
             ModuleReference(moduleId: moduleId, order: index)
         }
 
+        let workoutExercises = standaloneExercises.enumerated().map { index, exercise in
+            WorkoutExercise(exercise: exercise, order: index)
+        }
+
         if var existingWorkout = workout {
             existingWorkout.name = trimmedName
             existingWorkout.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
             existingWorkout.estimatedDuration = duration
             existingWorkout.moduleReferences = moduleRefs
+            existingWorkout.standaloneExercises = workoutExercises
             existingWorkout.updatedAt = Date()
             workoutViewModel.saveWorkout(existingWorkout)
         } else {
             let newWorkout = Workout(
                 name: trimmedName,
                 moduleReferences: moduleRefs,
+                standaloneExercises: workoutExercises,
                 estimatedDuration: duration,
                 notes: trimmedNotes.isEmpty ? nil : trimmedNotes
             )
@@ -244,6 +312,158 @@ struct ModulePickerView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Quick Exercise Form
+
+struct QuickExerciseFormView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let onSave: (Exercise) -> Void
+
+    @State private var name: String = ""
+    @State private var exerciseType: ExerciseType = .strength
+    @State private var sets: Int = 3
+    @State private var reps: Int = 10
+    @State private var targetWeight: String = ""
+    @State private var targetDuration: Int = 60
+    @State private var targetHoldTime: Int = 30
+    @State private var targetDistance: String = ""
+    @State private var distanceUnit: DistanceUnit = .miles
+    @State private var cardioMetric: CardioMetric = .timeOnly
+    @State private var restPeriod: Int = 90
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Exercise Info") {
+                    TextField("Exercise Name", text: $name)
+
+                    Picker("Type", selection: $exerciseType) {
+                        ForEach(ExerciseType.allCases) { type in
+                            Label(type.displayName, systemImage: type.icon)
+                                .tag(type)
+                        }
+                    }
+                }
+
+                Section("Set Configuration") {
+                    Stepper("Sets: \(sets)", value: $sets, in: 1...20)
+
+                    switch exerciseType {
+                    case .strength:
+                        Stepper("Reps: \(reps)", value: $reps, in: 1...100)
+                        HStack {
+                            Text("Target Weight")
+                            Spacer()
+                            TextField("0", text: $targetWeight)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 60)
+                            Text("lbs")
+                                .foregroundStyle(.secondary)
+                        }
+
+                    case .cardio:
+                        Picker("Track", selection: $cardioMetric) {
+                            ForEach(CardioMetric.allCases) { metric in
+                                Text(metric.displayName).tag(metric)
+                            }
+                        }
+                        if cardioMetric.tracksTime {
+                            Stepper("Duration: \(targetDuration / 60):\(String(format: "%02d", targetDuration % 60))", value: $targetDuration, in: 10...3600, step: 30)
+                        }
+                        if cardioMetric.tracksDistance {
+                            HStack {
+                                Text("Distance")
+                                Spacer()
+                                TextField("0", text: $targetDistance)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
+                                    .frame(width: 60)
+                                Picker("", selection: $distanceUnit) {
+                                    ForEach(DistanceUnit.allCases) { unit in
+                                        Text(unit.abbreviation).tag(unit)
+                                    }
+                                }
+                                .frame(width: 70)
+                            }
+                        }
+
+                    case .isometric:
+                        Stepper("Hold: \(targetHoldTime)s", value: $targetHoldTime, in: 5...300, step: 5)
+
+                    case .mobility, .explosive:
+                        Stepper("Reps: \(reps)", value: $reps, in: 1...100)
+                    }
+
+                    Stepper("Rest: \(restPeriod)s", value: $restPeriod, in: 0...300, step: 15)
+                }
+            }
+            .navigationTitle("Add Exercise")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        saveExercise()
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+    }
+
+    private func saveExercise() {
+        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+
+        var setGroup: SetGroup
+
+        switch exerciseType {
+        case .strength:
+            setGroup = SetGroup(
+                sets: sets,
+                targetReps: reps,
+                targetWeight: Double(targetWeight),
+                restPeriod: restPeriod
+            )
+        case .cardio:
+            setGroup = SetGroup(
+                sets: sets,
+                targetDuration: cardioMetric.tracksTime ? targetDuration : nil,
+                targetDistance: cardioMetric.tracksDistance ? Double(targetDistance) : nil,
+                restPeriod: restPeriod
+            )
+        case .isometric:
+            setGroup = SetGroup(
+                sets: sets,
+                targetHoldTime: targetHoldTime,
+                restPeriod: restPeriod
+            )
+        case .mobility, .explosive:
+            setGroup = SetGroup(
+                sets: sets,
+                targetReps: reps,
+                restPeriod: restPeriod
+            )
+        }
+
+        let exercise = Exercise(
+            name: trimmedName,
+            exerciseType: exerciseType,
+            cardioMetric: cardioMetric,
+            distanceUnit: distanceUnit,
+            setGroups: [setGroup]
+        )
+
+        onSave(exercise)
+        dismiss()
     }
 }
 
