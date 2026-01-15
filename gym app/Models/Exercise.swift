@@ -4,9 +4,25 @@
 //
 //  A specific movement or activity within a module
 //
+//  DEPRECATED: This model is being replaced by the normalized ExerciseTemplate + ExerciseInstance pattern.
+//  - Use ExerciseTemplate for the canonical exercise definition (name, type, muscles, etc.)
+//  - Use ExerciseInstance for workout-specific data (sets, reps, notes for a particular usage)
+//  - Use ResolvedExercise for UI display (combines instance + template)
+//  This file is kept for backward compatibility during migration.
+//
 
 import Foundation
 
+/// DEPRECATED: Use ExerciseInstance + ExerciseTemplate instead.
+/// This struct embeds all exercise data directly, which causes issues when:
+/// - Editing an exercise in the library (changes don't propagate to historical workouts)
+/// - Tracking progress across workouts (exercise identity is by name, not ID)
+/// - Managing storage (exercise data is duplicated in every module)
+///
+/// The new normalized model:
+/// - ExerciseTemplate: Canonical definition in the library
+/// - ExerciseInstance: Lightweight reference stored in modules
+/// - ResolvedExercise: Hydrated view model for UI
 struct Exercise: Identifiable, Codable, Hashable {
     var id: UUID
     var name: String

@@ -18,6 +18,7 @@ struct ExercisePickerView: View {
 
     @State private var searchText = ""
     @State private var selectedCategory: ExerciseCategory?
+    @State private var selectedExerciseType: ExerciseType = .strength
     @State private var saveToLibrary = true
 
     // New library system fields
@@ -171,6 +172,13 @@ struct ExercisePickerView: View {
                 }
 
                 if showingAdvancedOptions {
+                    // Exercise Type Selection
+                    Picker("Exercise Type", selection: $selectedExerciseType) {
+                        ForEach(ExerciseType.allCases) { type in
+                            Text(type.displayName).tag(type)
+                        }
+                    }
+
                     // Muscle Group Selection
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("Muscles Worked")
@@ -320,7 +328,9 @@ struct ExercisePickerView: View {
             customLibrary.addExercise(
                 name: customName.trimmingCharacters(in: .whitespaces),
                 category: selectedCategory ?? .fullBody,
-                exerciseType: .strength
+                exerciseType: selectedExerciseType,
+                muscleGroupIds: selectedMuscleGroups,
+                implementIds: selectedImplements
             )
         }
         selectedTemplate = nil

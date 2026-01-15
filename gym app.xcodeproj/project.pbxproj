@@ -44,6 +44,7 @@
 		B63EBF1F2F15E73700D8C22D /* ModulesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF92F15E73700D8C22D /* ModulesListView.swift */; };
 		B63EBF202F15E73700D8C22D /* ActiveSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEFB2F15E73700D8C22D /* ActiveSessionView.swift */; };
 		B63EBF212F15E73700D8C22D /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEFD2F15E73700D8C22D /* SettingsView.swift */; };
+		B6EXERC022F15E73700D8C22D /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6EXERC012F15E73700D8C22D /* ExerciseLibraryView.swift */; };
 		B63EBF222F15E73700D8C22D /* WorkoutDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEFF2F15E73700D8C22D /* WorkoutDetailView.swift */; };
 		B63EBF232F15E73700D8C22D /* WorkoutFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF002F15E73700D8C22D /* WorkoutFormView.swift */; };
 		B63EBF242F15E73700D8C22D /* WorkoutsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF012F15E73700D8C22D /* WorkoutsListView.swift */; };
@@ -71,6 +72,10 @@
 		FORMATTING002HELPERS002 /* FormattingHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = FORMATTING001HELPERS001 /* FormattingHelpers.swift */; };
 		9245BCBAC81C4E3C9670553C /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C36DDB57BAA44FEF866BE090 /* AuthService.swift */; };
 		AB8059E04FED4CAC94B1D5DB /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D9B5EAEA83B489586ACDC15 /* SignInView.swift */; };
+		EXINST002BUILD002 /* ExerciseInstance.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXINST001FILE001 /* ExerciseInstance.swift */; };
+		RESOLV002BUILD002 /* ResolvedExercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = RESOLV001FILE001 /* ResolvedExercise.swift */; };
+		EXRSLV002BUILD002 /* ExerciseResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXRSLV001FILE001 /* ExerciseResolver.swift */; };
+		EXMIGR002BUILD002 /* ExerciseMigrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXMIGR001FILE001 /* ExerciseMigrationManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -129,6 +134,7 @@
 		B63EBEF92F15E73700D8C22D /* ModulesListView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModulesListView.swift; sourceTree = "<group>"; };
 		B63EBEFB2F15E73700D8C22D /* ActiveSessionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActiveSessionView.swift; sourceTree = "<group>"; };
 		B63EBEFD2F15E73700D8C22D /* SettingsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B6EXERC012F15E73700D8C22D /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
 		B63EBEFF2F15E73700D8C22D /* WorkoutDetailView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WorkoutDetailView.swift; sourceTree = "<group>"; };
 		B63EBF002F15E73700D8C22D /* WorkoutFormView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WorkoutFormView.swift; sourceTree = "<group>"; };
 		B63EBF012F15E73700D8C22D /* WorkoutsListView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WorkoutsListView.swift; sourceTree = "<group>"; };
@@ -155,6 +161,10 @@
 		C36DDB57BAA44FEF866BE090 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		8D9B5EAEA83B489586ACDC15 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		0057BC06B76642D3A14ACCD3 /* gym_app.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = gym_app.entitlements; sourceTree = "<group>"; };
+		EXINST001FILE001 /* ExerciseInstance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseInstance.swift; sourceTree = "<group>"; };
+		RESOLV001FILE001 /* ResolvedExercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolvedExercise.swift; sourceTree = "<group>"; };
+		EXRSLV001FILE001 /* ExerciseResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseResolver.swift; sourceTree = "<group>"; };
+		EXMIGR001FILE001 /* ExerciseMigrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseMigrationManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -266,8 +276,10 @@
 				A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */,
 				B63EBEEB2F15E73700D8C22D /* Enums.swift */,
 				B63EBEEC2F15E73700D8C22D /* Exercise.swift */,
+				EXINST001FILE001 /* ExerciseInstance.swift */,
 				B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */,
 				B63EBEED2F15E73700D8C22D /* Module.swift */,
+				RESOLV001FILE001 /* ResolvedExercise.swift */,
 				B63EBEEE2F15E73700D8C22D /* Session.swift */,
 				B6SCHED00DE514440E0A348 /* ScheduledWorkout.swift */,
 				B63EBEEF2F15E73700D8C22D /* SetGroup.swift */,
@@ -317,6 +329,7 @@
 		B63EBEFE2F15E73700D8C22D /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				B6EXERC012F15E73700D8C22D /* ExerciseLibraryView.swift */,
 				B63EBEFD2F15E73700D8C22D /* SettingsView.swift */,
 			);
 			path = Settings;
@@ -352,6 +365,7 @@
 				B63EBF062F15E73700D8C22D /* CoreDataEntities.swift */,
 				B63EBF072F15E73700D8C22D /* PersistenceController.swift */,
 				B12D1154F7E74A3385D7FF2E /* DataSeeder.swift */,
+				EXMIGR001FILE001 /* ExerciseMigrationManager.swift */,
 			);
 			path = CoreData;
 			sourceTree = "<group>";
@@ -367,10 +381,12 @@
 		B63EBF0E2F15E73700D8C22D /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				C36DDB57BAA44FEF866BE090 /* AuthService.swift */,
+				EXRSLV001FILE001 /* ExerciseResolver.swift */,
 				B63EBF0B2F15E73700D8C22D /* FirebaseService.swift */,
 				B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */,
 				B63EBF0D2F15E73700D8C22D /* SyncManager.swift */,
-				C36DDB57BAA44FEF866BE090 /* AuthService.swift */,);
+			);
 			path = Services;
 			sourceTree = "<group>";
 		};
@@ -540,6 +556,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B63EBF212F15E73700D8C22D /* SettingsView.swift in Sources */,
+				B6EXERC022F15E73700D8C22D /* ExerciseLibraryView.swift in Sources */,
 				B63EBF1D2F15E73700D8C22D /* ModuleDetailView.swift in Sources */,
 				B63EBF172F15E73700D8C22D /* SetGroup.swift in Sources */,
 				B63EBF2B2F15E73700D8C22D /* NetworkMonitor.swift in Sources */,
@@ -592,7 +609,11 @@
 				0DE55B310BEE4A628944C240 /* LibraryExerciseEditView.swift in Sources */,
 				FORMATTING002HELPERS002 /* FormattingHelpers.swift in Sources */,
 				9245BCBAC81C4E3C9670553C /* AuthService.swift in Sources */,
-				AB8059E04FED4CAC94B1D5DB /* SignInView.swift in Sources */,);
+				AB8059E04FED4CAC94B1D5DB /* SignInView.swift in Sources */,
+				EXINST002BUILD002 /* ExerciseInstance.swift in Sources */,
+				RESOLV002BUILD002 /* ResolvedExercise.swift in Sources */,
+				EXRSLV002BUILD002 /* ExerciseResolver.swift in Sources */,
+				EXMIGR002BUILD002 /* ExerciseMigrationManager.swift in Sources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		B610AC0B2F15B4DE008B2C15 /* Sources */ = {

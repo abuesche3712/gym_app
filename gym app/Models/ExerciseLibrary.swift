@@ -7,40 +7,101 @@
 
 import Foundation
 
-struct ExerciseTemplate: Identifiable, Hashable {
+struct ExerciseTemplate: Identifiable, Codable, Hashable {
     let id: UUID
-    let name: String
-    let category: ExerciseCategory
-    let exerciseType: ExerciseType
-    let primaryMuscles: [MuscleGroup]
-    let secondaryMuscles: [MuscleGroup]
+    var name: String
+    var category: ExerciseCategory
+    var exerciseType: ExerciseType
 
-    // New library system fields
+    // Tracking configuration
+    var cardioMetric: CardioMetric
+    var mobilityTracking: MobilityTracking
+    var distanceUnit: DistanceUnit
+
+    // Physical attributes
     var muscleGroupIds: Set<UUID>
     var implementIds: Set<UUID>
+    var isBodyweight: Bool
+    var recoveryActivityType: RecoveryActivityType?
+
+    // Defaults for new instances
+    var defaultSetGroups: [SetGroup]
+    var defaultNotes: String?
+
+    // Library management
+    var isArchived: Bool
+    var isCustom: Bool
+    var createdAt: Date
+    var updatedAt: Date
+
+    // Legacy muscle data (for backward compatibility)
+    var primaryMuscles: [MuscleGroup]
+    var secondaryMuscles: [MuscleGroup]
 
     init(
         id: UUID = UUID(),
         name: String,
         category: ExerciseCategory,
         exerciseType: ExerciseType = .strength,
+        cardioMetric: CardioMetric = .timeOnly,
+        mobilityTracking: MobilityTracking = .repsOnly,
+        distanceUnit: DistanceUnit = .meters,
         primary: [MuscleGroup] = [],
         secondary: [MuscleGroup] = [],
         muscleGroupIds: Set<UUID> = [],
-        implementIds: Set<UUID> = []
+        implementIds: Set<UUID> = [],
+        isBodyweight: Bool = false,
+        recoveryActivityType: RecoveryActivityType? = nil,
+        defaultSetGroups: [SetGroup] = [],
+        defaultNotes: String? = nil,
+        isArchived: Bool = false,
+        isCustom: Bool = false,
+        createdAt: Date = Date(),
+        updatedAt: Date = Date()
     ) {
         self.id = id
         self.name = name
         self.category = category
         self.exerciseType = exerciseType
+        self.cardioMetric = cardioMetric
+        self.mobilityTracking = mobilityTracking
+        self.distanceUnit = distanceUnit
         self.primaryMuscles = primary
         self.secondaryMuscles = secondary
         self.muscleGroupIds = muscleGroupIds
         self.implementIds = implementIds
+        self.isBodyweight = isBodyweight
+        self.recoveryActivityType = recoveryActivityType
+        self.defaultSetGroups = defaultSetGroups
+        self.defaultNotes = defaultNotes
+        self.isArchived = isArchived
+        self.isCustom = isCustom
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
     }
 
     var allMuscles: [MuscleGroup] {
         Array(Set(primaryMuscles + secondaryMuscles))
+    }
+
+    /// Whether this cardio exercise should log time
+    var tracksTime: Bool {
+        exerciseType == .cardio && cardioMetric.tracksTime
+    }
+
+    /// Whether this cardio exercise should log distance
+    var tracksDistance: Bool {
+        exerciseType == .cardio && cardioMetric.tracksDistance
+    }
+
+    /// Whether this mobility exercise should log reps
+    var mobilityTracksReps: Bool {
+        exerciseType == .mobility && mobilityTracking.tracksReps
+    }
+
+    /// Whether this mobility exercise should log duration
+    var mobilityTracksDuration: Bool {
+        exerciseType == .mobility && mobilityTracking.tracksDuration
     }
 }
 

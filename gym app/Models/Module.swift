@@ -11,7 +11,8 @@ struct Module: Identifiable, Codable, Hashable {
     var id: UUID
     var name: String
     var type: ModuleType
-    var exercises: [Exercise]
+    var exercises: [Exercise]  // Legacy - kept for backward compatibility
+    var exerciseInstances: [ExerciseInstance]  // New normalized model
     var notes: String?
     var estimatedDuration: Int? // minutes
     var createdAt: Date
@@ -23,6 +24,7 @@ struct Module: Identifiable, Codable, Hashable {
         name: String,
         type: ModuleType,
         exercises: [Exercise] = [],
+        exerciseInstances: [ExerciseInstance] = [],
         notes: String? = nil,
         estimatedDuration: Int? = nil,
         createdAt: Date = Date(),
@@ -33,6 +35,7 @@ struct Module: Identifiable, Codable, Hashable {
         self.name = name
         self.type = type
         self.exercises = exercises
+        self.exerciseInstances = exerciseInstances
         self.notes = notes
         self.estimatedDuration = estimatedDuration
         self.createdAt = createdAt
@@ -110,6 +113,111 @@ struct Module: Identifiable, Codable, Hashable {
             }
         }
         updatedAt = Date()
+    }
+
+    // MARK: - ExerciseInstance Methods (New Normalized Model)
+
+    mutating func addExerciseInstance(_ instance: ExerciseInstance) {
+        var newInstance = instance
+        newInstance.order = exerciseInstances.count
+        exerciseInstances.append(newInstance)
+        updatedAt = Date()
+    }
+
+    mutating func removeExerciseInstance(at index: Int) {
+        exerciseInstances.remove(at: index)
+        // Reorder remaining instances
+        for i in exerciseInstances.indices {
+            exerciseInstances[i].order = i
+        }
+        updatedAt = Date()
+    }
+
+    mutating func updateExerciseInstance(_ instance: ExerciseInstance) {
+        if let index = exerciseInstances.firstIndex(where: { $0.id == instance.id }) {
+            exerciseInstances[index] = instance
+            updatedAt = Date()
+        }
+    }
+
+    /// Groups exercise instances by superset, maintaining original order
+    var groupedExerciseInstances: [[ExerciseInstance]] {
+        var groups: [[ExerciseInstance]] = []
+        var processedIds: Set<UUID> = []
+
+        for instance in exerciseInstances.sorted(by: { $0.order < $1.order }) {
+            guard !processedIds.contains(instance.id) else { continue }
+
+            if let supersetId = instance.supersetGroupId {
+                // Find all instances in this superset
+                let supersetInstances = exerciseInstances.filter { $0.supersetGroupId == supersetId }
+                    .sorted(by: { $0.order < $1.order })
+                groups.append(supersetInstances)
+                supersetInstances.forEach { processedIds.insert($0.id) }
+            } else {
+                // Single instance (not in a superset)
+                groups.append([instance])
+                processedIds.insert(instance.id)
+            }
+        }
+
+        return groups
+    }
+
+    /// Link exercise instances together as a superset
+    mutating func createInstanceSuperset(instanceIds: [UUID]) {
+        guard instanceIds.count >= 2 else { return }
+        let supersetId = UUID()
+
+        for i in exerciseInstances.indices {
+            if instanceIds.contains(exerciseInstances[i].id) {
+                exerciseInstances[i].supersetGroupId = supersetId
+            }
+        }
+        updatedAt = Date()
+    }
+
+    /// Remove an exercise instance from its superset
+    mutating func breakInstanceSuperset(instanceId: UUID) {
+        if let index = exerciseInstances.firstIndex(where: { $0.id == instanceId }) {
+            exerciseInstances[index].supersetGroupId = nil
+            updatedAt = Date()
+        }
+    }
+
+    /// Break all exercise instances in a superset
+    mutating func breakInstanceSupersetGroup(supersetGroupId: UUID) {
+        for i in exerciseInstances.indices {
+            if exerciseInstances[i].supersetGroupId == supersetGroupId {
+                exerciseInstances[i].supersetGroupId = nil
+            }
+        }
+        updatedAt = Date()
+    }
+
+    /// Resolves exercise instances using the ExerciseResolver
+    /// Returns ResolvedExercise objects that combine instance + template data
+    /// Note: Must be called from MainActor context since ExerciseResolver is MainActor-isolated
+    @MainActor
+    func resolvedExercises(using resolver: ExerciseResolver = .shared) -> [ResolvedExercise] {
+        resolver.resolve(exerciseInstances)
+    }
+
+    /// Resolves exercise instances grouped by superset
+    /// Note: Must be called from MainActor context since ExerciseResolver is MainActor-isolated
+    @MainActor
+    func resolvedExercisesGrouped(using resolver: ExerciseResolver = .shared) -> [[ResolvedExercise]] {
+        resolver.resolveGrouped(exerciseInstances)
+    }
+
+    /// Whether this module uses the new normalized model
+    var usesNormalizedModel: Bool {
+        !exerciseInstances.isEmpty
+    }
+
+    /// Whether this module uses the legacy model
+    var usesLegacyModel: Bool {
+        !exercises.isEmpty && exerciseInstances.isEmpty
     }
 }
 

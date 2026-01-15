@@ -46,6 +46,16 @@ struct PersistenceController {
 
         // Seed default data on first launch
         seedDataIfNeeded()
+
+        // Migrate old Exercise data to ExerciseInstance (if needed)
+        migrateExercisesIfNeeded()
+    }
+
+    // MARK: - Exercise Migration
+
+    private func migrateExercisesIfNeeded() {
+        let migrationManager = ExerciseMigrationManager(context: container.viewContext)
+        migrationManager.migrateIfNeeded()
     }
 
     // MARK: - Model Creation
@@ -66,6 +76,7 @@ struct PersistenceController {
         let setDataEntity = createSetDataEntity()
         let syncQueueEntity = createSyncQueueEntity()
         let customExerciseTemplateEntity = createCustomExerciseTemplateEntity()
+        let exerciseInstanceEntity = createExerciseInstanceEntity()
 
         // Create new library entities
         let implementEntity = createImplementEntity()
@@ -102,12 +113,19 @@ struct PersistenceController {
             exerciseLibraryEntity: exerciseLibraryEntity
         )
 
+        // Set up ExerciseInstance relationships (for normalized model)
+        setupExerciseInstanceRelationships(
+            moduleEntity: moduleEntity,
+            exerciseInstanceEntity: exerciseInstanceEntity,
+            setGroupEntity: setGroupEntity
+        )
+
         model.entities = [
             moduleEntity, exerciseEntity, setGroupEntity,
             workoutEntity, moduleReferenceEntity,
             sessionEntity, completedModuleEntity, sessionExerciseEntity,
             completedSetGroupEntity, setDataEntity, syncQueueEntity,
-            customExerciseTemplateEntity,
+            customExerciseTemplateEntity, exerciseInstanceEntity,
             // Library entities
             implementEntity, measurableEntity, muscleGroupEntity, exerciseLibraryEntity,
             // Dynamic measurable entities
@@ -366,10 +384,45 @@ struct PersistenceController {
             createAttribute("exerciseTypeRaw", type: .stringAttributeType),
             createAttribute("primaryMusclesRaw", type: .stringAttributeType, optional: true),
             createAttribute("secondaryMusclesRaw", type: .stringAttributeType, optional: true),
-            createAttribute("createdAt", type: .dateAttributeType),
-            // New library system fields
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            // Library system fields
             createAttribute("muscleGroupIdsRaw", type: .stringAttributeType, optional: true),
-            createAttribute("implementIdsRaw", type: .stringAttributeType, optional: true)
+            createAttribute("implementIdsRaw", type: .stringAttributeType, optional: true),
+            // Tracking configuration
+            createAttribute("cardioMetricRaw", type: .stringAttributeType, optional: true),
+            createAttribute("mobilityTrackingRaw", type: .stringAttributeType, optional: true),
+            createAttribute("distanceUnitRaw", type: .stringAttributeType, optional: true),
+            // Physical attributes
+            createAttribute("isBodyweight", type: .booleanAttributeType, optional: true, defaultValue: false),
+            createAttribute("recoveryActivityTypeRaw", type: .stringAttributeType, optional: true),
+            // Defaults for new instances
+            createAttribute("defaultSetGroupsData", type: .binaryDataAttributeType, optional: true),
+            createAttribute("defaultNotes", type: .stringAttributeType, optional: true),
+            // Library management
+            createAttribute("isArchived", type: .booleanAttributeType, optional: true, defaultValue: false),
+            createAttribute("isCustom", type: .booleanAttributeType, optional: true, defaultValue: true)
+        ]
+
+        return entity
+    }
+
+    private static func createExerciseInstanceEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "ExerciseInstanceEntity"
+        entity.managedObjectClassName = "ExerciseInstanceEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("templateId", type: .UUIDAttributeType),  // Required - links to template
+            createAttribute("supersetGroupIdRaw", type: .stringAttributeType, optional: true),
+            createAttribute("notes", type: .stringAttributeType, optional: true),
+            createAttribute("orderIndex", type: .integer32AttributeType),
+            createAttribute("createdAt", type: .dateAttributeType),
+            createAttribute("updatedAt", type: .dateAttributeType),
+            // Optional overrides
+            createAttribute("nameOverride", type: .stringAttributeType, optional: true),
+            createAttribute("exerciseTypeOverrideRaw", type: .stringAttributeType, optional: true)
         ]
 
         return entity
@@ -792,6 +845,61 @@ struct PersistenceController {
 
         exerciseLibraryEntity.properties.append(exerciseToImplements)
         implementEntity.properties.append(implementToExercises)
+    }
+
+    // MARK: - ExerciseInstance Relationship Setup
+
+    private static func setupExerciseInstanceRelationships(
+        moduleEntity: NSEntityDescription,
+        exerciseInstanceEntity: NSEntityDescription,
+        setGroupEntity: NSEntityDescription
+    ) {
+        // Module <-> ExerciseInstance (one-to-many)
+        let moduleToExerciseInstances = NSRelationshipDescription()
+        moduleToExerciseInstances.name = "exerciseInstances"
+        moduleToExerciseInstances.destinationEntity = exerciseInstanceEntity
+        moduleToExerciseInstances.isOrdered = true
+        moduleToExerciseInstances.minCount = 0
+        moduleToExerciseInstances.maxCount = 0  // unlimited
+        moduleToExerciseInstances.deleteRule = .cascadeDeleteRule
+
+        let exerciseInstanceToModule = NSRelationshipDescription()
+        exerciseInstanceToModule.name = "module"
+        exerciseInstanceToModule.destinationEntity = moduleEntity
+        exerciseInstanceToModule.minCount = 0
+        exerciseInstanceToModule.maxCount = 1
+        exerciseInstanceToModule.deleteRule = .nullifyDeleteRule
+
+        moduleToExerciseInstances.inverseRelationship = exerciseInstanceToModule
+        exerciseInstanceToModule.inverseRelationship = moduleToExerciseInstances
+
+        moduleEntity.properties.append(moduleToExerciseInstances)
+        exerciseInstanceEntity.properties.append(exerciseInstanceToModule)
+
+        // ExerciseInstance <-> SetGroup (one-to-many)
+        // Note: SetGroups can belong to either Exercise OR ExerciseInstance (not both)
+        // This allows both systems to coexist during migration
+        let exerciseInstanceToSetGroups = NSRelationshipDescription()
+        exerciseInstanceToSetGroups.name = "setGroups"
+        exerciseInstanceToSetGroups.destinationEntity = setGroupEntity
+        exerciseInstanceToSetGroups.isOrdered = true
+        exerciseInstanceToSetGroups.minCount = 0
+        exerciseInstanceToSetGroups.maxCount = 0  // unlimited
+        exerciseInstanceToSetGroups.deleteRule = .cascadeDeleteRule
+
+        let setGroupToExerciseInstance = NSRelationshipDescription()
+        setGroupToExerciseInstance.name = "exerciseInstance"
+        setGroupToExerciseInstance.destinationEntity = exerciseInstanceEntity
+        setGroupToExerciseInstance.minCount = 0
+        setGroupToExerciseInstance.maxCount = 1
+        setGroupToExerciseInstance.isOptional = true
+        setGroupToExerciseInstance.deleteRule = .nullifyDeleteRule
+
+        exerciseInstanceToSetGroups.inverseRelationship = setGroupToExerciseInstance
+        setGroupToExerciseInstance.inverseRelationship = exerciseInstanceToSetGroups
+
+        exerciseInstanceEntity.properties.append(exerciseInstanceToSetGroups)
+        setGroupEntity.properties.append(setGroupToExerciseInstance)
     }
 
     // MARK: - Helper Functions

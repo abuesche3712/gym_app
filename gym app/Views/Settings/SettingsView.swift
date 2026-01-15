@@ -60,6 +60,12 @@ struct SettingsView: View {
                     // Data Section
                     SettingsSection(title: "Data") {
                         NavigationLink {
+                            ExerciseLibraryView()
+                        } label: {
+                            SettingsRowLabel(icon: "dumbbell.fill", title: "Exercise Library")
+                        }
+
+                        NavigationLink {
                             DataStatsView()
                         } label: {
                             SettingsRowLabel(icon: "chart.bar", title: "Statistics")

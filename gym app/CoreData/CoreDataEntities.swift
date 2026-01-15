@@ -20,6 +20,7 @@ public class ModuleEntity: NSManagedObject {
     @NSManaged public var updatedAt: Date
     @NSManaged public var syncStatusRaw: String
     @NSManaged public var exercises: NSOrderedSet?
+    @NSManaged public var exerciseInstances: NSOrderedSet?  // New normalized model
 
     var type: ModuleType {
         get { ModuleType(rawValue: typeRaw) ?? .strength }
@@ -33,6 +34,10 @@ public class ModuleEntity: NSManagedObject {
 
     var exerciseArray: [ExerciseEntity] {
         exercises?.array as? [ExerciseEntity] ?? []
+    }
+
+    var exerciseInstanceArray: [ExerciseInstanceEntity] {
+        exerciseInstances?.array as? [ExerciseInstanceEntity] ?? []
     }
 }
 
@@ -136,6 +141,53 @@ public class ExerciseEntity: NSManagedObject {
     }
 }
 
+// MARK: - Exercise Instance Entity (New normalized model)
+
+@objc(ExerciseInstanceEntity)
+public class ExerciseInstanceEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var templateId: UUID  // Required - links to ExerciseTemplate
+    @NSManaged public var supersetGroupIdRaw: String?
+    @NSManaged public var notes: String?
+    @NSManaged public var orderIndex: Int32
+    @NSManaged public var createdAt: Date
+    @NSManaged public var updatedAt: Date
+    @NSManaged public var module: ModuleEntity?
+    @NSManaged public var setGroups: NSOrderedSet?
+
+    // Optional overrides (rarely used)
+    @NSManaged public var nameOverride: String?
+    @NSManaged public var exerciseTypeOverrideRaw: String?
+
+    var supersetGroupId: UUID? {
+        get {
+            guard let raw = supersetGroupIdRaw else { return nil }
+            return UUID(uuidString: raw)
+        }
+        set {
+            supersetGroupIdRaw = newValue?.uuidString
+        }
+    }
+
+    var exerciseTypeOverride: ExerciseType? {
+        get {
+            guard let raw = exerciseTypeOverrideRaw else { return nil }
+            return ExerciseType(rawValue: raw)
+        }
+        set {
+            exerciseTypeOverrideRaw = newValue?.rawValue
+        }
+    }
+
+    var setGroupArray: [SetGroupEntity] {
+        setGroups?.array as? [SetGroupEntity] ?? []
+    }
+
+    var isInSuperset: Bool {
+        supersetGroupId != nil
+    }
+}
+
 // MARK: - SetGroup Entity
 
 @objc(SetGroupEntity)
@@ -146,6 +198,7 @@ public class SetGroupEntity: NSManagedObject {
     @NSManaged public var notes: String?
     @NSManaged public var orderIndex: Int32
     @NSManaged public var exercise: ExerciseEntity?
+    @NSManaged public var exerciseInstance: ExerciseInstanceEntity?  // New normalized model
 
     // Interval mode fields
     @NSManaged public var isInterval: Bool
@@ -448,7 +501,7 @@ public class SyncQueueEntity: NSManagedObject {
     }
 }
 
-// MARK: - Custom Exercise Template Entity
+// MARK: - Custom Exercise Template Entity (Enhanced for normalized model)
 
 @objc(CustomExerciseTemplateEntity)
 public class CustomExerciseTemplateEntity: NSManagedObject {
@@ -458,11 +511,29 @@ public class CustomExerciseTemplateEntity: NSManagedObject {
     @NSManaged public var exerciseTypeRaw: String
     @NSManaged public var primaryMusclesRaw: String?
     @NSManaged public var secondaryMusclesRaw: String?
-    @NSManaged public var createdAt: Date
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
 
-    // New library system fields
+    // Library system fields
     @NSManaged public var muscleGroupIdsRaw: String?
     @NSManaged public var implementIdsRaw: String?
+
+    // Tracking configuration
+    @NSManaged public var cardioMetricRaw: String?
+    @NSManaged public var mobilityTrackingRaw: String?
+    @NSManaged public var distanceUnitRaw: String?
+
+    // Physical attributes
+    @NSManaged public var isBodyweight: Bool
+    @NSManaged public var recoveryActivityTypeRaw: String?
+
+    // Defaults for new instances
+    @NSManaged public var defaultSetGroupsData: Data?  // Serialized [SetGroup]
+    @NSManaged public var defaultNotes: String?
+
+    // Library management
+    @NSManaged public var isArchived: Bool
+    @NSManaged public var isCustom: Bool
 
     var category: ExerciseCategory {
         get { ExerciseCategory(rawValue: categoryRaw) ?? .fullBody }
@@ -472,6 +543,31 @@ public class CustomExerciseTemplateEntity: NSManagedObject {
     var exerciseType: ExerciseType {
         get { ExerciseType(rawValue: exerciseTypeRaw) ?? .strength }
         set { exerciseTypeRaw = newValue.rawValue }
+    }
+
+    var cardioMetric: CardioMetric {
+        get { CardioMetric(rawValue: cardioMetricRaw ?? "") ?? .timeOnly }
+        set { cardioMetricRaw = newValue.rawValue }
+    }
+
+    var mobilityTracking: MobilityTracking {
+        get { MobilityTracking(rawValue: mobilityTrackingRaw ?? "") ?? .repsOnly }
+        set { mobilityTrackingRaw = newValue.rawValue }
+    }
+
+    var distanceUnit: DistanceUnit {
+        get { DistanceUnit(rawValue: distanceUnitRaw ?? "") ?? .meters }
+        set { distanceUnitRaw = newValue.rawValue }
+    }
+
+    var recoveryActivityType: RecoveryActivityType? {
+        get {
+            guard let raw = recoveryActivityTypeRaw else { return nil }
+            return RecoveryActivityType(rawValue: raw)
+        }
+        set {
+            recoveryActivityTypeRaw = newValue?.rawValue
+        }
     }
 
     var primaryMuscles: [MuscleGroup] {
@@ -494,7 +590,6 @@ public class CustomExerciseTemplateEntity: NSManagedObject {
         }
     }
 
-    // New library system accessors
     var muscleGroupIds: Set<UUID> {
         get {
             guard let raw = muscleGroupIdsRaw else { return [] }
@@ -512,6 +607,16 @@ public class CustomExerciseTemplateEntity: NSManagedObject {
         }
         set {
             implementIdsRaw = newValue.isEmpty ? nil : newValue.map { $0.uuidString }.joined(separator: ",")
+        }
+    }
+
+    var defaultSetGroups: [SetGroup] {
+        get {
+            guard let data = defaultSetGroupsData else { return [] }
+            return (try? JSONDecoder().decode([SetGroup].self, from: data)) ?? []
+        }
+        set {
+            defaultSetGroupsData = try? JSONEncoder().encode(newValue)
         }
     }
 }
