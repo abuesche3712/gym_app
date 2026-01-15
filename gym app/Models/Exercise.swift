@@ -103,9 +103,9 @@ struct Exercise: Identifiable, Codable, Hashable {
             } else if let distance = group.targetDistance, isDistanceBased {
                 return "\(group.sets)x\(formatDistance(distance))"
             } else if let duration = group.targetDuration {
-                return "\(group.sets)x\(formatDuration(duration))"
+                return "\(group.sets)x\(formatDurationVerbose(duration))"
             } else if let holdTime = group.targetHoldTime {
-                return "\(group.sets)x\(formatDuration(holdTime)) hold"
+                return "\(group.sets)x\(formatDurationVerbose(holdTime)) hold"
             }
             return "\(group.sets) sets"
         }.joined(separator: " + ")
@@ -116,17 +116,5 @@ struct Exercise: Identifiable, Codable, Hashable {
             return "\(Int(distance))\(distanceUnit.abbreviation)"
         }
         return String(format: "%.1f%@", distance, distanceUnit.abbreviation)
-    }
-
-    private func formatDuration(_ seconds: Int) -> String {
-        if seconds >= 60 {
-            let mins = seconds / 60
-            let secs = seconds % 60
-            if secs > 0 {
-                return String(format: "%d:%02d", mins, secs)
-            }
-            return "\(mins) min"
-        }
-        return "\(seconds)s"
     }
 }

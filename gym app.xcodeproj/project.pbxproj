@@ -62,6 +62,7 @@
 		809C1B452DCD4B8AB156DBCE /* RecentSetsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41BC86B3BCEE40829E96B24B /* RecentSetsSheet.swift */; };
 		7E3A26543EA449B5824C3A63 /* WorkoutOverviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */; };
 		9A12E7530EDF4ADE85E5FEA3 /* ExerciseModificationSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA5B70D29F142CF8BE80E2D /* ExerciseModificationSheets.swift */; };
+		FORMATTING002HELPERS002 /* FormattingHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = FORMATTING001HELPERS001 /* FormattingHelpers.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -136,6 +137,7 @@
 		819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WorkoutOverviewSheet.swift; sourceTree = "<group>"; };
 		4EA5B70D29F142CF8BE80E2D /* ExerciseModificationSheets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseModificationSheets.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F647890123456A /* IntervalTimerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IntervalTimerView.swift; sourceTree = "<group>"; };
+		FORMATTING001HELPERS001 /* FormattingHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FormattingHelpers.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -189,6 +191,7 @@
 			isa = PBXGroup;
 			children = (
 				B658B09D2F16903C00B2F84E /* Theme */,
+				UTILITIES001GROUP001 /* Utilities */,
 				B63EBF082F15E73700D8C22D /* CoreData */,
 				B63EBEF12F15E73700D8C22D /* Models */,
 				B63EBF0A2F15E73700D8C22D /* Repositories */,
@@ -359,6 +362,14 @@
 				B658B09C2F16903C00B2F84E /* Components.swift */,
 			);
 			path = Theme;
+			sourceTree = "<group>";
+		};
+		UTILITIES001GROUP001 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				FORMATTING001HELPERS001 /* FormattingHelpers.swift */,
+			);
+			path = Utilities;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -546,6 +557,7 @@
 				809C1B452DCD4B8AB156DBCE /* RecentSetsSheet.swift in Sources */,
 				7E3A26543EA449B5824C3A63 /* WorkoutOverviewSheet.swift in Sources */,
 				9A12E7530EDF4ADE85E5FEA3 /* ExerciseModificationSheets.swift in Sources */,
+				FORMATTING002HELPERS002 /* FormattingHelpers.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

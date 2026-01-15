@@ -252,11 +252,4 @@ struct SetGroupFormView: View {
         }
         return String(format: "%.2f", value)
     }
-
-    private func formatWeight(_ weight: Double) -> String {
-        if weight == floor(weight) {
-            return "\(Int(weight))"
-        }
-        return String(format: "%.1f", weight)
-    }
 }

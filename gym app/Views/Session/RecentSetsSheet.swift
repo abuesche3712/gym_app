@@ -250,14 +250,4 @@ struct EditRecentSetSheet: View {
         inputHoldTime = set.holdTime ?? 0
         inputDistance = set.distance.map { formatDistance($0) } ?? ""
     }
-
-    private func formatWeight(_ weight: Double) -> String {
-        if weight == floor(weight) { return "\(Int(weight))" }
-        return String(format: "%.1f", weight)
-    }
-
-    private func formatDistance(_ distance: Double) -> String {
-        if distance == floor(distance) { return "\(Int(distance))" }
-        return String(format: "%.2f", distance)
-    }
 }

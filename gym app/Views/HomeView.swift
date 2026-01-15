@@ -302,19 +302,6 @@ struct HomeView: View {
         sessionViewModel.startSession(workout: workout, modules: modules)
         showingActiveSession = true
     }
-
-    private func formatTime(_ seconds: Int) -> String {
-        let mins = seconds / 60
-        let secs = seconds % 60
-        return String(format: "%d:%02d", mins, secs)
-    }
-
-    private func formatVolume(_ volume: Double) -> String {
-        if volume >= 1000 {
-            return String(format: "%.1fk", volume / 1000)
-        }
-        return "\(Int(volume))"
-    }
 }
 
 // MARK: - Quick Start Card

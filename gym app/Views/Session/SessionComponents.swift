@@ -520,23 +520,4 @@ struct SetRowView: View {
         inputDistance = flatSet.targetDistance.map { formatDistance($0) } ?? ""
         inputRPE = 0
     }
-
-    private func formatWeight(_ weight: Double) -> String {
-        if weight == floor(weight) { return "\(Int(weight))" }
-        return String(format: "%.1f", weight)
-    }
-
-    private func formatDistance(_ distance: Double) -> String {
-        if distance == floor(distance) { return "\(Int(distance))" }
-        return String(format: "%.2f", distance)
-    }
-
-    private func formatDuration(_ seconds: Int) -> String {
-        let mins = seconds / 60
-        let secs = seconds % 60
-        if mins > 0 {
-            return String(format: "%d:%02d", mins, secs)
-        }
-        return "\(secs)s"
-    }
 }

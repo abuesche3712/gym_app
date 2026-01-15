@@ -196,15 +196,6 @@ struct SetTimerRing: View {
         }
         .frame(width: size, height: size)
     }
-
-    private func formatTime(_ seconds: Int) -> String {
-        let mins = seconds / 60
-        let secs = seconds % 60
-        if mins > 0 {
-            return "\(mins):\(String(format: "%02d", secs))"
-        }
-        return "\(secs)"
-    }
 }
 
 // MARK: - Progress Bar
@@ -457,24 +448,12 @@ struct CompactTimePicker: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
-            Text(formatTime(totalSeconds))
+            Text(formatDurationVerbose(totalSeconds))
                 .font(.headline)
                 .foregroundColor(AppColors.textPrimary)
 
             Stepper("", value: $totalSeconds, in: 0...(maxMinutes * 60), step: 15)
                 .labelsHidden()
-        }
-    }
-
-    private func formatTime(_ seconds: Int) -> String {
-        let mins = seconds / 60
-        let secs = seconds % 60
-        if mins > 0 && secs > 0 {
-            return "\(mins)m \(secs)s"
-        } else if mins > 0 {
-            return "\(mins) min"
-        } else {
-            return "\(secs)s"
         }
     }
 }

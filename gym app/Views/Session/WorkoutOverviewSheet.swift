@@ -350,17 +350,6 @@ struct WorkoutOverviewSheet: View {
         }
     }
 
-    private func formatDuration(_ seconds: Int) -> String {
-        if seconds >= 60 {
-            let mins = seconds / 60
-            let secs = seconds % 60
-            if secs > 0 {
-                return String(format: "%d:%02d", mins, secs)
-            }
-            return "\(mins) min"
-        }
-        return "\(seconds)s"
-    }
 }
 
 // MARK: - Edit Set Sheet
@@ -524,15 +513,5 @@ struct EditSetSheet: View {
         inputDuration = set.duration ?? 0
         inputHoldTime = set.holdTime ?? 0
         inputDistance = set.distance.map { formatDistance($0) } ?? ""
-    }
-
-    private func formatWeight(_ weight: Double) -> String {
-        if weight == floor(weight) { return "\(Int(weight))" }
-        return String(format: "%.1f", weight)
-    }
-
-    private func formatDistance(_ distance: Double) -> String {
-        if distance == floor(distance) { return "\(Int(distance))" }
-        return String(format: "%.2f", distance)
     }
 }

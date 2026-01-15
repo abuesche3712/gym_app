@@ -95,13 +95,6 @@ struct SetGroup: Identifiable, Codable, Hashable {
         return parts.joined(separator: " ")
     }
 
-    private func formatWeight(_ weight: Double) -> String {
-        if weight == floor(weight) {
-            return "\(Int(weight))"
-        }
-        return String(format: "%.1f", weight)
-    }
-
     private func formatDistance(_ distance: Double) -> String {
         let unit = targetDistanceUnit ?? .meters
         if distance == floor(distance) {

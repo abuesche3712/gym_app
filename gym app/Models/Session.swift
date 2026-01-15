@@ -299,13 +299,6 @@ struct SetData: Identifiable, Codable, Hashable {
         return result
     }
 
-    private func formatWeight(_ weight: Double) -> String {
-        if weight == floor(weight) {
-            return "\(Int(weight))"
-        }
-        return String(format: "%.1f", weight)
-    }
-
     var formattedCardio: String? {
         var parts: [String] = []
         if let duration = duration {
@@ -324,14 +317,5 @@ struct SetData: Identifiable, Codable, Hashable {
             result += " @ \(intensity)/10"
         }
         return result
-    }
-
-    private func formatDuration(_ seconds: Int) -> String {
-        let mins = seconds / 60
-        let secs = seconds % 60
-        if mins > 0 {
-            return String(format: "%d:%02d", mins, secs)
-        }
-        return "\(secs)s"
     }
 }

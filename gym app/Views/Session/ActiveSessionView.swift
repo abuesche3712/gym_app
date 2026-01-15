@@ -659,15 +659,6 @@ struct ActiveSessionView: View {
         )
     }
 
-    private func formatDuration(_ seconds: Int) -> String {
-        let mins = seconds / 60
-        let secs = seconds % 60
-        if mins > 0 {
-            return String(format: "%d:%02d", mins, secs)
-        }
-        return "\(secs)s"
-    }
-
     // Uses FlatSet defined in SessionModels
 
     private func flattenedSetsForGroup(exercise: SessionExercise, groupIndex: Int) -> [FlatSet] {
@@ -1387,14 +1378,6 @@ struct ActiveSessionView: View {
             Spacer()
         }
         .padding(AppSpacing.xl)
-    }
-
-    // MARK: - Helper Functions
-
-    private func formatTime(_ seconds: Int) -> String {
-        let mins = seconds / 60
-        let secs = seconds % 60
-        return String(format: "%d:%02d", mins, secs)
     }
 }
 
