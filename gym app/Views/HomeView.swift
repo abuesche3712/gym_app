@@ -577,6 +577,24 @@ struct HomeView: View {
                         .textCase(.uppercase)
                 }
                 .frame(maxWidth: .infinity)
+
+                // Divider
+                Rectangle()
+                    .fill(AppColors.border)
+                    .frame(width: 1, height: 50)
+
+                // Cardio stat
+                VStack(spacing: AppSpacing.xs) {
+                    Text("\(cardioMinutesThisWeek)")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundColor(AppColors.warning)
+
+                    Text("cardio min")
+                        .font(.caption.weight(.medium))
+                        .foregroundColor(AppColors.textSecondary)
+                        .textCase(.uppercase)
+                }
+                .frame(maxWidth: .infinity)
             }
             .padding(.vertical, AppSpacing.lg)
             .background(
@@ -637,6 +655,25 @@ struct HomeView: View {
             .flatMap { $0.completedModules }
             .flatMap { $0.completedExercises }
             .reduce(0) { $0 + $1.totalVolume }
+    }
+
+    private var cardioMinutesThisWeek: Int {
+        let startOfWeek = Calendar.current.date(from: Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date()))!
+        let weekSessions = sessionViewModel.sessions.filter { $0.date >= startOfWeek }
+
+        var totalSeconds = 0
+        for session in weekSessions {
+            for module in session.completedModules {
+                for exercise in module.completedExercises where exercise.exerciseType == .cardio {
+                    for setGroup in exercise.completedSetGroups {
+                        for set in setGroup.sets where set.completed {
+                            totalSeconds += set.duration ?? 0
+                        }
+                    }
+                }
+            }
+        }
+        return totalSeconds / 60
     }
 
     private var scheduledThisWeek: Int {

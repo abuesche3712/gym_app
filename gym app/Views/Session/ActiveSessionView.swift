@@ -518,6 +518,11 @@ struct ActiveSessionView: View {
                     }
                 }
 
+                // MARK: Smart Suggestions Placeholder (TODO: Implement progression logic)
+                // This is where smart suggestions like "Try 140 lbs next?" would appear
+                // once we have progression tracking logic implemented.
+                // smartSuggestionsBanner(for: exercise)
+
                 // Check for interval set groups
                 ForEach(Array(exercise.completedSetGroups.enumerated()), id: \.element.id) { groupIndex, setGroup in
                     if setGroup.isInterval {
@@ -525,8 +530,10 @@ struct ActiveSessionView: View {
                         intervalSetGroupRow(setGroup: setGroup, groupIndex: groupIndex)
                     } else {
                         // Regular sets
+                        let lastSessionExercise = sessionViewModel.getLastSessionData(for: exercise.exerciseName)
                         ForEach(flattenedSetsForGroup(exercise: exercise, groupIndex: groupIndex), id: \.id) { flatSet in
                             let isFirstIncomplete = isFirstIncompleteSet(flatSet, in: exercise)
+                            let previousSet = getPreviousCompletedSet(for: flatSet, in: exercise)
                             SetRowView(
                                 flatSet: flatSet,
                                 exercise: exercise,
@@ -572,7 +579,9 @@ struct ActiveSessionView: View {
                                     withAnimation(.easeInOut(duration: 0.2)) {
                                         uncheckSetAt(flatSet: flatSet)
                                     }
-                                }
+                                },
+                                lastSessionExercise: lastSessionExercise,
+                                previousCompletedSet: previousSet
                             )
                         }
                     }
@@ -808,6 +817,66 @@ struct ActiveSessionView: View {
         }
         return false
     }
+
+    /// Gets the previous completed set before the given flatSet (for "same as last" button)
+    private func getPreviousCompletedSet(for flatSet: FlatSet, in exercise: SessionExercise) -> SetData? {
+        var allSets: [SetData] = []
+        for setGroup in exercise.completedSetGroups {
+            allSets.append(contentsOf: setGroup.sets)
+        }
+
+        // Find the index of our current set
+        guard let currentIndex = allSets.firstIndex(where: { $0.id == flatSet.setData.id }) else {
+            return nil
+        }
+
+        // Look backwards for the most recent completed set
+        for i in stride(from: currentIndex - 1, through: 0, by: -1) {
+            if allSets[i].completed {
+                return allSets[i]
+            }
+        }
+
+        return nil
+    }
+
+    // MARK: - Smart Suggestions (TODO: Implement when progression logic is ready)
+    // Uncomment and implement this when we have progression tracking
+    /*
+    @ViewBuilder
+    private func smartSuggestionsBanner(for exercise: SessionExercise) -> some View {
+        // Example: Show suggestion based on last session performance
+        if let lastSession = sessionViewModel.getLastSessionData(for: exercise.exerciseName),
+           let suggestion = calculateProgressionSuggestion(current: exercise, last: lastSession) {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "lightbulb.fill")
+                    .foregroundColor(AppColors.warning)
+                Text(suggestion)
+                    .font(.caption)
+                    .foregroundColor(AppColors.textSecondary)
+                Spacer()
+                Button("Apply") {
+                    // Apply suggested weight/reps
+                }
+                .font(.caption.bold())
+                .foregroundColor(AppColors.accentBlue)
+            }
+            .padding(AppSpacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.small)
+                    .fill(AppColors.warning.opacity(0.1))
+            )
+        }
+    }
+
+    private func calculateProgressionSuggestion(current: SessionExercise, last: SessionExercise) -> String? {
+        // TODO: Implement progression logic
+        // - Check if user completed all sets last time
+        // - Check RPE to determine if they can progress
+        // - Suggest weight increase or rep increase based on program
+        return nil
+    }
+    */
 
     private var isLastExercise: Bool {
         guard let session = sessionViewModel.currentSession else { return true }
@@ -1412,52 +1481,59 @@ struct ActiveSessionView: View {
     // MARK: - Rest Timer Overlay
 
     private var restTimerBar: some View {
-        HStack(spacing: AppSpacing.md) {
-            // Progress ring (small)
-            ZStack {
-                Circle()
-                    .stroke(AppColors.surfaceLight, lineWidth: 3)
-                    .frame(width: 36, height: 36)
+        VStack(spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.md) {
+                // Progress ring (small)
+                ZStack {
+                    Circle()
+                        .stroke(AppColors.surfaceLight, lineWidth: 3)
+                        .frame(width: 36, height: 36)
 
-                Circle()
-                    .trim(from: 0, to: CGFloat(sessionViewModel.restTimerSeconds) / CGFloat(max(sessionViewModel.restTimerTotal, 1)))
-                    .stroke(AppColors.accentTeal, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                    .frame(width: 36, height: 36)
-                    .rotationEffect(.degrees(-90))
+                    Circle()
+                        .trim(from: 0, to: CGFloat(sessionViewModel.restTimerSeconds) / CGFloat(max(sessionViewModel.restTimerTotal, 1)))
+                        .stroke(AppColors.accentTeal, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .frame(width: 36, height: 36)
+                        .rotationEffect(.degrees(-90))
 
-                Text("\(sessionViewModel.restTimerSeconds)")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundColor(AppColors.textPrimary)
+                    Text("\(sessionViewModel.restTimerSeconds)")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(AppColors.textPrimary)
+                }
+
+                // Label
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Rest")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundColor(AppColors.textPrimary)
+                    Text("\(sessionViewModel.restTimerSeconds)s remaining")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+
+                Spacer()
+
+                // Skip button
+                Button {
+                    sessionViewModel.stopRestTimer()
+                    highlightNextSet = true
+                } label: {
+                    Text("Skip")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundColor(AppColors.accentBlue)
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.sm)
+                        .background(
+                            Capsule()
+                                .fill(AppColors.accentBlue.opacity(0.1))
+                        )
+                }
+                .buttonStyle(.plain)
             }
 
-            // Label
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Rest")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(AppColors.textPrimary)
-                Text("\(sessionViewModel.restTimerSeconds)s remaining")
-                    .font(.caption)
-                    .foregroundColor(AppColors.textTertiary)
+            // MARK: - Long Rest Joke Banner (TODO: Remove this temporary joke feature)
+            if sessionViewModel.restTimerTotal > 120 {
+                longRestJokeBanner
             }
-
-            Spacer()
-
-            // Skip button
-            Button {
-                sessionViewModel.stopRestTimer()
-                highlightNextSet = true
-            } label: {
-                Text("Skip")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(AppColors.accentBlue)
-                    .padding(.horizontal, AppSpacing.md)
-                    .padding(.vertical, AppSpacing.sm)
-                    .background(
-                        Capsule()
-                            .fill(AppColors.accentBlue.opacity(0.1))
-                    )
-            }
-            .buttonStyle(.plain)
         }
         .padding(AppSpacing.md)
         .background(
@@ -1475,6 +1551,32 @@ struct ActiveSessionView: View {
             if wasRunning && !isRunning {
                 highlightNextSet = true
             }
+        }
+    }
+
+    // MARK: - Long Rest Joke Banner (TODO: Remove this temporary joke feature)
+    private var longRestJokeBanner: some View {
+        Link(destination: URL(string: "https://twitter.com")!) {
+            HStack(spacing: AppSpacing.sm) {
+                Text("Long rest? We've got you:")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
+
+                // X/Twitter logo as text
+                Text("𝕏")
+                    .font(.system(size: 20, weight: .black))
+                    .foregroundColor(AppColors.textPrimary)
+
+                Image(systemName: "arrow.up.right.square")
+                    .font(.system(size: 12))
+                    .foregroundColor(AppColors.accentBlue)
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.small)
+                    .fill(AppColors.surfaceLight.opacity(0.5))
+            )
         }
     }
 

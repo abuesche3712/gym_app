@@ -65,6 +65,11 @@ struct SetRowView: View {
     var onDistanceUnitChange: ((DistanceUnit) -> Void)? = nil  // Callback to change distance unit
     var onUncheck: (() -> Void)? = nil  // Callback to uncheck/edit a completed set
 
+    // Smart friction reduction: last session data for auto-fill hints
+    var lastSessionExercise: SessionExercise? = nil
+    // Smart friction reduction: previous completed set in current session for "same as last"
+    var previousCompletedSet: SetData? = nil
+
     @State private var inputWeight: String = ""
     @State private var inputReps: String = ""
     @State private var inputRPE: String = ""
@@ -117,6 +122,11 @@ struct SetRowView: View {
             } else {
                 // Input fields based on exercise type
                 inputFieldsView
+
+                // Same as last set button (friction reduction)
+                if previousCompletedSet != nil {
+                    sameAsLastButton
+                }
 
                 // Delete button (if available and set not completed)
                 if let onDelete = onDelete {
@@ -761,6 +771,43 @@ struct SetRowView: View {
 
     // MARK: - Log Button
 
+    // MARK: - Same as Last Set Button (Friction Reduction)
+    private var sameAsLastButton: some View {
+        Button {
+            guard let prevSet = previousCompletedSet else { return }
+            // Copy values from previous completed set
+            if let weight = prevSet.weight {
+                inputWeight = formatWeight(weight)
+            }
+            if let reps = prevSet.reps {
+                inputReps = "\(reps)"
+            }
+            if let duration = prevSet.duration {
+                inputDuration = duration
+                durationManuallySet = true
+            }
+            if let holdTime = prevSet.holdTime {
+                inputHoldTime = holdTime
+            }
+            if let distance = prevSet.distance {
+                inputDistance = formatDistance(distance)
+            }
+            // Light haptic to confirm action
+            HapticManager.shared.soft()
+        } label: {
+            Image(systemName: "arrow.uturn.backward")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(AppColors.accentBlue)
+                .frame(width: 32, height: 32)
+                .background(
+                    Circle()
+                        .fill(AppColors.accentBlue.opacity(0.1))
+                )
+        }
+        .buttonStyle(.plain)
+        .help("Same as last set")
+    }
+
     private var logButton: some View {
         Button {
             focusedField = nil
@@ -1002,6 +1049,11 @@ struct SetRowView: View {
     private func loadDefaults() {
         let setData = flatSet.setData
 
+        // Get last session values for this exercise (for smart auto-fill)
+        let lastSessionSet = lastSessionExercise?.completedSetGroups
+            .flatMap { $0.sets }
+            .first { $0.completed }
+
         // If set was previously logged, load logged values for editing
         // Otherwise load target values for new sets
         if setData.weight != nil || setData.reps != nil || setData.duration != nil || setData.holdTime != nil || setData.distance != nil {
@@ -1015,15 +1067,28 @@ struct SetRowView: View {
             inputHoldTime = setData.holdTime ?? flatSet.targetHoldTime ?? 0
             inputDistance = setData.distance.map { formatDistance($0) } ?? flatSet.targetDistance.map { formatDistance($0) } ?? ""
         } else {
-            // Load target values for new sets
-            inputWeight = flatSet.targetWeight.map { formatWeight($0) } ?? ""
-            inputReps = flatSet.targetReps.map { "\($0)" } ?? ""
-            inputHoldTime = flatSet.targetHoldTime ?? 0
+            // Smart auto-fill: Use last session values if no target values exist
+            // Priority: target values > last session values > empty
+            let lastWeight = lastSessionSet?.weight
+            let lastReps = lastSessionSet?.reps
+            let lastDuration = lastSessionSet?.duration
+            let lastHoldTime = lastSessionSet?.holdTime
+            let lastDistance = lastSessionSet?.distance
+
+            inputWeight = flatSet.targetWeight.map { formatWeight($0) }
+                ?? lastWeight.map { formatWeight($0) }
+                ?? ""
+            inputReps = flatSet.targetReps.map { "\($0)" }
+                ?? lastReps.map { "\($0)" }
+                ?? ""
+            inputHoldTime = flatSet.targetHoldTime ?? lastHoldTime ?? 0
             // Only load duration if user hasn't manually set it via time picker
             if !durationManuallySet {
-                inputDuration = flatSet.targetDuration ?? 0
+                inputDuration = flatSet.targetDuration ?? lastDuration ?? 0
             }
-            inputDistance = flatSet.targetDistance.map { formatDistance($0) } ?? ""
+            inputDistance = flatSet.targetDistance.map { formatDistance($0) }
+                ?? lastDistance.map { formatDistance($0) }
+                ?? ""
         }
 
         // Always load these from setData if present
