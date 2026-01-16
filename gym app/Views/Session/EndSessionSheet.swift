@@ -202,6 +202,9 @@ struct EndSessionSheet: View {
 
                     // Progression buttons
                     progressionButtons(exercise: exercise, moduleId: moduleId)
+
+                    // Exercise notes
+                    exerciseNotesField(exercise: exercise, moduleId: moduleId)
                 }
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.bottom, AppSpacing.md)
@@ -346,10 +349,11 @@ struct EndSessionSheet: View {
 
     private func progressionButton(_ recommendation: ProgressionRecommendation, exercise: SessionExercise, moduleId: UUID) -> some View {
         let isSelected = exercise.progressionRecommendation == recommendation
-        let color = Color(recommendation.color)
+        let color = recommendation.swiftUIColor
 
         return Button {
             updateProgression(moduleId: moduleId, exerciseId: exercise.id, recommendation: recommendation)
+            HapticManager.shared.selectionChanged()
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: recommendation.icon)
@@ -362,7 +366,7 @@ struct EndSessionSheet: View {
             .padding(.vertical, AppSpacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.small)
-                    .fill(isSelected ? color : color.opacity(0.1))
+                    .fill(isSelected ? color : color.opacity(0.15))
             )
         }
         .buttonStyle(.plain)
@@ -386,6 +390,54 @@ struct EndSessionSheet: View {
         }
 
         session = currentSession
+    }
+
+    // MARK: - Exercise Notes
+
+    private func exerciseNotesField(exercise: SessionExercise, moduleId: UUID) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("Notes")
+                .font(.caption)
+                .foregroundColor(AppColors.textTertiary)
+
+            TextField("Add notes for this exercise...", text: exerciseNotesBinding(exercise: exercise, moduleId: moduleId), axis: .vertical)
+                .font(.subheadline)
+                .foregroundColor(AppColors.textPrimary)
+                .padding(AppSpacing.sm)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.small)
+                        .fill(AppColors.surfaceLight)
+                )
+                .lineLimit(1...4)
+        }
+    }
+
+    private func exerciseNotesBinding(exercise: SessionExercise, moduleId: UUID) -> Binding<String> {
+        Binding(
+            get: {
+                guard let session = session else { return "" }
+                for module in session.completedModules where module.id == moduleId {
+                    if let ex = module.completedExercises.first(where: { $0.id == exercise.id }) {
+                        return ex.notes ?? ""
+                    }
+                }
+                return ""
+            },
+            set: { newValue in
+                guard var currentSession = session else { return }
+                for moduleIndex in currentSession.completedModules.indices {
+                    if currentSession.completedModules[moduleIndex].id == moduleId {
+                        for exerciseIndex in currentSession.completedModules[moduleIndex].completedExercises.indices {
+                            if currentSession.completedModules[moduleIndex].completedExercises[exerciseIndex].id == exercise.id {
+                                currentSession.completedModules[moduleIndex].completedExercises[exerciseIndex].notes = newValue.isEmpty ? nil : newValue
+                                session = currentSession
+                                return
+                            }
+                        }
+                    }
+                }
+            }
+        )
     }
 
     // MARK: - Notes Section

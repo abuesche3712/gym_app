@@ -118,6 +118,7 @@ struct SessionExercise: Identifiable, Codable, Hashable {
     var exerciseName: String // Denormalized
     var exerciseType: ExerciseType
     var cardioMetric: CardioMetric // Time or distance based
+    var mobilityTracking: MobilityTracking // Reps, duration, or both (for mobility)
     var distanceUnit: DistanceUnit // Unit for distance tracking
     var supersetGroupId: UUID? // Links exercises that should alternate sets
     var completedSetGroups: [CompletedSetGroup]
@@ -139,6 +140,7 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         exerciseName: String,
         exerciseType: ExerciseType,
         cardioMetric: CardioMetric = .timeOnly,
+        mobilityTracking: MobilityTracking = .repsOnly,
         distanceUnit: DistanceUnit = .meters,
         supersetGroupId: UUID? = nil,
         completedSetGroups: [CompletedSetGroup] = [],
@@ -155,6 +157,7 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         self.exerciseName = exerciseName
         self.exerciseType = exerciseType
         self.cardioMetric = cardioMetric
+        self.mobilityTracking = mobilityTracking
         self.distanceUnit = distanceUnit
         self.supersetGroupId = supersetGroupId
         self.completedSetGroups = completedSetGroups

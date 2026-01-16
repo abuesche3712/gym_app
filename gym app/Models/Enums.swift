@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 // MARK: - Module Types
 
@@ -363,6 +364,14 @@ enum ProgressionRecommendation: String, Codable, CaseIterable, Identifiable {
         case .regress: return "orange"
         case .stay: return "blue"
         case .progress: return "green"
+        }
+    }
+
+    var swiftUIColor: Color {
+        switch self {
+        case .regress: return .orange
+        case .stay: return .blue
+        case .progress: return .green
         }
     }
 }

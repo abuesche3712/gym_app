@@ -8,7 +8,12 @@
 import SwiftUI
 
 struct SessionDetailView: View {
+    @EnvironmentObject var sessionViewModel: SessionViewModel
+    @Environment(\.dismiss) private var dismiss
+
     let session: Session
+
+    @State private var showingDeleteConfirmation = false
 
     var body: some View {
         List {
@@ -89,6 +94,29 @@ struct SessionDetailView: View {
         .listStyle(.insetGrouped)
         .navigationTitle("Session Details")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .destructiveAction) {
+                Button(role: .destructive) {
+                    showingDeleteConfirmation = true
+                } label: {
+                    Image(systemName: "trash")
+                        .foregroundColor(AppColors.error)
+                }
+            }
+        }
+        .confirmationDialog(
+            "Delete Workout?",
+            isPresented: $showingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                sessionViewModel.deleteSession(session)
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will permanently delete this workout from your history. This action cannot be undone.")
+        }
     }
 
     private func feelingText(_ feeling: Int) -> String {
@@ -464,5 +492,6 @@ struct ExerciseResultView: View {
             overallFeeling: 4,
             notes: "Great session, PR on squats!"
         ))
+        .environmentObject(SessionViewModel())
     }
 }

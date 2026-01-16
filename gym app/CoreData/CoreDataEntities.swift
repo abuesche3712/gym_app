@@ -373,6 +373,10 @@ public class SessionExerciseEntity: NSManagedObject {
     @NSManaged public var orderIndex: Int32
     @NSManaged public var completedModule: CompletedModuleEntity?
     @NSManaged public var completedSetGroups: NSOrderedSet?
+    @NSManaged public var progressionRecommendationRaw: String?
+    @NSManaged public var mobilityTrackingRaw: String?
+    @NSManaged public var isBodyweight: Bool
+    @NSManaged public var supersetGroupIdRaw: String?
 
     var exerciseType: ExerciseType {
         get { ExerciseType(rawValue: exerciseTypeRaw) ?? .strength }
@@ -387,6 +391,21 @@ public class SessionExerciseEntity: NSManagedObject {
     var distanceUnit: DistanceUnit {
         get { DistanceUnit(rawValue: distanceUnitRaw ?? "meters") ?? .meters }
         set { distanceUnitRaw = newValue.rawValue }
+    }
+
+    var progressionRecommendation: ProgressionRecommendation? {
+        get { progressionRecommendationRaw.flatMap { ProgressionRecommendation(rawValue: $0) } }
+        set { progressionRecommendationRaw = newValue?.rawValue }
+    }
+
+    var mobilityTracking: MobilityTracking {
+        get { MobilityTracking(rawValue: mobilityTrackingRaw ?? "reps") ?? .repsOnly }
+        set { mobilityTrackingRaw = newValue.rawValue }
+    }
+
+    var supersetGroupId: UUID? {
+        get { supersetGroupIdRaw.flatMap { UUID(uuidString: $0) } }
+        set { supersetGroupIdRaw = newValue?.uuidString }
     }
 
     var completedSetGroupArray: [CompletedSetGroupEntity] {
@@ -624,9 +643,10 @@ public class CustomExerciseTemplateEntity: NSManagedObject {
 // MARK: - Implement Entity
 
 @objc(ImplementEntity)
-public class ImplementEntity: NSManagedObject {
+public class ImplementEntity: NSManagedObject, Identifiable {
     @NSManaged public var id: UUID
     @NSManaged public var name: String
+    @NSManaged public var isCustom: Bool
     @NSManaged public var measurables: NSSet?
     @NSManaged public var exercises: NSSet?  // Inverse of ExerciseLibraryEntity.implements
 

@@ -11,6 +11,8 @@ struct HistoryView: View {
     @EnvironmentObject var sessionViewModel: SessionViewModel
     @State private var searchText = ""
     @State private var selectedFilter: HistoryFilter = .all
+    @State private var sessionToDelete: Session?
+    @State private var showingDeleteConfirmation = false
 
     enum HistoryFilter: String, CaseIterable {
         case all = "All"
@@ -111,6 +113,14 @@ struct HistoryView: View {
                                                 SessionHistoryRow(session: session)
                                             }
                                             .buttonStyle(.plain)
+                                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                                Button(role: .destructive) {
+                                                    sessionToDelete = session
+                                                    showingDeleteConfirmation = true
+                                                } label: {
+                                                    Label("Delete", systemImage: "trash")
+                                                }
+                                            }
 
                                             if index < sessions.count - 1 {
                                                 Divider()
@@ -137,6 +147,30 @@ struct HistoryView: View {
             .searchable(text: $searchText, prompt: "Search workouts")
             .refreshable {
                 sessionViewModel.loadSessions()
+                HapticManager.shared.success()
+            }
+            .confirmationDialog(
+                "Delete Workout?",
+                isPresented: $showingDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    if let session = sessionToDelete {
+                        sessionViewModel.deleteSession(session)
+                        HapticManager.shared.impact()
+                    }
+                    sessionToDelete = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    sessionToDelete = nil
+                }
+            } message: {
+                Text("This will permanently delete this workout from your history.")
+            }
+            .onChange(of: showingDeleteConfirmation) { _, isShowing in
+                if isShowing {
+                    HapticManager.shared.warning()
+                }
             }
         }
     }

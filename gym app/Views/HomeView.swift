@@ -15,8 +15,7 @@ struct HomeView: View {
 
     @State private var showingActiveSession = false
     @State private var selectedCalendarDate: Date = Date()
-    @State private var showingScheduleSheet = false
-    @State private var dayToSchedule: Date?
+    @State private var dayToSchedule: IdentifiableDate?
     @State private var showingTodayWorkoutDetail = false
     @State private var showingQuickSchedule = false
 
@@ -50,31 +49,33 @@ struct HomeView: View {
                     ActiveSessionView()
                 }
             }
-            .sheet(isPresented: $showingScheduleSheet) {
-                if let date = dayToSchedule {
-                    ScheduleWorkoutSheet(
-                        date: date,
-                        workouts: workoutViewModel.workouts,
-                        modules: moduleViewModel.modules,
-                        scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date),
-                        sessions: sessionsForDate(date),
-                        onSchedule: { workout in
-                            workoutViewModel.scheduleWorkout(workout, for: date)
-                        },
-                        onScheduleRest: {
-                            workoutViewModel.scheduleRestDay(for: date)
-                        },
-                        onUnschedule: { scheduled in
-                            workoutViewModel.unscheduleWorkout(scheduled)
-                        },
-                        onStartWorkout: { workout in
-                            showingScheduleSheet = false
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                startWorkout(workout)
-                            }
+            .sheet(item: $dayToSchedule) { identifiableDate in
+                let date = identifiableDate.date
+                ScheduleWorkoutSheet(
+                    date: date,
+                    workouts: workoutViewModel.workouts,
+                    modules: moduleViewModel.modules,
+                    scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date),
+                    sessions: sessionsForDate(date),
+                    onSchedule: { workout in
+                        workoutViewModel.scheduleWorkout(workout, for: date)
+                    },
+                    onScheduleRest: {
+                        workoutViewModel.scheduleRestDay(for: date)
+                    },
+                    onUnschedule: { scheduled in
+                        workoutViewModel.unscheduleWorkout(scheduled)
+                    },
+                    onStartWorkout: { workout in
+                        dayToSchedule = nil
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            startWorkout(workout)
                         }
-                    )
-                }
+                    },
+                    onDeleteSession: { session in
+                        sessionViewModel.deleteSession(session)
+                    }
+                )
             }
             .sheet(isPresented: $showingTodayWorkoutDetail) {
                 if let scheduled = workoutViewModel.getTodaySchedule(),
@@ -440,8 +441,7 @@ struct HomeView: View {
                         scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date),
                         completedSessions: sessionsForDate(date)
                     ) {
-                        dayToSchedule = date
-                        showingScheduleSheet = true
+                        dayToSchedule = IdentifiableDate(date: date)
                     }
                 }
             }
@@ -767,6 +767,7 @@ struct ScheduleWorkoutSheet: View {
     let onScheduleRest: () -> Void
     let onUnschedule: (ScheduledWorkout) -> Void
     let onStartWorkout: (Workout) -> Void
+    var onDeleteSession: ((Session) -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
 
@@ -800,10 +801,24 @@ struct ScheduleWorkoutSheet: View {
                                 .foregroundColor(AppColors.success)
 
                             ForEach(sessions) { session in
-                                NavigationLink(destination: SessionDetailView(session: session)) {
-                                    CompletedSessionRow(session: session)
+                                HStack(spacing: 0) {
+                                    NavigationLink(destination: SessionDetailView(session: session)) {
+                                        CompletedSessionRow(session: session)
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    if onDeleteSession != nil {
+                                        Button {
+                                            onDeleteSession?(session)
+                                        } label: {
+                                            Image(systemName: "trash")
+                                                .font(.system(size: 14))
+                                                .foregroundColor(AppColors.error)
+                                                .frame(width: 44, height: 44)
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -1342,6 +1357,13 @@ struct QuickScheduleTodaySheet: View {
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
     }
+}
+
+// MARK: - Identifiable Date Wrapper
+
+struct IdentifiableDate: Identifiable {
+    let id = UUID()
+    let date: Date
 }
 
 #Preview {

@@ -343,6 +343,20 @@ class DataRepository: ObservableObject {
         }
     }
 
+    /// Get the most recent progression recommendation for an exercise
+    func getLastProgressionRecommendation(exerciseName: String) -> (recommendation: ProgressionRecommendation, date: Date)? {
+        // Sessions are already sorted by date descending
+        for session in sessions {
+            for module in session.completedModules {
+                if let exercise = module.completedExercises.first(where: { $0.exerciseName == exerciseName }),
+                   let recommendation = exercise.progressionRecommendation {
+                    return (recommendation, session.date)
+                }
+            }
+        }
+        return nil
+    }
+
     // MARK: - ExerciseInstance Operations
 
     /// Resolves exercise instances for a module using ExerciseResolver
@@ -734,6 +748,10 @@ class DataRepository: ObservableObject {
                 exerciseEntity.notes = sessionExercise.notes
                 exerciseEntity.orderIndex = Int32(exIndex)
                 exerciseEntity.completedModule = moduleEntity
+                exerciseEntity.progressionRecommendation = sessionExercise.progressionRecommendation
+                exerciseEntity.mobilityTracking = sessionExercise.mobilityTracking
+                exerciseEntity.isBodyweight = sessionExercise.isBodyweight
+                exerciseEntity.supersetGroupId = sessionExercise.supersetGroupId
 
                 // Add completed set groups
                 let setGroupEntities = sessionExercise.completedSetGroups.enumerated().map { sgIndex, completedSetGroup in
@@ -820,9 +838,13 @@ class DataRepository: ObservableObject {
                     exerciseName: exerciseEntity.exerciseName,
                     exerciseType: exerciseEntity.exerciseType,
                     cardioMetric: exerciseEntity.cardioMetric,
+                    mobilityTracking: exerciseEntity.mobilityTracking,
                     distanceUnit: exerciseEntity.distanceUnit,
+                    supersetGroupId: exerciseEntity.supersetGroupId,
                     completedSetGroups: completedSetGroups,
-                    notes: exerciseEntity.notes
+                    notes: exerciseEntity.notes,
+                    isBodyweight: exerciseEntity.isBodyweight,
+                    progressionRecommendation: exerciseEntity.progressionRecommendation
                 )
             }
 

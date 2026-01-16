@@ -66,6 +66,12 @@ struct SettingsView: View {
                         }
 
                         NavigationLink {
+                            EquipmentLibraryView()
+                        } label: {
+                            SettingsRowLabel(icon: "wrench.and.screwdriver.fill", title: "Equipment Library")
+                        }
+
+                        NavigationLink {
                             DataStatsView()
                         } label: {
                             SettingsRowLabel(icon: "chart.bar", title: "Statistics")

@@ -302,7 +302,11 @@ struct PersistenceController {
             createAttribute("cardioMetricRaw", type: .stringAttributeType, optional: true),
             createAttribute("distanceUnitRaw", type: .stringAttributeType, optional: true),
             createAttribute("notes", type: .stringAttributeType, optional: true),
-            createAttribute("orderIndex", type: .integer32AttributeType)
+            createAttribute("orderIndex", type: .integer32AttributeType),
+            createAttribute("progressionRecommendationRaw", type: .stringAttributeType, optional: true),
+            createAttribute("mobilityTrackingRaw", type: .stringAttributeType, optional: true),
+            createAttribute("isBodyweight", type: .booleanAttributeType, optional: true),
+            createAttribute("supersetGroupIdRaw", type: .stringAttributeType, optional: true)
         ]
 
         return entity
@@ -435,7 +439,8 @@ struct PersistenceController {
 
         entity.properties = [
             createAttribute("id", type: .UUIDAttributeType),
-            createAttribute("name", type: .stringAttributeType)
+            createAttribute("name", type: .stringAttributeType),
+            createAttribute("isCustom", type: .booleanAttributeType, defaultValue: false)
         ]
 
         return entity

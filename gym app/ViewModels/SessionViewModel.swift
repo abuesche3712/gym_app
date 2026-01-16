@@ -97,6 +97,7 @@ class SessionViewModel: ObservableObject {
             exerciseName: exercise.name,
             exerciseType: exercise.exerciseType,
             cardioMetric: exercise.cardioMetric,
+            mobilityTracking: exercise.mobilityTracking,
             distanceUnit: exercise.distanceUnit,
             supersetGroupId: exercise.supersetGroupId,
             completedSetGroups: exercise.setGroups.map { setGroup in

@@ -17,15 +17,19 @@ struct SetIndicator: View {
 
     var body: some View {
         ZStack {
-            Circle()
-                .fill(backgroundColor)
-                .frame(width: 40, height: 40)
-
             if isCompleted {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(AppColors.success)
+                // Use animated checkmark for completed sets
+                AnimatedCheckmark(
+                    isChecked: true,
+                    size: 40,
+                    color: AppColors.success,
+                    lineWidth: 3
+                )
             } else {
+                Circle()
+                    .fill(backgroundColor)
+                    .frame(width: 40, height: 40)
+
                 Text("\(setNumber)")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(isCurrent ? AppColors.accentBlue : AppColors.textTertiary)
@@ -33,16 +37,14 @@ struct SetIndicator: View {
         }
         .overlay(
             Circle()
-                .stroke(isCurrent ? AppColors.accentBlue : .clear, lineWidth: 2)
+                .stroke(isCurrent && !isCompleted ? AppColors.accentBlue : .clear, lineWidth: 2)
         )
         .animation(AppAnimation.quick, value: isCompleted)
         .animation(AppAnimation.quick, value: isCurrent)
     }
 
     private var backgroundColor: Color {
-        if isCompleted {
-            return AppColors.success.opacity(0.15)
-        } else if isCurrent {
+        if isCurrent {
             return AppColors.accentBlue.opacity(0.15)
         } else {
             return AppColors.surfaceLight
@@ -89,6 +91,8 @@ struct SetRowView: View {
     @State private var showRPEPicker: Bool = false
     @State private var showTimePicker: Bool = false  // For manual time entry on distance-based cardio
     @State private var showDistanceUnitPicker: Bool = false  // For changing distance unit
+    @State private var durationManuallySet: Bool = false  // Track if user manually set duration via picker
+    @State private var justCompleted: Bool = false  // For completion glow animation
 
     private var hasTimedTarget: Bool {
         (exercise.exerciseType == .cardio && exercise.tracksTime && flatSet.targetDuration != nil) ||
@@ -129,6 +133,7 @@ struct SetRowView: View {
             RoundedRectangle(cornerRadius: AppCorners.medium)
                 .fill(isHighlighted ? AppColors.accentBlue.opacity(0.08) : backgroundColor)
         )
+        .completionGlow(isActive: justCompleted, color: AppColors.success)
         .overlay(
             RoundedRectangle(cornerRadius: AppCorners.medium)
                 .stroke(isHighlighted ? AppColors.accentBlue.opacity(0.5) : .clear, lineWidth: 2)
@@ -140,13 +145,28 @@ struct SetRowView: View {
         .onAppear { loadDefaults() }
         .onDisappear { stopTimer() }
         .onChange(of: flatSet.setData.completed) { wasCompleted, isCompleted in
+            // Trigger completion glow when a set is newly completed
+            if !wasCompleted && isCompleted {
+                justCompleted = true
+                // Reset the flag after animation completes
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    justCompleted = false
+                }
+            }
             // When unchecking a set (completed -> incomplete), reload logged values
             if wasCompleted && !isCompleted {
+                durationManuallySet = false  // Reset so we can load the logged duration
                 loadDefaults()
             }
         }
         .sheet(isPresented: $showTimePicker) {
-            TimePickerSheet(totalSeconds: $inputDuration, title: "Enter Time")
+            TimePickerSheet(
+                totalSeconds: $inputDuration,
+                title: "Enter Time",
+                onSave: {
+                    durationManuallySet = true
+                }
+            )
         }
     }
 
@@ -154,15 +174,18 @@ struct SetRowView: View {
 
     private var setNumberBadge: some View {
         ZStack {
-            Circle()
-                .fill(flatSet.setData.completed ? AppColors.success.opacity(0.15) : AppColors.surfaceLight)
-                .frame(width: 32, height: 32)
-
             if flatSet.setData.completed {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(AppColors.success)
+                // Use animated checkmark for completed sets
+                AnimatedCheckmark(
+                    isChecked: true,
+                    size: 32,
+                    color: AppColors.success,
+                    lineWidth: 2.5
+                )
             } else {
+                Circle()
+                    .fill(AppColors.surfaceLight)
+                    .frame(width: 32, height: 32)
                 Text("\(flatSet.setNumber)")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundColor(AppColors.textSecondary)
@@ -210,7 +233,7 @@ struct SetRowView: View {
         case .explosive:
             explosiveInputs
         case .mobility:
-            repsOnlyInputs
+            mobilityInputs
         case .recovery:
             recoveryInputs
         }
@@ -519,6 +542,59 @@ struct SetRowView: View {
         }
     }
 
+    // MARK: - Mobility Inputs (Reps, Duration, or Both)
+
+    private var mobilityInputs: some View {
+        HStack(spacing: AppSpacing.md) {
+            HStack(spacing: AppSpacing.sm) {
+                // Show reps if tracking includes reps
+                if exercise.mobilityTracking.tracksReps {
+                    VStack(spacing: 4) {
+                        TextField("0", text: $inputReps)
+                            .keyboardType(.numberPad)
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundColor(AppColors.textPrimary)
+                            .multilineTextAlignment(.center)
+                            .frame(minWidth: 40)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 8)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                            .focused($focusedField, equals: .reps)
+
+                        Text("reps")
+                            .font(.caption2.weight(.medium))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+
+                // Show duration if tracking includes duration
+                if exercise.mobilityTracking.tracksDuration {
+                    VStack(spacing: 4) {
+                        Button {
+                            showTimePicker = true
+                        } label: {
+                            Text(formatDuration(inputDuration))
+                                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
+                                .frame(minWidth: 60)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 8)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                        }
+                        .buttonStyle(.plain)
+
+                        Text("time")
+                            .font(.caption2.weight(.medium))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+            }
+            .frame(minWidth: 150, alignment: .leading)
+
+            Spacer(minLength: 0)
+        }
+    }
+
     // MARK: - Explosive Inputs (Box Jumps, etc.)
 
     private var explosiveInputs: some View {
@@ -688,6 +764,9 @@ struct SetRowView: View {
     private var logButton: some View {
         Button {
             focusedField = nil
+            // Trigger haptic feedback for set completion
+            HapticManager.shared.setCompleted()
+
             let rpeValue = Int(inputRPE)
             let validRPE = rpeValue.flatMap { $0 >= 1 && $0 <= 10 ? $0 : nil }
             onLog(
@@ -712,7 +791,7 @@ struct SetRowView: View {
                         .fill(AppGradients.accentGradient)
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.bouncy)
     }
 
     // MARK: - Completed Summary
@@ -769,7 +848,14 @@ struct SetRowView: View {
             }
             return parts.isEmpty ? "Completed" : parts.joined(separator: " ")
         case .mobility:
-            return set.reps.map { "\($0) reps" } ?? "Completed"
+            var parts: [String] = []
+            if exercise.mobilityTracking.tracksReps, let reps = set.reps {
+                parts.append("\(reps) reps")
+            }
+            if exercise.mobilityTracking.tracksDuration, let duration = set.duration {
+                parts.append(formatDuration(duration))
+            }
+            return parts.isEmpty ? "Completed" : parts.joined(separator: " · ")
         case .recovery:
             if let duration = set.duration {
                 var result = formatDuration(duration)
@@ -810,8 +896,7 @@ struct SetRowView: View {
         timerSecondsRemaining = targetTimerSeconds
         timerRunning = true
 
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
+        HapticManager.shared.impact()
 
         updateTimerFromStartTime()
 
@@ -835,10 +920,9 @@ struct SetRowView: View {
         let remaining = targetTimerSeconds - elapsed
 
         if remaining > 0 {
-            // Haptic for last 3 seconds
+            // Haptic for last 3 seconds countdown
             if remaining <= 3 && timerSecondsRemaining > 3 {
-                let generator = UIImpactFeedbackGenerator(style: .light)
-                generator.impactOccurred()
+                HapticManager.shared.tap()
             }
             timerSecondsRemaining = remaining
         } else {
@@ -856,8 +940,7 @@ struct SetRowView: View {
 
     private func timerComplete() {
         stopTimer()
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
+        HapticManager.shared.timerComplete()
 
         if exercise.exerciseType == .isometric {
             inputHoldTime = targetTimerSeconds
@@ -882,8 +965,7 @@ struct SetRowView: View {
         timerRunning = true
         isStopwatchMode = true
 
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
+        HapticManager.shared.impact()
 
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             updateStopwatch()
@@ -912,8 +994,7 @@ struct SetRowView: View {
         timerStartTime = nil
         NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
 
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
+        HapticManager.shared.timerComplete()
     }
 
     // MARK: - Helpers
@@ -927,7 +1008,10 @@ struct SetRowView: View {
             // Load logged values
             inputWeight = setData.weight.map { formatWeight($0) } ?? flatSet.targetWeight.map { formatWeight($0) } ?? ""
             inputReps = setData.reps.map { "\($0)" } ?? flatSet.targetReps.map { "\($0)" } ?? ""
-            inputDuration = setData.duration ?? flatSet.targetDuration ?? 0
+            // Only load duration if user hasn't manually set it via time picker
+            if !durationManuallySet {
+                inputDuration = setData.duration ?? flatSet.targetDuration ?? 0
+            }
             inputHoldTime = setData.holdTime ?? flatSet.targetHoldTime ?? 0
             inputDistance = setData.distance.map { formatDistance($0) } ?? flatSet.targetDistance.map { formatDistance($0) } ?? ""
         } else {
@@ -935,7 +1019,10 @@ struct SetRowView: View {
             inputWeight = flatSet.targetWeight.map { formatWeight($0) } ?? ""
             inputReps = flatSet.targetReps.map { "\($0)" } ?? ""
             inputHoldTime = flatSet.targetHoldTime ?? 0
-            inputDuration = flatSet.targetDuration ?? 0
+            // Only load duration if user hasn't manually set it via time picker
+            if !durationManuallySet {
+                inputDuration = flatSet.targetDuration ?? 0
+            }
             inputDistance = flatSet.targetDistance.map { formatDistance($0) } ?? ""
         }
 
@@ -955,6 +1042,7 @@ struct TimePickerSheet: View {
     @Binding var totalSeconds: Int
     var title: String = "Time"
     var maxMinutes: Int = 30
+    var onSave: (() -> Void)? = nil
 
     @State private var minutes: Int = 0
     @State private var seconds: Int = 0
@@ -1009,6 +1097,7 @@ struct TimePickerSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         totalSeconds = (minutes * 60) + seconds
+                        onSave?()
                         dismiss()
                     }
                     .fontWeight(.semibold)
