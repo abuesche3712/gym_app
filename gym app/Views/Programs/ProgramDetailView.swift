@@ -2,7 +2,7 @@
 //  ProgramDetailView.swift
 //  gym app
 //
-//  Detail view for a training program showing weekly schedule
+//  Detail view for editing a training program's weekly schedule
 //
 
 import SwiftUI
@@ -17,6 +17,7 @@ struct ProgramDetailView: View {
     @State private var showingDeactivateAlert = false
     @State private var showingDeleteAlert = false
     @State private var showingAddSlotSheet = false
+    @State private var showingEditSheet = false
     @State private var selectedDayOfWeek: Int?
     @State private var editMode: EditMode = .inactive
 
@@ -27,8 +28,13 @@ struct ProgramDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Header Card
-                programHeaderCard
+                // Editable Header Card
+                editableHeaderCard
+
+                // Progress Section (only when active)
+                if currentProgram.isActive, let startDate = currentProgram.startDate {
+                    progressCard(startDate: startDate)
+                }
 
                 // Weekly Schedule Grid
                 weeklyScheduleSection
@@ -38,16 +44,22 @@ struct ProgramDetailView: View {
             }
             .padding()
         }
-        .navigationTitle(currentProgram.name)
+        .navigationTitle("Edit Program")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button {
+                        showingEditSheet = true
+                    } label: {
+                        Label("Edit Details", systemImage: "pencil")
+                    }
+
+                    Button {
                         editMode = editMode == .active ? .inactive : .active
                     } label: {
-                        Label(editMode == .active ? "Done Editing" : "Edit Slots",
-                              systemImage: editMode == .active ? "checkmark" : "pencil")
+                        Label(editMode == .active ? "Done Editing Slots" : "Edit Workout Slots",
+                              systemImage: editMode == .active ? "checkmark" : "calendar.badge.plus")
                     }
 
                     Divider()
@@ -69,6 +81,9 @@ struct ProgramDetailView: View {
             if let dayOfWeek = selectedDayOfWeek {
                 AddWorkoutSlotSheet(program: currentProgram, dayOfWeek: dayOfWeek)
             }
+        }
+        .sheet(isPresented: $showingEditSheet) {
+            EditProgramSheet(program: currentProgram)
         }
         .alert("Deactivate Program?", isPresented: $showingDeactivateAlert) {
             Button("Keep Schedule") {
@@ -92,61 +107,76 @@ struct ProgramDetailView: View {
         }
     }
 
-    // MARK: - Header Card
+    // MARK: - Editable Header Card
 
-    private var programHeaderCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private var editableHeaderCard: some View {
+        Button {
+            showingEditSheet = true
+        } label: {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    if currentProgram.isActive {
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(Color.green)
-                                .frame(width: 8, height: 8)
-                            Text("Active")
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundColor(.green)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Text(currentProgram.name)
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.primary)
+
+                        if currentProgram.isActive {
+                            Text("ACTIVE")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.green)
+                                .cornerRadius(4)
                         }
                     }
 
-                    Text("\(currentProgram.durationWeeks) Week Program")
-                        .font(.headline)
+                    HStack(spacing: 16) {
+                        Label("\(currentProgram.durationWeeks) weeks", systemImage: "calendar")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+
+                        Label("\(currentProgram.workoutSlots.filter { $0.scheduleType == .weekly }.count) workouts/week", systemImage: "figure.run")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+
+                    if let description = currentProgram.programDescription, !description.isEmpty {
+                        Text(description)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .lineLimit(2)
+                    }
                 }
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("\(currentProgram.workoutSlots.filter { $0.scheduleType == .weekly }.count)")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    Text("workouts/week")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
+                Image(systemName: "pencil.circle.fill")
+                    .font(.title2)
+                    .foregroundColor(.accentColor)
             }
-
-            if let description = currentProgram.programDescription, !description.isEmpty {
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-
-            if currentProgram.isActive, let startDate = currentProgram.startDate {
-                Divider()
-                programProgressSection(startDate: startDate)
-            }
+            .padding()
+            .background(Color(.secondarySystemGroupedBackground))
+            .cornerRadius(12)
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .buttonStyle(.plain)
     }
 
-    private func programProgressSection(startDate: Date) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+    // MARK: - Progress Card
+
+    private func progressCard(startDate: Date) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
             let progress = programProgress(startDate: startDate)
             let currentWeek = Int(progress * Double(currentProgram.durationWeeks)) + 1
             let weeksRemaining = currentProgram.durationWeeks - currentWeek + 1
+
+            HStack {
+                Text("Progress")
+                    .font(.headline)
+                Spacer()
+            }
 
             HStack {
                 Text("Week \(min(currentWeek, currentProgram.durationWeeks)) of \(currentProgram.durationWeeks)")
@@ -155,13 +185,14 @@ struct ProgramDetailView: View {
 
                 Spacer()
 
-                Text("\(weeksRemaining) weeks remaining")
+                Text("\(max(weeksRemaining, 0)) weeks remaining")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
             ProgressView(value: progress)
                 .progressViewStyle(.linear)
+                .tint(.green)
 
             HStack {
                 Text("Started \(startDate.formatted(date: .abbreviated, time: .omitted))")
@@ -177,6 +208,9 @@ struct ProgramDetailView: View {
                 }
             }
         }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(12)
     }
 
     private func programProgress(startDate: Date) -> Double {
@@ -195,11 +229,18 @@ struct ProgramDetailView: View {
 
                 Spacer()
 
-                if editMode == .active {
-                    Text("Tap day to add")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                Button {
+                    editMode = editMode == .active ? .inactive : .active
+                } label: {
+                    Text(editMode == .active ? "Done" : "Edit")
+                        .font(.subheadline)
                 }
+            }
+
+            if editMode == .active {
+                Text("Tap a day to add a workout, or tap X to remove")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
 
             ProgramWeeklyGridView(
@@ -211,9 +252,16 @@ struct ProgramDetailView: View {
                 },
                 onSlotRemove: { slotId in
                     programViewModel.removeWorkoutSlot(slotId, from: currentProgram)
+                    // If program is active, update the schedule
+                    if currentProgram.isActive {
+                        programViewModel.updateActiveProgramSchedule(currentProgram)
+                    }
                 }
             )
         }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(12)
     }
 
     // MARK: - Action Buttons
@@ -237,8 +285,114 @@ struct ProgramDetailView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(currentProgram.workoutSlots.isEmpty)
+
+                if currentProgram.workoutSlots.isEmpty {
+                    Text("Add workouts to the weekly schedule before activating")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
             }
         }
+    }
+}
+
+// MARK: - Edit Program Sheet
+
+struct EditProgramSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var programViewModel: ProgramViewModel
+
+    let program: Program
+
+    @State private var name: String
+    @State private var description: String
+    @State private var durationWeeks: Int
+
+    private let durationOptions = [2, 4, 6, 8, 10, 12, 16]
+
+    init(program: Program) {
+        self.program = program
+        _name = State(initialValue: program.name)
+        _description = State(initialValue: program.programDescription ?? "")
+        _durationWeeks = State(initialValue: program.durationWeeks)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Program Name", text: $name)
+
+                    Picker("Duration", selection: $durationWeeks) {
+                        ForEach(durationOptions, id: \.self) { weeks in
+                            Text("\(weeks) weeks").tag(weeks)
+                        }
+                    }
+                } header: {
+                    Text("Program Details")
+                }
+
+                Section {
+                    TextField("Description (optional)", text: $description, axis: .vertical)
+                        .lineLimit(3...6)
+                } header: {
+                    Text("Description")
+                }
+
+                if program.isActive {
+                    Section {
+                        HStack {
+                            Image(systemName: "info.circle.fill")
+                                .foregroundColor(.blue)
+
+                            Text("Changes to duration will update the program end date. The scheduled workouts will be adjusted accordingly.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Edit Program")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        saveChanges()
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+    }
+
+    private func saveChanges() {
+        var updatedProgram = program
+        updatedProgram.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        updatedProgram.programDescription = description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : description.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let durationChanged = updatedProgram.durationWeeks != durationWeeks
+        updatedProgram.durationWeeks = durationWeeks
+
+        // Recalculate end date if active and duration changed
+        if updatedProgram.isActive, let startDate = updatedProgram.startDate, durationChanged {
+            updatedProgram.endDate = Calendar.current.date(byAdding: .weekOfYear, value: durationWeeks, to: startDate)
+        }
+
+        programViewModel.saveProgram(updatedProgram)
+
+        // If active and duration changed, update the schedule
+        if updatedProgram.isActive && durationChanged {
+            programViewModel.updateActiveProgramSchedule(updatedProgram)
+        }
+
+        dismiss()
     }
 }
 
