@@ -528,6 +528,33 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             SectionHeader(title: "Week in Review")
 
+            // Streak banner (only show if streak >= 2)
+            if currentStreak >= 2 {
+                HStack(spacing: AppSpacing.sm) {
+                    Text("🔥")
+                        .font(.title2)
+
+                    Text("\(currentStreak) day streak!")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(AppColors.textPrimary)
+
+                    Spacer()
+
+                    Text("Keep it going")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .padding(AppSpacing.md)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .fill(LinearGradient(
+                            colors: [Color.orange.opacity(0.15), Color.red.opacity(0.1)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ))
+                )
+            }
+
             HStack(spacing: 0) {
                 // Completed stat
                 VStack(spacing: AppSpacing.xs) {
@@ -569,7 +596,7 @@ struct HomeView: View {
                 VStack(spacing: AppSpacing.xs) {
                     Text(formatVolumeShort(volumeThisWeek))
                         .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.accentTeal)
+                        .foregroundColor(Color(hex: "A78BFA"))  // Purple
 
                     Text("volume")
                         .font(.caption.weight(.medium))
@@ -685,6 +712,39 @@ struct HomeView: View {
             scheduled.scheduledDate >= startOfWeek &&
             scheduled.scheduledDate <= endOfWeek
         }.count
+    }
+
+    /// Calculate current workout streak (consecutive days with workouts)
+    private var currentStreak: Int {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        // Get all unique workout dates, sorted descending
+        let workoutDates = Set(sessionViewModel.sessions.map { calendar.startOfDay(for: $0.date) })
+            .sorted(by: >)
+
+        guard !workoutDates.isEmpty else { return 0 }
+
+        var streak = 0
+        var checkDate = today
+
+        // If no workout today, check if there was one yesterday (streak still counts)
+        if !workoutDates.contains(today) {
+            let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+            if !workoutDates.contains(yesterday) {
+                return 0  // No workout today or yesterday = no active streak
+            }
+            checkDate = yesterday
+        }
+
+        // Count consecutive days backwards
+        while workoutDates.contains(checkDate) {
+            streak += 1
+            guard let previousDay = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
+            checkDate = previousDay
+        }
+
+        return streak
     }
 
     private func formatVolumeShort(_ volume: Double) -> String {

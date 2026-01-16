@@ -15,6 +15,7 @@ struct ExerciseLibraryView: View {
     @State private var selectedSource: ExerciseSource = .all
     @State private var showingAddExercise = false
     @State private var exerciseToEdit: ExerciseTemplate? = nil
+    @State private var providedExerciseToView: ExerciseTemplate? = nil
 
     enum ExerciseSource {
         case all, provided, custom
@@ -129,6 +130,8 @@ struct ExerciseLibraryView: View {
                             onTap: {
                                 if customExerciseIds.contains(exercise.id) {
                                     exerciseToEdit = exercise
+                                } else {
+                                    providedExerciseToView = exercise
                                 }
                             },
                             onDelete: customExerciseIds.contains(exercise.id) ? {
@@ -157,6 +160,9 @@ struct ExerciseLibraryView: View {
         }
         .sheet(item: $exerciseToEdit) { exercise in
             EditCustomExerciseSheet(exercise: exercise)
+        }
+        .sheet(item: $providedExerciseToView) { exercise in
+            ProvidedExerciseDetailSheet(exercise: exercise)
         }
     }
 }
@@ -301,11 +307,9 @@ private struct ExerciseLibraryRow: View {
                     .font(.system(size: 14))
                     .foregroundColor(AppColors.textTertiary)
 
-                if isCustom {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                }
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(AppColors.textTertiary)
             }
             .padding(AppSpacing.md)
             .background(
@@ -488,6 +492,146 @@ private struct EditCustomExerciseSheet: View {
                     .disabled(!canSave)
                 }
             }
+        }
+    }
+}
+
+// MARK: - Provided Exercise Detail Sheet (View-Only)
+
+private struct ProvidedExerciseDetailSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var libraryService = LibraryService.shared
+
+    let exercise: ExerciseTemplate
+
+    private var muscleGroups: [MuscleGroupEntity] {
+        exercise.muscleGroupIds.compactMap { libraryService.getMuscleGroup(id: $0) }
+            .sorted { $0.name < $1.name }
+    }
+
+    private var equipment: [ImplementEntity] {
+        exercise.implementIds.compactMap { libraryService.getImplement(id: $0) }
+            .sorted { $0.name < $1.name }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                // Header
+                Section {
+                    HStack(spacing: AppSpacing.md) {
+                        // Type indicator
+                        Circle()
+                            .fill(exerciseTypeColor)
+                            .frame(width: 12, height: 12)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(exercise.name)
+                                .font(.title2.bold())
+
+                            Text(exercise.exerciseType.displayName)
+                                .font(.subheadline)
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: exerciseTypeIcon)
+                            .font(.title2)
+                            .foregroundColor(exerciseTypeColor)
+                    }
+                    .listRowBackground(Color.clear)
+                }
+
+                // Muscles
+                Section {
+                    if muscleGroups.isEmpty {
+                        Text("No muscles specified")
+                            .foregroundColor(AppColors.textTertiary)
+                    } else {
+                        ForEach(muscleGroups, id: \.id) { muscle in
+                            HStack(spacing: AppSpacing.sm) {
+                                Image(systemName: "figure.arms.open")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(AppColors.accentBlue)
+                                    .frame(width: 24)
+
+                                Text(muscle.name)
+                                    .font(.body)
+                                    .foregroundColor(AppColors.textPrimary)
+                            }
+                        }
+                    }
+                } header: {
+                    HStack {
+                        Text("Muscles Worked")
+                        Spacer()
+                        Text("\(muscleGroups.count)")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+
+                // Equipment
+                Section {
+                    if equipment.isEmpty {
+                        Text("No equipment required")
+                            .foregroundColor(AppColors.textTertiary)
+                    } else {
+                        ForEach(equipment, id: \.id) { equip in
+                            HStack(spacing: AppSpacing.sm) {
+                                Image(systemName: EquipmentIconMapper.icon(for: equip.name))
+                                    .font(.system(size: 14))
+                                    .foregroundColor(AppColors.accentBlue)
+                                    .frame(width: 24)
+
+                                Text(equip.name)
+                                    .font(.body)
+                                    .foregroundColor(AppColors.textPrimary)
+                            }
+                        }
+                    }
+                } header: {
+                    HStack {
+                        Text("Equipment")
+                        Spacer()
+                        Text("\(equipment.count)")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("Exercise Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(AppColors.accentBlue)
+                }
+            }
+        }
+    }
+
+    private var exerciseTypeColor: Color {
+        switch exercise.exerciseType {
+        case .strength: return AppColors.accentBlue
+        case .cardio: return AppColors.warning
+        case .mobility: return AppColors.accentTeal
+        case .isometric: return AppColors.accentCyan
+        case .explosive: return Color(hex: "FF8C42")
+        case .recovery: return AppColors.accentMint
+        }
+    }
+
+    private var exerciseTypeIcon: String {
+        switch exercise.exerciseType {
+        case .strength: return "dumbbell.fill"
+        case .cardio: return "heart.fill"
+        case .isometric: return "timer"
+        case .explosive: return "bolt.fill"
+        case .mobility: return "figure.flexibility"
+        case .recovery: return "leaf.fill"
         }
     }
 }

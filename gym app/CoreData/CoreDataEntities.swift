@@ -741,3 +741,65 @@ public class ExerciseLibraryEntity: NSManagedObject {
         return measurables
     }
 }
+
+// MARK: - Program Entity
+
+@objc(ProgramEntity)
+public class ProgramEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var name: String
+    @NSManaged public var programDescription: String?
+    @NSManaged public var durationWeeks: Int32
+    @NSManaged public var startDate: Date?
+    @NSManaged public var endDate: Date?
+    @NSManaged public var isActive: Bool
+    @NSManaged public var createdAt: Date
+    @NSManaged public var updatedAt: Date
+    @NSManaged public var syncStatusRaw: String
+    @NSManaged public var workoutSlots: NSOrderedSet?
+
+    var syncStatus: SyncStatus {
+        get { SyncStatus(rawValue: syncStatusRaw) ?? .pendingSync }
+        set { syncStatusRaw = newValue.rawValue }
+    }
+
+    var workoutSlotArray: [ProgramWorkoutSlotEntity] {
+        workoutSlots?.array as? [ProgramWorkoutSlotEntity] ?? []
+    }
+}
+
+// MARK: - Program Workout Slot Entity
+
+@objc(ProgramWorkoutSlotEntity)
+public class ProgramWorkoutSlotEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var workoutId: UUID
+    @NSManaged public var workoutName: String
+    @NSManaged public var scheduleTypeRaw: String
+    @NSManaged public var dayOfWeek: Int32
+    @NSManaged public var weekNumber: Int32
+    @NSManaged public var specificDateOffset: Int32
+    @NSManaged public var orderIndex: Int32
+    @NSManaged public var notes: String?
+    @NSManaged public var program: ProgramEntity?
+
+    var scheduleType: SlotScheduleType {
+        get { SlotScheduleType(rawValue: scheduleTypeRaw) ?? .weekly }
+        set { scheduleTypeRaw = newValue.rawValue }
+    }
+
+    var optionalDayOfWeek: Int? {
+        get { dayOfWeek >= 0 ? Int(dayOfWeek) : nil }
+        set { dayOfWeek = Int32(newValue ?? -1) }
+    }
+
+    var optionalWeekNumber: Int? {
+        get { weekNumber > 0 ? Int(weekNumber) : nil }
+        set { weekNumber = Int32(newValue ?? 0) }
+    }
+
+    var optionalSpecificDateOffset: Int? {
+        get { specificDateOffset >= 0 ? Int(specificDateOffset) : nil }
+        set { specificDateOffset = Int32(newValue ?? -1) }
+    }
+}

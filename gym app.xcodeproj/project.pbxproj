@@ -80,6 +80,14 @@
 		ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANIMCO001FILE001 /* AnimatedComponents.swift */; };
 		HOMESC002BUILD002 /* HomeScheduleSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = HOMESC001FILE001 /* HomeScheduleSheets.swift */; };
 		EQUIPL002BUILD002 /* EquipmentLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EQUIPL001FILE001 /* EquipmentLibraryView.swift */; };
+		PROGAM002BUILD002 /* Program.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROGAM001FILE001 /* Program.swift */; };
+		PROGVM002BUILD002 /* ProgramViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROGVM001FILE001 /* ProgramViewModel.swift */; };
+		PRGLST002BUILD002 /* ProgramsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGLST001FILE001 /* ProgramsListView.swift */; };
+		PRGCRE002BUILD002 /* CreateProgramSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGCRE001FILE001 /* CreateProgramSheet.swift */; };
+		PRGDET002BUILD002 /* ProgramDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGDET001FILE001 /* ProgramDetailView.swift */; };
+		PRGWKL002BUILD002 /* ProgramWeeklyGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGWKL001FILE001 /* ProgramWeeklyGridView.swift */; };
+		PRGADD002BUILD002 /* AddWorkoutSlotSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGADD001FILE001 /* AddWorkoutSlotSheet.swift */; };
+		PRGACT002BUILD002 /* ActivateProgramSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGACT001FILE001 /* ActivateProgramSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -173,6 +181,14 @@
 		ANIMCO001FILE001 /* AnimatedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedComponents.swift; sourceTree = "<group>"; };
 		HOMESC001FILE001 /* HomeScheduleSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScheduleSheets.swift; sourceTree = "<group>"; };
 		EQUIPL001FILE001 /* EquipmentLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentLibraryView.swift; sourceTree = "<group>"; };
+		PROGAM001FILE001 /* Program.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Program.swift; sourceTree = "<group>"; };
+		PROGVM001FILE001 /* ProgramViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramViewModel.swift; sourceTree = "<group>"; };
+		PRGLST001FILE001 /* ProgramsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramsListView.swift; sourceTree = "<group>"; };
+		PRGCRE001FILE001 /* CreateProgramSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateProgramSheet.swift; sourceTree = "<group>"; };
+		PRGDET001FILE001 /* ProgramDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramDetailView.swift; sourceTree = "<group>"; };
+		PRGWKL001FILE001 /* ProgramWeeklyGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramWeeklyGridView.swift; sourceTree = "<group>"; };
+		PRGADD001FILE001 /* AddWorkoutSlotSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddWorkoutSlotSheet.swift; sourceTree = "<group>"; };
+		PRGACT001FILE001 /* ActivateProgramSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivateProgramSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -272,6 +288,7 @@
 			children = (
 				B63EBEE62F15E73700D8C22D /* AppState.swift */,
 				B63EBEE72F15E73700D8C22D /* ModuleViewModel.swift */,
+				PROGVM001FILE001 /* ProgramViewModel.swift */,
 				B63EBEE82F15E73700D8C22D /* SessionViewModel.swift */,
 				B63EBEE92F15E73700D8C22D /* WorkoutViewModel.swift */,
 			);
@@ -287,6 +304,7 @@
 				EXINST001FILE001 /* ExerciseInstance.swift */,
 				B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */,
 				B63EBEED2F15E73700D8C22D /* Module.swift */,
+				PROGAM001FILE001 /* Program.swift */,
 				RESOLV001FILE001 /* ResolvedExercise.swift */,
 				B63EBEEE2F15E73700D8C22D /* Session.swift */,
 				B6SCHED00DE514440E0A348 /* ScheduledWorkout.swift */,
@@ -360,6 +378,7 @@
 				COMPGRP001GROUP001 /* Components */,
 				B63EBEF42F15E73700D8C22D /* History */,
 				B63EBEFA2F15E73700D8C22D /* Modules */,
+				PRGGRP001GROUP001 /* Programs */,
 				B63EBEFC2F15E73700D8C22D /* Session */,
 				B63EBEFE2F15E73700D8C22D /* Settings */,
 				B63EBF022F15E73700D8C22D /* Workouts */,
@@ -433,6 +452,19 @@
 				8D9B5EAEA83B489586ACDC15 /* SignInView.swift */,
 			);
 			path = Auth;
+			sourceTree = "<group>";
+		};
+		PRGGRP001GROUP001 /* Programs */ = {
+			isa = PBXGroup;
+			children = (
+				PRGLST001FILE001 /* ProgramsListView.swift */,
+				PRGCRE001FILE001 /* CreateProgramSheet.swift */,
+				PRGDET001FILE001 /* ProgramDetailView.swift */,
+				PRGWKL001FILE001 /* ProgramWeeklyGridView.swift */,
+				PRGADD001FILE001 /* AddWorkoutSlotSheet.swift */,
+				PRGACT001FILE001 /* ActivateProgramSheet.swift */,
+			);
+			path = Programs;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -637,7 +669,15 @@
 				HAPTIC002BUILD002 /* HapticManager.swift in Sources */,
 				ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */,
 				HOMESC002BUILD002 /* HomeScheduleSheets.swift in Sources */,
-				EQUIPL002BUILD002 /* EquipmentLibraryView.swift in Sources */,);
+				EQUIPL002BUILD002 /* EquipmentLibraryView.swift in Sources */,
+				PROGAM002BUILD002 /* Program.swift in Sources */,
+				PROGVM002BUILD002 /* ProgramViewModel.swift in Sources */,
+				PRGLST002BUILD002 /* ProgramsListView.swift in Sources */,
+				PRGCRE002BUILD002 /* CreateProgramSheet.swift in Sources */,
+				PRGDET002BUILD002 /* ProgramDetailView.swift in Sources */,
+				PRGWKL002BUILD002 /* ProgramWeeklyGridView.swift in Sources */,
+				PRGADD002BUILD002 /* AddWorkoutSlotSheet.swift in Sources */,
+				PRGACT002BUILD002 /* ActivateProgramSheet.swift in Sources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		B610AC0B2F15B4DE008B2C15 /* Sources */ = {

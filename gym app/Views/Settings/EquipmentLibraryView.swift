@@ -313,6 +313,7 @@ enum EquipmentIconMapper {
 private struct EquipmentDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var libraryService = LibraryService.shared
+    @ObservedObject private var customLibrary = CustomExerciseLibrary.shared
 
     let equipment: ImplementEntity
 
@@ -324,6 +325,14 @@ private struct EquipmentDetailSheet: View {
         var name: String
         var units: [String]
         var isStringBased: Bool
+    }
+
+    /// All exercises that use this equipment
+    private var exercisesUsingEquipment: [ExerciseTemplate] {
+        let allExercises = ExerciseLibrary.shared.exercises + customLibrary.exercises
+        return allExercises
+            .filter { $0.implementIds.contains(equipment.id) }
+            .sorted { $0.name < $1.name }
     }
 
     init(equipment: ImplementEntity) {
@@ -397,6 +406,40 @@ private struct EquipmentDetailSheet: View {
                 } footer: {
                     Text("Measurables define what you track when using this equipment (e.g., weight, height, color)")
                 }
+
+                // Used in Exercises section
+                Section {
+                    if exercisesUsingEquipment.isEmpty {
+                        Text("No exercises use this equipment")
+                            .foregroundColor(AppColors.textTertiary)
+                    } else {
+                        ForEach(exercisesUsingEquipment) { exercise in
+                            HStack(spacing: AppSpacing.sm) {
+                                Circle()
+                                    .fill(exerciseTypeColor(exercise.exerciseType))
+                                    .frame(width: 8, height: 8)
+
+                                Text(exercise.name)
+                                    .font(.body)
+                                    .foregroundColor(AppColors.textPrimary)
+
+                                Spacer()
+
+                                Text(exercise.exerciseType.displayName)
+                                    .font(.caption)
+                                    .foregroundColor(AppColors.textTertiary)
+                            }
+                        }
+                    }
+                } header: {
+                    HStack {
+                        Text("Used in Exercises")
+                        Spacer()
+                        Text("\(exercisesUsingEquipment.count)")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Equipment Details")
@@ -413,6 +456,17 @@ private struct EquipmentDetailSheet: View {
                     dismiss()
                 }
             }
+        }
+    }
+
+    private func exerciseTypeColor(_ type: ExerciseType) -> Color {
+        switch type {
+        case .strength: return AppColors.accentBlue
+        case .cardio: return AppColors.warning
+        case .mobility: return AppColors.accentTeal
+        case .isometric: return AppColors.accentCyan
+        case .explosive: return Color(hex: "FF8C42")
+        case .recovery: return AppColors.accentMint
         }
     }
 }

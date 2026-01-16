@@ -7,6 +7,19 @@
 
 import SwiftUI
 
+// MARK: - Rest Day Jabs
+
+private let restDayJabs = [
+    "Muscles grow when you rest... allegedly 😴",
+    "Fine, take a break. The weights will miss you.",
+    "Rest day? More like best day... said no one ever 💪",
+    "Even superheroes need a day off. You're basically Superman.",
+    "The gym will be there tomorrow. So will leg day. Always leg day.",
+    "Recovery mode: activated 🔋",
+    "Netflix and no-chill (because you're resting)",
+    "Plot twist: rest days are just stealth gains",
+]
+
 // MARK: - Week Day Cell
 
 struct WeekDayCell: View {
@@ -108,6 +121,8 @@ struct ScheduleWorkoutSheet: View {
     var onDeleteSession: ((Session) -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
+    @State private var showRestDayJab = false
+    @State private var restDayJab = restDayJabs.randomElement() ?? ""
 
     private var hasRestDay: Bool {
         scheduledWorkouts.contains { $0.isRestDay }
@@ -230,7 +245,8 @@ struct ScheduleWorkoutSheet: View {
                             // Rest day option
                             if !hasRestDay {
                                 Button {
-                                    onScheduleRest()
+                                    restDayJab = restDayJabs.randomElement() ?? ""
+                                    showRestDayJab = true
                                 } label: {
                                     HStack {
                                         Image(systemName: "moon.zzz.fill")
@@ -266,6 +282,14 @@ struct ScheduleWorkoutSheet: View {
                     Button("Done") { dismiss() }
                         .foregroundColor(AppColors.accentBlue)
                 }
+            }
+            .alert("Rest Day?", isPresented: $showRestDayJab) {
+                Button("Yes, I need it") {
+                    onScheduleRest()
+                }
+                Button("Nevermind, let's lift", role: .cancel) { }
+            } message: {
+                Text(restDayJab)
             }
         }
         .presentationDetents([.medium, .large])
@@ -608,6 +632,8 @@ struct QuickScheduleTodaySheet: View {
     let onScheduleRest: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @State private var showRestDayJab = false
+    @State private var restDayJab = restDayJabs.randomElement() ?? ""
 
     var body: some View {
         NavigationStack {
@@ -658,7 +684,8 @@ struct QuickScheduleTodaySheet: View {
                             .foregroundColor(AppColors.accentTeal)
 
                         Button {
-                            onScheduleRest()
+                            restDayJab = restDayJabs.randomElement() ?? ""
+                            showRestDayJab = true
                         } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
@@ -696,6 +723,14 @@ struct QuickScheduleTodaySheet: View {
                     Button("Cancel") { dismiss() }
                         .foregroundColor(AppColors.textSecondary)
                 }
+            }
+            .alert("Rest Day?", isPresented: $showRestDayJab) {
+                Button("Yes, I need it") {
+                    onScheduleRest()
+                }
+                Button("Nevermind, let's lift", role: .cancel) { }
+            } message: {
+                Text(restDayJab)
             }
         }
         .presentationDetents([.medium])

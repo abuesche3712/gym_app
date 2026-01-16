@@ -245,7 +245,7 @@ struct ActiveSessionView: View {
         }
     }
 
-    // MARK: - Progress Header (Subtle)
+    // MARK: - Progress Header (Subtle) - Tap or drag down for overview
 
     private var sessionProgressHeader: some View {
         VStack(spacing: 0) {
@@ -268,29 +268,53 @@ struct ActiveSessionView: View {
                 .background(AppColors.border.opacity(0.3))
             }
 
-            // Compact info row
-            HStack {
-                // Timer - subtle
-                HStack(spacing: 4) {
-                    Image(systemName: "clock")
-                        .font(.system(size: 12))
-                        .foregroundColor(AppColors.textTertiary)
-                    Text(formatTime(sessionViewModel.sessionElapsedSeconds))
-                        .font(.system(size: 14, weight: .medium, design: .monospaced))
-                        .foregroundColor(AppColors.textSecondary)
-                }
+            // Compact info row - tappable for overview
+            Button {
+                showWorkoutOverview = true
+                HapticManager.shared.soft()
+            } label: {
+                HStack {
+                    // Timer - subtle
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock")
+                            .font(.system(size: 12))
+                            .foregroundColor(AppColors.textTertiary)
+                        Text(formatTime(sessionViewModel.sessionElapsedSeconds))
+                            .font(.system(size: 14, weight: .medium, design: .monospaced))
+                            .foregroundColor(AppColors.textSecondary)
+                    }
 
-                Spacer()
+                    Spacer()
 
-                // Module progress - subtle
-                if let session = sessionViewModel.currentSession {
-                    Text("\(sessionViewModel.currentModuleIndex + 1)/\(session.completedModules.count)")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(AppColors.textTertiary)
+                    // Overview hint
+                    HStack(spacing: 4) {
+                        Image(systemName: "list.bullet")
+                            .font(.system(size: 10))
+                        Text("Overview")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .foregroundColor(AppColors.textTertiary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(AppColors.surfaceLight)
+                    )
+
+                    Spacer()
+
+                    // Module progress - subtle
+                    if let session = sessionViewModel.currentSession {
+                        Text("\(sessionViewModel.currentModuleIndex + 1)/\(session.completedModules.count)")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
                 }
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.vertical, AppSpacing.sm)
+                .contentShape(Rectangle())
             }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm)
+            .buttonStyle(.plain)
         }
         .background(AppColors.cardBackground.opacity(0.5))
     }

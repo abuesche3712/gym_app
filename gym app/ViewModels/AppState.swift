@@ -16,6 +16,7 @@ class AppState: ObservableObject {
     @Published var moduleViewModel: ModuleViewModel
     @Published var workoutViewModel: WorkoutViewModel
     @Published var sessionViewModel: SessionViewModel
+    @Published var programViewModel: ProgramViewModel
 
     // Settings
     @Published var weightUnit: WeightUnit {
@@ -42,8 +43,10 @@ class AppState: ObservableObject {
         let repository = DataRepository.shared
 
         self.moduleViewModel = ModuleViewModel(repository: repository)
-        self.workoutViewModel = WorkoutViewModel(repository: repository)
+        let workoutVM = WorkoutViewModel(repository: repository)
+        self.workoutViewModel = workoutVM
         self.sessionViewModel = SessionViewModel(repository: repository)
+        self.programViewModel = ProgramViewModel(repository: repository, workoutViewModel: workoutVM)
 
         // Load settings
         if let weightRaw = UserDefaults.standard.string(forKey: "weightUnit"),
@@ -74,6 +77,7 @@ class AppState: ObservableObject {
         moduleViewModel.loadModules()
         workoutViewModel.loadWorkouts()
         sessionViewModel.loadSessions()
+        programViewModel.loadPrograms()
     }
 
     func triggerSync() async {

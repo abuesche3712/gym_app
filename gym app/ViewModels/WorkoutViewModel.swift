@@ -105,12 +105,20 @@ class WorkoutViewModel: ObservableObject {
         }
     }
 
-    func scheduleWorkout(_ workout: Workout, for date: Date) {
+    func scheduleWorkout(_ workout: Workout, for date: Date, programId: UUID? = nil, programSlotId: UUID? = nil) {
         let scheduled = ScheduledWorkout(
             workoutId: workout.id,
             workoutName: workout.name,
-            scheduledDate: date
+            scheduledDate: date,
+            programId: programId,
+            programSlotId: programSlotId
         )
+        scheduledWorkouts.append(scheduled)
+        saveScheduledWorkouts()
+    }
+
+    /// Add a scheduled workout directly (used by ProgramViewModel)
+    func addScheduledWorkout(_ scheduled: ScheduledWorkout) {
         scheduledWorkouts.append(scheduled)
         saveScheduledWorkouts()
     }
@@ -124,6 +132,26 @@ class WorkoutViewModel: ObservableObject {
     func unscheduleWorkout(_ scheduledWorkout: ScheduledWorkout) {
         scheduledWorkouts.removeAll { $0.id == scheduledWorkout.id }
         saveScheduledWorkouts()
+    }
+
+    /// Remove all scheduled workouts for a program
+    /// If futureOnly is true, only removes workouts scheduled for today or later
+    func removeScheduledWorkoutsForProgram(_ programId: UUID, futureOnly: Bool) {
+        let today = Calendar.current.startOfDay(for: Date())
+
+        scheduledWorkouts.removeAll { scheduled in
+            guard scheduled.programId == programId else { return false }
+            if futureOnly {
+                return scheduled.scheduledDate >= today
+            }
+            return true
+        }
+        saveScheduledWorkouts()
+    }
+
+    /// Get scheduled workouts for a specific program
+    func getScheduledWorkouts(for programId: UUID) -> [ScheduledWorkout] {
+        scheduledWorkouts.filter { $0.programId == programId }
     }
 
     func updateScheduledWorkout(_ scheduledWorkout: ScheduledWorkout) {

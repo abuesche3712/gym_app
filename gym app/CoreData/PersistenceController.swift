@@ -88,6 +88,10 @@ struct PersistenceController {
         let targetValueEntity = createTargetValueEntity()
         let actualValueEntity = createActualValueEntity()
 
+        // Create program entities
+        let programEntity = createProgramEntity()
+        let programWorkoutSlotEntity = createProgramWorkoutSlotEntity()
+
         // Set up relationships
         setupRelationships(
             moduleEntity: moduleEntity,
@@ -120,6 +124,12 @@ struct PersistenceController {
             setGroupEntity: setGroupEntity
         )
 
+        // Set up Program relationships
+        setupProgramRelationships(
+            programEntity: programEntity,
+            programWorkoutSlotEntity: programWorkoutSlotEntity
+        )
+
         model.entities = [
             moduleEntity, exerciseEntity, setGroupEntity,
             workoutEntity, moduleReferenceEntity,
@@ -129,7 +139,9 @@ struct PersistenceController {
             // Library entities
             implementEntity, measurableEntity, muscleGroupEntity, exerciseLibraryEntity,
             // Dynamic measurable entities
-            targetValueEntity, actualValueEntity
+            targetValueEntity, actualValueEntity,
+            // Program entities
+            programEntity, programWorkoutSlotEntity
         ]
 
         return model
@@ -521,6 +533,47 @@ struct PersistenceController {
         return entity
     }
 
+    private static func createProgramEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "ProgramEntity"
+        entity.managedObjectClassName = "ProgramEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("name", type: .stringAttributeType),
+            createAttribute("programDescription", type: .stringAttributeType, optional: true),
+            createAttribute("durationWeeks", type: .integer32AttributeType),
+            createAttribute("startDate", type: .dateAttributeType, optional: true),
+            createAttribute("endDate", type: .dateAttributeType, optional: true),
+            createAttribute("isActive", type: .booleanAttributeType, defaultValue: false),
+            createAttribute("createdAt", type: .dateAttributeType),
+            createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("syncStatusRaw", type: .stringAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createProgramWorkoutSlotEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "ProgramWorkoutSlotEntity"
+        entity.managedObjectClassName = "ProgramWorkoutSlotEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("workoutId", type: .UUIDAttributeType),
+            createAttribute("workoutName", type: .stringAttributeType),
+            createAttribute("scheduleTypeRaw", type: .stringAttributeType),
+            createAttribute("dayOfWeek", type: .integer32AttributeType, optional: true, defaultValue: -1),
+            createAttribute("weekNumber", type: .integer32AttributeType, optional: true, defaultValue: 0),
+            createAttribute("specificDateOffset", type: .integer32AttributeType, optional: true, defaultValue: -1),
+            createAttribute("orderIndex", type: .integer32AttributeType),
+            createAttribute("notes", type: .stringAttributeType, optional: true)
+        ]
+
+        return entity
+    }
+
     // MARK: - Relationship Setup
 
     private static func setupRelationships(
@@ -905,6 +958,35 @@ struct PersistenceController {
 
         exerciseInstanceEntity.properties.append(exerciseInstanceToSetGroups)
         setGroupEntity.properties.append(setGroupToExerciseInstance)
+    }
+
+    // MARK: - Program Relationship Setup
+
+    private static func setupProgramRelationships(
+        programEntity: NSEntityDescription,
+        programWorkoutSlotEntity: NSEntityDescription
+    ) {
+        // Program <-> ProgramWorkoutSlot (one-to-many)
+        let programToSlots = NSRelationshipDescription()
+        programToSlots.name = "workoutSlots"
+        programToSlots.destinationEntity = programWorkoutSlotEntity
+        programToSlots.isOrdered = true
+        programToSlots.minCount = 0
+        programToSlots.maxCount = 0  // unlimited
+        programToSlots.deleteRule = .cascadeDeleteRule
+
+        let slotToProgram = NSRelationshipDescription()
+        slotToProgram.name = "program"
+        slotToProgram.destinationEntity = programEntity
+        slotToProgram.minCount = 0
+        slotToProgram.maxCount = 1
+        slotToProgram.deleteRule = .nullifyDeleteRule
+
+        programToSlots.inverseRelationship = slotToProgram
+        slotToProgram.inverseRelationship = programToSlots
+
+        programEntity.properties.append(programToSlots)
+        programWorkoutSlotEntity.properties.append(slotToProgram)
     }
 
     // MARK: - Helper Functions

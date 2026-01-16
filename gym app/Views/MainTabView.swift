@@ -19,35 +19,42 @@ struct MainTabView: View {
                 }
                 .tag(0)
 
+            ProgramsListView()
+                .tabItem {
+                    Label("Programs", systemImage: "calendar.badge.plus")
+                }
+                .tag(1)
+
             WorkoutsListView()
                 .tabItem {
                     Label("Workouts", systemImage: "figure.strengthtraining.traditional")
                 }
-                .tag(1)
+                .tag(2)
 
             ModulesListView()
                 .tabItem {
                     Label("Modules", systemImage: "square.stack.3d.up.fill")
                 }
-                .tag(2)
+                .tag(3)
 
             HistoryView()
                 .tabItem {
                     Label("History", systemImage: "clock.arrow.circlepath")
                 }
-                .tag(3)
+                .tag(4)
 
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
                 }
-                .tag(4)
+                .tag(5)
         }
         .tint(AppColors.accentBlue)
         .environmentObject(appState)
         .environmentObject(appState.moduleViewModel)
         .environmentObject(appState.workoutViewModel)
         .environmentObject(appState.sessionViewModel)
+        .environmentObject(appState.programViewModel)
         .preferredColorScheme(.dark)
     }
 }

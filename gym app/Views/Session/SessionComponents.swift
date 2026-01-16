@@ -98,6 +98,8 @@ struct SetRowView: View {
     @State private var showDistanceUnitPicker: Bool = false  // For changing distance unit
     @State private var durationManuallySet: Bool = false  // Track if user manually set duration via picker
     @State private var justCompleted: Bool = false  // For completion glow animation
+    @State private var swipeOffset: CGFloat = 0  // For swipe-to-complete gesture
+    @State private var isSwipeActive: Bool = false  // Track if swipe threshold reached
 
     private var hasTimedTarget: Bool {
         (exercise.exerciseType == .cardio && exercise.tracksTime && flatSet.targetDuration != nil) ||
@@ -111,38 +113,86 @@ struct SetRowView: View {
         return flatSet.targetDuration ?? 0
     }
 
+    private let swipeThreshold: CGFloat = 100
+
     var body: some View {
-        HStack(spacing: AppSpacing.sm) {
-            // Set number indicator
-            setNumberBadge
-
-            if flatSet.setData.completed {
-                // Completed state - show summary
-                completedView
-            } else {
-                // Input fields based on exercise type
-                inputFieldsView
-
-                // Same as last set button (friction reduction)
-                if previousCompletedSet != nil {
-                    sameAsLastButton
+        ZStack(alignment: .leading) {
+            // Swipe background (revealed on swipe)
+            if !flatSet.setData.completed {
+                HStack {
+                    Image(systemName: isSwipeActive ? "checkmark.circle.fill" : "checkmark.circle")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.leading, AppSpacing.lg)
+                    Text(isSwipeActive ? "Release to log" : "Swipe to log")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundColor(.white.opacity(0.9))
+                    Spacer()
                 }
-
-                // Delete button (if available and set not completed)
-                if let onDelete = onDelete {
-                    deleteButton(action: onDelete)
-                }
-
-                // Log button
-                logButton
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .fill(isSwipeActive ? AppColors.success : AppColors.success.opacity(0.7))
+                )
             }
+
+            // Main content
+            HStack(spacing: AppSpacing.sm) {
+                // Set number indicator
+                setNumberBadge
+
+                if flatSet.setData.completed {
+                    // Completed state - show summary
+                    completedView
+                } else {
+                    // Input fields based on exercise type
+                    inputFieldsView
+
+                    // Same as last set button (friction reduction)
+                    if previousCompletedSet != nil {
+                        sameAsLastButton
+                    }
+
+                    // Delete button (if available and set not completed)
+                    if let onDelete = onDelete {
+                        deleteButton(action: onDelete)
+                    }
+
+                    // Log button
+                    logButton
+                }
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .fill(isHighlighted ? AppColors.accentBlue.opacity(0.08) : backgroundColor)
+            )
+            .offset(x: swipeOffset)
+            .gesture(
+                flatSet.setData.completed ? nil : DragGesture(minimumDistance: 20)
+                    .onChanged { value in
+                        // Only allow right swipe
+                        if value.translation.width > 0 {
+                            swipeOffset = value.translation.width
+                            isSwipeActive = swipeOffset > swipeThreshold
+                            if isSwipeActive && !flatSet.setData.completed {
+                                HapticManager.shared.soft()
+                            }
+                        }
+                    }
+                    .onEnded { value in
+                        if swipeOffset > swipeThreshold {
+                            // Complete the set via swipe
+                            triggerSwipeComplete()
+                        }
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            swipeOffset = 0
+                            isSwipeActive = false
+                        }
+                    }
+            )
         }
-        .padding(.horizontal, AppSpacing.md)
-        .padding(.vertical, AppSpacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(isHighlighted ? AppColors.accentBlue.opacity(0.08) : backgroundColor)
-        )
         .completionGlow(isActive: justCompleted, color: AppColors.success)
         .overlay(
             RoundedRectangle(cornerRadius: AppCorners.medium)
@@ -1042,6 +1092,28 @@ struct SetRowView: View {
         NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
 
         HapticManager.shared.timerComplete()
+    }
+
+    // MARK: - Swipe Complete
+
+    private func triggerSwipeComplete() {
+        focusedField = nil
+        HapticManager.shared.setCompleted()
+
+        let rpeValue = Int(inputRPE)
+        let validRPE = rpeValue.flatMap { $0 >= 1 && $0 <= 10 ? $0 : nil }
+        onLog(
+            Double(inputWeight),
+            Int(inputReps),
+            validRPE,
+            inputDuration > 0 ? inputDuration : nil,
+            inputHoldTime > 0 ? inputHoldTime : nil,
+            Double(inputDistance),
+            Double(inputHeight),
+            inputQuality > 0 ? inputQuality : nil,
+            inputIntensity > 0 ? inputIntensity : nil,
+            Int(inputTemperature)
+        )
     }
 
     // MARK: - Helpers

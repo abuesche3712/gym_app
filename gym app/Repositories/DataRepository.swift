@@ -23,6 +23,7 @@ class DataRepository: ObservableObject {
     @Published var modules: [Module] = []
     @Published var workouts: [Workout] = []
     @Published var sessions: [Session] = []
+    @Published var programs: [Program] = []
     @Published var isSyncing = false
 
     init() {
@@ -148,6 +149,7 @@ class DataRepository: ObservableObject {
         loadModules()
         loadWorkouts()
         loadSessions()
+        loadPrograms()
     }
 
     // MARK: - Module Operations
@@ -355,6 +357,43 @@ class DataRepository: ObservableObject {
             }
         }
         return nil
+    }
+
+    // MARK: - Program Operations
+
+    func loadPrograms() {
+        let request = NSFetchRequest<ProgramEntity>(entityName: "ProgramEntity")
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \ProgramEntity.updatedAt, ascending: false)]
+
+        do {
+            let entities = try viewContext.fetch(request)
+            programs = entities.map { convertToProgram($0) }
+        } catch {
+            print("Error loading programs: \(error)")
+        }
+    }
+
+    func saveProgram(_ program: Program) {
+        let entity = findOrCreateProgramEntity(id: program.id)
+        updateProgramEntity(entity, from: program)
+        save()
+        loadPrograms()
+    }
+
+    func deleteProgram(_ program: Program) {
+        if let entity = findProgramEntity(id: program.id) {
+            viewContext.delete(entity)
+            save()
+            loadPrograms()
+        }
+    }
+
+    func getProgram(id: UUID) -> Program? {
+        programs.first { $0.id == id }
+    }
+
+    func getActiveProgram() -> Program? {
+        programs.first { $0.isActive }
     }
 
     // MARK: - ExerciseInstance Operations
@@ -871,6 +910,89 @@ class DataRepository: ObservableObject {
             notes: entity.notes,
             createdAt: entity.createdAt,
             syncStatus: entity.syncStatus
+        )
+    }
+
+    // MARK: - Program Conversion
+
+    private func findProgramEntity(id: UUID) -> ProgramEntity? {
+        let request = NSFetchRequest<ProgramEntity>(entityName: "ProgramEntity")
+        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+        return try? viewContext.fetch(request).first
+    }
+
+    private func findOrCreateProgramEntity(id: UUID) -> ProgramEntity {
+        if let existing = findProgramEntity(id: id) {
+            return existing
+        }
+        let entity = ProgramEntity(context: viewContext)
+        entity.id = id
+        return entity
+    }
+
+    private func updateProgramEntity(_ entity: ProgramEntity, from program: Program) {
+        entity.name = program.name
+        entity.programDescription = program.programDescription
+        entity.durationWeeks = Int32(program.durationWeeks)
+        entity.startDate = program.startDate
+        entity.endDate = program.endDate
+        entity.isActive = program.isActive
+        entity.createdAt = program.createdAt
+        entity.updatedAt = program.updatedAt
+        entity.syncStatus = program.syncStatus
+
+        // Clear existing workout slots
+        if let existingSlots = entity.workoutSlots {
+            for case let slot as ProgramWorkoutSlotEntity in existingSlots {
+                viewContext.delete(slot)
+            }
+        }
+
+        // Add workout slots
+        let slotEntities = program.workoutSlots.enumerated().map { index, slot in
+            let slotEntity = ProgramWorkoutSlotEntity(context: viewContext)
+            slotEntity.id = slot.id
+            slotEntity.workoutId = slot.workoutId
+            slotEntity.workoutName = slot.workoutName
+            slotEntity.scheduleType = slot.scheduleType
+            slotEntity.optionalDayOfWeek = slot.dayOfWeek
+            slotEntity.optionalWeekNumber = slot.weekNumber
+            slotEntity.optionalSpecificDateOffset = slot.specificDateOffset
+            slotEntity.orderIndex = Int32(index)
+            slotEntity.notes = slot.notes
+            slotEntity.program = entity
+            return slotEntity
+        }
+        entity.workoutSlots = NSOrderedSet(array: slotEntities)
+    }
+
+    private func convertToProgram(_ entity: ProgramEntity) -> Program {
+        let slots = entity.workoutSlotArray.map { slotEntity in
+            ProgramWorkoutSlot(
+                id: slotEntity.id,
+                workoutId: slotEntity.workoutId,
+                workoutName: slotEntity.workoutName,
+                scheduleType: slotEntity.scheduleType,
+                dayOfWeek: slotEntity.optionalDayOfWeek,
+                weekNumber: slotEntity.optionalWeekNumber,
+                specificDateOffset: slotEntity.optionalSpecificDateOffset,
+                order: Int(slotEntity.orderIndex),
+                notes: slotEntity.notes
+            )
+        }
+
+        return Program(
+            id: entity.id,
+            name: entity.name,
+            programDescription: entity.programDescription,
+            durationWeeks: Int(entity.durationWeeks),
+            startDate: entity.startDate,
+            endDate: entity.endDate,
+            isActive: entity.isActive,
+            createdAt: entity.createdAt,
+            updatedAt: entity.updatedAt,
+            syncStatus: entity.syncStatus,
+            workoutSlots: slots
         )
     }
 }
