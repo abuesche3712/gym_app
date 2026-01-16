@@ -78,6 +78,8 @@
 		EXMIGR002BUILD002 /* ExerciseMigrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXMIGR001FILE001 /* ExerciseMigrationManager.swift */; };
 		HAPTIC002BUILD002 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = HAPTIC001FILE001 /* HapticManager.swift */; };
 		ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANIMCO001FILE001 /* AnimatedComponents.swift */; };
+		HOMESC002BUILD002 /* HomeScheduleSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = HOMESC001FILE001 /* HomeScheduleSheets.swift */; };
+		EQUIPL002BUILD002 /* EquipmentLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EQUIPL001FILE001 /* EquipmentLibraryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -169,6 +171,8 @@
 		EXMIGR001FILE001 /* ExerciseMigrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseMigrationManager.swift; sourceTree = "<group>"; };
 		HAPTIC001FILE001 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		ANIMCO001FILE001 /* AnimatedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedComponents.swift; sourceTree = "<group>"; };
+		HOMESC001FILE001 /* HomeScheduleSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScheduleSheets.swift; sourceTree = "<group>"; };
+		EQUIPL001FILE001 /* EquipmentLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentLibraryView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -334,6 +338,7 @@
 			isa = PBXGroup;
 			children = (
 				B6EXERC012F15E73700D8C22D /* ExerciseLibraryView.swift */,
+				EQUIPL001FILE001 /* EquipmentLibraryView.swift */,
 				B63EBEFD2F15E73700D8C22D /* SettingsView.swift */,
 			);
 			path = Settings;
@@ -359,6 +364,7 @@
 				B63EBEFE2F15E73700D8C22D /* Settings */,
 				B63EBF022F15E73700D8C22D /* Workouts */,
 				B63EBF032F15E73700D8C22D /* HomeView.swift */,
+				HOMESC001FILE001 /* HomeScheduleSheets.swift */,
 				B63EBF042F15E73700D8C22D /* MainTabView.swift */,
 				E7C11766A68E4A17A1EC57EE /* Auth */,);
 			path = Views;
@@ -629,7 +635,9 @@
 				EXRSLV002BUILD002 /* ExerciseResolver.swift in Sources */,
 				EXMIGR002BUILD002 /* ExerciseMigrationManager.swift in Sources */,
 				HAPTIC002BUILD002 /* HapticManager.swift in Sources */,
-				ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */,);
+				ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */,
+				HOMESC002BUILD002 /* HomeScheduleSheets.swift in Sources */,
+				EQUIPL002BUILD002 /* EquipmentLibraryView.swift in Sources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		B610AC0B2F15B4DE008B2C15 /* Sources */ = {
