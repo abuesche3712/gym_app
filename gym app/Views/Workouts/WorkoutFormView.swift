@@ -323,7 +323,11 @@ struct QuickExerciseFormView: View {
     let onSave: (Exercise) -> Void
 
     @State private var name: String = ""
+    @State private var selectedTemplate: ExerciseTemplate?
     @State private var exerciseType: ExerciseType = .strength
+    @State private var muscleGroupIds: Set<UUID> = []
+    @State private var implementIds: Set<UUID> = []
+
     @State private var sets: Int = 3
     @State private var reps: Int = 10
     @State private var targetWeight: String = ""
@@ -334,74 +338,93 @@ struct QuickExerciseFormView: View {
     @State private var cardioMetric: CardioMetric = .timeOnly
     @State private var restPeriod: Int = 90
 
+    @State private var showingExercisePicker = false
+
     var body: some View {
         NavigationStack {
             Form {
-                Section("Exercise Info") {
-                    TextField("Exercise Name", text: $name)
+                Section("Exercise") {
+                    Button {
+                        showingExercisePicker = true
+                    } label: {
+                        HStack {
+                            Text("Exercise")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Text(name.isEmpty ? "Select exercise..." : name)
+                                .foregroundColor(name.isEmpty ? .secondary : .primary)
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
 
-                    Picker("Type", selection: $exerciseType) {
-                        ForEach(ExerciseType.allCases) { type in
-                            Label(type.displayName, systemImage: type.icon)
-                                .tag(type)
+                    if !name.isEmpty {
+                        Picker("Type", selection: $exerciseType) {
+                            ForEach(ExerciseType.allCases) { type in
+                                Label(type.displayName, systemImage: type.icon)
+                                    .tag(type)
+                            }
                         }
                     }
                 }
 
-                Section("Set Configuration") {
-                    Stepper("Sets: \(sets)", value: $sets, in: 1...20)
+                if !name.isEmpty {
+                    Section("Set Configuration") {
+                        Stepper("Sets: \(sets)", value: $sets, in: 1...20)
 
-                    switch exerciseType {
-                    case .strength:
-                        Stepper("Reps: \(reps)", value: $reps, in: 1...100)
-                        HStack {
-                            Text("Target Weight")
-                            Spacer()
-                            TextField("0", text: $targetWeight)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                                .frame(width: 60)
-                            Text("lbs")
-                                .foregroundStyle(.secondary)
-                        }
-
-                    case .cardio:
-                        Picker("Track", selection: $cardioMetric) {
-                            ForEach(CardioMetric.allCases) { metric in
-                                Text(metric.displayName).tag(metric)
-                            }
-                        }
-                        if cardioMetric.tracksTime {
-                            TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, label: "Duration")
-                        }
-                        if cardioMetric.tracksDistance {
+                        switch exerciseType {
+                        case .strength:
+                            Stepper("Reps: \(reps)", value: $reps, in: 1...100)
                             HStack {
-                                Text("Distance")
+                                Text("Target Weight")
                                 Spacer()
-                                TextField("0", text: $targetDistance)
+                                TextField("0", text: $targetWeight)
                                     .keyboardType(.decimalPad)
                                     .multilineTextAlignment(.trailing)
                                     .frame(width: 60)
-                                Picker("", selection: $distanceUnit) {
-                                    ForEach(DistanceUnit.allCases) { unit in
-                                        Text(unit.abbreviation).tag(unit)
-                                    }
-                                }
-                                .frame(width: 70)
+                                Text("lbs")
+                                    .foregroundStyle(.secondary)
                             }
+
+                        case .cardio:
+                            Picker("Track", selection: $cardioMetric) {
+                                ForEach(CardioMetric.allCases) { metric in
+                                    Text(metric.displayName).tag(metric)
+                                }
+                            }
+                            if cardioMetric.tracksTime {
+                                TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, label: "Duration")
+                            }
+                            if cardioMetric.tracksDistance {
+                                HStack {
+                                    Text("Distance")
+                                    Spacer()
+                                    TextField("0", text: $targetDistance)
+                                        .keyboardType(.decimalPad)
+                                        .multilineTextAlignment(.trailing)
+                                        .frame(width: 60)
+                                    Picker("", selection: $distanceUnit) {
+                                        ForEach(DistanceUnit.allCases) { unit in
+                                            Text(unit.abbreviation).tag(unit)
+                                        }
+                                    }
+                                    .frame(width: 70)
+                                }
+                            }
+
+                        case .isometric:
+                            TimePickerView(totalSeconds: $targetHoldTime, maxMinutes: 5, label: "Hold Time")
+
+                        case .mobility, .explosive:
+                            Stepper("Reps: \(reps)", value: $reps, in: 1...100)
+
+                        case .recovery:
+                            TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, label: "Duration")
                         }
 
-                    case .isometric:
-                        TimePickerView(totalSeconds: $targetHoldTime, maxMinutes: 5, label: "Hold Time")
-
-                    case .mobility, .explosive:
-                        Stepper("Reps: \(reps)", value: $reps, in: 1...100)
-
-                    case .recovery:
-                        TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, label: "Duration")
+                        Stepper("Rest: \(restPeriod)s", value: $restPeriod, in: 0...300, step: 15)
                     }
-
-                    Stepper("Rest: \(restPeriod)s", value: $restPeriod, in: 0...300, step: 15)
                 }
             }
             .navigationTitle("Add Exercise")
@@ -419,6 +442,34 @@ struct QuickExerciseFormView: View {
                     }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
+            }
+            .sheet(isPresented: $showingExercisePicker) {
+                ExercisePickerView(
+                    selectedTemplate: $selectedTemplate,
+                    customName: $name,
+                    onSelect: { template in
+                        if let template = template {
+                            name = template.name
+                            exerciseType = template.exerciseType
+                            selectedTemplate = template
+                            muscleGroupIds = template.muscleGroupIds
+                            implementIds = template.implementIds
+                        }
+                    },
+                    onSelectWithDetails: { template, type, muscles, implements in
+                        if let template = template {
+                            name = template.name
+                            exerciseType = template.exerciseType
+                            selectedTemplate = template
+                            muscleGroupIds = template.muscleGroupIds
+                            implementIds = template.implementIds
+                        } else {
+                            exerciseType = type
+                        }
+                        muscleGroupIds.formUnion(muscles)
+                        implementIds.formUnion(implements)
+                    }
+                )
             }
         }
     }
@@ -465,10 +516,13 @@ struct QuickExerciseFormView: View {
 
         let exercise = Exercise(
             name: trimmedName,
+            templateId: selectedTemplate?.id,
             exerciseType: exerciseType,
             cardioMetric: cardioMetric,
             distanceUnit: distanceUnit,
-            setGroups: [setGroup]
+            setGroups: [setGroup],
+            muscleGroupIds: muscleGroupIds,
+            implementIds: implementIds
         )
 
         onSave(exercise)

@@ -136,7 +136,7 @@ struct ExerciseFormView: View {
                         implementIds = template.implementIds
                     }
                 },
-                onSelectWithDetails: { template, muscles, implements in
+                onSelectWithDetails: { template, type, muscles, implements in
                     if let template = template {
                         name = template.name
                         exerciseType = template.exerciseType
@@ -144,6 +144,9 @@ struct ExerciseFormView: View {
                         // Copy muscle groups and implements from template
                         muscleGroupIds = template.muscleGroupIds
                         implementIds = template.implementIds
+                    } else {
+                        // Custom exercise - use the type from picker
+                        exerciseType = type
                     }
                     // Also merge any additional selections from the picker
                     muscleGroupIds.formUnion(muscles)

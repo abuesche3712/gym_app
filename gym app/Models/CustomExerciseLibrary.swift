@@ -35,10 +35,8 @@ class CustomExerciseLibrary: ObservableObject {
                 ExerciseTemplate(
                     id: entity.id,
                     name: entity.name,
-                    category: entity.category,
+                    category: .fullBody,  // Deprecated - always use fullBody
                     exerciseType: entity.exerciseType,
-                    primary: entity.primaryMuscles,
-                    secondary: entity.secondaryMuscles,
                     muscleGroupIds: entity.muscleGroupIds,
                     implementIds: entity.implementIds
                 )
@@ -52,10 +50,7 @@ class CustomExerciseLibrary: ObservableObject {
 
     func addExercise(
         name: String,
-        category: ExerciseCategory,
         exerciseType: ExerciseType,
-        primaryMuscles: [MuscleGroup] = [],
-        secondaryMuscles: [MuscleGroup] = [],
         muscleGroupIds: Set<UUID> = [],
         implementIds: Set<UUID> = []
     ) {
@@ -67,10 +62,8 @@ class CustomExerciseLibrary: ObservableObject {
         let entity = CustomExerciseTemplateEntity(context: viewContext)
         entity.id = UUID()
         entity.name = name
-        entity.category = category
+        entity.categoryRaw = ExerciseCategory.fullBody.rawValue  // Deprecated
         entity.exerciseType = exerciseType
-        entity.primaryMuscles = primaryMuscles
-        entity.secondaryMuscles = secondaryMuscles
         entity.muscleGroupIds = muscleGroupIds
         entity.implementIds = implementIds
         entity.createdAt = Date()
@@ -82,10 +75,7 @@ class CustomExerciseLibrary: ObservableObject {
     func addExercise(_ template: ExerciseTemplate) {
         addExercise(
             name: template.name,
-            category: template.category,
             exerciseType: template.exerciseType,
-            primaryMuscles: template.primaryMuscles,
-            secondaryMuscles: template.secondaryMuscles,
             muscleGroupIds: template.muscleGroupIds,
             implementIds: template.implementIds
         )
@@ -100,10 +90,7 @@ class CustomExerciseLibrary: ObservableObject {
         do {
             if let entity = try viewContext.fetch(request).first {
                 entity.name = template.name
-                entity.category = template.category
                 entity.exerciseType = template.exerciseType
-                entity.primaryMuscles = template.primaryMuscles
-                entity.secondaryMuscles = template.secondaryMuscles
                 entity.muscleGroupIds = template.muscleGroupIds
                 entity.implementIds = template.implementIds
                 save()

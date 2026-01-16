@@ -14,10 +14,10 @@ struct ExercisePickerView: View {
     @Binding var selectedTemplate: ExerciseTemplate?
     @Binding var customName: String
     let onSelect: (ExerciseTemplate?) -> Void
-    var onSelectWithDetails: ((ExerciseTemplate?, Set<UUID>, Set<UUID>) -> Void)?
+    var onSelectWithDetails: ((ExerciseTemplate?, ExerciseType, Set<UUID>, Set<UUID>) -> Void)?
 
     @State private var searchText = ""
-    @State private var selectedCategory: ExerciseCategory?
+    @State private var selectedType: ExerciseType?
     @State private var selectedExerciseType: ExerciseType = .strength
     @State private var saveToLibrary = true
 
@@ -33,8 +33,8 @@ struct ExercisePickerView: View {
     private var filteredLibraryExercises: [ExerciseTemplate] {
         var exercises = ExerciseLibrary.shared.exercises
 
-        if let category = selectedCategory {
-            exercises = exercises.filter { $0.category == category }
+        if let type = selectedType {
+            exercises = exercises.filter { $0.exerciseType == type }
         }
 
         if !searchText.isEmpty {
@@ -47,8 +47,8 @@ struct ExercisePickerView: View {
     private var filteredCustomExercises: [ExerciseTemplate] {
         var exercises = customLibrary.exercises
 
-        if let category = selectedCategory {
-            exercises = exercises.filter { $0.category == category }
+        if let type = selectedType {
+            exercises = exercises.filter { $0.exerciseType == type }
         }
 
         if !searchText.isEmpty {
@@ -67,7 +67,7 @@ struct ExercisePickerView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                categoryFilterBar
+                typeFilterBar
                 exerciseList
             }
             .navigationTitle("Select Exercise")
@@ -89,18 +89,18 @@ struct ExercisePickerView: View {
         }
     }
 
-    // MARK: - Category Filter
+    // MARK: - Type Filter
 
-    private var categoryFilterBar: some View {
+    private var typeFilterBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                CategoryPill(title: "All", isSelected: selectedCategory == nil) {
-                    selectedCategory = nil
+                CategoryPill(title: "All", isSelected: selectedType == nil) {
+                    selectedType = nil
                 }
 
-                ForEach(ExerciseCategory.allCases) { category in
-                    CategoryPill(title: category.rawValue, isSelected: selectedCategory == category) {
-                        selectedCategory = category
+                ForEach(ExerciseType.allCases) { type in
+                    CategoryPill(title: type.displayName, isSelected: selectedType == type) {
+                        selectedType = type
                     }
                 }
             }
@@ -275,7 +275,7 @@ struct ExercisePickerView: View {
                     }
 
                     HStack(spacing: 4) {
-                        Text(template.category.rawValue)
+                        Text(template.exerciseType.displayName)
                             .font(.caption)
                             .foregroundColor(.secondary)
 
@@ -327,7 +327,6 @@ struct ExercisePickerView: View {
         if saveToLibrary && !isNameInLibrary {
             customLibrary.addExercise(
                 name: customName.trimmingCharacters(in: .whitespaces),
-                category: selectedCategory ?? .fullBody,
                 exerciseType: selectedExerciseType,
                 muscleGroupIds: selectedMuscleGroups,
                 implementIds: selectedImplements
@@ -337,7 +336,7 @@ struct ExercisePickerView: View {
 
         // Use the detailed callback if provided, otherwise use the simple one
         if let detailedCallback = onSelectWithDetails {
-            detailedCallback(nil, selectedMuscleGroups, selectedImplements)
+            detailedCallback(nil, selectedExerciseType, selectedMuscleGroups, selectedImplements)
         } else {
             onSelect(nil)
         }

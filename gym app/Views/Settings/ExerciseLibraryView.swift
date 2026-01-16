@@ -9,8 +9,9 @@ import SwiftUI
 
 struct ExerciseLibraryView: View {
     @ObservedObject private var customLibrary = CustomExerciseLibrary.shared
+    @StateObject private var libraryService = LibraryService.shared
     @State private var searchText = ""
-    @State private var selectedCategory: ExerciseCategory? = nil
+    @State private var selectedType: ExerciseType? = nil
     @State private var showingAddExercise = false
     @State private var exerciseToEdit: ExerciseTemplate? = nil
 
@@ -23,9 +24,9 @@ struct ExerciseLibraryView: View {
     private var filteredExercises: [ExerciseTemplate] {
         var exercises = allExercises
 
-        // Filter by category
-        if let category = selectedCategory {
-            exercises = exercises.filter { $0.category == category }
+        // Filter by type
+        if let type = selectedType {
+            exercises = exercises.filter { $0.exerciseType == type }
         }
 
         // Filter by search
@@ -57,20 +58,20 @@ struct ExerciseLibraryView: View {
                         .fill(AppColors.cardBackground)
                 )
 
-                // Category filter
+                // Type filter
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: AppSpacing.sm) {
-                        CategoryChip(
+                        TypeChip(
                             title: "All",
-                            isSelected: selectedCategory == nil,
-                            action: { selectedCategory = nil }
+                            isSelected: selectedType == nil,
+                            action: { selectedType = nil }
                         )
 
-                        ForEach(ExerciseCategory.allCases) { category in
-                            CategoryChip(
-                                title: category.rawValue,
-                                isSelected: selectedCategory == category,
-                                action: { selectedCategory = category }
+                        ForEach(ExerciseType.allCases) { type in
+                            TypeChip(
+                                title: type.displayName,
+                                isSelected: selectedType == type,
+                                action: { selectedType = type }
                             )
                         }
                     }
@@ -133,9 +134,9 @@ struct ExerciseLibraryView: View {
     }
 }
 
-// MARK: - Category Chip
+// MARK: - Type Chip
 
-private struct CategoryChip: View {
+private struct TypeChip: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
@@ -188,12 +189,14 @@ private struct ExerciseLibraryRow: View {
     let onTap: () -> Void
     var onDelete: (() -> Void)? = nil
 
+    @StateObject private var libraryService = LibraryService.shared
+
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: AppSpacing.md) {
-                // Category color indicator
+                // Type color indicator
                 Circle()
-                    .fill(categoryColor)
+                    .fill(typeColor)
                     .frame(width: 8, height: 8)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -216,14 +219,14 @@ private struct ExerciseLibraryRow: View {
                     }
 
                     HStack(spacing: AppSpacing.sm) {
-                        Text(exercise.category.rawValue)
+                        Text(exercise.exerciseType.displayName)
                             .font(.caption)
                             .foregroundColor(AppColors.textTertiary)
 
-                        if !exercise.primaryMuscles.isEmpty {
+                        if !exercise.muscleGroupIds.isEmpty {
                             Text("•")
                                 .foregroundColor(AppColors.textTertiary)
-                            Text(exercise.primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
+                            Text(muscleNames)
                                 .font(.caption)
                                 .foregroundColor(AppColors.textTertiary)
                                 .lineLimit(1)
@@ -260,17 +263,21 @@ private struct ExerciseLibraryRow: View {
         }
     }
 
-    private var categoryColor: Color {
-        switch exercise.category {
-        case .chest: return .red
-        case .back: return .blue
-        case .shoulders: return .orange
-        case .biceps: return .purple
-        case .triceps: return .pink
-        case .legs: return .green
-        case .core: return .yellow
-        case .cardio: return .cyan
-        case .fullBody: return .indigo
+    private var muscleNames: String {
+        let names = exercise.muscleGroupIds.compactMap { id in
+            libraryService.getMuscleGroup(id: id)?.name
+        }
+        return names.joined(separator: ", ")
+    }
+
+    private var typeColor: Color {
+        switch exercise.exerciseType {
+        case .strength: return .blue
+        case .cardio: return .red
+        case .isometric: return .orange
+        case .explosive: return .purple
+        case .mobility: return .green
+        case .recovery: return .cyan
         }
     }
 
@@ -293,10 +300,9 @@ private struct AddExerciseSheet: View {
     @ObservedObject private var customLibrary = CustomExerciseLibrary.shared
 
     @State private var name = ""
-    @State private var category: ExerciseCategory = .chest
     @State private var exerciseType: ExerciseType = .strength
-    @State private var primaryMuscles: Set<MuscleGroup> = []
-    @State private var secondaryMuscles: Set<MuscleGroup> = []
+    @State private var selectedMuscleGroups: Set<UUID> = []
+    @State private var selectedImplements: Set<UUID> = []
 
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
@@ -309,14 +315,6 @@ private struct AddExerciseSheet: View {
                     TextField("Exercise name", text: $name)
                 }
 
-                Section("Category") {
-                    Picker("Category", selection: $category) {
-                        ForEach(ExerciseCategory.allCases) { cat in
-                            Text(cat.rawValue).tag(cat)
-                        }
-                    }
-                }
-
                 Section("Type") {
                     Picker("Type", selection: $exerciseType) {
                         ForEach(ExerciseType.allCases) { type in
@@ -325,34 +323,14 @@ private struct AddExerciseSheet: View {
                     }
                 }
 
-                Section("Primary Muscles") {
-                    ForEach(MuscleGroup.allCases) { muscle in
-                        Toggle(muscle.rawValue, isOn: Binding(
-                            get: { primaryMuscles.contains(muscle) },
-                            set: { isOn in
-                                if isOn {
-                                    primaryMuscles.insert(muscle)
-                                } else {
-                                    primaryMuscles.remove(muscle)
-                                }
-                            }
-                        ))
-                    }
+                Section("Muscles Worked") {
+                    MuscleGroupGridCompact(selectedIds: $selectedMuscleGroups)
+                        .padding(.vertical, 4)
                 }
 
-                Section("Secondary Muscles") {
-                    ForEach(MuscleGroup.allCases) { muscle in
-                        Toggle(muscle.rawValue, isOn: Binding(
-                            get: { secondaryMuscles.contains(muscle) },
-                            set: { isOn in
-                                if isOn {
-                                    secondaryMuscles.insert(muscle)
-                                } else {
-                                    secondaryMuscles.remove(muscle)
-                                }
-                            }
-                        ))
-                    }
+                Section("Equipment") {
+                    ImplementGridCompact(selectedIds: $selectedImplements)
+                        .padding(.vertical, 4)
                 }
             }
             .navigationTitle("Add Exercise")
@@ -365,10 +343,9 @@ private struct AddExerciseSheet: View {
                     Button("Save") {
                         customLibrary.addExercise(
                             name: name.trimmingCharacters(in: .whitespaces),
-                            category: category,
                             exerciseType: exerciseType,
-                            primaryMuscles: Array(primaryMuscles),
-                            secondaryMuscles: Array(secondaryMuscles)
+                            muscleGroupIds: selectedMuscleGroups,
+                            implementIds: selectedImplements
                         )
                         dismiss()
                     }
@@ -388,18 +365,16 @@ private struct EditCustomExerciseSheet: View {
     let exercise: ExerciseTemplate
 
     @State private var name: String
-    @State private var category: ExerciseCategory
     @State private var exerciseType: ExerciseType
-    @State private var primaryMuscles: Set<MuscleGroup>
-    @State private var secondaryMuscles: Set<MuscleGroup>
+    @State private var selectedMuscleGroups: Set<UUID>
+    @State private var selectedImplements: Set<UUID>
 
     init(exercise: ExerciseTemplate) {
         self.exercise = exercise
         _name = State(initialValue: exercise.name)
-        _category = State(initialValue: exercise.category)
         _exerciseType = State(initialValue: exercise.exerciseType)
-        _primaryMuscles = State(initialValue: Set(exercise.primaryMuscles))
-        _secondaryMuscles = State(initialValue: Set(exercise.secondaryMuscles))
+        _selectedMuscleGroups = State(initialValue: exercise.muscleGroupIds)
+        _selectedImplements = State(initialValue: exercise.implementIds)
     }
 
     private var canSave: Bool {
@@ -413,14 +388,6 @@ private struct EditCustomExerciseSheet: View {
                     TextField("Exercise name", text: $name)
                 }
 
-                Section("Category") {
-                    Picker("Category", selection: $category) {
-                        ForEach(ExerciseCategory.allCases) { cat in
-                            Text(cat.rawValue).tag(cat)
-                        }
-                    }
-                }
-
                 Section("Type") {
                     Picker("Type", selection: $exerciseType) {
                         ForEach(ExerciseType.allCases) { type in
@@ -429,34 +396,14 @@ private struct EditCustomExerciseSheet: View {
                     }
                 }
 
-                Section("Primary Muscles") {
-                    ForEach(MuscleGroup.allCases) { muscle in
-                        Toggle(muscle.rawValue, isOn: Binding(
-                            get: { primaryMuscles.contains(muscle) },
-                            set: { isOn in
-                                if isOn {
-                                    primaryMuscles.insert(muscle)
-                                } else {
-                                    primaryMuscles.remove(muscle)
-                                }
-                            }
-                        ))
-                    }
+                Section("Muscles Worked") {
+                    MuscleGroupGridCompact(selectedIds: $selectedMuscleGroups)
+                        .padding(.vertical, 4)
                 }
 
-                Section("Secondary Muscles") {
-                    ForEach(MuscleGroup.allCases) { muscle in
-                        Toggle(muscle.rawValue, isOn: Binding(
-                            get: { secondaryMuscles.contains(muscle) },
-                            set: { isOn in
-                                if isOn {
-                                    secondaryMuscles.insert(muscle)
-                                } else {
-                                    secondaryMuscles.remove(muscle)
-                                }
-                            }
-                        ))
-                    }
+                Section("Equipment") {
+                    ImplementGridCompact(selectedIds: $selectedImplements)
+                        .padding(.vertical, 4)
                 }
             }
             .navigationTitle("Edit Exercise")
@@ -467,16 +414,13 @@ private struct EditCustomExerciseSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        var updated = exercise
-                        updated = ExerciseTemplate(
+                        let updated = ExerciseTemplate(
                             id: exercise.id,
                             name: name.trimmingCharacters(in: .whitespaces),
-                            category: category,
+                            category: .fullBody,
                             exerciseType: exerciseType,
-                            primary: Array(primaryMuscles),
-                            secondary: Array(secondaryMuscles),
-                            muscleGroupIds: exercise.muscleGroupIds,
-                            implementIds: exercise.implementIds
+                            muscleGroupIds: selectedMuscleGroups,
+                            implementIds: selectedImplements
                         )
                         customLibrary.updateExercise(updated)
                         dismiss()
