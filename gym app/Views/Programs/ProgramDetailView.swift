@@ -19,7 +19,6 @@ struct ProgramDetailView: View {
     @State private var showingAddSlotSheet = false
     @State private var showingEditSheet = false
     @State private var selectedDayOfWeek: Int?
-    @State private var editMode: EditMode = .inactive
 
     private var currentProgram: Program {
         programViewModel.getProgram(id: program.id) ?? program
@@ -53,13 +52,6 @@ struct ProgramDetailView: View {
                         showingEditSheet = true
                     } label: {
                         Label("Edit Details", systemImage: "pencil")
-                    }
-
-                    Button {
-                        editMode = editMode == .active ? .inactive : .active
-                    } label: {
-                        Label(editMode == .active ? "Done Editing Slots" : "Edit Workout Slots",
-                              systemImage: editMode == .active ? "checkmark" : "calendar.badge.plus")
                     }
 
                     Divider()
@@ -223,29 +215,15 @@ struct ProgramDetailView: View {
 
     private var weeklyScheduleSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Weekly Schedule")
-                    .font(.headline)
+            Text("Weekly Schedule")
+                .font(.headline)
 
-                Spacer()
-
-                Button {
-                    editMode = editMode == .active ? .inactive : .active
-                } label: {
-                    Text(editMode == .active ? "Done" : "Edit")
-                        .font(.subheadline)
-                }
-            }
-
-            if editMode == .active {
-                Text("Tap a day to add a workout, or tap X to remove")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
+            Text("Tap + to add a workout, tap X to remove")
+                .font(.caption)
+                .foregroundColor(.secondary)
 
             ProgramWeeklyGridView(
                 program: currentProgram,
-                editMode: $editMode,
                 onDayTapped: { dayOfWeek in
                     selectedDayOfWeek = dayOfWeek
                     showingAddSlotSheet = true
@@ -259,9 +237,6 @@ struct ProgramDetailView: View {
                 }
             )
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
     }
 
     // MARK: - Action Buttons

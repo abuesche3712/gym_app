@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ProgramWeeklyGridView: View {
     let program: Program
-    @Binding var editMode: EditMode
     let onDayTapped: (Int) -> Void
     let onSlotRemove: (UUID) -> Void
 
@@ -35,7 +34,6 @@ struct ProgramWeeklyGridView: View {
                     DayCell(
                         dayOfWeek: day,
                         slots: slotsForDay(day),
-                        isEditing: editMode == .active,
                         onTap: {
                             onDayTapped(day)
                         },
@@ -61,7 +59,6 @@ struct ProgramWeeklyGridView: View {
 struct DayCell: View {
     let dayOfWeek: Int
     let slots: [ProgramWorkoutSlot]
-    let isEditing: Bool
     let onTap: () -> Void
     let onSlotRemove: (UUID) -> Void
 
@@ -73,9 +70,8 @@ struct DayCell: View {
                 slotsList
             }
 
-            if isEditing {
-                addButton
-            }
+            // Always show add button
+            addButton
         }
         .frame(maxWidth: .infinity, minHeight: 80)
         .background(Color(.tertiarySystemGroupedBackground))
@@ -83,24 +79,10 @@ struct DayCell: View {
     }
 
     private var emptyDayContent: some View {
-        VStack {
-            if isEditing {
-                Text("Rest")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            } else {
-                Text("-")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            if isEditing {
-                onTap()
-            }
-        }
+        Text("Rest")
+            .font(.caption2)
+            .foregroundColor(.secondary)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var slotsList: some View {
@@ -108,7 +90,6 @@ struct DayCell: View {
             ForEach(slots) { slot in
                 SlotChip(
                     slot: slot,
-                    isEditing: isEditing,
                     onRemove: {
                         onSlotRemove(slot.id)
                     }
@@ -135,7 +116,6 @@ struct DayCell: View {
 
 struct SlotChip: View {
     let slot: ProgramWorkoutSlot
-    let isEditing: Bool
     let onRemove: () -> Void
 
     var body: some View {
@@ -144,16 +124,14 @@ struct SlotChip: View {
                 .font(.system(size: 9, weight: .medium))
                 .lineLimit(1)
 
-            if isEditing {
-                Button {
-                    onRemove()
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 10))
-                        .foregroundColor(.white.opacity(0.8))
-                }
-                .buttonStyle(.plain)
+            Button {
+                onRemove()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(.white.opacity(0.8))
             }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 2)
@@ -181,39 +159,14 @@ struct SlotChip: View {
     }
 }
 
-// MARK: - Preview
-
 #Preview {
-    struct PreviewWrapper: View {
-        @State private var editMode: EditMode = .inactive
-
-        var body: some View {
-            let program = Program(
-                name: "Test Program",
-                durationWeeks: 8
-            )
-
-            VStack {
-                Toggle("Edit Mode", isOn: Binding(
-                    get: { editMode == .active },
-                    set: { editMode = $0 ? .active : .inactive }
-                ))
-                .padding()
-
-                ProgramWeeklyGridView(
-                    program: program,
-                    editMode: $editMode,
-                    onDayTapped: { day in
-                        print("Tapped day: \(day)")
-                    },
-                    onSlotRemove: { id in
-                        print("Remove slot: \(id)")
-                    }
-                )
-                .padding()
-            }
-        }
-    }
-
-    return PreviewWrapper()
+    ProgramWeeklyGridView(
+        program: Program(
+            name: "Test Program",
+            durationWeeks: 8
+        ),
+        onDayTapped: { _ in },
+        onSlotRemove: { _ in }
+    )
+    .padding()
 }

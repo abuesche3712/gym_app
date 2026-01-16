@@ -13,6 +13,8 @@ struct ProgramsListView: View {
     @State private var showingCreateSheet = false
     @State private var showingProgramsSheet = false
     @State private var selectedMonth: Date = Date()
+    @State private var selectedDate: Date?
+    @State private var showingDayDetail = false
 
     var body: some View {
         NavigationStack {
@@ -44,6 +46,11 @@ struct ProgramsListView: View {
             }
             .sheet(isPresented: $showingProgramsSheet) {
                 ProgramsManagementSheet()
+            }
+            .sheet(isPresented: $showingDayDetail) {
+                if let date = selectedDate {
+                    DayDetailSheet(date: date, scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date))
+                }
             }
         }
     }
@@ -203,7 +210,11 @@ struct ProgramsListView: View {
                         date: date,
                         isCurrentMonth: Calendar.current.isDate(date, equalTo: selectedMonth, toGranularity: .month),
                         scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date),
-                        isToday: Calendar.current.isDateInToday(date)
+                        isToday: Calendar.current.isDateInToday(date),
+                        onTap: {
+                            selectedDate = date
+                            showingDayDetail = true
+                        }
                     )
                 }
             }
@@ -287,34 +298,40 @@ struct MonthDayCell: View {
     let isCurrentMonth: Bool
     let scheduledWorkouts: [ScheduledWorkout]
     let isToday: Bool
+    let onTap: () -> Void
 
     var body: some View {
-        VStack(spacing: 2) {
-            Text("\(Calendar.current.component(.day, from: date))")
-                .font(.system(size: 14, weight: isToday ? .bold : .regular))
-                .foregroundColor(dayTextColor)
+        Button {
+            onTap()
+        } label: {
+            VStack(spacing: 2) {
+                Text("\(Calendar.current.component(.day, from: date))")
+                    .font(.system(size: 14, weight: isToday ? .bold : .regular))
+                    .foregroundColor(dayTextColor)
 
-            // Workout indicators
-            if !scheduledWorkouts.isEmpty {
-                HStack(spacing: 2) {
-                    ForEach(scheduledWorkouts.prefix(3)) { scheduled in
-                        Circle()
-                            .fill(scheduled.isRestDay ? Color.gray : (scheduled.isFromProgram ? Color.green : Color.accentColor))
-                            .frame(width: 4, height: 4)
-                    }
-                    if scheduledWorkouts.count > 3 {
-                        Text("+")
-                            .font(.system(size: 8))
-                            .foregroundColor(.secondary)
+                // Workout indicators
+                if !scheduledWorkouts.isEmpty {
+                    HStack(spacing: 2) {
+                        ForEach(scheduledWorkouts.prefix(3)) { scheduled in
+                            Circle()
+                                .fill(scheduled.isRestDay ? Color.gray : (scheduled.isFromProgram ? Color.green : Color.accentColor))
+                                .frame(width: 4, height: 4)
+                        }
+                        if scheduledWorkouts.count > 3 {
+                            Text("+")
+                                .font(.system(size: 8))
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
             }
+            .frame(height: 44)
+            .frame(maxWidth: .infinity)
+            .background(isToday ? Color.accentColor.opacity(0.2) : Color.clear)
+            .cornerRadius(8)
+            .opacity(isCurrentMonth ? 1 : 0.3)
         }
-        .frame(height: 44)
-        .frame(maxWidth: .infinity)
-        .background(isToday ? Color.accentColor.opacity(0.2) : Color.clear)
-        .cornerRadius(8)
-        .opacity(isCurrentMonth ? 1 : 0.3)
+        .buttonStyle(.plain)
     }
 
     private var dayTextColor: Color {
@@ -459,6 +476,88 @@ struct ProgramRow: View {
         let totalDays = Double(durationWeeks * 7)
         let elapsed = Date().timeIntervalSince(startDate) / (24 * 60 * 60)
         return min(max(elapsed / totalDays, 0), 1)
+    }
+}
+
+// MARK: - Day Detail Sheet
+
+struct DayDetailSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let date: Date
+    let scheduledWorkouts: [ScheduledWorkout]
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if scheduledWorkouts.isEmpty {
+                    Section {
+                        HStack {
+                            Spacer()
+                            VStack(spacing: 8) {
+                                Image(systemName: "moon.zzz")
+                                    .font(.system(size: 32))
+                                    .foregroundColor(.secondary)
+                                Text("Rest Day")
+                                    .font(.headline)
+                                Text("No workouts scheduled")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.vertical, 24)
+                            Spacer()
+                        }
+                    }
+                } else {
+                    Section {
+                        ForEach(scheduledWorkouts) { scheduled in
+                            if scheduled.isRestDay {
+                                HStack {
+                                    Image(systemName: "moon.zzz")
+                                        .foregroundColor(.secondary)
+                                    Text("Rest Day")
+                                        .foregroundColor(.secondary)
+                                }
+                            } else {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(scheduled.workoutName)
+                                            .font(.headline)
+
+                                        if scheduled.isFromProgram {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "calendar.badge.clock")
+                                                    .font(.caption)
+                                                Text("From Program")
+                                                    .font(.caption)
+                                            }
+                                            .foregroundColor(.green)
+                                        }
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
+                    } header: {
+                        Text("Scheduled Workouts")
+                    }
+                }
+            }
+            .navigationTitle(date.formatted(date: .abbreviated, time: .omitted))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 
