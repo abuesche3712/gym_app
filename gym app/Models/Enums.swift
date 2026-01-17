@@ -375,3 +375,19 @@ enum ProgressionRecommendation: String, Codable, CaseIterable, Identifiable {
         }
     }
 }
+
+// MARK: - Sync Notifications
+
+extension Notification.Name {
+    /// Posted when scheduled workouts are synced from cloud
+    static let scheduledWorkoutsSyncedFromCloud = Notification.Name("scheduledWorkoutsSyncedFromCloud")
+
+    /// Posted when user profile is synced from cloud
+    static let userProfileSyncedFromCloud = Notification.Name("userProfileSyncedFromCloud")
+
+    /// Posted to request scheduled workouts for sync to cloud
+    static let requestScheduledWorkoutsForSync = Notification.Name("requestScheduledWorkoutsForSync")
+
+    /// Posted to request user profile for sync to cloud
+    static let requestUserProfileForSync = Notification.Name("requestUserProfileForSync")
+}

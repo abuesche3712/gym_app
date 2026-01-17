@@ -33,11 +33,46 @@ struct PersistenceController {
 
         if inMemory {
             container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
+        } else {
+            // Enable lightweight migration for schema changes (adding optional attributes is supported)
+            if let description = container.persistentStoreDescriptions.first {
+                description.setOption(true as NSNumber, forKey: NSMigratePersistentStoresAutomaticallyOption)
+                description.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
+            }
         }
 
-        container.loadPersistentStores { storeDescription, error in
+        container.loadPersistentStores { [container] storeDescription, error in
             if let error = error as NSError? {
-                fatalError("Unresolved error \(error), \(error.userInfo)")
+                // Log the error
+                print("⚠️ CoreData store failed to load: \(error), \(error.userInfo)")
+
+                // Attempt recovery by deleting incompatible store
+                if let storeURL = storeDescription.url {
+                    print("⚠️ Attempting to delete incompatible store and recreate...")
+                    do {
+                        try container.persistentStoreCoordinator.destroyPersistentStore(at: storeURL, ofType: NSSQLiteStoreType, options: nil)
+                        // Delete related files
+                        let fileManager = FileManager.default
+                        let storePath = storeURL.path
+                        for suffix in ["", "-shm", "-wal"] {
+                            try? fileManager.removeItem(atPath: storePath + suffix)
+                        }
+
+                        // Try loading again
+                        try container.persistentStoreCoordinator.addPersistentStore(
+                            ofType: NSSQLiteStoreType,
+                            configurationName: nil,
+                            at: storeURL,
+                            options: [
+                                NSMigratePersistentStoresAutomaticallyOption: true,
+                                NSInferMappingModelAutomaticallyOption: true
+                            ]
+                        )
+                        print("✅ Store recreated successfully")
+                    } catch {
+                        print("❌ Failed to recreate store: \(error)")
+                    }
+                }
             }
         }
 
@@ -162,6 +197,7 @@ struct PersistenceController {
             createAttribute("estimatedDuration", type: .integer32AttributeType, optional: true),
             createAttribute("createdAt", type: .dateAttributeType),
             createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncStatusRaw", type: .stringAttributeType)
         ]
 
@@ -182,6 +218,7 @@ struct PersistenceController {
             createAttribute("orderIndex", type: .integer32AttributeType),
             createAttribute("createdAt", type: .dateAttributeType),
             createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             // Library system reference (optional for backward compatibility)
             createAttribute("exerciseLibraryId", type: .UUIDAttributeType, optional: true),
             // Library system fields (direct storage for muscle groups and implements)
@@ -213,6 +250,9 @@ struct PersistenceController {
             createAttribute("restPeriod", type: .integer32AttributeType, optional: true),
             createAttribute("notes", type: .stringAttributeType, optional: true),
             createAttribute("orderIndex", type: .integer32AttributeType),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             // Interval mode fields
             createAttribute("isInterval", type: .booleanAttributeType, optional: true),
             createAttribute("workDuration", type: .integer32AttributeType, optional: true),
@@ -240,6 +280,7 @@ struct PersistenceController {
             createAttribute("archived", type: .booleanAttributeType),
             createAttribute("createdAt", type: .dateAttributeType),
             createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncStatusRaw", type: .stringAttributeType)
         ]
 
@@ -256,7 +297,10 @@ struct PersistenceController {
             createAttribute("moduleId", type: .UUIDAttributeType),
             createAttribute("orderIndex", type: .integer32AttributeType),
             createAttribute("isRequired", type: .booleanAttributeType),
-            createAttribute("notes", type: .stringAttributeType, optional: true)
+            createAttribute("notes", type: .stringAttributeType, optional: true),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true)
         ]
 
         return entity
@@ -276,8 +320,10 @@ struct PersistenceController {
             createAttribute("duration", type: .integer32AttributeType, optional: true),
             createAttribute("overallFeeling", type: .integer32AttributeType, optional: true),
             createAttribute("notes", type: .stringAttributeType, optional: true),
-            createAttribute("createdAt", type: .dateAttributeType),
-            createAttribute("syncStatusRaw", type: .stringAttributeType)
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncStatusRaw", type: .stringAttributeType, optional: true)
         ]
 
         return entity
@@ -295,7 +341,10 @@ struct PersistenceController {
             createAttribute("moduleTypeRaw", type: .stringAttributeType),
             createAttribute("skipped", type: .booleanAttributeType),
             createAttribute("notes", type: .stringAttributeType, optional: true),
-            createAttribute("orderIndex", type: .integer32AttributeType)
+            createAttribute("orderIndex", type: .integer32AttributeType),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true)
         ]
 
         return entity
@@ -315,6 +364,9 @@ struct PersistenceController {
             createAttribute("distanceUnitRaw", type: .stringAttributeType, optional: true),
             createAttribute("notes", type: .stringAttributeType, optional: true),
             createAttribute("orderIndex", type: .integer32AttributeType),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             createAttribute("progressionRecommendationRaw", type: .stringAttributeType, optional: true),
             createAttribute("mobilityTrackingRaw", type: .stringAttributeType, optional: true),
             createAttribute("isBodyweight", type: .booleanAttributeType, optional: true),
@@ -333,6 +385,9 @@ struct PersistenceController {
             createAttribute("id", type: .UUIDAttributeType),
             createAttribute("setGroupId", type: .UUIDAttributeType),
             createAttribute("orderIndex", type: .integer32AttributeType),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             createAttribute("restPeriod", type: .integer32AttributeType, optional: true),
             // Interval mode fields
             createAttribute("isInterval", type: .booleanAttributeType, optional: true),
@@ -363,7 +418,10 @@ struct PersistenceController {
             createAttribute("intensity", type: .integer32AttributeType, optional: true),
             createAttribute("height", type: .doubleAttributeType, optional: true),
             createAttribute("quality", type: .integer32AttributeType, optional: true),
-            createAttribute("restAfter", type: .integer32AttributeType, optional: true)
+            createAttribute("restAfter", type: .integer32AttributeType, optional: true),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true)
         ]
 
         return entity
@@ -376,13 +434,14 @@ struct PersistenceController {
 
         entity.properties = [
             createAttribute("id", type: .UUIDAttributeType),
-            createAttribute("operationRaw", type: .stringAttributeType),
             createAttribute("entityTypeRaw", type: .stringAttributeType),
             createAttribute("entityId", type: .UUIDAttributeType),
+            createAttribute("actionRaw", type: .stringAttributeType),
             createAttribute("payload", type: .binaryDataAttributeType),
-            createAttribute("attempts", type: .integer32AttributeType),
             createAttribute("createdAt", type: .dateAttributeType),
-            createAttribute("lastAttemptAt", type: .dateAttributeType, optional: true)
+            createAttribute("retryCount", type: .integer32AttributeType, defaultValue: 0),
+            createAttribute("lastAttemptAt", type: .dateAttributeType, optional: true),
+            createAttribute("lastError", type: .stringAttributeType, optional: true)
         ]
 
         return entity
@@ -400,8 +459,9 @@ struct PersistenceController {
             createAttribute("exerciseTypeRaw", type: .stringAttributeType),
             createAttribute("primaryMusclesRaw", type: .stringAttributeType, optional: true),
             createAttribute("secondaryMusclesRaw", type: .stringAttributeType, optional: true),
-            createAttribute("createdAt", type: .dateAttributeType, optional: true),
-            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("createdAt", type: .dateAttributeType),
+            createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             // Library system fields
             createAttribute("muscleGroupIdsRaw", type: .stringAttributeType, optional: true),
             createAttribute("implementIdsRaw", type: .stringAttributeType, optional: true),
@@ -436,6 +496,7 @@ struct PersistenceController {
             createAttribute("orderIndex", type: .integer32AttributeType),
             createAttribute("createdAt", type: .dateAttributeType),
             createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             // Optional overrides
             createAttribute("nameOverride", type: .stringAttributeType, optional: true),
             createAttribute("exerciseTypeOverrideRaw", type: .stringAttributeType, optional: true)
@@ -548,6 +609,7 @@ struct PersistenceController {
             createAttribute("isActive", type: .booleanAttributeType, defaultValue: false),
             createAttribute("createdAt", type: .dateAttributeType),
             createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncStatusRaw", type: .stringAttributeType)
         ]
 
@@ -568,7 +630,10 @@ struct PersistenceController {
             createAttribute("weekNumber", type: .integer32AttributeType, optional: true, defaultValue: 0),
             createAttribute("specificDateOffset", type: .integer32AttributeType, optional: true, defaultValue: -1),
             createAttribute("orderIndex", type: .integer32AttributeType),
-            createAttribute("notes", type: .stringAttributeType, optional: true)
+            createAttribute("notes", type: .stringAttributeType, optional: true),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true)
         ]
 
         return entity

@@ -17,40 +17,38 @@ struct ProgramsListView: View {
     @State private var showingDayDetail = false
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    // Active Program Header
-                    activeProgramHeader
+        ScrollView {
+            VStack(spacing: 16) {
+                // Active Program Header
+                activeProgramHeader
 
-                    // Monthly Calendar
-                    monthlyCalendarSection
+                // Monthly Calendar
+                monthlyCalendarSection
 
-                    // Program List (collapsed)
-                    programListSection
+                // Program List (collapsed)
+                programListSection
+            }
+            .padding()
+        }
+        .navigationTitle("Programs")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showingCreateSheet = true
+                } label: {
+                    Image(systemName: "plus")
                 }
-                .padding()
             }
-            .navigationTitle("Programs")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingCreateSheet = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
-            .sheet(isPresented: $showingCreateSheet) {
-                CreateProgramSheet()
-            }
-            .sheet(isPresented: $showingProgramsSheet) {
-                ProgramsManagementSheet()
-            }
-            .sheet(isPresented: $showingDayDetail) {
-                if let date = selectedDate {
-                    DayDetailSheet(date: date, scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date))
-                }
+        }
+        .sheet(isPresented: $showingCreateSheet) {
+            CreateProgramSheet()
+        }
+        .sheet(isPresented: $showingProgramsSheet) {
+            ProgramsManagementSheet()
+        }
+        .sheet(isPresented: $showingDayDetail) {
+            if let date = selectedDate {
+                DayDetailSheet(date: date, scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date))
             }
         }
     }
@@ -60,7 +58,9 @@ struct ProgramsListView: View {
     private var activeProgramHeader: some View {
         Group {
             if let activeProgram = programViewModel.activeProgram {
-                NavigationLink(value: activeProgram) {
+                NavigationLink {
+                    ProgramDetailView(program: activeProgram)
+                } label: {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
@@ -116,9 +116,6 @@ struct ProgramsListView: View {
             } else {
                 noActiveProgramCard
             }
-        }
-        .navigationDestination(for: Program.self) { program in
-            ProgramDetailView(program: program)
         }
     }
 
@@ -193,7 +190,7 @@ struct ProgramsListView: View {
 
             // Day Headers
             HStack(spacing: 0) {
-                ForEach(["S", "M", "T", "W", "T", "F", "S"], id: \.self) { day in
+                ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { _, day in
                     Text(day)
                         .font(.caption)
                         .fontWeight(.medium)
@@ -250,7 +247,9 @@ struct ProgramsListView: View {
                     .padding()
             } else {
                 ForEach(programViewModel.programs) { program in
-                    NavigationLink(value: program) {
+                    NavigationLink {
+                        ProgramDetailView(program: program)
+                    } label: {
                         ProgramCompactRow(program: program, isActive: program.isActive)
                     }
                     .buttonStyle(.plain)
@@ -393,7 +392,9 @@ struct ProgramsManagementSheet: View {
         NavigationStack {
             List {
                 ForEach(programViewModel.programs) { program in
-                    NavigationLink(value: program) {
+                    NavigationLink {
+                        ProgramDetailView(program: program)
+                    } label: {
                         ProgramRow(program: program, isActive: program.isActive)
                     }
                 }
@@ -407,9 +408,6 @@ struct ProgramsManagementSheet: View {
                         dismiss()
                     }
                 }
-            }
-            .navigationDestination(for: Program.self) { program in
-                ProgramDetailView(program: program)
             }
         }
     }
@@ -562,5 +560,7 @@ struct DayDetailSheet: View {
 }
 
 #Preview {
-    ProgramsListView()
+    NavigationStack {
+        ProgramsListView()
+    }
 }

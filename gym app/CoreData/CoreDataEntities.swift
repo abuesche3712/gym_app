@@ -7,10 +7,44 @@
 
 import CoreData
 
+// MARK: - Syncable Entity Protocol
+
+/// Protocol for entities that sync to Firebase
+/// Provides required timestamp fields for conflict resolution
+@objc protocol SyncableEntity: NSObjectProtocol {
+    /// When the entity was first created locally
+    var createdAt: Date { get set }
+    /// When the entity was last modified locally (auto-updated on save)
+    var updatedAt: Date { get set }
+    /// When the entity was last successfully synced to cloud (nil if never synced)
+    var syncedAt: Date? { get set }
+}
+
+/// Extension to auto-update timestamps on save
+extension SyncableEntity where Self: NSManagedObject {
+    /// Call this in willSave() to auto-update updatedAt timestamp
+    func updateTimestampsOnSave() {
+        // Only update if there are actual changes (not just relationship updates)
+        if hasChanges && !changedValues().isEmpty {
+            // Avoid infinite loop by checking if updatedAt is the only change
+            let changedKeys = changedValues().keys
+            if changedKeys.count == 1 && changedKeys.contains("updatedAt") {
+                return
+            }
+
+            // Set updatedAt to now
+            let now = Date()
+            if updatedAt != now {
+                setPrimitiveValue(now, forKey: "updatedAt")
+            }
+        }
+    }
+}
+
 // MARK: - Module Entity
 
 @objc(ModuleEntity)
-public class ModuleEntity: NSManagedObject {
+public class ModuleEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var name: String
     @NSManaged public var typeRaw: String
@@ -18,9 +52,15 @@ public class ModuleEntity: NSManagedObject {
     @NSManaged public var estimatedDuration: Int32
     @NSManaged public var createdAt: Date
     @NSManaged public var updatedAt: Date
+    @NSManaged public var syncedAt: Date?
     @NSManaged public var syncStatusRaw: String
     @NSManaged public var exercises: NSOrderedSet?
-    @NSManaged public var exerciseInstances: NSOrderedSet?  // New normalized model
+    @NSManaged public var exerciseInstances: NSOrderedSet?
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
 
     var type: ModuleType {
         get { ModuleType(rawValue: typeRaw) ?? .strength }
@@ -44,7 +84,7 @@ public class ModuleEntity: NSManagedObject {
 // MARK: - Exercise Entity
 
 @objc(ExerciseEntity)
-public class ExerciseEntity: NSManagedObject {
+public class ExerciseEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var name: String
     @NSManaged public var exerciseTypeRaw: String
@@ -53,6 +93,7 @@ public class ExerciseEntity: NSManagedObject {
     @NSManaged public var orderIndex: Int32
     @NSManaged public var createdAt: Date
     @NSManaged public var updatedAt: Date
+    @NSManaged public var syncedAt: Date?
     @NSManaged public var module: ModuleEntity?
     @NSManaged public var setGroups: NSOrderedSet?
 
@@ -68,6 +109,11 @@ public class ExerciseEntity: NSManagedObject {
     @NSManaged public var templateId: UUID?
     @NSManaged public var cardioMetricRaw: String?
     @NSManaged public var distanceUnitRaw: String?
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
 
     var cardioMetric: CardioMetric {
         get { CardioMetric(rawValue: cardioMetricRaw ?? "") ?? .timeOnly }
@@ -144,7 +190,7 @@ public class ExerciseEntity: NSManagedObject {
 // MARK: - Exercise Instance Entity (New normalized model)
 
 @objc(ExerciseInstanceEntity)
-public class ExerciseInstanceEntity: NSManagedObject {
+public class ExerciseInstanceEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var templateId: UUID  // Required - links to ExerciseTemplate
     @NSManaged public var supersetGroupIdRaw: String?
@@ -152,12 +198,18 @@ public class ExerciseInstanceEntity: NSManagedObject {
     @NSManaged public var orderIndex: Int32
     @NSManaged public var createdAt: Date
     @NSManaged public var updatedAt: Date
+    @NSManaged public var syncedAt: Date?
     @NSManaged public var module: ModuleEntity?
     @NSManaged public var setGroups: NSOrderedSet?
 
     // Optional overrides (rarely used)
     @NSManaged public var nameOverride: String?
     @NSManaged public var exerciseTypeOverrideRaw: String?
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
 
     var supersetGroupId: UUID? {
         get {
@@ -197,6 +249,9 @@ public class SetGroupEntity: NSManagedObject {
     @NSManaged public var restPeriod: Int32
     @NSManaged public var notes: String?
     @NSManaged public var orderIndex: Int32
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
     @NSManaged public var exercise: ExerciseEntity?
     @NSManaged public var exerciseInstance: ExerciseInstanceEntity?  // New normalized model
 
@@ -266,7 +321,7 @@ public class TargetValueEntity: NSManagedObject {
 // MARK: - Workout Entity
 
 @objc(WorkoutEntity)
-public class WorkoutEntity: NSManagedObject {
+public class WorkoutEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var name: String
     @NSManaged public var estimatedDuration: Int32
@@ -274,8 +329,14 @@ public class WorkoutEntity: NSManagedObject {
     @NSManaged public var archived: Bool
     @NSManaged public var createdAt: Date
     @NSManaged public var updatedAt: Date
+    @NSManaged public var syncedAt: Date?
     @NSManaged public var syncStatusRaw: String
     @NSManaged public var moduleReferences: NSOrderedSet?
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
 
     var syncStatus: SyncStatus {
         get { SyncStatus(rawValue: syncStatusRaw) ?? .pendingSync }
@@ -296,6 +357,9 @@ public class ModuleReferenceEntity: NSManagedObject {
     @NSManaged public var orderIndex: Int32
     @NSManaged public var isRequired: Bool
     @NSManaged public var notes: String?
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
     @NSManaged public var workout: WorkoutEntity?
 }
 
@@ -311,12 +375,14 @@ public class SessionEntity: NSManagedObject {
     @NSManaged public var duration: Int32
     @NSManaged public var overallFeeling: Int32
     @NSManaged public var notes: String?
-    @NSManaged public var createdAt: Date
-    @NSManaged public var syncStatusRaw: String
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
+    @NSManaged public var syncStatusRaw: String?
     @NSManaged public var completedModules: NSOrderedSet?
 
     var syncStatus: SyncStatus {
-        get { SyncStatus(rawValue: syncStatusRaw) ?? .pendingSync }
+        get { SyncStatus(rawValue: syncStatusRaw ?? "") ?? .pendingSync }
         set { syncStatusRaw = newValue.rawValue }
     }
 
@@ -346,6 +412,9 @@ public class CompletedModuleEntity: NSManagedObject {
     @NSManaged public var skipped: Bool
     @NSManaged public var notes: String?
     @NSManaged public var orderIndex: Int32
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
     @NSManaged public var session: SessionEntity?
     @NSManaged public var completedExercises: NSOrderedSet?
 
@@ -371,6 +440,9 @@ public class SessionExerciseEntity: NSManagedObject {
     @NSManaged public var distanceUnitRaw: String?
     @NSManaged public var notes: String?
     @NSManaged public var orderIndex: Int32
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
     @NSManaged public var completedModule: CompletedModuleEntity?
     @NSManaged public var completedSetGroups: NSOrderedSet?
     @NSManaged public var progressionRecommendationRaw: String?
@@ -420,6 +492,9 @@ public class CompletedSetGroupEntity: NSManagedObject {
     @NSManaged public var id: UUID
     @NSManaged public var setGroupId: UUID
     @NSManaged public var orderIndex: Int32
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
     @NSManaged public var sessionExercise: SessionExerciseEntity?
     @NSManaged public var sets: NSOrderedSet?
 
@@ -442,6 +517,9 @@ public class SetDataEntity: NSManagedObject {
     @NSManaged public var setNumber: Int32
     @NSManaged public var completed: Bool
     @NSManaged public var restAfter: Int32
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
     @NSManaged public var completedSetGroup: CompletedSetGroupEntity?
 
     // Dynamic measurable actuals (new system)
@@ -501,37 +579,19 @@ public class ActualValueEntity: NSManagedObject {
     }
 }
 
-// MARK: - Sync Queue Entity
-
-@objc(SyncQueueEntity)
-public class SyncQueueEntity: NSManagedObject {
-    @NSManaged public var id: UUID
-    @NSManaged public var operationRaw: String
-    @NSManaged public var entityTypeRaw: String
-    @NSManaged public var entityId: UUID
-    @NSManaged public var payload: Data
-    @NSManaged public var attempts: Int32
-    @NSManaged public var createdAt: Date
-    @NSManaged public var lastAttemptAt: Date?
-
-    var operation: SyncOperation {
-        get { SyncOperation(rawValue: operationRaw) ?? .create }
-        set { operationRaw = newValue.rawValue }
-    }
-}
-
 // MARK: - Custom Exercise Template Entity (Enhanced for normalized model)
 
 @objc(CustomExerciseTemplateEntity)
-public class CustomExerciseTemplateEntity: NSManagedObject {
+public class CustomExerciseTemplateEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var name: String
     @NSManaged public var categoryRaw: String
     @NSManaged public var exerciseTypeRaw: String
     @NSManaged public var primaryMusclesRaw: String?
     @NSManaged public var secondaryMusclesRaw: String?
-    @NSManaged public var createdAt: Date?
-    @NSManaged public var updatedAt: Date?
+    @NSManaged public var createdAt: Date
+    @NSManaged public var updatedAt: Date
+    @NSManaged public var syncedAt: Date?
 
     // Library system fields
     @NSManaged public var muscleGroupIdsRaw: String?
@@ -553,6 +613,11 @@ public class CustomExerciseTemplateEntity: NSManagedObject {
     // Library management
     @NSManaged public var isArchived: Bool
     @NSManaged public var isCustom: Bool
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
 
     var category: ExerciseCategory {
         get { ExerciseCategory(rawValue: categoryRaw) ?? .fullBody }
@@ -745,7 +810,7 @@ public class ExerciseLibraryEntity: NSManagedObject {
 // MARK: - Program Entity
 
 @objc(ProgramEntity)
-public class ProgramEntity: NSManagedObject {
+public class ProgramEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var name: String
     @NSManaged public var programDescription: String?
@@ -755,8 +820,14 @@ public class ProgramEntity: NSManagedObject {
     @NSManaged public var isActive: Bool
     @NSManaged public var createdAt: Date
     @NSManaged public var updatedAt: Date
+    @NSManaged public var syncedAt: Date?
     @NSManaged public var syncStatusRaw: String
     @NSManaged public var workoutSlots: NSOrderedSet?
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
 
     var syncStatus: SyncStatus {
         get { SyncStatus(rawValue: syncStatusRaw) ?? .pendingSync }
@@ -781,6 +852,9 @@ public class ProgramWorkoutSlotEntity: NSManagedObject {
     @NSManaged public var specificDateOffset: Int32
     @NSManaged public var orderIndex: Int32
     @NSManaged public var notes: String?
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
     @NSManaged public var program: ProgramEntity?
 
     var scheduleType: SlotScheduleType {
@@ -801,5 +875,50 @@ public class ProgramWorkoutSlotEntity: NSManagedObject {
     var optionalSpecificDateOffset: Int? {
         get { specificDateOffset >= 0 ? Int(specificDateOffset) : nil }
         set { specificDateOffset = Int32(newValue ?? -1) }
+    }
+}
+
+// MARK: - Sync Queue Entity
+
+@objc(SyncQueueEntity)
+public class SyncQueueEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var entityTypeRaw: String
+    @NSManaged public var entityId: UUID
+    @NSManaged public var actionRaw: String
+    @NSManaged public var payload: Data
+    @NSManaged public var createdAt: Date
+    @NSManaged public var retryCount: Int32
+    @NSManaged public var lastAttemptAt: Date?
+    @NSManaged public var lastError: String?
+
+    var entityType: SyncEntityType {
+        get { SyncEntityType(rawValue: entityTypeRaw) ?? .session }
+        set { entityTypeRaw = newValue.rawValue }
+    }
+
+    var action: SyncAction {
+        get { SyncAction(rawValue: actionRaw) ?? .update }
+        set { actionRaw = newValue.rawValue }
+    }
+
+    /// Whether this item has exceeded retry limit
+    var needsManualIntervention: Bool {
+        retryCount >= SyncQueueItem.maxRetries
+    }
+
+    /// Convert to model object
+    func toModel() -> SyncQueueItem {
+        SyncQueueItem(
+            id: id,
+            entityType: entityType,
+            entityId: entityId,
+            action: action,
+            payload: payload,
+            createdAt: createdAt,
+            retryCount: Int(retryCount),
+            lastAttemptAt: lastAttemptAt,
+            lastError: lastError
+        )
     }
 }

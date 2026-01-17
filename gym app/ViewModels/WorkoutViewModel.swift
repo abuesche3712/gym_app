@@ -17,12 +17,89 @@ class WorkoutViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     private let repository: DataRepository
+    private let firestoreService = FirestoreService.shared
+    private let authService = AuthService.shared
     private let scheduledWorkoutsKey = "scheduledWorkouts"
+    private var cancellables = Set<AnyCancellable>()
 
     init(repository: DataRepository = .shared) {
         self.repository = repository
         loadWorkouts()
         loadScheduledWorkouts()
+        setupSyncNotifications()
+    }
+
+    // MARK: - Sync Notifications
+
+    private func setupSyncNotifications() {
+        // Listen for scheduled workouts synced from cloud
+        NotificationCenter.default.publisher(for: .scheduledWorkoutsSyncedFromCloud)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                if let cloudScheduled = notification.object as? [ScheduledWorkout] {
+                    self?.mergeScheduledWorkoutsFromCloud(cloudScheduled)
+                }
+            }
+            .store(in: &cancellables)
+
+        // Listen for request to push scheduled workouts to cloud
+        NotificationCenter.default.publisher(for: .requestScheduledWorkoutsForSync)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task { [weak self] in
+                    await self?.pushScheduledWorkoutsToCloud()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func mergeScheduledWorkoutsFromCloud(_ cloudScheduled: [ScheduledWorkout]) {
+        for cloudItem in cloudScheduled {
+            if let localIndex = scheduledWorkouts.firstIndex(where: { $0.id == cloudItem.id }) {
+                // Update if cloud is newer (compare by createdAt since we don't have updatedAt)
+                if cloudItem.createdAt > scheduledWorkouts[localIndex].createdAt {
+                    scheduledWorkouts[localIndex] = cloudItem
+                }
+            } else {
+                // New from cloud
+                scheduledWorkouts.append(cloudItem)
+            }
+        }
+        saveScheduledWorkouts()
+    }
+
+    private func pushScheduledWorkoutsToCloud() async {
+        guard authService.isAuthenticated else { return }
+
+        for scheduled in scheduledWorkouts {
+            do {
+                try await firestoreService.saveScheduledWorkout(scheduled)
+            } catch {
+                print("Failed to sync scheduled workout \(scheduled.id): \(error)")
+            }
+        }
+    }
+
+    private func syncScheduledWorkoutToCloud(_ scheduled: ScheduledWorkout) {
+        guard authService.isAuthenticated else { return }
+        Task {
+            do {
+                try await firestoreService.saveScheduledWorkout(scheduled)
+            } catch {
+                print("Failed to sync scheduled workout: \(error)")
+            }
+        }
+    }
+
+    private func deleteScheduledWorkoutFromCloud(_ scheduledId: UUID) {
+        guard authService.isAuthenticated else { return }
+        Task {
+            do {
+                try await firestoreService.deleteScheduledWorkout(scheduledId)
+            } catch {
+                print("Failed to delete scheduled workout from cloud: \(error)")
+            }
+        }
     }
 
     // MARK: - Workout Operations
@@ -115,23 +192,27 @@ class WorkoutViewModel: ObservableObject {
         )
         scheduledWorkouts.append(scheduled)
         saveScheduledWorkouts()
+        syncScheduledWorkoutToCloud(scheduled)
     }
 
     /// Add a scheduled workout directly (used by ProgramViewModel)
     func addScheduledWorkout(_ scheduled: ScheduledWorkout) {
         scheduledWorkouts.append(scheduled)
         saveScheduledWorkouts()
+        syncScheduledWorkoutToCloud(scheduled)
     }
 
     func scheduleRestDay(for date: Date) {
         let scheduled = ScheduledWorkout(scheduledDate: date)
         scheduledWorkouts.append(scheduled)
         saveScheduledWorkouts()
+        syncScheduledWorkoutToCloud(scheduled)
     }
 
     func unscheduleWorkout(_ scheduledWorkout: ScheduledWorkout) {
         scheduledWorkouts.removeAll { $0.id == scheduledWorkout.id }
         saveScheduledWorkouts()
+        deleteScheduledWorkoutFromCloud(scheduledWorkout.id)
     }
 
     /// Remove all scheduled workouts for a program
@@ -139,14 +220,29 @@ class WorkoutViewModel: ObservableObject {
     func removeScheduledWorkoutsForProgram(_ programId: UUID, futureOnly: Bool) {
         let today = Calendar.current.startOfDay(for: Date())
 
-        scheduledWorkouts.removeAll { scheduled in
+        let toRemove = scheduledWorkouts.filter { scheduled in
             guard scheduled.programId == programId else { return false }
             if futureOnly {
                 return scheduled.scheduledDate >= today
             }
             return true
         }
+
+        scheduledWorkouts.removeAll { scheduled in
+            toRemove.contains { $0.id == scheduled.id }
+        }
         saveScheduledWorkouts()
+
+        // Delete from cloud
+        if authService.isAuthenticated {
+            Task {
+                do {
+                    try await firestoreService.deleteScheduledWorkoutsForProgram(programId)
+                } catch {
+                    print("Failed to delete program scheduled workouts from cloud: \(error)")
+                }
+            }
+        }
     }
 
     /// Get scheduled workouts for a specific program
@@ -158,6 +254,7 @@ class WorkoutViewModel: ObservableObject {
         if let index = scheduledWorkouts.firstIndex(where: { $0.id == scheduledWorkout.id }) {
             scheduledWorkouts[index] = scheduledWorkout
             saveScheduledWorkouts()
+            syncScheduledWorkoutToCloud(scheduledWorkout)
         }
     }
 

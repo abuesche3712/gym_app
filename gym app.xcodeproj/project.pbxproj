@@ -92,6 +92,8 @@
 		SOCAL002BUILD002 /* SocialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SOCAL001FILE001 /* SocialView.swift */; };
 		ANLYT002BUILD002 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLYT001FILE001 /* AnalyticsView.swift */; };
 		MOREV002BUILD002 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOREV001FILE001 /* MoreView.swift */; };
+		USRPFL002BUILD002 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = USRPFL001FILE001 /* UserProfile.swift */; };
+		SYNCQU002BUILD002 /* SyncQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = SYNCQU001FILE001 /* SyncQueue.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -138,6 +140,8 @@
 		B63EBEEE2F15E73700D8C22D /* Session.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
 		B6SCHED00DE514440E0A348 /* ScheduledWorkout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduledWorkout.swift; sourceTree = "<group>"; };
 		B63EBEEF2F15E73700D8C22D /* SetGroup.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetGroup.swift; sourceTree = "<group>"; };
+		USRPFL001FILE001 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		SYNCQU001FILE001 /* SyncQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncQueue.swift; sourceTree = "<group>"; };
 		B63EBEF02F15E73700D8C22D /* Workout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Workout.swift; sourceTree = "<group>"; };
 		B63EBEF22F15E73700D8C22D /* HistoryView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		B63EBEF32F15E73700D8C22D /* SessionDetailView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
@@ -317,6 +321,8 @@
 				B63EBEEE2F15E73700D8C22D /* Session.swift */,
 				B6SCHED00DE514440E0A348 /* ScheduledWorkout.swift */,
 				B63EBEEF2F15E73700D8C22D /* SetGroup.swift */,
+				SYNCQU001FILE001 /* SyncQueue.swift */,
+				USRPFL001FILE001 /* UserProfile.swift */,
 				B63EBEF02F15E73700D8C22D /* Workout.swift */,
 			);
 			path = Models;
@@ -725,7 +731,10 @@
 				WKBLD002BUILD002 /* WorkoutBuilderView.swift in Sources */,
 				SOCAL002BUILD002 /* SocialView.swift in Sources */,
 				ANLYT002BUILD002 /* AnalyticsView.swift in Sources */,
-				MOREV002BUILD002 /* MoreView.swift in Sources */,);
+				MOREV002BUILD002 /* MoreView.swift in Sources */,
+				USRPFL002BUILD002 /* UserProfile.swift in Sources */,
+				SYNCQU002BUILD002 /* SyncQueue.swift in Sources */,
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		B610AC0B2F15B4DE008B2C15 /* Sources */ = {

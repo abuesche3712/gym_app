@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import Combine
 
 @MainActor
 class AppState: ObservableObject {
@@ -22,16 +23,19 @@ class AppState: ObservableObject {
     @Published var weightUnit: WeightUnit {
         didSet {
             UserDefaults.standard.set(weightUnit.rawValue, forKey: "weightUnit")
+            syncUserProfileToCloud()
         }
     }
     @Published var distanceUnit: DistanceUnit {
         didSet {
             UserDefaults.standard.set(distanceUnit.rawValue, forKey: "distanceUnit")
+            syncUserProfileToCloud()
         }
     }
     @Published var defaultRestTime: Int {
         didSet {
             UserDefaults.standard.set(defaultRestTime, forKey: "defaultRestTime")
+            syncUserProfileToCloud()
         }
     }
 
@@ -39,9 +43,12 @@ class AppState: ObservableObject {
     @Published var isSyncing = false
     @Published var lastSyncDate: Date?
 
-    init() {
-        let repository = DataRepository.shared
+    private let repository = DataRepository.shared
+    private let firestoreService = FirestoreService.shared
+    private let authService = AuthService.shared
+    private var cancellables = Set<AnyCancellable>()
 
+    init() {
         self.moduleViewModel = ModuleViewModel(repository: repository)
         let workoutVM = WorkoutViewModel(repository: repository)
         self.workoutViewModel = workoutVM
@@ -71,6 +78,65 @@ class AppState: ObservableObject {
         if let lastSync = UserDefaults.standard.object(forKey: "lastSyncDate") as? Date {
             self.lastSyncDate = lastSync
         }
+
+        setupSyncNotifications()
+    }
+
+    // MARK: - Sync Notifications
+
+    private func setupSyncNotifications() {
+        // Listen for user profile synced from cloud
+        NotificationCenter.default.publisher(for: .userProfileSyncedFromCloud)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                if let profile = notification.object as? UserProfile {
+                    self?.applyUserProfile(profile)
+                }
+            }
+            .store(in: &cancellables)
+
+        // Listen for request to push user profile to cloud
+        NotificationCenter.default.publisher(for: .requestUserProfileForSync)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task { [weak self] in
+                    await self?.pushUserProfileToCloud()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func applyUserProfile(_ profile: UserProfile) {
+        // Update local settings without triggering sync back to cloud
+        UserDefaults.standard.set(profile.weightUnit.rawValue, forKey: "weightUnit")
+        UserDefaults.standard.set(profile.distanceUnit.rawValue, forKey: "distanceUnit")
+        UserDefaults.standard.set(profile.defaultRestTime, forKey: "defaultRestTime")
+
+        // Update published properties (will trigger didSet but we check auth below)
+        weightUnit = profile.weightUnit
+        distanceUnit = profile.distanceUnit
+        defaultRestTime = profile.defaultRestTime
+    }
+
+    private func syncUserProfileToCloud() {
+        guard authService.isAuthenticated else { return }
+        Task {
+            await pushUserProfileToCloud()
+        }
+    }
+
+    private func pushUserProfileToCloud() async {
+        guard authService.isAuthenticated else { return }
+        let profile = UserProfile(
+            weightUnit: weightUnit,
+            distanceUnit: distanceUnit,
+            defaultRestTime: defaultRestTime
+        )
+        do {
+            try await firestoreService.saveUserProfile(profile)
+        } catch {
+            print("Failed to sync user profile to cloud: \(error)")
+        }
     }
 
     func refreshAllData() {
@@ -81,12 +147,25 @@ class AppState: ObservableObject {
     }
 
     func triggerSync() async {
+        guard authService.isAuthenticated else {
+            print("triggerSync: Not authenticated")
+            return
+        }
+
         isSyncing = true
-        // TODO: Implement Firebase sync
-        try? await Task.sleep(nanoseconds: 1_000_000_000) // Simulate sync
+
+        // Sync from cloud first (gets latest data)
+        await repository.syncFromCloud()
+
+        // Then push any local changes
+        await repository.pushAllToCloud()
+
         lastSyncDate = Date()
         UserDefaults.standard.set(lastSyncDate, forKey: "lastSyncDate")
         isSyncing = false
+
+        // Refresh all view models
+        refreshAllData()
     }
 }
 

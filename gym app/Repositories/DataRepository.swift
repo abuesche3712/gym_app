@@ -26,6 +26,52 @@ class DataRepository: ObservableObject {
     @Published var programs: [Program] = []
     @Published var isSyncing = false
 
+    // Track deleted item IDs to prevent re-sync
+    private let deletedModuleIdsKey = "deletedModuleIds"
+    private let deletedWorkoutIdsKey = "deletedWorkoutIds"
+    private let deletedProgramIdsKey = "deletedProgramIds"
+    private let deletedSessionIdsKey = "deletedSessionIds"
+
+    private var deletedModuleIds: Set<UUID> {
+        get {
+            let strings = UserDefaults.standard.stringArray(forKey: deletedModuleIdsKey) ?? []
+            return Set(strings.compactMap { UUID(uuidString: $0) })
+        }
+        set {
+            UserDefaults.standard.set(newValue.map { $0.uuidString }, forKey: deletedModuleIdsKey)
+        }
+    }
+
+    private var deletedWorkoutIds: Set<UUID> {
+        get {
+            let strings = UserDefaults.standard.stringArray(forKey: deletedWorkoutIdsKey) ?? []
+            return Set(strings.compactMap { UUID(uuidString: $0) })
+        }
+        set {
+            UserDefaults.standard.set(newValue.map { $0.uuidString }, forKey: deletedWorkoutIdsKey)
+        }
+    }
+
+    private var deletedProgramIds: Set<UUID> {
+        get {
+            let strings = UserDefaults.standard.stringArray(forKey: deletedProgramIdsKey) ?? []
+            return Set(strings.compactMap { UUID(uuidString: $0) })
+        }
+        set {
+            UserDefaults.standard.set(newValue.map { $0.uuidString }, forKey: deletedProgramIdsKey)
+        }
+    }
+
+    private var deletedSessionIds: Set<UUID> {
+        get {
+            let strings = UserDefaults.standard.stringArray(forKey: deletedSessionIdsKey) ?? []
+            return Set(strings.compactMap { UUID(uuidString: $0) })
+        }
+        set {
+            UserDefaults.standard.set(newValue.map { $0.uuidString }, forKey: deletedSessionIdsKey)
+        }
+    }
+
     init() {
         loadAllData()
     }
@@ -44,34 +90,97 @@ class DataRepository: ObservableObject {
 
         do {
             let cloudData = try await firestoreService.fetchAllUserData()
-            print("syncFromCloud: Fetched \(cloudData.modules.count) modules, \(cloudData.workouts.count) workouts, \(cloudData.sessions.count) sessions, \(cloudData.exercises.count) exercises")
+            print("syncFromCloud: Fetched \(cloudData.modules.count) modules, \(cloudData.workouts.count) workouts, \(cloudData.sessions.count) sessions, \(cloudData.exercises.count) exercises, \(cloudData.programs.count) programs, \(cloudData.scheduledWorkouts.count) scheduledWorkouts")
 
             // Merge cloud modules (last-write-wins based on updatedAt)
+            print("syncFromCloud: Local modules count: \(modules.count), deleted IDs tracked: \(deletedModuleIds.count)")
+            var totalExercises = 0
+            var totalExerciseInstances = 0
             for cloudModule in cloudData.modules {
+                totalExercises += cloudModule.exercises.count
+                totalExerciseInstances += cloudModule.exerciseInstances.count
+                print("syncFromCloud: Processing cloud module '\(cloudModule.name)' (id: \(cloudModule.id)) - \(cloudModule.exercises.count) legacy exercises, \(cloudModule.exerciseInstances.count) exercise instances")
+
+                // Skip if this module was deleted locally
+                if deletedModuleIds.contains(cloudModule.id) {
+                    print("syncFromCloud: Module '\(cloudModule.name)' was deleted locally, skipping")
+                    continue
+                }
+
                 if let local = modules.first(where: { $0.id == cloudModule.id }) {
                     // If cloud is newer, update local
                     if cloudModule.updatedAt > local.updatedAt {
+                        print("syncFromCloud: Cloud module '\(cloudModule.name)' is newer, updating local")
                         saveModuleLocally(cloudModule)
+                    } else {
+                        print("syncFromCloud: Local module '\(cloudModule.name)' is newer or same, skipping")
                     }
                 } else {
                     // New from cloud, save locally
+                    print("syncFromCloud: Module '\(cloudModule.name)' is new, saving locally")
                     saveModuleLocally(cloudModule)
                 }
             }
 
+            print("syncFromCloud: Total exercises across all modules - \(totalExercises) legacy, \(totalExerciseInstances) instances")
+
+            // Extract custom exercises from module data (for legacy format)
+            let builtInLibrary = ExerciseLibrary.shared
+            let customLibraryPreExtract = CustomExerciseLibrary.shared
+            var extractedCount = 0
+            for cloudModule in cloudData.modules {
+                for exercise in cloudModule.exercises {
+                    // Check if this exercise is NOT in the built-in library and NOT already in custom library
+                    let isBuiltIn = builtInLibrary.exercises.contains { $0.name.lowercased() == exercise.name.lowercased() }
+                    let isAlreadyCustom = customLibraryPreExtract.contains(name: exercise.name)
+
+                    if !isBuiltIn && !isAlreadyCustom {
+                        print("syncFromCloud: Extracting custom exercise '\(exercise.name)' from module '\(cloudModule.name)'")
+                        customLibraryPreExtract.addExercise(
+                            name: exercise.name,
+                            exerciseType: exercise.exerciseType,
+                            muscleGroupIds: [],
+                            implementIds: []
+                        )
+                        extractedCount += 1
+                    }
+                }
+            }
+            print("syncFromCloud: Extracted \(extractedCount) custom exercises from module data")
+
             // Merge cloud workouts
+            print("syncFromCloud: Local workouts count: \(workouts.count), deleted IDs tracked: \(deletedWorkoutIds.count)")
             for cloudWorkout in cloudData.workouts {
+                print("syncFromCloud: Processing cloud workout '\(cloudWorkout.name)' (id: \(cloudWorkout.id)) - \(cloudWorkout.moduleReferences.count) module refs")
+
+                // Skip if this workout was deleted locally
+                if deletedWorkoutIds.contains(cloudWorkout.id) {
+                    print("syncFromCloud: Workout '\(cloudWorkout.name)' was deleted locally, skipping")
+                    continue
+                }
+
                 if let local = workouts.first(where: { $0.id == cloudWorkout.id }) {
                     if cloudWorkout.updatedAt > local.updatedAt {
+                        print("syncFromCloud: Cloud workout '\(cloudWorkout.name)' is newer, updating local")
                         saveWorkoutLocally(cloudWorkout)
+                    } else {
+                        print("syncFromCloud: Local workout '\(cloudWorkout.name)' is newer or same, skipping")
                     }
                 } else {
+                    print("syncFromCloud: Workout '\(cloudWorkout.name)' is new, saving locally")
                     saveWorkoutLocally(cloudWorkout)
                 }
             }
 
             // Merge cloud sessions
+            print("syncFromCloud: Local sessions count: \(sessions.count), deleted IDs tracked: \(deletedSessionIds.count)")
             for cloudSession in cloudData.sessions {
+                // Skip if this session was deleted locally
+                if deletedSessionIds.contains(cloudSession.id) {
+                    print("syncFromCloud: Session '\(cloudSession.workoutName)' was deleted locally, skipping")
+                    continue
+                }
+
                 if !sessions.contains(where: { $0.id == cloudSession.id }) {
                     saveSessionLocally(cloudSession)
                 }
@@ -79,10 +188,49 @@ class DataRepository: ObservableObject {
 
             // Merge custom exercises
             let customLibrary = CustomExerciseLibrary.shared
+            print("syncFromCloud: Custom exercises - cloud has \(cloudData.exercises.count), local has \(customLibrary.exercises.count)")
             for cloudExercise in cloudData.exercises {
+                print("syncFromCloud: Processing custom exercise '\(cloudExercise.name)' (id: \(cloudExercise.id))")
                 if !customLibrary.exercises.contains(where: { $0.id == cloudExercise.id }) {
+                    print("syncFromCloud: Adding custom exercise '\(cloudExercise.name)'")
                     customLibrary.addExercise(cloudExercise)
+                } else {
+                    print("syncFromCloud: Custom exercise '\(cloudExercise.name)' already exists locally")
                 }
+            }
+            print("syncFromCloud: After sync, local custom exercises: \(customLibrary.exercises.count)")
+
+            // Merge cloud programs
+            print("syncFromCloud: Local programs count: \(programs.count), deleted IDs tracked: \(deletedProgramIds.count)")
+            for cloudProgram in cloudData.programs {
+                // Skip if this program was deleted locally
+                if deletedProgramIds.contains(cloudProgram.id) {
+                    print("syncFromCloud: Program '\(cloudProgram.name)' was deleted locally, skipping")
+                    continue
+                }
+
+                if let local = programs.first(where: { $0.id == cloudProgram.id }) {
+                    if cloudProgram.updatedAt > local.updatedAt {
+                        saveProgramLocally(cloudProgram)
+                    }
+                } else {
+                    saveProgramLocally(cloudProgram)
+                }
+            }
+
+            // Merge cloud scheduled workouts
+            // Note: This needs to notify WorkoutViewModel to update its local storage
+            NotificationCenter.default.post(
+                name: .scheduledWorkoutsSyncedFromCloud,
+                object: cloudData.scheduledWorkouts
+            )
+
+            // Merge user profile
+            if let cloudProfile = cloudData.profile {
+                NotificationCenter.default.post(
+                    name: .userProfileSyncedFromCloud,
+                    object: cloudProfile
+                )
             }
 
             // Reload all data after merge
@@ -105,7 +253,7 @@ class DataRepository: ObservableObject {
         }
 
         print("pushAllToCloud: Starting push...")
-        print("pushAllToCloud: \(modules.count) modules, \(workouts.count) workouts, \(sessions.count) sessions")
+        print("pushAllToCloud: \(modules.count) modules, \(workouts.count) workouts, \(sessions.count) sessions, \(programs.count) programs")
         isSyncing = true
 
         do {
@@ -133,6 +281,18 @@ class DataRepository: ObservableObject {
                 print("pushAllToCloud: Saving custom exercise \(exercise.name)")
                 try await firestoreService.saveCustomExercise(exercise)
             }
+
+            // Push all programs
+            for program in programs {
+                print("pushAllToCloud: Saving program \(program.name)")
+                try await firestoreService.saveProgram(program)
+            }
+
+            // Request scheduled workouts from WorkoutViewModel and push them
+            NotificationCenter.default.post(name: .requestScheduledWorkoutsForSync, object: nil)
+
+            // Push user profile
+            NotificationCenter.default.post(name: .requestUserProfileForSync, object: nil)
 
             print("pushAllToCloud: Completed successfully")
         } catch {
@@ -183,10 +343,13 @@ class DataRepository: ObservableObject {
 
     /// Save module to CoreData only (used during cloud sync to avoid loops)
     private func saveModuleLocally(_ module: Module) {
+        print("saveModuleLocally: Saving module '\(module.name)'")
         let entity = findOrCreateModuleEntity(id: module.id)
         updateModuleEntity(entity, from: module)
         save()
+        print("saveModuleLocally: Save completed, reloading modules")
         loadModules()
+        print("saveModuleLocally: Modules count after reload: \(modules.count)")
     }
 
     func deleteModule(_ module: Module) {
@@ -195,13 +358,26 @@ class DataRepository: ObservableObject {
             save()
             loadModules()
 
+            // Track this deletion to prevent re-sync
+            var deleted = deletedModuleIds
+            deleted.insert(module.id)
+            deletedModuleIds = deleted
+            print("deleteModule: Tracked deletion of '\(module.name)' (id: \(module.id))")
+
             // Delete from cloud if authenticated
             if authService.isAuthenticated {
                 Task {
                     do {
                         try await firestoreService.deleteModule(module.id)
+                        // If cloud delete succeeds, we can remove from tracking
+                        // (it won't come back on sync since it's gone from cloud)
+                        var deleted = self.deletedModuleIds
+                        deleted.remove(module.id)
+                        self.deletedModuleIds = deleted
+                        print("deleteModule: Cloud delete succeeded, removed from tracking")
                     } catch {
                         print("Failed to delete module from cloud: \(error)")
+                        // Keep in tracking so it won't re-sync
                     }
                 }
             }
@@ -256,11 +432,21 @@ class DataRepository: ObservableObject {
             save()
             loadWorkouts()
 
+            // Track this deletion to prevent re-sync
+            var deleted = deletedWorkoutIds
+            deleted.insert(workout.id)
+            deletedWorkoutIds = deleted
+            print("deleteWorkout: Tracked deletion of '\(workout.name)' (id: \(workout.id))")
+
             // Delete from cloud if authenticated
             if authService.isAuthenticated {
                 Task {
                     do {
                         try await firestoreService.deleteWorkout(workout.id)
+                        var deleted = self.deletedWorkoutIds
+                        deleted.remove(workout.id)
+                        self.deletedWorkoutIds = deleted
+                        print("deleteWorkout: Cloud delete succeeded, removed from tracking")
                     } catch {
                         print("Failed to delete workout from cloud: \(error)")
                     }
@@ -316,11 +502,21 @@ class DataRepository: ObservableObject {
             save()
             loadSessions()
 
+            // Track this deletion to prevent re-sync
+            var deleted = deletedSessionIds
+            deleted.insert(session.id)
+            deletedSessionIds = deleted
+            print("deleteSession: Tracked deletion of session (id: \(session.id))")
+
             // Delete from cloud if authenticated
             if authService.isAuthenticated {
                 Task {
                     do {
                         try await firestoreService.deleteSession(session.id)
+                        var deleted = self.deletedSessionIds
+                        deleted.remove(session.id)
+                        self.deletedSessionIds = deleted
+                        print("deleteSession: Cloud delete succeeded, removed from tracking")
                     } catch {
                         print("Failed to delete session from cloud: \(error)")
                     }
@@ -374,6 +570,22 @@ class DataRepository: ObservableObject {
     }
 
     func saveProgram(_ program: Program) {
+        saveProgramLocally(program)
+
+        // Sync to cloud if authenticated
+        if authService.isAuthenticated {
+            Task {
+                do {
+                    try await firestoreService.saveProgram(program)
+                } catch {
+                    print("Failed to sync program to cloud: \(error)")
+                }
+            }
+        }
+    }
+
+    /// Save program to CoreData only (used during cloud sync to avoid loops)
+    private func saveProgramLocally(_ program: Program) {
         let entity = findOrCreateProgramEntity(id: program.id)
         updateProgramEntity(entity, from: program)
         save()
@@ -385,6 +597,27 @@ class DataRepository: ObservableObject {
             viewContext.delete(entity)
             save()
             loadPrograms()
+
+            // Track this deletion to prevent re-sync
+            var deleted = deletedProgramIds
+            deleted.insert(program.id)
+            deletedProgramIds = deleted
+            print("deleteProgram: Tracked deletion of '\(program.name)' (id: \(program.id))")
+
+            // Delete from cloud if authenticated
+            if authService.isAuthenticated {
+                Task {
+                    do {
+                        try await firestoreService.deleteProgram(program.id)
+                        var deleted = self.deletedProgramIds
+                        deleted.remove(program.id)
+                        self.deletedProgramIds = deleted
+                        print("deleteProgram: Cloud delete succeeded, removed from tracking")
+                    } catch {
+                        print("Failed to delete program from cloud: \(error)")
+                    }
+                }
+            }
         }
     }
 
@@ -908,7 +1141,7 @@ class DataRepository: ObservableObject {
             duration: entity.duration > 0 ? Int(entity.duration) : nil,
             overallFeeling: entity.overallFeeling > 0 ? Int(entity.overallFeeling) : nil,
             notes: entity.notes,
-            createdAt: entity.createdAt,
+            createdAt: entity.createdAt ?? entity.date,
             syncStatus: entity.syncStatus
         )
     }
