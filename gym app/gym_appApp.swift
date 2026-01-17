@@ -26,9 +26,13 @@ struct gym_appApp: App {
         WindowGroup {
             MainTabView()
                 .task {
-                    // Sync from cloud on app launch if authenticated
-                    if authService.isAuthenticated {
+                    // Wait for Firebase to restore auth state, then sync
+                    let isAuthenticated = await authService.waitForAuthState()
+                    if isAuthenticated {
+                        print("App launch: Auth restored, starting sync...")
                         await dataRepository.syncFromCloud()
+                    } else {
+                        print("App launch: Not authenticated, skipping sync")
                     }
                 }
         }

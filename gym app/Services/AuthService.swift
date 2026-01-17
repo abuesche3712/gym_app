@@ -18,8 +18,10 @@ class AuthService: NSObject, ObservableObject {
     @Published var currentUser: User?
     @Published var isLoading = false
     @Published var error: Error?
+    @Published var isAuthStateReady = false  // True after initial auth state is determined
 
     private var authStateHandler: AuthStateDidChangeListenerHandle?
+    private var authStateContinuation: CheckedContinuation<Bool, Never>?
 
     override init() {
         super.init()
@@ -47,7 +49,25 @@ class AuthService: NSObject, ObservableObject {
                 } else {
                     self?.currentUser = nil
                 }
+
+                // Mark auth state as ready and resume any waiting tasks
+                if self?.isAuthStateReady == false {
+                    self?.isAuthStateReady = true
+                    self?.authStateContinuation?.resume(returning: self?.isAuthenticated ?? false)
+                    self?.authStateContinuation = nil
+                }
             }
+        }
+    }
+
+    /// Wait for Firebase to restore auth state (returns isAuthenticated)
+    func waitForAuthState() async -> Bool {
+        if isAuthStateReady {
+            return isAuthenticated
+        }
+
+        return await withCheckedContinuation { continuation in
+            self.authStateContinuation = continuation
         }
     }
 
