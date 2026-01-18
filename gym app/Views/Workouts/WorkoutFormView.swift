@@ -39,18 +39,11 @@ struct WorkoutFormView: View {
                     Text("No modules added")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(Array(selectedModuleIds.enumerated()), id: \.element) { index, moduleId in
+                    ForEach(selectedModuleIds, id: \.self) { moduleId in
                         if let module = moduleViewModel.getModule(id: moduleId) {
                             HStack {
-                                Text("\(index + 1)")
-                                    .font(.caption)
-                                    .fontWeight(.semibold)
-                                    .frame(width: 24, height: 24)
-                                    .background(Color(.systemGray5))
-                                    .clipShape(Circle())
-
                                 Image(systemName: module.type.icon)
-                                    .foregroundStyle(Color(module.type.color))
+                                    .foregroundStyle(module.type.color)
 
                                 VStack(alignment: .leading) {
                                     Text(module.name)
@@ -252,7 +245,7 @@ struct ModulePickerView: View {
                             FilterPill(
                                 title: type.displayName,
                                 isSelected: selectedType == type,
-                                color: Color(type.color)
+                                color: type.color
                             ) {
                                 selectedType = type
                             }
@@ -279,7 +272,7 @@ struct ModulePickerView: View {
                         } label: {
                             HStack {
                                 Image(systemName: module.type.icon)
-                                    .foregroundStyle(Color(module.type.color))
+                                    .foregroundStyle(module.type.color)
 
                                 VStack(alignment: .leading) {
                                     Text(module.name)

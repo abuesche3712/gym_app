@@ -64,6 +64,25 @@ struct ScheduledWorkout: Identifiable, Codable, Hashable {
         self.programSlotId = nil
     }
 
+    // Custom decoder to handle missing fields from older Firebase documents
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        workoutId = try container.decodeIfPresent(UUID.self, forKey: .workoutId)
+        workoutName = try container.decodeIfPresent(String.self, forKey: .workoutName) ?? "Unknown"
+        scheduledDate = try container.decode(Date.self, forKey: .scheduledDate)
+        completedSessionId = try container.decodeIfPresent(UUID.self, forKey: .completedSessionId)
+        isRestDay = try container.decodeIfPresent(Bool.self, forKey: .isRestDay) ?? (workoutId == nil)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        programId = try container.decodeIfPresent(UUID.self, forKey: .programId)
+        programSlotId = try container.decodeIfPresent(UUID.self, forKey: .programSlotId)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, workoutId, workoutName, scheduledDate, completedSessionId, isRestDay, notes, createdAt, programId, programSlotId
+    }
+
     var isCompleted: Bool {
         completedSessionId != nil || isRestDay
     }

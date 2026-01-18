@@ -47,6 +47,25 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         self.updatedAt = updatedAt
     }
 
+    // Custom decoder to handle missing fields from older Firebase documents
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        templateId = try container.decode(UUID.self, forKey: .templateId)
+        setGroups = try container.decodeIfPresent([SetGroup].self, forKey: .setGroups) ?? []
+        supersetGroupId = try container.decodeIfPresent(UUID.self, forKey: .supersetGroupId)
+        order = try container.decodeIfPresent(Int.self, forKey: .order) ?? 0
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        nameOverride = try container.decodeIfPresent(String.self, forKey: .nameOverride)
+        exerciseTypeOverride = try container.decodeIfPresent(ExerciseType.self, forKey: .exerciseTypeOverride)
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, templateId, setGroups, supersetGroupId, order, notes, nameOverride, exerciseTypeOverride, createdAt, updatedAt
+    }
+
     /// Whether this instance is part of a superset
     var isInSuperset: Bool {
         supersetGroupId != nil

@@ -8,7 +8,7 @@
 import Foundation
 import CoreData
 
-@MainActor
+@preconcurrency @MainActor
 class CustomExerciseLibrary: ObservableObject {
     static let shared = CustomExerciseLibrary()
 
@@ -67,6 +67,7 @@ class CustomExerciseLibrary: ObservableObject {
         entity.muscleGroupIds = muscleGroupIds
         entity.implementIds = implementIds
         entity.createdAt = Date()
+        entity.updatedAt = Date()
 
         save()
         loadExercises()
@@ -93,6 +94,7 @@ class CustomExerciseLibrary: ObservableObject {
                 entity.exerciseType = template.exerciseType
                 entity.muscleGroupIds = template.muscleGroupIds
                 entity.implementIds = template.implementIds
+                entity.updatedAt = Date()
                 save()
                 loadExercises()
             }
@@ -112,6 +114,12 @@ class CustomExerciseLibrary: ObservableObject {
                 viewContext.delete(entity)
                 save()
                 loadExercises()
+
+                // Queue deletion for cloud sync if authenticated
+                if AuthService.shared.isAuthenticated {
+                    SyncManager.shared.queueCustomExercise(template, action: .delete)
+                    print("deleteExercise: Queued deletion for cloud sync")
+                }
             }
         } catch {
             print("Error deleting custom exercise: \(error)")
@@ -119,6 +127,13 @@ class CustomExerciseLibrary: ObservableObject {
     }
 
     func deleteExercise(named name: String) {
+        // Find the template first to get the full object for sync
+        if let template = exercises.first(where: { $0.name.lowercased() == name.lowercased() }) {
+            deleteExercise(template)
+            return
+        }
+
+        // Fallback to old behavior if template not found
         let request = NSFetchRequest<CustomExerciseTemplateEntity>(entityName: "CustomExerciseTemplateEntity")
         request.predicate = NSPredicate(format: "name ==[c] %@", name)
 

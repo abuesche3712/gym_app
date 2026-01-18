@@ -57,9 +57,7 @@ struct SetIndicator: View {
 struct SetRowView: View {
     let flatSet: FlatSet
     let exercise: SessionExercise
-    let isExpanded: Bool  // Kept for API compatibility but not used
     var isHighlighted: Bool = false  // Highlight when rest timer ends
-    let onTap: () -> Void  // Kept for API compatibility but not used
     let onLog: (Double?, Int?, Int?, Int?, Int?, Double?, Double?, Int?, Int?, Int?) -> Void  // weight, reps, rpe, duration, holdTime, distance, height, quality, intensity, temperature
     var onDelete: (() -> Void)? = nil  // Optional delete callback
     var onDistanceUnitChange: ((DistanceUnit) -> Void)? = nil  // Callback to change distance unit
@@ -145,8 +143,9 @@ struct SetRowView: View {
                     // Completed state - show summary
                     completedView
                 } else {
-                    // Input fields based on exercise type
+                    // Input fields based on exercise type - fills available space
                     inputFieldsView
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                     // Same as last set button (friction reduction)
                     if previousCompletedSet != nil {
@@ -400,7 +399,8 @@ struct SetRowView: View {
                                     .font(.system(size: 18, weight: .bold, design: .rounded))
                                     .foregroundColor(timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.accentBlue)
                                     .monospacedDigit()
-                                    .frame(minWidth: 50)
+                                    .multilineTextAlignment(.center)
+                                    .frame(width: 70, alignment: .center)
                                     .padding(.vertical, 10)
                                     .padding(.horizontal, 8)
                                     .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
@@ -412,7 +412,8 @@ struct SetRowView: View {
                                     Text(formatDuration(inputDuration))
                                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                                         .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
-                                        .frame(minWidth: 50)
+                                        .multilineTextAlignment(.center)
+                                        .frame(width: 70, alignment: .center)
                                         .padding(.vertical, 10)
                                         .padding(.horizontal, 8)
                                         .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
@@ -437,7 +438,8 @@ struct SetRowView: View {
                                     .font(.system(size: 18, weight: .bold, design: .rounded))
                                     .foregroundColor(AppColors.accentBlue)
                                     .monospacedDigit()
-                                    .frame(minWidth: 50)
+                                    .multilineTextAlignment(.center)
+                                    .frame(width: 70, alignment: .center)
                                     .padding(.vertical, 10)
                                     .padding(.horizontal, 8)
                                     .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
@@ -448,7 +450,8 @@ struct SetRowView: View {
                                     Text(formatDuration(inputDuration))
                                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                                         .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
-                                        .frame(minWidth: 50)
+                                        .multilineTextAlignment(.center)
+                                        .frame(width: 70, alignment: .center)
                                         .padding(.vertical, 10)
                                         .padding(.horizontal, 8)
                                         .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
@@ -534,7 +537,8 @@ struct SetRowView: View {
                                 .font(.system(size: 18, weight: .bold, design: .rounded))
                                 .foregroundColor(timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.accentBlue)
                                 .monospacedDigit()
-                                .frame(minWidth: 50)
+                                .multilineTextAlignment(.center)
+                                .frame(width: 70, alignment: .center)
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 8)
                                 .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
@@ -542,7 +546,8 @@ struct SetRowView: View {
                             Text(formatDuration(inputHoldTime))
                                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                                 .foregroundColor(AppColors.textPrimary)
-                                .frame(minWidth: 50)
+                                .multilineTextAlignment(.center)
+                                .frame(width: 70, alignment: .center)
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 8)
                                 .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
@@ -636,7 +641,8 @@ struct SetRowView: View {
                             Text(formatDuration(inputDuration))
                                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                                 .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
-                                .frame(minWidth: 60)
+                                .multilineTextAlignment(.center)
+                                .frame(width: 70, alignment: .center)
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 8)
                                 .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
@@ -761,8 +767,10 @@ struct SetRowView: View {
                             Text(timerRunning ? formatDuration(stopwatchSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
                                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                                 .foregroundColor(timerRunning ? AppColors.accentBlue : AppColors.textPrimary)
+                                .monospacedDigit()
+                                .multilineTextAlignment(.center)
                         }
-                        .frame(minWidth: 70)
+                        .frame(width: 100, alignment: .center)
                         .padding(.vertical, 10)
                         .padding(.horizontal, 12)
                         .background(RoundedRectangle(cornerRadius: 8).fill(timerRunning ? AppColors.accentBlue.opacity(0.1) : AppColors.cardBackground))

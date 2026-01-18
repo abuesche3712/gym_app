@@ -512,8 +512,6 @@ struct ActiveSessionView: View {
 
     // MARK: - All Sets Section
 
-    @State private var expandedSetId: String? = nil
-
     private var allSetsSection: some View {
         VStack(spacing: AppSpacing.md) {
             if let exercise = sessionViewModel.currentExercise {
@@ -561,22 +559,9 @@ struct ActiveSessionView: View {
                             SetRowView(
                                 flatSet: flatSet,
                                 exercise: exercise,
-                                isExpanded: expandedSetId == flatSet.id,
                                 isHighlighted: highlightNextSet && isFirstIncomplete,
-                                onTap: {
-                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                        if expandedSetId == flatSet.id {
-                                            expandedSetId = nil
-                                        } else {
-                                            expandedSetId = flatSet.id
-                                        }
-                                    }
-                                },
                                 onLog: { weight, reps, rpe, duration, holdTime, distance, height, quality, intensity, temperature in
                                     logSetAt(flatSet: flatSet, weight: weight, reps: reps, rpe: rpe, duration: duration, holdTime: holdTime, distance: distance, height: height, quality: quality, intensity: intensity, temperature: temperature)
-                                    withAnimation(.easeInOut(duration: 0.2)) {
-                                        expandedSetId = nil
-                                    }
                                     // Clear highlight when logging
                                     highlightNextSet = false
                                     // Start rest timer (skip for recovery activities)
@@ -864,48 +849,11 @@ struct ActiveSessionView: View {
         return nil
     }
 
-    // MARK: - Smart Suggestions (TODO: Implement when progression logic is ready)
-    // Uncomment and implement this when we have progression tracking
-    /*
-    @ViewBuilder
-    private func smartSuggestionsBanner(for exercise: SessionExercise) -> some View {
-        // Example: Show suggestion based on last session performance
-        if let lastSession = sessionViewModel.getLastSessionData(for: exercise.exerciseName),
-           let suggestion = calculateProgressionSuggestion(current: exercise, last: lastSession) {
-            HStack(spacing: AppSpacing.sm) {
-                Image(systemName: "lightbulb.fill")
-                    .foregroundColor(AppColors.warning)
-                Text(suggestion)
-                    .font(.caption)
-                    .foregroundColor(AppColors.textSecondary)
-                Spacer()
-                Button("Apply") {
-                    // Apply suggested weight/reps
-                }
-                .font(.caption.bold())
-                .foregroundColor(AppColors.accentBlue)
-            }
-            .padding(AppSpacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.small)
-                    .fill(AppColors.warning.opacity(0.1))
-            )
-        }
-    }
-
-    private func calculateProgressionSuggestion(current: SessionExercise, last: SessionExercise) -> String? {
-        // TODO: Implement progression logic
-        // - Check if user completed all sets last time
-        // - Check RPE to determine if they can progress
-        // - Suggest weight increase or rep increase based on program
-        return nil
-    }
-    */
-
     private var isLastExercise: Bool {
         guard let session = sessionViewModel.currentSession else { return true }
         let lastModuleIndex = session.completedModules.count - 1
         guard sessionViewModel.currentModuleIndex == lastModuleIndex else { return false }
+        guard sessionViewModel.currentModuleIndex < session.completedModules.count else { return true }
         let module = session.completedModules[sessionViewModel.currentModuleIndex]
         return sessionViewModel.currentExerciseIndex == module.completedExercises.count - 1
     }
@@ -937,8 +885,10 @@ struct ActiveSessionView: View {
 
     private func addSetToCurrentExercise() {
         guard var session = sessionViewModel.currentSession else { return }
+        guard sessionViewModel.currentModuleIndex < session.completedModules.count else { return }
 
         var module = session.completedModules[sessionViewModel.currentModuleIndex]
+        guard sessionViewModel.currentExerciseIndex < module.completedExercises.count else { return }
         var exercise = module.completedExercises[sessionViewModel.currentExerciseIndex]
 
         // Find the last set group and its last set to copy targets from
@@ -978,8 +928,10 @@ struct ActiveSessionView: View {
 
     private func deleteSetAt(flatSet: FlatSet) {
         guard var session = sessionViewModel.currentSession else { return }
+        guard sessionViewModel.currentModuleIndex < session.completedModules.count else { return }
 
         var module = session.completedModules[sessionViewModel.currentModuleIndex]
+        guard sessionViewModel.currentExerciseIndex < module.completedExercises.count else { return }
         var exercise = module.completedExercises[sessionViewModel.currentExerciseIndex]
 
         // Find the set group and remove the set
@@ -1038,8 +990,10 @@ struct ActiveSessionView: View {
 
     private func substituteCurrentExercise(name: String, type: ExerciseType, cardioMetric: CardioMetric, distanceUnit: DistanceUnit) {
         guard var session = sessionViewModel.currentSession else { return }
+        guard sessionViewModel.currentModuleIndex < session.completedModules.count else { return }
 
         var module = session.completedModules[sessionViewModel.currentModuleIndex]
+        guard sessionViewModel.currentExerciseIndex < module.completedExercises.count else { return }
         var exercise = module.completedExercises[sessionViewModel.currentExerciseIndex]
 
         // Store original name if not already a substitution
@@ -1177,10 +1131,14 @@ struct ActiveSessionView: View {
 
     private func updateSetAt(moduleIndex: Int, exerciseIndex: Int, setGroupIndex: Int, setIndex: Int, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?, completed: Bool? = nil) {
         guard var session = sessionViewModel.currentSession else { return }
+        guard moduleIndex < session.completedModules.count else { return }
 
         var module = session.completedModules[moduleIndex]
+        guard exerciseIndex < module.completedExercises.count else { return }
         var exercise = module.completedExercises[exerciseIndex]
+        guard setGroupIndex < exercise.completedSetGroups.count else { return }
         var setGroup = exercise.completedSetGroups[setGroupIndex]
+        guard setIndex < setGroup.sets.count else { return }
         var setData = setGroup.sets[setIndex]
 
         setData.weight = weight ?? setData.weight
@@ -1203,10 +1161,14 @@ struct ActiveSessionView: View {
 
     private func logSetAt(flatSet: FlatSet, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?, height: Double? = nil, quality: Int? = nil, intensity: Int? = nil, temperature: Int? = nil) {
         guard var session = sessionViewModel.currentSession else { return }
+        guard sessionViewModel.currentModuleIndex < session.completedModules.count else { return }
 
         var module = session.completedModules[sessionViewModel.currentModuleIndex]
+        guard sessionViewModel.currentExerciseIndex < module.completedExercises.count else { return }
         var exercise = module.completedExercises[sessionViewModel.currentExerciseIndex]
+        guard flatSet.setGroupIndex < exercise.completedSetGroups.count else { return }
         var setGroup = exercise.completedSetGroups[flatSet.setGroupIndex]
+        guard flatSet.setIndex < setGroup.sets.count else { return }
         var setData = setGroup.sets[flatSet.setIndex]
 
         setData.weight = weight ?? setData.weight
@@ -1372,12 +1334,12 @@ struct ActiveSessionView: View {
                                 Text(progression.displayName)
                                     .font(.caption.weight(.semibold))
                             }
-                            .foregroundColor(Color(progression.color))
+                            .foregroundColor(progression.color)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(
                                 Capsule()
-                                    .fill(Color(progression.color).opacity(0.15))
+                                    .fill(progression.color.opacity(0.15))
                             )
                         }
                     }
@@ -1504,6 +1466,11 @@ struct ActiveSessionView: View {
 
     // MARK: - Rest Timer Overlay
 
+    // Long rest threshold (3 minutes) - show browse option
+    private var isLongRest: Bool {
+        sessionViewModel.restTimerTotal >= 180
+    }
+
     private var restTimerBar: some View {
         VStack(spacing: AppSpacing.sm) {
             HStack(spacing: AppSpacing.md) {
@@ -1536,6 +1503,28 @@ struct ActiveSessionView: View {
 
                 Spacer()
 
+                // Browse X button (for long rests 3+ min)
+                if isLongRest {
+                    Button {
+                        openTwitter()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.up.right.square")
+                                .font(.system(size: 12, weight: .medium))
+                            Text("Browse X")
+                                .font(.subheadline.weight(.medium))
+                        }
+                        .foregroundColor(AppColors.textSecondary)
+                        .padding(.horizontal, AppSpacing.sm)
+                        .padding(.vertical, AppSpacing.sm)
+                        .background(
+                            Capsule()
+                                .fill(AppColors.surfaceLight)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 // Skip button
                 Button {
                     sessionViewModel.stopRestTimer()
@@ -1554,10 +1543,6 @@ struct ActiveSessionView: View {
                 .buttonStyle(.plain)
             }
 
-            // MARK: - Long Rest Joke Banner (TODO: Remove this temporary joke feature)
-            if sessionViewModel.restTimerTotal > 120 {
-                longRestJokeBanner
-            }
         }
         .padding(AppSpacing.md)
         .background(
@@ -1575,32 +1560,6 @@ struct ActiveSessionView: View {
             if wasRunning && !isRunning {
                 highlightNextSet = true
             }
-        }
-    }
-
-    // MARK: - Long Rest Joke Banner (TODO: Remove this temporary joke feature)
-    private var longRestJokeBanner: some View {
-        Link(destination: URL(string: "https://twitter.com")!) {
-            HStack(spacing: AppSpacing.sm) {
-                Text("Long rest? We've got you:")
-                    .font(.caption)
-                    .foregroundColor(AppColors.textTertiary)
-
-                // X/Twitter logo as text
-                Text("𝕏")
-                    .font(.system(size: 20, weight: .black))
-                    .foregroundColor(AppColors.textPrimary)
-
-                Image(systemName: "arrow.up.right.square")
-                    .font(.system(size: 12))
-                    .foregroundColor(AppColors.accentBlue)
-            }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.small)
-                    .fill(AppColors.surfaceLight.opacity(0.5))
-            )
         }
     }
 
@@ -1731,6 +1690,20 @@ struct ActiveSessionView: View {
             Text(label)
                 .font(.caption)
                 .foregroundColor(AppColors.textTertiary)
+        }
+    }
+
+    // MARK: - External App Links
+
+    private func openTwitter() {
+        // Try to open X/Twitter app first, fall back to web
+        let twitterAppURL = URL(string: "twitter://")!
+        let twitterWebURL = URL(string: "https://x.com")!
+
+        if UIApplication.shared.canOpenURL(twitterAppURL) {
+            UIApplication.shared.open(twitterAppURL)
+        } else {
+            UIApplication.shared.open(twitterWebURL)
         }
     }
 

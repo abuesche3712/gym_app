@@ -48,6 +48,26 @@ struct Program: Identifiable, Codable, Hashable {
         self.workoutSlots = workoutSlots
     }
 
+    // Custom decoder to handle missing fields from older Firebase documents
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        programDescription = try container.decodeIfPresent(String.self, forKey: .programDescription)
+        durationWeeks = try container.decodeIfPresent(Int.self, forKey: .durationWeeks) ?? 4
+        startDate = try container.decodeIfPresent(Date.self, forKey: .startDate)
+        endDate = try container.decodeIfPresent(Date.self, forKey: .endDate)
+        isActive = try container.decodeIfPresent(Bool.self, forKey: .isActive) ?? false
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
+        syncStatus = try container.decodeIfPresent(SyncStatus.self, forKey: .syncStatus) ?? .synced
+        workoutSlots = try container.decodeIfPresent([ProgramWorkoutSlot].self, forKey: .workoutSlots) ?? []
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, programDescription, durationWeeks, startDate, endDate, isActive, createdAt, updatedAt, syncStatus, workoutSlots
+    }
+
     // MARK: - Computed Properties
 
     /// Computed end date based on start date and duration

@@ -43,6 +43,25 @@ struct Module: Identifiable, Codable, Hashable {
         self.syncStatus = syncStatus
     }
 
+    // Custom decoder to handle missing fields from older Firebase documents
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        type = try container.decode(ModuleType.self, forKey: .type)
+        exercises = try container.decodeIfPresent([Exercise].self, forKey: .exercises) ?? []
+        exerciseInstances = try container.decodeIfPresent([ExerciseInstance].self, forKey: .exerciseInstances) ?? []
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        estimatedDuration = try container.decodeIfPresent(Int.self, forKey: .estimatedDuration)
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
+        syncStatus = try container.decodeIfPresent(SyncStatus.self, forKey: .syncStatus) ?? .synced
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, type, exercises, exerciseInstances, notes, estimatedDuration, createdAt, updatedAt, syncStatus
+    }
+
     mutating func addExercise(_ exercise: Exercise) {
         exercises.append(exercise)
         updatedAt = Date()

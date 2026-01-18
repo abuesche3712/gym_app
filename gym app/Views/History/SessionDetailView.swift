@@ -55,7 +55,7 @@ struct SessionDetailView: View {
                     // Module header
                     HStack {
                         Image(systemName: completedModule.moduleType.icon)
-                            .foregroundStyle(Color(completedModule.moduleType.color))
+                            .foregroundStyle(completedModule.moduleType.color)
                         Text(completedModule.moduleName)
                             .fontWeight(.semibold)
 
@@ -455,19 +455,7 @@ struct ExerciseResultView: View {
         return nil
     }
 
-    private func formatDistance(_ distance: Double) -> String {
-        if distance == floor(distance) {
-            return "\(Int(distance))"
-        }
-        return String(format: "%.2f", distance)
-    }
-
-    private func formatWeight(_ weight: Double) -> String {
-        if weight == floor(weight) {
-            return "\(Int(weight))"
-        }
-        return String(format: "%.1f", weight)
-    }
+    // formatDistance() and formatWeight() use global FormattingHelpers
 
     private func formatHeight(_ height: Double) -> String {
         if height == floor(height) {

@@ -349,7 +349,7 @@ struct EndSessionSheet: View {
 
     private func progressionButton(_ recommendation: ProgressionRecommendation, exercise: SessionExercise, moduleId: UUID) -> some View {
         let isSelected = exercise.progressionRecommendation == recommendation
-        let color = recommendation.swiftUIColor
+        let color = recommendation.color
 
         return Button {
             updateProgression(moduleId: moduleId, exerciseId: exercise.id, recommendation: recommendation)

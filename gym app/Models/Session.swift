@@ -46,6 +46,26 @@ struct Session: Identifiable, Codable, Hashable {
         self.syncStatus = syncStatus
     }
 
+    // Custom decoder to handle missing fields from older Firebase documents
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        workoutId = try container.decode(UUID.self, forKey: .workoutId)
+        workoutName = try container.decodeIfPresent(String.self, forKey: .workoutName) ?? "Unknown"
+        date = try container.decode(Date.self, forKey: .date)
+        completedModules = try container.decodeIfPresent([CompletedModule].self, forKey: .completedModules) ?? []
+        skippedModuleIds = try container.decodeIfPresent([UUID].self, forKey: .skippedModuleIds) ?? []
+        duration = try container.decodeIfPresent(Int.self, forKey: .duration)
+        overallFeeling = try container.decodeIfPresent(Int.self, forKey: .overallFeeling)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        syncStatus = try container.decodeIfPresent(SyncStatus.self, forKey: .syncStatus) ?? .synced
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, workoutId, workoutName, date, completedModules, skippedModuleIds, duration, overallFeeling, notes, createdAt, syncStatus
+    }
+
     var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -108,6 +128,22 @@ struct CompletedModule: Identifiable, Codable, Hashable {
         self.skipped = skipped
         self.notes = notes
     }
+
+    // Custom decoder to handle missing fields from older Firebase documents
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        moduleId = try container.decode(UUID.self, forKey: .moduleId)
+        moduleName = try container.decodeIfPresent(String.self, forKey: .moduleName) ?? "Unknown"
+        moduleType = try container.decodeIfPresent(ModuleType.self, forKey: .moduleType) ?? .strength
+        completedExercises = try container.decodeIfPresent([SessionExercise].self, forKey: .completedExercises) ?? []
+        skipped = try container.decodeIfPresent(Bool.self, forKey: .skipped) ?? false
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, moduleId, moduleName, moduleType, completedExercises, skipped, notes
+    }
 }
 
 // MARK: - Session Exercise
@@ -168,6 +204,33 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         self.originalExerciseName = originalExerciseName
         self.isAdHoc = isAdHoc
         self.progressionRecommendation = progressionRecommendation
+    }
+
+    // Custom decoder to handle missing fields from older Firebase documents
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        exerciseId = try container.decode(UUID.self, forKey: .exerciseId)
+        exerciseName = try container.decodeIfPresent(String.self, forKey: .exerciseName) ?? "Unknown"
+        exerciseType = try container.decodeIfPresent(ExerciseType.self, forKey: .exerciseType) ?? .strength
+        cardioMetric = try container.decodeIfPresent(CardioMetric.self, forKey: .cardioMetric) ?? .timeOnly
+        mobilityTracking = try container.decodeIfPresent(MobilityTracking.self, forKey: .mobilityTracking) ?? .repsOnly
+        distanceUnit = try container.decodeIfPresent(DistanceUnit.self, forKey: .distanceUnit) ?? .meters
+        supersetGroupId = try container.decodeIfPresent(UUID.self, forKey: .supersetGroupId)
+        completedSetGroups = try container.decodeIfPresent([CompletedSetGroup].self, forKey: .completedSetGroups) ?? []
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        isBodyweight = try container.decodeIfPresent(Bool.self, forKey: .isBodyweight) ?? false
+        recoveryActivityType = try container.decodeIfPresent(RecoveryActivityType.self, forKey: .recoveryActivityType)
+        isSubstitution = try container.decodeIfPresent(Bool.self, forKey: .isSubstitution) ?? false
+        originalExerciseName = try container.decodeIfPresent(String.self, forKey: .originalExerciseName)
+        isAdHoc = try container.decodeIfPresent(Bool.self, forKey: .isAdHoc) ?? false
+        progressionRecommendation = try container.decodeIfPresent(ProgressionRecommendation.self, forKey: .progressionRecommendation)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, exerciseId, exerciseName, exerciseType, cardioMetric, mobilityTracking, distanceUnit
+        case supersetGroupId, completedSetGroups, notes, isBodyweight, recoveryActivityType
+        case isSubstitution, originalExerciseName, isAdHoc, progressionRecommendation
     }
 
     var isInSuperset: Bool {
@@ -233,6 +296,22 @@ struct CompletedSetGroup: Identifiable, Codable, Hashable {
         self.isInterval = isInterval
         self.workDuration = workDuration
         self.intervalRestDuration = intervalRestDuration
+    }
+
+    // Custom decoder to handle missing fields from older Firebase documents
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        setGroupId = try container.decode(UUID.self, forKey: .setGroupId)
+        restPeriod = try container.decodeIfPresent(Int.self, forKey: .restPeriod)
+        sets = try container.decodeIfPresent([SetData].self, forKey: .sets) ?? []
+        isInterval = try container.decodeIfPresent(Bool.self, forKey: .isInterval) ?? false
+        workDuration = try container.decodeIfPresent(Int.self, forKey: .workDuration)
+        intervalRestDuration = try container.decodeIfPresent(Int.self, forKey: .intervalRestDuration)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, setGroupId, restPeriod, sets, isInterval, workDuration, intervalRestDuration
     }
 
     /// Total rounds (for interval mode, equals number of sets)
@@ -307,6 +386,32 @@ struct SetData: Identifiable, Codable, Hashable {
         self.quality = quality
         self.temperature = temperature
         self.restAfter = restAfter
+    }
+
+    // Custom decoder to handle missing fields from older Firebase documents
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        setNumber = try container.decodeIfPresent(Int.self, forKey: .setNumber) ?? 1
+        weight = try container.decodeIfPresent(Double.self, forKey: .weight)
+        reps = try container.decodeIfPresent(Int.self, forKey: .reps)
+        rpe = try container.decodeIfPresent(Int.self, forKey: .rpe)
+        completed = try container.decodeIfPresent(Bool.self, forKey: .completed) ?? true
+        duration = try container.decodeIfPresent(Int.self, forKey: .duration)
+        distance = try container.decodeIfPresent(Double.self, forKey: .distance)
+        pace = try container.decodeIfPresent(Double.self, forKey: .pace)
+        avgHeartRate = try container.decodeIfPresent(Int.self, forKey: .avgHeartRate)
+        holdTime = try container.decodeIfPresent(Int.self, forKey: .holdTime)
+        intensity = try container.decodeIfPresent(Int.self, forKey: .intensity)
+        height = try container.decodeIfPresent(Double.self, forKey: .height)
+        quality = try container.decodeIfPresent(Int.self, forKey: .quality)
+        temperature = try container.decodeIfPresent(Int.self, forKey: .temperature)
+        restAfter = try container.decodeIfPresent(Int.self, forKey: .restAfter)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, setNumber, weight, reps, rpe, completed, duration, distance, pace, avgHeartRate
+        case holdTime, intensity, height, quality, temperature, restAfter
     }
 
     var formattedStrength: String? {

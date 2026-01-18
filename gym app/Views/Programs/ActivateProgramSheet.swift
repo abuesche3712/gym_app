@@ -68,7 +68,7 @@ struct ActivateProgramSheet: View {
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             } else {
-                                Text(scheduled.workoutName ?? "Unknown")
+                                Text(scheduled.workoutName)
                                     .font(.subheadline)
                             }
                         }

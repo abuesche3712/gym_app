@@ -90,6 +90,34 @@ struct Exercise: Identifiable, Codable, Hashable {
         }
     }
 
+    // Custom decoder to handle missing fields from older Firebase documents
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        templateId = try container.decodeIfPresent(UUID.self, forKey: .templateId)
+        exerciseType = try container.decodeIfPresent(ExerciseType.self, forKey: .exerciseType) ?? .strength
+        cardioMetric = try container.decodeIfPresent(CardioMetric.self, forKey: .cardioMetric) ?? .timeOnly
+        mobilityTracking = try container.decodeIfPresent(MobilityTracking.self, forKey: .mobilityTracking) ?? .repsOnly
+        distanceUnit = try container.decodeIfPresent(DistanceUnit.self, forKey: .distanceUnit) ?? .meters
+        setGroups = try container.decodeIfPresent([SetGroup].self, forKey: .setGroups) ?? []
+        trackingMetrics = try container.decodeIfPresent([MetricType].self, forKey: .trackingMetrics) ?? Exercise.defaultMetrics(for: exerciseType)
+        supersetGroupId = try container.decodeIfPresent(UUID.self, forKey: .supersetGroupId)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
+        muscleGroupIds = try container.decodeIfPresent(Set<UUID>.self, forKey: .muscleGroupIds) ?? []
+        implementIds = try container.decodeIfPresent(Set<UUID>.self, forKey: .implementIds) ?? []
+        isBodyweight = try container.decodeIfPresent(Bool.self, forKey: .isBodyweight) ?? false
+        recoveryActivityType = try container.decodeIfPresent(RecoveryActivityType.self, forKey: .recoveryActivityType)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, name, templateId, exerciseType, cardioMetric, mobilityTracking, distanceUnit
+        case setGroups, trackingMetrics, supersetGroupId, notes, createdAt, updatedAt
+        case muscleGroupIds, implementIds, isBodyweight, recoveryActivityType
+    }
+
     /// Whether this cardio exercise should log time
     var tracksTime: Bool {
         exerciseType == .cardio && cardioMetric.tracksTime

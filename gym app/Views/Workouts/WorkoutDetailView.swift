@@ -187,7 +187,7 @@ struct WorkoutModuleRow: View {
                 .clipShape(Circle())
 
             Image(systemName: module.type.icon)
-                .foregroundStyle(Color(module.type.color))
+                .foregroundStyle(module.type.color)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(module.name)

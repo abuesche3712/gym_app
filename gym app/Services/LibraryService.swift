@@ -8,7 +8,7 @@
 import CoreData
 import SwiftUI
 
-@MainActor
+@preconcurrency @MainActor
 class LibraryService: ObservableObject {
     static let shared = LibraryService()
 

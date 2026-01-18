@@ -9,7 +9,7 @@
 import Foundation
 import Combine
 
-@MainActor
+@preconcurrency @MainActor
 class ExerciseResolver: ObservableObject {
     static let shared = ExerciseResolver()
 

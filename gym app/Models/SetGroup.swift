@@ -71,6 +71,35 @@ struct SetGroup: Identifiable, Codable, Hashable {
         self.implementMeasurableStringValue = implementMeasurableStringValue
     }
 
+    // Custom decoder to handle missing fields from older Firebase documents
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        sets = try container.decodeIfPresent(Int.self, forKey: .sets) ?? 1
+        targetReps = try container.decodeIfPresent(Int.self, forKey: .targetReps)
+        targetWeight = try container.decodeIfPresent(Double.self, forKey: .targetWeight)
+        targetRPE = try container.decodeIfPresent(Int.self, forKey: .targetRPE)
+        targetDuration = try container.decodeIfPresent(Int.self, forKey: .targetDuration)
+        targetDistance = try container.decodeIfPresent(Double.self, forKey: .targetDistance)
+        targetDistanceUnit = try container.decodeIfPresent(DistanceUnit.self, forKey: .targetDistanceUnit)
+        targetHoldTime = try container.decodeIfPresent(Int.self, forKey: .targetHoldTime)
+        restPeriod = try container.decodeIfPresent(Int.self, forKey: .restPeriod)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        isInterval = try container.decodeIfPresent(Bool.self, forKey: .isInterval) ?? false
+        workDuration = try container.decodeIfPresent(Int.self, forKey: .workDuration)
+        intervalRestDuration = try container.decodeIfPresent(Int.self, forKey: .intervalRestDuration)
+        implementMeasurableLabel = try container.decodeIfPresent(String.self, forKey: .implementMeasurableLabel)
+        implementMeasurableUnit = try container.decodeIfPresent(String.self, forKey: .implementMeasurableUnit)
+        implementMeasurableValue = try container.decodeIfPresent(Double.self, forKey: .implementMeasurableValue)
+        implementMeasurableStringValue = try container.decodeIfPresent(String.self, forKey: .implementMeasurableStringValue)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, sets, targetReps, targetWeight, targetRPE, targetDuration, targetDistance, targetDistanceUnit
+        case targetHoldTime, restPeriod, notes, isInterval, workDuration, intervalRestDuration
+        case implementMeasurableLabel, implementMeasurableUnit, implementMeasurableValue, implementMeasurableStringValue
+    }
+
     /// Total duration of the interval workout (all rounds)
     var totalIntervalDuration: Int? {
         guard isInterval, let work = workDuration, let rest = intervalRestDuration else { return nil }

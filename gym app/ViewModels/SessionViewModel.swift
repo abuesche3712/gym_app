@@ -441,7 +441,9 @@ class SessionViewModel: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.updateRestTimer()
+            Task { @MainActor [weak self] in
+                self?.updateRestTimer()
+            }
         }
     }
 
@@ -483,7 +485,9 @@ class SessionViewModel: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.updateElapsedTime()
+            Task { @MainActor [weak self] in
+                self?.updateElapsedTime()
+            }
         }
     }
 

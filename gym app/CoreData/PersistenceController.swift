@@ -127,6 +127,9 @@ struct PersistenceController {
         let programEntity = createProgramEntity()
         let programWorkoutSlotEntity = createProgramWorkoutSlotEntity()
 
+        // Create library cache entities
+        let progressionSchemeEntity = createProgressionSchemeEntity()
+
         // Set up relationships
         setupRelationships(
             moduleEntity: moduleEntity,
@@ -176,7 +179,9 @@ struct PersistenceController {
             // Dynamic measurable entities
             targetValueEntity, actualValueEntity,
             // Program entities
-            programEntity, programWorkoutSlotEntity
+            programEntity, programWorkoutSlotEntity,
+            // Library cache entities
+            progressionSchemeEntity
         ]
 
         return model
@@ -195,8 +200,8 @@ struct PersistenceController {
             createAttribute("typeRaw", type: .stringAttributeType),
             createAttribute("notes", type: .stringAttributeType, optional: true),
             createAttribute("estimatedDuration", type: .integer32AttributeType, optional: true),
-            createAttribute("createdAt", type: .dateAttributeType),
-            createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncStatusRaw", type: .stringAttributeType)
         ]
@@ -216,8 +221,8 @@ struct PersistenceController {
             createAttribute("trackingMetricsRaw", type: .stringAttributeType),
             createAttribute("notes", type: .stringAttributeType, optional: true),
             createAttribute("orderIndex", type: .integer32AttributeType),
-            createAttribute("createdAt", type: .dateAttributeType),
-            createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             // Library system reference (optional for backward compatibility)
             createAttribute("exerciseLibraryId", type: .UUIDAttributeType, optional: true),
@@ -278,10 +283,11 @@ struct PersistenceController {
             createAttribute("estimatedDuration", type: .integer32AttributeType, optional: true),
             createAttribute("notes", type: .stringAttributeType, optional: true),
             createAttribute("archived", type: .booleanAttributeType),
-            createAttribute("createdAt", type: .dateAttributeType),
-            createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true),
-            createAttribute("syncStatusRaw", type: .stringAttributeType)
+            createAttribute("syncStatusRaw", type: .stringAttributeType),
+            createAttribute("standaloneExercisesData", type: .binaryDataAttributeType, optional: true)
         ]
 
         return entity
@@ -438,7 +444,7 @@ struct PersistenceController {
             createAttribute("entityId", type: .UUIDAttributeType),
             createAttribute("actionRaw", type: .stringAttributeType),
             createAttribute("payload", type: .binaryDataAttributeType),
-            createAttribute("createdAt", type: .dateAttributeType),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
             createAttribute("retryCount", type: .integer32AttributeType, defaultValue: 0),
             createAttribute("lastAttemptAt", type: .dateAttributeType, optional: true),
             createAttribute("lastError", type: .stringAttributeType, optional: true)
@@ -459,8 +465,8 @@ struct PersistenceController {
             createAttribute("exerciseTypeRaw", type: .stringAttributeType),
             createAttribute("primaryMusclesRaw", type: .stringAttributeType, optional: true),
             createAttribute("secondaryMusclesRaw", type: .stringAttributeType, optional: true),
-            createAttribute("createdAt", type: .dateAttributeType),
-            createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             // Library system fields
             createAttribute("muscleGroupIdsRaw", type: .stringAttributeType, optional: true),
@@ -494,8 +500,8 @@ struct PersistenceController {
             createAttribute("supersetGroupIdRaw", type: .stringAttributeType, optional: true),
             createAttribute("notes", type: .stringAttributeType, optional: true),
             createAttribute("orderIndex", type: .integer32AttributeType),
-            createAttribute("createdAt", type: .dateAttributeType),
-            createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             // Optional overrides
             createAttribute("nameOverride", type: .stringAttributeType, optional: true),
@@ -572,7 +578,10 @@ struct PersistenceController {
             createAttribute("measurableName", type: .stringAttributeType),
             createAttribute("measurableUnit", type: .stringAttributeType),
             createAttribute("targetValue", type: .doubleAttributeType),
-            createAttribute("stringValue", type: .stringAttributeType, optional: true)
+            createAttribute("stringValue", type: .stringAttributeType, optional: true),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true)
         ]
 
         return entity
@@ -588,7 +597,10 @@ struct PersistenceController {
             createAttribute("measurableName", type: .stringAttributeType),
             createAttribute("measurableUnit", type: .stringAttributeType),
             createAttribute("actualValue", type: .doubleAttributeType),
-            createAttribute("stringValue", type: .stringAttributeType, optional: true)
+            createAttribute("stringValue", type: .stringAttributeType, optional: true),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true)
         ]
 
         return entity
@@ -607,8 +619,8 @@ struct PersistenceController {
             createAttribute("startDate", type: .dateAttributeType, optional: true),
             createAttribute("endDate", type: .dateAttributeType, optional: true),
             createAttribute("isActive", type: .booleanAttributeType, defaultValue: false),
-            createAttribute("createdAt", type: .dateAttributeType),
-            createAttribute("updatedAt", type: .dateAttributeType),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncStatusRaw", type: .stringAttributeType)
         ]
@@ -631,6 +643,25 @@ struct PersistenceController {
             createAttribute("specificDateOffset", type: .integer32AttributeType, optional: true, defaultValue: -1),
             createAttribute("orderIndex", type: .integer32AttributeType),
             createAttribute("notes", type: .stringAttributeType, optional: true),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true)
+        ]
+
+        return entity
+    }
+
+    private static func createProgressionSchemeEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "ProgressionSchemeEntity"
+        entity.managedObjectClassName = "ProgressionSchemeEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("name", type: .stringAttributeType),
+            createAttribute("typeRaw", type: .stringAttributeType),
+            createAttribute("parametersData", type: .binaryDataAttributeType, optional: true),
+            createAttribute("isDefault", type: .booleanAttributeType, defaultValue: false),
             createAttribute("createdAt", type: .dateAttributeType, optional: true),
             createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true)

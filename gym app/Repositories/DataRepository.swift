@@ -8,7 +8,7 @@
 import CoreData
 import Combine
 
-@MainActor
+@preconcurrency @MainActor
 class DataRepository: ObservableObject {
     static let shared = DataRepository()
 
@@ -108,12 +108,12 @@ class DataRepository: ObservableObject {
                 }
 
                 if let local = modules.first(where: { $0.id == cloudModule.id }) {
-                    // If cloud is newer, update local
-                    if cloudModule.updatedAt > local.updatedAt {
-                        print("syncFromCloud: Cloud module '\(cloudModule.name)' is newer, updating local")
+                    // If cloud is newer or same, update local (cloud is source of truth)
+                    if cloudModule.updatedAt >= local.updatedAt {
+                        print("syncFromCloud: Cloud module '\(cloudModule.name)' is newer or same (cloud: \(cloudModule.updatedAt), local: \(local.updatedAt)), updating local")
                         saveModuleLocally(cloudModule)
                     } else {
-                        print("syncFromCloud: Local module '\(cloudModule.name)' is newer or same, skipping")
+                        print("syncFromCloud: Local module '\(cloudModule.name)' is newer (cloud: \(cloudModule.updatedAt), local: \(local.updatedAt)), keeping local")
                     }
                 } else {
                     // New from cloud, save locally
@@ -160,11 +160,12 @@ class DataRepository: ObservableObject {
                 }
 
                 if let local = workouts.first(where: { $0.id == cloudWorkout.id }) {
-                    if cloudWorkout.updatedAt > local.updatedAt {
-                        print("syncFromCloud: Cloud workout '\(cloudWorkout.name)' is newer, updating local")
+                    // Cloud is source of truth - update if cloud is newer or same
+                    if cloudWorkout.updatedAt >= local.updatedAt {
+                        print("syncFromCloud: Cloud workout '\(cloudWorkout.name)' is newer or same (cloud: \(cloudWorkout.updatedAt), local: \(local.updatedAt)), updating local")
                         saveWorkoutLocally(cloudWorkout)
                     } else {
-                        print("syncFromCloud: Local workout '\(cloudWorkout.name)' is newer or same, skipping")
+                        print("syncFromCloud: Local workout '\(cloudWorkout.name)' is newer (cloud: \(cloudWorkout.updatedAt), local: \(local.updatedAt)), keeping local")
                     }
                 } else {
                     print("syncFromCloud: Workout '\(cloudWorkout.name)' is new, saving locally")
@@ -210,10 +211,15 @@ class DataRepository: ObservableObject {
                 }
 
                 if let local = programs.first(where: { $0.id == cloudProgram.id }) {
-                    if cloudProgram.updatedAt > local.updatedAt {
+                    // Cloud is source of truth - update if cloud is newer or same
+                    if cloudProgram.updatedAt >= local.updatedAt {
+                        print("syncFromCloud: Cloud program '\(cloudProgram.name)' is newer or same (cloud: \(cloudProgram.updatedAt), local: \(local.updatedAt)), updating local")
                         saveProgramLocally(cloudProgram)
+                    } else {
+                        print("syncFromCloud: Local program '\(cloudProgram.name)' is newer (cloud: \(cloudProgram.updatedAt), local: \(local.updatedAt)), keeping local")
                     }
                 } else {
+                    print("syncFromCloud: Program '\(cloudProgram.name)' is new, saving locally")
                     saveProgramLocally(cloudProgram)
                 }
             }
@@ -364,22 +370,11 @@ class DataRepository: ObservableObject {
             deletedModuleIds = deleted
             print("deleteModule: Tracked deletion of '\(module.name)' (id: \(module.id))")
 
-            // Delete from cloud if authenticated
+            // Queue deletion for cloud sync if authenticated
             if authService.isAuthenticated {
-                Task {
-                    do {
-                        try await firestoreService.deleteModule(module.id)
-                        // If cloud delete succeeds, we can remove from tracking
-                        // (it won't come back on sync since it's gone from cloud)
-                        var deleted = self.deletedModuleIds
-                        deleted.remove(module.id)
-                        self.deletedModuleIds = deleted
-                        print("deleteModule: Cloud delete succeeded, removed from tracking")
-                    } catch {
-                        print("Failed to delete module from cloud: \(error)")
-                        // Keep in tracking so it won't re-sync
-                    }
-                }
+                // Queue the deletion - SyncManager will handle online/offline
+                SyncManager.shared.queueModule(module, action: .delete)
+                print("deleteModule: Queued deletion for cloud sync")
             }
         }
     }
@@ -438,19 +433,10 @@ class DataRepository: ObservableObject {
             deletedWorkoutIds = deleted
             print("deleteWorkout: Tracked deletion of '\(workout.name)' (id: \(workout.id))")
 
-            // Delete from cloud if authenticated
+            // Queue deletion for cloud sync if authenticated
             if authService.isAuthenticated {
-                Task {
-                    do {
-                        try await firestoreService.deleteWorkout(workout.id)
-                        var deleted = self.deletedWorkoutIds
-                        deleted.remove(workout.id)
-                        self.deletedWorkoutIds = deleted
-                        print("deleteWorkout: Cloud delete succeeded, removed from tracking")
-                    } catch {
-                        print("Failed to delete workout from cloud: \(error)")
-                    }
-                }
+                SyncManager.shared.queueWorkout(workout, action: .delete)
+                print("deleteWorkout: Queued deletion for cloud sync")
             }
         }
     }
@@ -508,19 +494,10 @@ class DataRepository: ObservableObject {
             deletedSessionIds = deleted
             print("deleteSession: Tracked deletion of session (id: \(session.id))")
 
-            // Delete from cloud if authenticated
+            // Queue deletion for cloud sync if authenticated
             if authService.isAuthenticated {
-                Task {
-                    do {
-                        try await firestoreService.deleteSession(session.id)
-                        var deleted = self.deletedSessionIds
-                        deleted.remove(session.id)
-                        self.deletedSessionIds = deleted
-                        print("deleteSession: Cloud delete succeeded, removed from tracking")
-                    } catch {
-                        print("Failed to delete session from cloud: \(error)")
-                    }
-                }
+                SyncManager.shared.queueSession(session, action: .delete)
+                print("deleteSession: Queued deletion for cloud sync")
             }
         }
     }
@@ -604,19 +581,10 @@ class DataRepository: ObservableObject {
             deletedProgramIds = deleted
             print("deleteProgram: Tracked deletion of '\(program.name)' (id: \(program.id))")
 
-            // Delete from cloud if authenticated
+            // Queue deletion for cloud sync if authenticated
             if authService.isAuthenticated {
-                Task {
-                    do {
-                        try await firestoreService.deleteProgram(program.id)
-                        var deleted = self.deletedProgramIds
-                        deleted.remove(program.id)
-                        self.deletedProgramIds = deleted
-                        print("deleteProgram: Cloud delete succeeded, removed from tracking")
-                    } catch {
-                        print("Failed to delete program from cloud: \(error)")
-                    }
-                }
+                SyncManager.shared.queueProgram(program, action: .delete)
+                print("deleteProgram: Queued deletion for cloud sync")
             }
         }
     }
@@ -675,8 +643,8 @@ class DataRepository: ObservableObject {
                 notes: instanceEntity.notes,
                 nameOverride: instanceEntity.nameOverride,
                 exerciseTypeOverride: instanceEntity.exerciseTypeOverride,
-                createdAt: instanceEntity.createdAt,
-                updatedAt: instanceEntity.updatedAt
+                createdAt: instanceEntity.createdAt ?? Date(),
+                updatedAt: instanceEntity.updatedAt ?? Date()
             )
         }
     }
@@ -866,8 +834,8 @@ class DataRepository: ObservableObject {
                 setGroups: setGroups,
                 trackingMetrics: exerciseEntity.trackingMetrics,
                 notes: exerciseEntity.notes,
-                createdAt: exerciseEntity.createdAt,
-                updatedAt: exerciseEntity.updatedAt,
+                createdAt: exerciseEntity.createdAt ?? Date(),
+                updatedAt: exerciseEntity.updatedAt ?? Date(),
                 muscleGroupIds: exerciseEntity.muscleGroupIds,
                 implementIds: exerciseEntity.implementIds
             )
@@ -884,8 +852,8 @@ class DataRepository: ObservableObject {
             exerciseInstances: exerciseInstances,
             notes: entity.notes,
             estimatedDuration: entity.estimatedDuration > 0 ? Int(entity.estimatedDuration) : nil,
-            createdAt: entity.createdAt,
-            updatedAt: entity.updatedAt,
+            createdAt: entity.createdAt ?? Date(),
+            updatedAt: entity.updatedAt ?? Date(),
             syncStatus: entity.syncStatus
         )
     }
@@ -935,6 +903,9 @@ class DataRepository: ObservableObject {
             return refEntity
         }
         entity.moduleReferences = NSOrderedSet(array: refEntities)
+
+        // Save standalone exercises
+        entity.standaloneExercises = workout.standaloneExercises
     }
 
     private func convertToWorkout(_ entity: WorkoutEntity) -> Workout {
@@ -952,10 +923,11 @@ class DataRepository: ObservableObject {
             id: entity.id,
             name: entity.name,
             moduleReferences: moduleRefs,
+            standaloneExercises: entity.standaloneExercises,
             estimatedDuration: entity.estimatedDuration > 0 ? Int(entity.estimatedDuration) : nil,
             notes: entity.notes,
-            createdAt: entity.createdAt,
-            updatedAt: entity.updatedAt,
+            createdAt: entity.createdAt ?? Date(),
+            updatedAt: entity.updatedAt ?? Date(),
             archived: entity.archived,
             syncStatus: entity.syncStatus
         )
@@ -1222,8 +1194,8 @@ class DataRepository: ObservableObject {
             startDate: entity.startDate,
             endDate: entity.endDate,
             isActive: entity.isActive,
-            createdAt: entity.createdAt,
-            updatedAt: entity.updatedAt,
+            createdAt: entity.createdAt ?? Date(),
+            updatedAt: entity.updatedAt ?? Date(),
             syncStatus: entity.syncStatus,
             workoutSlots: slots
         )

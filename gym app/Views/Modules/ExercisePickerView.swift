@@ -360,11 +360,11 @@ struct CategoryPill: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline)
+                .font(.subheadline.weight(isSelected ? .semibold : .regular))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(isSelected ? Color.blue : Color(.systemGray5))
-                .foregroundColor(isSelected ? .white : .primary)
+                .background(isSelected ? AppColors.accentBlue : AppColors.surfaceLight)
+                .foregroundColor(isSelected ? .white : AppColors.textPrimary)
                 .clipShape(Capsule())
         }
     }
@@ -441,22 +441,22 @@ struct ImplementGridCompact: View {
 struct SelectableChip: View {
     let text: String
     let isSelected: Bool
-    var color: Color = .blue
+    var color: Color = AppColors.accentBlue
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Text(text)
-                .font(.caption)
+                .font(.caption.weight(isSelected ? .semibold : .regular))
                 .lineLimit(1)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(isSelected ? color : Color(.systemGray5))
+                        .fill(isSelected ? color : AppColors.surfaceLight)
                 )
-                .foregroundColor(isSelected ? .white : .primary)
+                .foregroundColor(isSelected ? .white : AppColors.textPrimary)
         }
         .buttonStyle(.plain)
     }

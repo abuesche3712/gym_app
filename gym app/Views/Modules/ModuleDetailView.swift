@@ -30,9 +30,9 @@ struct ModuleDetailView: View {
                 HStack(spacing: 16) {
                     Image(systemName: currentModule.type.icon)
                         .font(.largeTitle)
-                        .foregroundStyle(Color(currentModule.type.color))
+                        .foregroundStyle(currentModule.type.color)
                         .frame(width: 60, height: 60)
-                        .background(Color(currentModule.type.color).opacity(0.2))
+                        .background(currentModule.type.color.opacity(0.2))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
 
                     VStack(alignment: .leading, spacing: 4) {

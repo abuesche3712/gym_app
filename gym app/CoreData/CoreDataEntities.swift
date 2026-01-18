@@ -12,10 +12,10 @@ import CoreData
 /// Protocol for entities that sync to Firebase
 /// Provides required timestamp fields for conflict resolution
 @objc protocol SyncableEntity: NSObjectProtocol {
-    /// When the entity was first created locally
-    var createdAt: Date { get set }
-    /// When the entity was last modified locally (auto-updated on save)
-    var updatedAt: Date { get set }
+    /// When the entity was first created locally (nil for legacy data)
+    var createdAt: Date? { get set }
+    /// When the entity was last modified locally (auto-updated on save, nil for legacy data)
+    var updatedAt: Date? { get set }
     /// When the entity was last successfully synced to cloud (nil if never synced)
     var syncedAt: Date? { get set }
 }
@@ -50,8 +50,8 @@ public class ModuleEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var typeRaw: String
     @NSManaged public var notes: String?
     @NSManaged public var estimatedDuration: Int32
-    @NSManaged public var createdAt: Date
-    @NSManaged public var updatedAt: Date
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
     @NSManaged public var syncedAt: Date?
     @NSManaged public var syncStatusRaw: String
     @NSManaged public var exercises: NSOrderedSet?
@@ -91,8 +91,8 @@ public class ExerciseEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var trackingMetricsRaw: String
     @NSManaged public var notes: String?
     @NSManaged public var orderIndex: Int32
-    @NSManaged public var createdAt: Date
-    @NSManaged public var updatedAt: Date
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
     @NSManaged public var syncedAt: Date?
     @NSManaged public var module: ModuleEntity?
     @NSManaged public var setGroups: NSOrderedSet?
@@ -196,8 +196,8 @@ public class ExerciseInstanceEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var supersetGroupIdRaw: String?
     @NSManaged public var notes: String?
     @NSManaged public var orderIndex: Int32
-    @NSManaged public var createdAt: Date
-    @NSManaged public var updatedAt: Date
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
     @NSManaged public var syncedAt: Date?
     @NSManaged public var module: ModuleEntity?
     @NSManaged public var setGroups: NSOrderedSet?
@@ -243,7 +243,7 @@ public class ExerciseInstanceEntity: NSManagedObject, SyncableEntity {
 // MARK: - SetGroup Entity
 
 @objc(SetGroupEntity)
-public class SetGroupEntity: NSManagedObject {
+public class SetGroupEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var sets: Int32
     @NSManaged public var restPeriod: Int32
@@ -278,6 +278,18 @@ public class SetGroupEntity: NSManagedObject {
     @NSManaged public var implementMeasurableValue: Double
     @NSManaged public var implementMeasurableStringValue: String?
 
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
+
     var targetValueArray: [TargetValueEntity] {
         targetValues?.allObjects as? [TargetValueEntity] ?? []
     }
@@ -296,13 +308,28 @@ public class SetGroupEntity: NSManagedObject {
 // MARK: - Target Value Entity (Dynamic Measurable Targets)
 
 @objc(TargetValueEntity)
-public class TargetValueEntity: NSManagedObject {
+public class TargetValueEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var measurableName: String  // Matches MeasurableEntity.name
     @NSManaged public var measurableUnit: String  // Copied from MeasurableEntity.unit for display
     @NSManaged public var targetValue: Double     // For numeric measurables
     @NSManaged public var stringValue: String?    // For text-based measurables (e.g., band color)
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
     @NSManaged public var setGroup: SetGroupEntity?
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
 
     /// Whether this target uses string value (for text-based measurables like band color)
     var isStringBased: Bool {
@@ -327,11 +354,12 @@ public class WorkoutEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var estimatedDuration: Int32
     @NSManaged public var notes: String?
     @NSManaged public var archived: Bool
-    @NSManaged public var createdAt: Date
-    @NSManaged public var updatedAt: Date
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
     @NSManaged public var syncedAt: Date?
     @NSManaged public var syncStatusRaw: String
     @NSManaged public var moduleReferences: NSOrderedSet?
+    @NSManaged public var standaloneExercisesData: Data?  // JSON-encoded [WorkoutExercise]
 
     public override func willSave() {
         super.willSave()
@@ -346,12 +374,22 @@ public class WorkoutEntity: NSManagedObject, SyncableEntity {
     var moduleReferenceArray: [ModuleReferenceEntity] {
         moduleReferences?.array as? [ModuleReferenceEntity] ?? []
     }
+
+    var standaloneExercises: [WorkoutExercise] {
+        get {
+            guard let data = standaloneExercisesData else { return [] }
+            return (try? JSONDecoder().decode([WorkoutExercise].self, from: data)) ?? []
+        }
+        set {
+            standaloneExercisesData = try? JSONEncoder().encode(newValue)
+        }
+    }
 }
 
 // MARK: - Module Reference Entity
 
 @objc(ModuleReferenceEntity)
-public class ModuleReferenceEntity: NSManagedObject {
+public class ModuleReferenceEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var moduleId: UUID
     @NSManaged public var orderIndex: Int32
@@ -361,12 +399,24 @@ public class ModuleReferenceEntity: NSManagedObject {
     @NSManaged public var updatedAt: Date?
     @NSManaged public var syncedAt: Date?
     @NSManaged public var workout: WorkoutEntity?
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
 }
 
 // MARK: - Session Entity
 
 @objc(SessionEntity)
-public class SessionEntity: NSManagedObject {
+public class SessionEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var workoutId: UUID
     @NSManaged public var workoutName: String
@@ -380,6 +430,18 @@ public class SessionEntity: NSManagedObject {
     @NSManaged public var syncedAt: Date?
     @NSManaged public var syncStatusRaw: String?
     @NSManaged public var completedModules: NSOrderedSet?
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
 
     var syncStatus: SyncStatus {
         get { SyncStatus(rawValue: syncStatusRaw ?? "") ?? .pendingSync }
@@ -404,7 +466,7 @@ public class SessionEntity: NSManagedObject {
 // MARK: - Completed Module Entity
 
 @objc(CompletedModuleEntity)
-public class CompletedModuleEntity: NSManagedObject {
+public class CompletedModuleEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var moduleId: UUID
     @NSManaged public var moduleName: String
@@ -417,6 +479,18 @@ public class CompletedModuleEntity: NSManagedObject {
     @NSManaged public var syncedAt: Date?
     @NSManaged public var session: SessionEntity?
     @NSManaged public var completedExercises: NSOrderedSet?
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
 
     var moduleType: ModuleType {
         get { ModuleType(rawValue: moduleTypeRaw) ?? .strength }
@@ -431,7 +505,7 @@ public class CompletedModuleEntity: NSManagedObject {
 // MARK: - Session Exercise Entity
 
 @objc(SessionExerciseEntity)
-public class SessionExerciseEntity: NSManagedObject {
+public class SessionExerciseEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var exerciseId: UUID
     @NSManaged public var exerciseName: String
@@ -449,6 +523,18 @@ public class SessionExerciseEntity: NSManagedObject {
     @NSManaged public var mobilityTrackingRaw: String?
     @NSManaged public var isBodyweight: Bool
     @NSManaged public var supersetGroupIdRaw: String?
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
 
     var exerciseType: ExerciseType {
         get { ExerciseType(rawValue: exerciseTypeRaw) ?? .strength }
@@ -488,7 +574,7 @@ public class SessionExerciseEntity: NSManagedObject {
 // MARK: - Completed Set Group Entity
 
 @objc(CompletedSetGroupEntity)
-public class CompletedSetGroupEntity: NSManagedObject {
+public class CompletedSetGroupEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var setGroupId: UUID
     @NSManaged public var orderIndex: Int32
@@ -504,6 +590,18 @@ public class CompletedSetGroupEntity: NSManagedObject {
     @NSManaged public var intervalRestDuration: Int32
     @NSManaged public var restPeriod: Int32
 
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
+
     var setArray: [SetDataEntity] {
         sets?.array as? [SetDataEntity] ?? []
     }
@@ -512,7 +610,7 @@ public class CompletedSetGroupEntity: NSManagedObject {
 // MARK: - Set Data Entity
 
 @objc(SetDataEntity)
-public class SetDataEntity: NSManagedObject {
+public class SetDataEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var setNumber: Int32
     @NSManaged public var completed: Bool
@@ -539,6 +637,18 @@ public class SetDataEntity: NSManagedObject {
     @NSManaged public var height: Double
     @NSManaged public var quality: Int32
 
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
+
     var actualValueArray: [ActualValueEntity] {
         actualValues?.allObjects as? [ActualValueEntity] ?? []
     }
@@ -557,13 +667,28 @@ public class SetDataEntity: NSManagedObject {
 // MARK: - Actual Value Entity (Dynamic Measurable Actuals)
 
 @objc(ActualValueEntity)
-public class ActualValueEntity: NSManagedObject {
+public class ActualValueEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var measurableName: String  // Matches MeasurableEntity.name
     @NSManaged public var measurableUnit: String  // Copied from MeasurableEntity.unit for display
     @NSManaged public var actualValue: Double     // For numeric measurables
     @NSManaged public var stringValue: String?    // For text-based measurables (e.g., band color)
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
     @NSManaged public var setData: SetDataEntity?
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
 
     /// Whether this actual uses string value (for text-based measurables like band color)
     var isStringBased: Bool {
@@ -589,8 +714,8 @@ public class CustomExerciseTemplateEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var exerciseTypeRaw: String
     @NSManaged public var primaryMusclesRaw: String?
     @NSManaged public var secondaryMusclesRaw: String?
-    @NSManaged public var createdAt: Date
-    @NSManaged public var updatedAt: Date
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
     @NSManaged public var syncedAt: Date?
 
     // Library system fields
@@ -818,8 +943,8 @@ public class ProgramEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var startDate: Date?
     @NSManaged public var endDate: Date?
     @NSManaged public var isActive: Bool
-    @NSManaged public var createdAt: Date
-    @NSManaged public var updatedAt: Date
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
     @NSManaged public var syncedAt: Date?
     @NSManaged public var syncStatusRaw: String
     @NSManaged public var workoutSlots: NSOrderedSet?
@@ -842,7 +967,7 @@ public class ProgramEntity: NSManagedObject, SyncableEntity {
 // MARK: - Program Workout Slot Entity
 
 @objc(ProgramWorkoutSlotEntity)
-public class ProgramWorkoutSlotEntity: NSManagedObject {
+public class ProgramWorkoutSlotEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
     @NSManaged public var workoutId: UUID
     @NSManaged public var workoutName: String
@@ -856,6 +981,18 @@ public class ProgramWorkoutSlotEntity: NSManagedObject {
     @NSManaged public var updatedAt: Date?
     @NSManaged public var syncedAt: Date?
     @NSManaged public var program: ProgramEntity?
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
 
     var scheduleType: SlotScheduleType {
         get { SlotScheduleType(rawValue: scheduleTypeRaw) ?? .weekly }
@@ -876,6 +1013,57 @@ public class ProgramWorkoutSlotEntity: NSManagedObject {
         get { specificDateOffset >= 0 ? Int(specificDateOffset) : nil }
         set { specificDateOffset = Int32(newValue ?? -1) }
     }
+}
+
+// MARK: - Progression Scheme Entity (Library Cache)
+
+@objc(ProgressionSchemeEntity)
+public class ProgressionSchemeEntity: NSManagedObject, SyncableEntity {
+    @NSManaged public var id: UUID
+    @NSManaged public var name: String
+    @NSManaged public var typeRaw: String  // linear, percentage, double_progression
+    @NSManaged public var parametersData: Data?  // JSON encoded dictionary
+    @NSManaged public var isDefault: Bool  // True for prebaked schemes
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
+
+    var schemeType: ProgressionSchemeType {
+        get { ProgressionSchemeType(rawValue: typeRaw) ?? .linear }
+        set { typeRaw = newValue.rawValue }
+    }
+
+    var parameters: [String: Any]? {
+        get {
+            guard let data = parametersData else { return nil }
+            return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        }
+        set {
+            guard let dict = newValue else {
+                parametersData = nil
+                return
+            }
+            parametersData = try? JSONSerialization.data(withJSONObject: dict)
+        }
+    }
+}
+
+enum ProgressionSchemeType: String, Codable {
+    case linear
+    case percentage
+    case doubleProgression = "double_progression"
 }
 
 // MARK: - Sync Queue Entity

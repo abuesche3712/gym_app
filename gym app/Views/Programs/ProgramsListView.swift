@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+// MARK: - Date Identifiable Extension
+
+extension Date: Identifiable {
+    public var id: TimeInterval { timeIntervalSince1970 }
+}
+
 struct ProgramsListView: View {
     @EnvironmentObject private var programViewModel: ProgramViewModel
     @EnvironmentObject private var workoutViewModel: WorkoutViewModel
@@ -14,7 +20,6 @@ struct ProgramsListView: View {
     @State private var showingProgramsSheet = false
     @State private var selectedMonth: Date = Date()
     @State private var selectedDate: Date?
-    @State private var showingDayDetail = false
 
     var body: some View {
         ScrollView {
@@ -46,10 +51,8 @@ struct ProgramsListView: View {
         .sheet(isPresented: $showingProgramsSheet) {
             ProgramsManagementSheet()
         }
-        .sheet(isPresented: $showingDayDetail) {
-            if let date = selectedDate {
-                DayDetailSheet(date: date, scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date))
-            }
+        .sheet(item: $selectedDate) { date in
+            DayDetailSheet(date: date, scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date))
         }
     }
 
@@ -210,7 +213,6 @@ struct ProgramsListView: View {
                         isToday: Calendar.current.isDateInToday(date),
                         onTap: {
                             selectedDate = date
-                            showingDayDetail = true
                         }
                     )
                 }

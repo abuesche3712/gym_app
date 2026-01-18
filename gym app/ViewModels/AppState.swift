@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 import Combine
 
-@MainActor
+@preconcurrency @MainActor
 class AppState: ObservableObject {
     static let shared = AppState()
 

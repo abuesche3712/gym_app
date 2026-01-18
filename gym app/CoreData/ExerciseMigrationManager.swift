@@ -68,13 +68,13 @@ struct ExerciseMigrationManager {
         let modules = try viewContext.fetch(request)
 
         for module in modules {
-            try migrateModule(module)
+            migrateModule(module)
         }
 
         try viewContext.save()
     }
 
-    private func migrateModule(_ module: ModuleEntity) throws {
+    private func migrateModule(_ module: ModuleEntity) {
         // Skip if already has exercise instances
         guard module.exerciseInstanceArray.isEmpty else { return }
 
@@ -106,7 +106,7 @@ struct ExerciseMigrationManager {
             instance.module = module
 
             // Find or create template
-            let template = try findOrCreateTemplate(for: oldExercise)
+            let template = findOrCreateTemplate(for: oldExercise)
             instance.templateId = template.id
 
             // Handle superset group ID (was stored in templateId in old model)

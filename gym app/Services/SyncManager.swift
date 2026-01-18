@@ -10,7 +10,7 @@ import Foundation
 import CoreData
 import Combine
 
-@MainActor
+@preconcurrency @MainActor
 class SyncManager: ObservableObject {
     static let shared = SyncManager()
 
@@ -140,31 +140,25 @@ class SyncManager: ObservableObject {
 
         syncState = .syncing(progress: "Syncing...")
 
-        do {
-            // 1. Pull latest from cloud
-            syncState = .syncing(progress: "Pulling from cloud...")
-            await pullFromCloud()
+        // 1. Pull latest from cloud
+        syncState = .syncing(progress: "Pulling from cloud...")
+        await pullFromCloud()
 
-            // 2. Push any local changes not yet synced
-            syncState = .syncing(progress: "Pushing to cloud...")
-            await pushPendingToCloud()
+        // 2. Push any local changes not yet synced
+        syncState = .syncing(progress: "Pushing to cloud...")
+        await pushPendingToCloud()
 
-            // 3. Flush any queued items
-            syncState = .syncing(progress: "Processing queue...")
-            await processQueue()
+        // 3. Flush any queued items
+        syncState = .syncing(progress: "Processing queue...")
+        await processQueue()
 
-            lastSyncDate = Date()
-            saveLastSyncDate()
-            syncState = .success
+        lastSyncDate = Date()
+        saveLastSyncDate()
+        syncState = .success
 
-            // Reset to idle after brief success indication
-            try? await Task.sleep(nanoseconds: 1_500_000_000)
-            syncState = .idle
-
-        } catch {
-            print("SyncManager: Login sync failed: \(error)")
-            syncState = .error(message: error.localizedDescription)
-        }
+        // Reset to idle after brief success indication
+        try? await Task.sleep(nanoseconds: 1_500_000_000)
+        syncState = .idle
 
         updatePendingCounts()
     }
@@ -255,16 +249,11 @@ class SyncManager: ObservableObject {
     // MARK: - Pull Operations
 
     private func pullFromCloud() async {
-        do {
-            // Pull all user data
-            await dataRepository.syncFromCloud()
+        // Pull all user data
+        await dataRepository.syncFromCloud()
 
-            // Check library updates if needed
-            await checkLibraryUpdates()
-
-        } catch {
-            print("SyncManager: Pull from cloud failed: \(error)")
-        }
+        // Check library updates if needed
+        await checkLibraryUpdates()
     }
 
     private func checkLibraryUpdates() async {
@@ -525,6 +514,11 @@ class SyncManager: ObservableObject {
     func queueScheduledWorkout(_ scheduled: ScheduledWorkout, action: SyncAction) {
         guard let payload = try? JSONEncoder().encode(scheduled) else { return }
         queueSyncItem(entityType: .scheduledWorkout, entityId: scheduled.id, action: action, payload: payload)
+    }
+
+    func queueSession(_ session: Session, action: SyncAction) {
+        guard let payload = try? JSONEncoder().encode(session) else { return }
+        queueSyncItem(entityType: .session, entityId: session.id, action: action, payload: payload)
     }
 
     func queueCustomExercise(_ exercise: ExerciseTemplate, action: SyncAction) {

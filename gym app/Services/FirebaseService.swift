@@ -9,7 +9,7 @@ import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
-@MainActor
+@preconcurrency @MainActor
 class FirestoreService: ObservableObject {
     static let shared = FirestoreService()
 
@@ -21,6 +21,25 @@ class FirestoreService: ObservableObject {
 
     private var userId: String? {
         authService.uid
+    }
+
+    // MARK: - Timestamp Conversion Helper
+
+    /// Recursively converts all Firestore Timestamps to ISO8601 strings throughout a data structure
+    private func convertTimestamps(_ value: Any) -> Any {
+        if let timestamp = value as? Timestamp {
+            return ISO8601DateFormatter().string(from: timestamp.dateValue())
+        } else if let dict = value as? [String: Any] {
+            var result: [String: Any] = [:]
+            for (key, val) in dict {
+                result[key] = convertTimestamps(val)
+            }
+            return result
+        } else if let array = value as? [Any] {
+            return array.map { convertTimestamps($0) }
+        } else {
+            return value
+        }
     }
 
     // MARK: - User Document Reference
@@ -43,7 +62,12 @@ class FirestoreService: ObservableObject {
     func fetchModules() async throws -> [Module] {
         let snapshot = try await userRef().collection("modules").getDocuments()
         return snapshot.documents.compactMap { doc in
-            try? decodeModule(from: doc.data())
+            do {
+                return try decodeModule(from: doc.data())
+            } catch {
+                print("❌ Failed to decode module \(doc.documentID): \(error)")
+                return nil
+            }
         }
     }
 
@@ -62,7 +86,12 @@ class FirestoreService: ObservableObject {
     func fetchWorkouts() async throws -> [Workout] {
         let snapshot = try await userRef().collection("workouts").getDocuments()
         return snapshot.documents.compactMap { doc in
-            try? decodeWorkout(from: doc.data())
+            do {
+                return try decodeWorkout(from: doc.data())
+            } catch {
+                print("❌ Failed to decode workout \(doc.documentID): \(error)")
+                return nil
+            }
         }
     }
 
@@ -81,7 +110,12 @@ class FirestoreService: ObservableObject {
     func fetchSessions() async throws -> [Session] {
         let snapshot = try await userRef().collection("sessions").getDocuments()
         return snapshot.documents.compactMap { doc in
-            try? decodeSession(from: doc.data())
+            do {
+                return try decodeSession(from: doc.data())
+            } catch {
+                print("❌ Failed to decode session \(doc.documentID): \(error)")
+                return nil
+            }
         }
     }
 
@@ -149,7 +183,12 @@ class FirestoreService: ObservableObject {
     func fetchPrograms() async throws -> [Program] {
         let snapshot = try await userRef().collection("programs").getDocuments()
         return snapshot.documents.compactMap { doc in
-            try? decodeProgram(from: doc.data())
+            do {
+                return try decodeProgram(from: doc.data())
+            } catch {
+                print("❌ Failed to decode program \(doc.documentID): \(error)")
+                return nil
+            }
         }
     }
 
@@ -168,7 +207,12 @@ class FirestoreService: ObservableObject {
     func fetchScheduledWorkouts() async throws -> [ScheduledWorkout] {
         let snapshot = try await userRef().collection("scheduledWorkouts").getDocuments()
         return snapshot.documents.compactMap { doc in
-            try? decodeScheduledWorkout(from: doc.data())
+            do {
+                return try decodeScheduledWorkout(from: doc.data())
+            } catch {
+                print("❌ Failed to decode scheduledWorkout \(doc.documentID): \(error)")
+                return nil
+            }
         }
     }
 
@@ -242,17 +286,10 @@ class FirestoreService: ObservableObject {
     }
 
     private func decodeModule(from data: [String: Any]) throws -> Module {
-        var mutableData = data
+        // Recursively convert all Firestore Timestamps to ISO8601 strings
+        let convertedData = convertTimestamps(data) as! [String: Any]
 
-        // Handle Firestore Timestamp
-        if let timestamp = mutableData["updatedAt"] as? Timestamp {
-            mutableData["updatedAt"] = ISO8601DateFormatter().string(from: timestamp.dateValue())
-        }
-        if let timestamp = mutableData["createdAt"] as? Timestamp {
-            mutableData["createdAt"] = ISO8601DateFormatter().string(from: timestamp.dateValue())
-        }
-
-        let jsonData = try JSONSerialization.data(withJSONObject: mutableData)
+        let jsonData = try JSONSerialization.data(withJSONObject: convertedData)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(Module.self, from: jsonData)
@@ -274,16 +311,10 @@ class FirestoreService: ObservableObject {
     }
 
     private func decodeWorkout(from data: [String: Any]) throws -> Workout {
-        var mutableData = data
+        // Recursively convert all Firestore Timestamps to ISO8601 strings
+        let convertedData = convertTimestamps(data) as! [String: Any]
 
-        if let timestamp = mutableData["updatedAt"] as? Timestamp {
-            mutableData["updatedAt"] = ISO8601DateFormatter().string(from: timestamp.dateValue())
-        }
-        if let timestamp = mutableData["createdAt"] as? Timestamp {
-            mutableData["createdAt"] = ISO8601DateFormatter().string(from: timestamp.dateValue())
-        }
-
-        let jsonData = try JSONSerialization.data(withJSONObject: mutableData)
+        let jsonData = try JSONSerialization.data(withJSONObject: convertedData)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(Workout.self, from: jsonData)
@@ -305,19 +336,10 @@ class FirestoreService: ObservableObject {
     }
 
     private func decodeSession(from data: [String: Any]) throws -> Session {
-        var mutableData = data
+        // Recursively convert all Firestore Timestamps to ISO8601 strings
+        let convertedData = convertTimestamps(data) as! [String: Any]
 
-        if let timestamp = mutableData["date"] as? Timestamp {
-            mutableData["date"] = ISO8601DateFormatter().string(from: timestamp.dateValue())
-        }
-        if let timestamp = mutableData["createdAt"] as? Timestamp {
-            mutableData["createdAt"] = ISO8601DateFormatter().string(from: timestamp.dateValue())
-        }
-        if let timestamp = mutableData["updatedAt"] as? Timestamp {
-            mutableData["updatedAt"] = ISO8601DateFormatter().string(from: timestamp.dateValue())
-        }
-
-        let jsonData = try JSONSerialization.data(withJSONObject: mutableData)
+        let jsonData = try JSONSerialization.data(withJSONObject: convertedData)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(Session.self, from: jsonData)
@@ -385,23 +407,10 @@ class FirestoreService: ObservableObject {
     }
 
     private func decodeProgram(from data: [String: Any]) throws -> Program {
-        var mutableData = data
+        // Recursively convert all Firestore Timestamps to ISO8601 strings
+        let convertedData = convertTimestamps(data) as! [String: Any]
 
-        // Handle Firestore Timestamps
-        if let timestamp = mutableData["updatedAt"] as? Timestamp {
-            mutableData["updatedAt"] = ISO8601DateFormatter().string(from: timestamp.dateValue())
-        }
-        if let timestamp = mutableData["createdAt"] as? Timestamp {
-            mutableData["createdAt"] = ISO8601DateFormatter().string(from: timestamp.dateValue())
-        }
-        if let timestamp = mutableData["startDate"] as? Timestamp {
-            mutableData["startDate"] = ISO8601DateFormatter().string(from: timestamp.dateValue())
-        }
-        if let timestamp = mutableData["endDate"] as? Timestamp {
-            mutableData["endDate"] = ISO8601DateFormatter().string(from: timestamp.dateValue())
-        }
-
-        let jsonData = try JSONSerialization.data(withJSONObject: mutableData)
+        let jsonData = try JSONSerialization.data(withJSONObject: convertedData)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(Program.self, from: jsonData)
@@ -427,17 +436,10 @@ class FirestoreService: ObservableObject {
     }
 
     private func decodeScheduledWorkout(from data: [String: Any]) throws -> ScheduledWorkout {
-        var mutableData = data
+        // Recursively convert all Firestore Timestamps to ISO8601 strings
+        let convertedData = convertTimestamps(data) as! [String: Any]
 
-        // Handle Firestore Timestamps
-        if let timestamp = mutableData["scheduledDate"] as? Timestamp {
-            mutableData["scheduledDate"] = ISO8601DateFormatter().string(from: timestamp.dateValue())
-        }
-        if let timestamp = mutableData["createdAt"] as? Timestamp {
-            mutableData["createdAt"] = ISO8601DateFormatter().string(from: timestamp.dateValue())
-        }
-
-        let jsonData = try JSONSerialization.data(withJSONObject: mutableData)
+        let jsonData = try JSONSerialization.data(withJSONObject: convertedData)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(ScheduledWorkout.self, from: jsonData)

@@ -10,7 +10,7 @@ import AuthenticationServices
 import FirebaseAuth
 import FirebaseFirestore
 
-@MainActor
+@preconcurrency @MainActor
 class AuthService: NSObject, ObservableObject {
     static let shared = AuthService()
 
