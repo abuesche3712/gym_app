@@ -35,8 +35,8 @@ class WorkoutViewModel: ObservableObject {
         }
     }
 
-    init(repository: DataRepository = .shared) {
-        self.repository = repository
+    init(repository: DataRepository? = nil) {
+        self.repository = repository ?? DataRepository.shared
         loadWorkouts()
         loadScheduledWorkouts()
         setupSyncNotifications()
@@ -70,7 +70,7 @@ class WorkoutViewModel: ObservableObject {
         for cloudItem in cloudScheduled {
             // Skip if this scheduled workout was deleted locally
             if deletedScheduledWorkoutIds.contains(cloudItem.id) {
-                print("mergeScheduledWorkoutsFromCloud: Skipping '\(cloudItem.workoutName ?? "Rest Day")' - was deleted locally")
+                Logger.verbose("Skipping '\(cloudItem.workoutName)' - was deleted locally")
                 continue
             }
 
@@ -94,7 +94,7 @@ class WorkoutViewModel: ObservableObject {
             do {
                 try await firestoreService.saveScheduledWorkout(scheduled)
             } catch {
-                print("Failed to sync scheduled workout \(scheduled.id): \(error)")
+                Logger.error(error, context: "syncScheduledWorkout")
             }
         }
     }
@@ -105,7 +105,7 @@ class WorkoutViewModel: ObservableObject {
             do {
                 try await firestoreService.saveScheduledWorkout(scheduled)
             } catch {
-                print("Failed to sync scheduled workout: \(error)")
+                Logger.error(error, context: "syncScheduledWorkoutToCloud")
             }
         }
     }
@@ -113,7 +113,7 @@ class WorkoutViewModel: ObservableObject {
     private func queueScheduledWorkoutDeletionForCloud(_ scheduled: ScheduledWorkout) {
         guard authService.isAuthenticated else { return }
         SyncManager.shared.queueScheduledWorkout(scheduled, action: .delete)
-        print("unscheduleWorkout: Queued deletion for cloud sync")
+        Logger.debug("Queued scheduled workout deletion for cloud sync")
     }
 
     // MARK: - Workout Operations
@@ -182,7 +182,7 @@ class WorkoutViewModel: ObservableObject {
         do {
             scheduledWorkouts = try JSONDecoder().decode([ScheduledWorkout].self, from: data)
         } catch {
-            print("Error loading scheduled workouts: \(error)")
+            Logger.error(error, context: "loadScheduledWorkouts")
             scheduledWorkouts = []
         }
     }
@@ -192,7 +192,7 @@ class WorkoutViewModel: ObservableObject {
             let data = try JSONEncoder().encode(scheduledWorkouts)
             UserDefaults.standard.set(data, forKey: scheduledWorkoutsKey)
         } catch {
-            print("Error saving scheduled workouts: \(error)")
+            Logger.error(error, context: "saveScheduledWorkouts")
         }
     }
 
@@ -231,7 +231,7 @@ class WorkoutViewModel: ObservableObject {
         var deleted = deletedScheduledWorkoutIds
         deleted.insert(scheduledWorkout.id)
         deletedScheduledWorkoutIds = deleted
-        print("unscheduleWorkout: Tracked deletion of '\(scheduledWorkout.workoutName ?? "Rest Day")' (id: \(scheduledWorkout.id))")
+        Logger.verbose("Tracked deletion of '\(scheduledWorkout.workoutName)'")
 
         queueScheduledWorkoutDeletionForCloud(scheduledWorkout)
     }
@@ -260,14 +260,14 @@ class WorkoutViewModel: ObservableObject {
             deleted.insert(scheduled.id)
         }
         deletedScheduledWorkoutIds = deleted
-        print("removeScheduledWorkoutsForProgram: Tracked \(toRemove.count) deletions")
+        Logger.verbose("Tracked \(toRemove.count) scheduled workout deletions for program")
 
         // Queue deletions for cloud sync
         if authService.isAuthenticated {
             for scheduled in toRemove {
                 SyncManager.shared.queueScheduledWorkout(scheduled, action: .delete)
             }
-            print("removeScheduledWorkoutsForProgram: Queued \(toRemove.count) deletions for cloud sync")
+            Logger.debug("Queued \(toRemove.count) scheduled workout deletions for cloud sync")
         }
     }
 

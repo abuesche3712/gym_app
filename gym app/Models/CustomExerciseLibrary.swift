@@ -42,7 +42,7 @@ class CustomExerciseLibrary: ObservableObject {
                 )
             }
         } catch {
-            print("Error loading custom exercises: \(error)")
+            Logger.error(error, context: "loadCustomExercises")
         }
     }
 
@@ -99,7 +99,7 @@ class CustomExerciseLibrary: ObservableObject {
                 loadExercises()
             }
         } catch {
-            print("Error updating custom exercise: \(error)")
+            Logger.error(error, context: "updateCustomExercise")
         }
     }
 
@@ -118,11 +118,11 @@ class CustomExerciseLibrary: ObservableObject {
                 // Queue deletion for cloud sync if authenticated
                 if AuthService.shared.isAuthenticated {
                     SyncManager.shared.queueCustomExercise(template, action: .delete)
-                    print("deleteExercise: Queued deletion for cloud sync")
+                    Logger.debug("Queued custom exercise deletion for cloud sync")
                 }
             }
         } catch {
-            print("Error deleting custom exercise: \(error)")
+            Logger.error(error, context: "deleteCustomExercise")
         }
     }
 
@@ -144,7 +144,7 @@ class CustomExerciseLibrary: ObservableObject {
                 loadExercises()
             }
         } catch {
-            print("Error deleting custom exercise: \(error)")
+            Logger.error(error, context: "deleteCustomExerciseByName")
         }
     }
 

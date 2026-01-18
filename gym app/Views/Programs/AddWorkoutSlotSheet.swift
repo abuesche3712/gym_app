@@ -109,6 +109,14 @@ struct AddWorkoutSlotSheet: View {
             weekNumber: scheduleType == .specificWeek ? specificWeek : nil
         )
 
+        // If program is active, update the schedule to include the new slot
+        if program.isActive {
+            // Reload to get the updated program with the new slot
+            if let updatedProgram = programViewModel.programs.first(where: { $0.id == program.id }) {
+                programViewModel.updateActiveProgramSchedule(updatedProgram)
+            }
+        }
+
         dismiss()
     }
 }

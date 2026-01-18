@@ -17,10 +17,14 @@ func formatTime(_ seconds: Int) -> String {
 }
 
 /// Formats duration with context - shows seconds only if under a minute
-/// e.g., 45 -> "45s", 90 -> "1:30", 3600 -> "60:00"
+/// e.g., 45 -> "45s", 90 -> "1:30", 3600 -> "1:00:00", 3665 -> "1:01:05"
 func formatDuration(_ seconds: Int) -> String {
-    let mins = seconds / 60
+    let hours = seconds / 3600
+    let mins = (seconds % 3600) / 60
     let secs = seconds % 60
+    if hours > 0 {
+        return String(format: "%d:%02d:%02d", hours, mins, secs)
+    }
     if mins > 0 {
         return String(format: "%d:%02d", mins, secs)
     }

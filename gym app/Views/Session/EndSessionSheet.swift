@@ -561,7 +561,7 @@ struct SetEditSheet: View {
                     }
 
                 case .cardio:
-                    TimePickerView(totalSeconds: $duration, maxMinutes: 60, label: "Duration")
+                    TimePickerView(totalSeconds: $duration, maxMinutes: 60, maxHours: 4, label: "Duration")
                     HStack {
                         TextField("Distance", text: $distance)
                             .keyboardType(.decimalPad)
@@ -585,7 +585,7 @@ struct SetEditSheet: View {
                     TimePickerView(totalSeconds: $duration, maxMinutes: 10, label: "Duration")
 
                 case .recovery:
-                    TimePickerView(totalSeconds: $duration, maxMinutes: 60, label: "Duration")
+                    TimePickerView(totalSeconds: $duration, maxMinutes: 60, maxHours: 4, label: "Duration")
                     TextField("Temperature (°F)", text: $temperature)
                         .keyboardType(.numberPad)
                 }

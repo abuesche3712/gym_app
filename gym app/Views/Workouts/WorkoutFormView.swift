@@ -41,16 +41,18 @@ struct WorkoutFormView: View {
                 } else {
                     ForEach(selectedModuleIds, id: \.self) { moduleId in
                         if let module = moduleViewModel.getModule(id: moduleId) {
-                            HStack {
-                                Image(systemName: module.type.icon)
-                                    .foregroundStyle(module.type.color)
+                            NavigationLink(destination: ModuleDetailView(module: module)) {
+                                HStack {
+                                    Image(systemName: module.type.icon)
+                                        .foregroundStyle(module.type.color)
 
-                                VStack(alignment: .leading) {
-                                    Text(module.name)
-                                        .font(.subheadline)
-                                    Text(module.type.displayName)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                    VStack(alignment: .leading) {
+                                        Text(module.name)
+                                            .font(.subheadline)
+                                        Text("\(module.exercises.count) exercises")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
                             }
                         }
@@ -270,27 +272,28 @@ struct ModulePickerView: View {
                             }
                             dismiss()
                         } label: {
-                            HStack {
+                            HStack(spacing: 12) {
                                 Image(systemName: module.type.icon)
                                     .foregroundStyle(module.type.color)
+                                    .frame(width: 24)
 
-                                VStack(alignment: .leading) {
+                                VStack(alignment: .leading, spacing: 2) {
                                     Text(module.name)
                                         .font(.subheadline)
                                     Text("\(module.exercises.count) exercises")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
-
-                                Spacer()
+                                .frame(maxWidth: .infinity, alignment: .leading)
 
                                 if selectedModuleIds.contains(module.id) {
                                     Image(systemName: "checkmark")
                                         .foregroundStyle(.blue)
                                 }
                             }
+                            .contentShape(Rectangle())
                         }
-                        .foregroundStyle(.primary)
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -387,7 +390,7 @@ struct QuickExerciseFormView: View {
                                 }
                             }
                             if cardioMetric.tracksTime {
-                                TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, label: "Duration")
+                                TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, maxHours: 4, label: "Duration")
                             }
                             if cardioMetric.tracksDistance {
                                 HStack {
@@ -413,7 +416,7 @@ struct QuickExerciseFormView: View {
                             Stepper("Reps: \(reps)", value: $reps, in: 1...100)
 
                         case .recovery:
-                            TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, label: "Duration")
+                            TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, maxHours: 4, label: "Duration")
                         }
 
                         Stepper("Rest: \(restPeriod)s", value: $restPeriod, in: 0...300, step: 15)

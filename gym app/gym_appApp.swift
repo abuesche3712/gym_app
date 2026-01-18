@@ -11,6 +11,10 @@ import FirebaseCore
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // Mark startup began FIRST - before any other initialization
+        // This detects crashes during startup
+        StartupGuard.markStartupBegan()
+
         FirebaseApp.configure()
         return true
     }
@@ -25,14 +29,18 @@ struct gym_appApp: App {
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                .onAppear {
+                    // Mark startup as successful once UI appears
+                    StartupGuard.markStartupSucceeded()
+                }
                 .task {
                     // Wait for Firebase to restore auth state, then sync
                     let isAuthenticated = await authService.waitForAuthState()
                     if isAuthenticated {
-                        print("App launch: Auth restored, starting sync...")
+                        Logger.debug("App launch: Auth restored, starting sync...")
                         await dataRepository.syncFromCloud()
                     } else {
-                        print("App launch: Not authenticated, skipping sync")
+                        Logger.debug("App launch: Not authenticated, skipping sync")
                     }
                 }
         }

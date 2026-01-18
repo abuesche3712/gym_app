@@ -427,7 +427,7 @@ struct ScheduledWorkoutDetailRow: View {
     var body: some View {
         VStack(spacing: 0) {
             // Main content - tappable to view workout details
-            NavigationLink(destination: WorkoutDetailView(workout: workout)) {
+            NavigationLink(destination: WorkoutFormView(workout: workout)) {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "calendar.badge.clock")
                         .foregroundColor(AppColors.accentBlue)

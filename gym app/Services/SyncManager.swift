@@ -21,6 +21,7 @@ class SyncManager: ObservableObject {
     private let firestoreService = FirestoreService.shared
     private let networkMonitor = NetworkMonitorService.shared
     private let persistence = PersistenceController.shared
+    private let logger = SyncLogger.shared
 
     private var viewContext: NSManagedObjectContext {
         persistence.container.viewContext
@@ -128,12 +129,12 @@ class SyncManager: ObservableObject {
     /// Full sync on login/app launch - pulls from cloud then pushes local changes
     func syncOnLogin() async {
         guard syncEnabled else {
-            print("SyncManager: Not authenticated, skipping login sync")
+            logger.info("Not authenticated, skipping login sync", context: "SyncManager")
             return
         }
 
         guard isOnline else {
-            print("SyncManager: Offline, skipping login sync")
+            logger.warning("Offline, skipping login sync", context: "SyncManager")
             syncState = .offline
             return
         }
@@ -180,7 +181,7 @@ class SyncManager: ObservableObject {
         )
 
         guard let payload = try? JSONEncoder().encode(setPayload) else {
-            print("SyncManager: Failed to encode set for sync")
+            logger.error("Failed to encode set for sync", context: "SyncManager.syncSet")
             return
         }
 
@@ -205,7 +206,7 @@ class SyncManager: ObservableObject {
         guard syncEnabled else { return }
 
         guard let payload = try? JSONEncoder().encode(session) else {
-            print("SyncManager: Failed to encode session for sync")
+            logger.error("Failed to encode session for sync", context: "SyncManager.syncCompletedWorkout")
             return
         }
 
@@ -213,9 +214,9 @@ class SyncManager: ObservableObject {
             // Try immediate sync
             do {
                 try await firestoreService.saveSession(session)
-                print("SyncManager: Session synced immediately")
+                logger.info("Session synced immediately", context: "SyncManager.syncCompletedWorkout")
             } catch {
-                print("SyncManager: Immediate session sync failed, queuing: \(error)")
+                logger.logError(error, context: "SyncManager.syncCompletedWorkout", additionalInfo: "Immediate sync failed, queuing")
                 queueSyncItem(
                     entityType: .session,
                     entityId: session.id,
@@ -264,9 +265,9 @@ class SyncManager: ObservableObject {
             do {
                 _ = try await firestoreService.fetchExerciseLibrary()
                 metadata.exerciseLibraryLastSync = Date()
-                print("SyncManager: Exercise library updated")
+                logger.info("Exercise library updated", context: "SyncManager.checkLibraryUpdates")
             } catch {
-                print("SyncManager: Failed to fetch exercise library: \(error)")
+                logger.logError(error, context: "SyncManager.checkLibraryUpdates", additionalInfo: "Failed to fetch exercise library")
             }
         }
 
@@ -275,9 +276,9 @@ class SyncManager: ObservableObject {
             do {
                 _ = try await firestoreService.fetchEquipmentLibrary()
                 metadata.equipmentLibraryLastSync = Date()
-                print("SyncManager: Equipment library updated")
+                logger.info("Equipment library updated", context: "SyncManager.checkLibraryUpdates")
             } catch {
-                print("SyncManager: Failed to fetch equipment library: \(error)")
+                logger.logError(error, context: "SyncManager.checkLibraryUpdates", additionalInfo: "Failed to fetch equipment library")
             }
         }
 
@@ -286,9 +287,9 @@ class SyncManager: ObservableObject {
             do {
                 _ = try await firestoreService.fetchProgressionSchemes()
                 metadata.progressionSchemesLastSync = Date()
-                print("SyncManager: Progression schemes updated")
+                logger.info("Progression schemes updated", context: "SyncManager.checkLibraryUpdates")
             } catch {
-                print("SyncManager: Failed to fetch progression schemes: \(error)")
+                logger.logError(error, context: "SyncManager.checkLibraryUpdates", additionalInfo: "Failed to fetch progression schemes")
             }
         }
 
@@ -316,9 +317,9 @@ class SyncManager: ObservableObject {
         do {
             try viewContext.save()
             updatePendingCounts()
-            print("SyncManager: Queued \(entityType.rawValue) \(entityId) for \(action.rawValue)")
+            logger.info("Queued \(entityType.rawValue) \(entityId) for \(action.rawValue)", context: "SyncManager.queueSyncItem")
         } catch {
-            print("SyncManager: Failed to queue sync item: \(error)")
+            logger.logError(error, context: "SyncManager.queueSyncItem", additionalInfo: "Failed to queue sync item")
         }
     }
 
@@ -342,7 +343,7 @@ class SyncManager: ObservableObject {
                 await processQueueItem(item)
             }
         } catch {
-            print("SyncManager: Failed to fetch queue items: \(error)")
+            logger.logError(error, context: "SyncManager.processQueue", additionalInfo: "Failed to fetch queue items")
         }
 
         updatePendingCounts()
@@ -374,7 +375,7 @@ class SyncManager: ObservableObject {
             // Success - remove from queue
             viewContext.delete(item)
             try viewContext.save()
-            print("SyncManager: Successfully synced \(item.entityType.rawValue) \(item.entityId)")
+            logger.info("Successfully synced \(item.entityType.rawValue) \(item.entityId)", context: "SyncManager.processQueueItem")
 
         } catch {
             // Failed - increment retry count
@@ -384,11 +385,11 @@ class SyncManager: ObservableObject {
 
             do {
                 try viewContext.save()
-            } catch {
-                print("SyncManager: Failed to update queue item: \(error)")
+            } catch let saveError {
+                logger.logError(saveError, context: "SyncManager.processQueueItem", additionalInfo: "Failed to update queue item")
             }
 
-            print("SyncManager: Failed to sync \(item.entityType.rawValue) \(item.entityId), retry \(item.retryCount): \(error)")
+            logger.logError(error, context: "SyncManager.processQueueItem", additionalInfo: "Failed to sync \(item.entityType.rawValue) \(item.entityId), retry \(item.retryCount)")
         }
     }
 
@@ -541,7 +542,7 @@ class SyncManager: ObservableObject {
             pendingSyncCount = allItems.filter { !$0.needsManualIntervention }.count
             failedSyncCount = allItems.filter { $0.needsManualIntervention }.count
         } catch {
-            print("SyncManager: Failed to count pending items: \(error)")
+            logger.logError(error, context: "SyncManager.updatePendingCounts", additionalInfo: "Failed to count pending items")
         }
     }
 
@@ -557,8 +558,9 @@ class SyncManager: ObservableObject {
             }
             try viewContext.save()
             updatePendingCounts()
+            logger.info("Cleared \(failedItems.count) failed sync items", context: "SyncManager.clearFailedSyncs")
         } catch {
-            print("SyncManager: Failed to clear failed syncs: \(error)")
+            logger.logError(error, context: "SyncManager.clearFailedSyncs", additionalInfo: "Failed to clear failed syncs")
         }
     }
 

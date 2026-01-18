@@ -24,6 +24,9 @@ import Foundation
 /// - ExerciseInstance: Lightweight reference stored in modules
 /// - ResolvedExercise: Hydrated view model for UI
 struct Exercise: Identifiable, Codable, Hashable {
+    // Schema version for migration support
+    var schemaVersion: Int = SchemaVersions.exercise
+
     var id: UUID
     var name: String
     var templateId: UUID?  // Links to ExerciseLibrary for progress tracking
@@ -93,6 +96,28 @@ struct Exercise: Identifiable, Codable, Hashable {
     // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Decode schema version (default to 1 for backward compatibility)
+        let version = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
+        schemaVersion = SchemaVersions.exercise  // Always store current version
+
+        // Handle migrations based on version
+        switch version {
+        case 1:
+            // V1 is current - decode normally
+            break
+        // Future versions:
+        // case 2:
+        //     if let migrated = try ExerciseMigrations.migrateFromV2(container: container) {
+        //         self = migrated
+        //         return
+        //     }
+        default:
+            // Unknown future version - attempt to decode with defaults
+            break
+        }
+
+        // Decode all fields with defaults for backward compatibility
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
         templateId = try container.decodeIfPresent(UUID.self, forKey: .templateId)
@@ -112,7 +137,8 @@ struct Exercise: Identifiable, Codable, Hashable {
         recoveryActivityType = try container.decodeIfPresent(RecoveryActivityType.self, forKey: .recoveryActivityType)
     }
 
-    private enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
+        case schemaVersion
         case id, name, templateId, exerciseType, cardioMetric, mobilityTracking, distanceUnit
         case setGroups, trackingMetrics, supersetGroupId, notes, createdAt, updatedAt
         case muscleGroupIds, implementIds, isBodyweight, recoveryActivityType

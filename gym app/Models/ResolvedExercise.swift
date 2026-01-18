@@ -181,6 +181,34 @@ extension ResolvedExercise {
     }
 }
 
+// MARK: - Legacy Bridge
+
+extension ResolvedExercise {
+    /// Converts this ResolvedExercise to a legacy Exercise for backward compatibility.
+    /// Used during the migration period while SessionViewModel still expects Exercise objects.
+    func toLegacyExercise() -> Exercise {
+        Exercise(
+            id: instance.id,
+            name: name,
+            templateId: templateId,
+            exerciseType: exerciseType,
+            cardioMetric: cardioMetric,
+            mobilityTracking: mobilityTracking,
+            distanceUnit: distanceUnit,
+            setGroups: setGroups,
+            trackingMetrics: trackingMetrics,
+            supersetGroupId: supersetGroupId,
+            notes: notes,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            muscleGroupIds: muscleGroupIds,
+            implementIds: implementIds,
+            isBodyweight: isBodyweight,
+            recoveryActivityType: recoveryActivityType
+        )
+    }
+}
+
 // MARK: - ExerciseInstance Extension
 
 extension ExerciseInstance {

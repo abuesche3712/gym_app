@@ -1,13 +1,13 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2025-01-13
+> **Last updated:** 2025-01-18
 
 ## Last Session Summary
-- Modularized ActiveSessionView.swift into 6 separate files
-- Added live workout modification features (add sets, substitute exercise, add exercise to module)
-- Discussed infrastructure priorities: UX polish → auth → data model → sync → backend
-- Firebase strategy: CRUD only, keep abstracted for easy future migration
+- Fixed Swift 6 concurrency warnings (moved `.shared` access from default params to init bodies)
+- Implemented deep merge strategy for sync conflict resolution
+- Added `mergedWith()`, `contentHash`, `needsSync()` to Module and Workout
+- Created ModuleMergeTests.swift with comprehensive unit tests
 
 ## Project Overview
 
@@ -92,6 +92,144 @@ protocol CloudSyncService {
     // etc.
 }
 ```
+
+### Sync & Merge Strategy (Jan 2025)
+
+**Problem solved:** Module has `updatedAt`, nested Exercise also has `updatedAt`. If Device A edits Exercise 1 and Device B edits Exercise 2 in the same Module, simple module-level comparison would lose one edit.
+
+**Solution:** Deep merge at the entity level:
+- Compare each nested Exercise by its own `updatedAt`
+- Keep the newer version of each individual exercise
+- Module metadata (name, type, notes) uses last-write-wins from newer `updatedAt`
+
+**Key methods added to Module and Workout:**
+```swift
+// Deep merge: keeps newer version of each nested entity
+func mergedWith(_ cloudModule: Module) -> Module
+
+// Quick dirty-check via content hash
+var contentHash: Int { ... }
+
+// Compare for changes
+func needsSync(comparedTo other: Module) -> Bool
+```
+
+**Merge behavior:**
+| Scenario | Result |
+|----------|--------|
+| Local edits Ex A, cloud edits Ex B | Both edits preserved |
+| Both edit same exercise | Newer `updatedAt` wins |
+| Local deletes, cloud edits | Cloud version added back (no tombstones yet) |
+| Cloud adds new exercise | Added to merged result |
+
+**Dirty-checking:** `contentHash` combines name, type, notes, and all nested entity IDs/timestamps. If hashes match, skip the save.
+
+**Test coverage:** `ModuleMergeTests.swift` covers all scenarios above.
+
+### Schema Versioning (Jan 2025)
+
+All Codable models now include schema versioning for safe future migrations.
+
+**Central version registry:** `SchemaVersions.swift`
+```swift
+enum SchemaVersions {
+    static let exercise = 1
+    static let exerciseInstance = 1
+    static let module = 1
+    static let workout = 1
+    static let session = 1
+    static let program = 1
+    static let setGroup = 1
+    static let scheduledWorkout = 1
+}
+```
+
+**How it works:**
+1. Each model has `schemaVersion: Int` property (defaults to current version from `SchemaVersions`)
+2. Decoder reads version with `decodeIfPresent` (defaults to 1 for backward compatibility)
+3. Switch on version in `init(from decoder:)` to handle migrations
+4. Always stores current version after decoding
+
+**Migration pattern:**
+```swift
+init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    let version = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
+    schemaVersion = SchemaVersions.exercise  // Always current
+
+    switch version {
+    case 1:
+        break  // Current version
+    case 2:
+        // Future: migrate from v2 format
+        break
+    default:
+        break  // Unknown future version - best effort
+    }
+    // ... decode fields
+}
+```
+
+**To bump a version:**
+1. Increment version in `SchemaVersions`
+2. Add migration case in decoder's switch statement
+3. Implement migration logic in `*Migrations` enum if complex
+4. Update this documentation
+
+**Models with versioning:** Exercise, ExerciseInstance, Module, Workout, Session, Program
+
+### Logging & Debug Configuration (Jan 2025)
+
+The app uses a centralized logging system that respects debug/release builds.
+
+**Configuration:** `AppConfig.swift`
+```swift
+enum AppConfig {
+    static var isDebug: Bool          // true in DEBUG builds
+    static var isTestFlight: Bool     // true for TestFlight builds
+    static var enableSyncLogging: Bool     // DEBUG + TestFlight
+    static var enablePerformanceLogging: Bool  // DEBUG only
+    static var showDebugUI: Bool      // DEBUG + TestFlight
+
+    // Performance thresholds (seconds)
+    static let slowSyncThreshold: TimeInterval = 2.0
+    static let slowLoadThreshold: TimeInterval = 0.5
+    static let slowSaveThreshold: TimeInterval = 0.3
+}
+```
+
+**Logger utility:** `Logger.swift`
+```swift
+Logger.debug("message")    // DEBUG only, includes file:line
+Logger.verbose("message")  // DEBUG only, requires enableVerboseLogging
+Logger.info("message")     // DEBUG only
+Logger.warning("message")  // DEBUG only
+Logger.error("message")    // Always logs (DEBUG + RELEASE)
+Logger.error(error, context:) // Error objects
+
+// Sync logging (persisted via SyncLogger)
+Logger.syncInfo("msg", context:)
+Logger.syncWarning("msg", context:)
+Logger.syncError("msg", context:)
+
+// Performance logging
+Logger.performance("operation", duration:, threshold:)
+Logger.measure("operation") { ... }       // Sync operations
+Logger.measureAsync("operation") { ... }  // Async operations
+PerformanceTimer("operation")             // Manual timing
+
+// Sensitive data redaction
+Logger.redactUUID(uuid)    // "12345678..."
+Logger.redactUserID(id)    // "1234..."
+Logger.redactEmail(email)  // "ab***@example.com"
+```
+
+**Rules:**
+- Never log sensitive data (user IDs, emails, full UUIDs) even in DEBUG
+- Use `Logger.redact*()` helpers when logging identifiers
+- `Logger.error()` always logs - use for critical issues
+- Use `Logger.verbose()` for detailed tracing (off by default)
+- SyncLogger persists logs to CoreData for debugging sync issues
 
 ### Pending Items from Plan File
 Located at: `~/.claude/plans/structured-churning-stream.md`

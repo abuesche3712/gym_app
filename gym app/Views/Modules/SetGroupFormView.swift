@@ -190,7 +190,7 @@ struct SetGroupFormView: View {
 
         case .cardio:
             if cardioMetric.tracksTime {
-                TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, label: "Target Duration")
+                TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, maxHours: 4, label: "Target Duration")
             }
 
             if cardioMetric.tracksDistance {
@@ -215,7 +215,7 @@ struct SetGroupFormView: View {
             implementMeasurableField
 
         case .recovery:
-            TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, label: "Duration")
+            TimePickerView(totalSeconds: $targetDuration, maxMinutes: 60, maxHours: 4, label: "Duration")
         }
     }
 

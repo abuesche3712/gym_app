@@ -215,19 +215,9 @@ struct WorkoutModuleRow: View {
 struct FeelingIndicator: View {
     let feeling: Int
 
-    var emoji: String {
-        switch feeling {
-        case 1: return "😫"
-        case 2: return "😕"
-        case 3: return "😐"
-        case 4: return "🙂"
-        case 5: return "💪"
-        default: return "😐"
-        }
-    }
-
     var body: some View {
-        Text(emoji)
+        Text("\(feeling)")
+            .font(.caption.bold())
     }
 }
 

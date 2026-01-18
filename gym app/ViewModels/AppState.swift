@@ -135,7 +135,7 @@ class AppState: ObservableObject {
         do {
             try await firestoreService.saveUserProfile(profile)
         } catch {
-            print("Failed to sync user profile to cloud: \(error)")
+            Logger.error(error, context: "syncUserProfileToCloud")
         }
     }
 
@@ -148,7 +148,7 @@ class AppState: ObservableObject {
 
     func triggerSync() async {
         guard authService.isAuthenticated else {
-            print("triggerSync: Not authenticated")
+            Logger.debug("triggerSync: Not authenticated")
             return
         }
 

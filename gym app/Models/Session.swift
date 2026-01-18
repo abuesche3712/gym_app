@@ -8,6 +8,9 @@
 import Foundation
 
 struct Session: Identifiable, Codable, Hashable {
+    // Schema version for migration support
+    var schemaVersion: Int = SchemaVersions.session
+
     var id: UUID
     var workoutId: UUID
     var workoutName: String // Denormalized for easy display
@@ -49,6 +52,21 @@ struct Session: Identifiable, Codable, Hashable {
     // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Decode schema version (default to 1 for backward compatibility)
+        let version = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
+        schemaVersion = SchemaVersions.session  // Always store current version
+
+        // Handle migrations based on version
+        switch version {
+        case 1:
+            // V1 is current - decode normally
+            break
+        default:
+            // Unknown future version - attempt to decode with defaults
+            break
+        }
+
         id = try container.decode(UUID.self, forKey: .id)
         workoutId = try container.decode(UUID.self, forKey: .workoutId)
         workoutName = try container.decodeIfPresent(String.self, forKey: .workoutName) ?? "Unknown"
@@ -62,7 +80,8 @@ struct Session: Identifiable, Codable, Hashable {
         syncStatus = try container.decodeIfPresent(SyncStatus.self, forKey: .syncStatus) ?? .synced
     }
 
-    private enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
+        case schemaVersion
         case id, workoutId, workoutName, date, completedModules, skippedModuleIds, duration, overallFeeling, notes, createdAt, syncStatus
     }
 

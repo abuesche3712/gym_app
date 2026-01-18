@@ -370,21 +370,43 @@ struct DraggableModuleCard: View {
 struct TimePickerView: View {
     @Binding var totalSeconds: Int
     var maxMinutes: Int = 10
+    var maxHours: Int = 0  // Set > 0 to show hours picker (for cardio)
     var label: String = "Time"
     var compact: Bool = false
     var secondsStep: Int = 5  // Step size for seconds (1 for fine control, 5 for quick selection)
 
+    private var showHours: Bool { maxHours > 0 }
+
+    private var hours: Binding<Int> {
+        Binding(
+            get: { totalSeconds / 3600 },
+            set: { totalSeconds = $0 * 3600 + (totalSeconds % 3600) }
+        )
+    }
+
     private var minutes: Binding<Int> {
         Binding(
-            get: { totalSeconds / 60 },
-            set: { totalSeconds = $0 * 60 + (totalSeconds % 60) }
+            get: { showHours ? (totalSeconds % 3600) / 60 : totalSeconds / 60 },
+            set: {
+                if showHours {
+                    totalSeconds = (totalSeconds / 3600) * 3600 + $0 * 60 + (totalSeconds % 60)
+                } else {
+                    totalSeconds = $0 * 60 + (totalSeconds % 60)
+                }
+            }
         )
     }
 
     private var seconds: Binding<Int> {
         Binding(
             get: { totalSeconds % 60 },
-            set: { totalSeconds = (totalSeconds / 60) * 60 + $0 }
+            set: {
+                if showHours {
+                    totalSeconds = (totalSeconds / 3600) * 3600 + ((totalSeconds % 3600) / 60) * 60 + $0
+                } else {
+                    totalSeconds = (totalSeconds / 60) * 60 + $0
+                }
+            }
         )
     }
 
@@ -401,20 +423,37 @@ struct TimePickerView: View {
             }
 
             HStack(spacing: 0) {
+                if showHours {
+                    // Hours picker
+                    Picker("Hours", selection: hours) {
+                        ForEach(0...maxHours, id: \.self) { hr in
+                            Text("\(hr)").tag(hr)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(width: 50)
+                    .clipped()
+
+                    Text("hr")
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.textSecondary)
+                        .frame(width: 25)
+                }
+
                 // Minutes picker
                 Picker("Minutes", selection: minutes) {
-                    ForEach(0...maxMinutes, id: \.self) { min in
-                        Text("\(min)").tag(min)
+                    ForEach(0..<(showHours ? 60 : maxMinutes + 1), id: \.self) { min in
+                        Text(showHours ? String(format: "%02d", min) : "\(min)").tag(min)
                     }
                 }
                 .pickerStyle(.wheel)
-                .frame(width: 60)
+                .frame(width: showHours ? 50 : 60)
                 .clipped()
 
                 Text("min")
                     .font(.subheadline)
                     .foregroundColor(AppColors.textSecondary)
-                    .frame(width: 30)
+                    .frame(width: showHours ? 28 : 30)
 
                 // Seconds picker
                 Picker("Seconds", selection: seconds) {
@@ -423,13 +462,13 @@ struct TimePickerView: View {
                     }
                 }
                 .pickerStyle(.wheel)
-                .frame(width: 60)
+                .frame(width: showHours ? 50 : 60)
                 .clipped()
 
                 Text("sec")
                     .font(.subheadline)
                     .foregroundColor(AppColors.textSecondary)
-                    .frame(width: 30)
+                    .frame(width: showHours ? 28 : 30)
             }
             .frame(height: compact ? 100 : 120)
             .background(

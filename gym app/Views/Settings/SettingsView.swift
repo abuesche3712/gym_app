@@ -14,6 +14,9 @@ struct SettingsView: View {
     @State private var showingAbout = false
     @State private var showingSignIn = false
     @State private var showingDeleteConfirmation = false
+    @State private var showingSyncLogs = false
+    @State private var debugTapCount = 0
+    @State private var showingRecoveryReset = false
 
     var body: some View {
         NavigationStack {
@@ -57,6 +60,11 @@ struct SettingsView: View {
                         cloudSyncSection
                     }
 
+                    // Recovery Mode Section (show when in recovery mode or debug)
+                    if StartupGuard.isInRecoveryMode || AppConfig.showDebugUI {
+                        recoveryModeSection
+                    }
+
                     // Data Section
                     SettingsSection(title: "Data") {
                         NavigationLink {
@@ -84,19 +92,34 @@ struct SettingsView: View {
                         }
                     }
 
-                    // About Section
-                    SettingsSection(title: "About") {
-                        SettingsRow(icon: "info.circle", title: "Version") {
-                            Text("1.0.0 MVP")
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.textSecondary)
-                        }
+                    // About Section (triple-tap "About" title to access debug logs)
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("ABOUT")
+                            .font(.caption.weight(.semibold))
+                            .foregroundColor(AppColors.textTertiary)
+                            .padding(.leading, AppSpacing.xs)
+                            .onTapGesture(count: 3) {
+                                showingSyncLogs = true
+                            }
 
-                        Button {
-                            showingAbout = true
-                        } label: {
-                            SettingsRowLabel(icon: "questionmark.circle", title: "About Gym App")
+                        VStack(spacing: 0) {
+                            SettingsRow(icon: "info.circle", title: "Version") {
+                                Text("1.0.0 MVP")
+                                    .font(.subheadline)
+                                    .foregroundColor(AppColors.textSecondary)
+                            }
+
+                            Button {
+                                showingAbout = true
+                            } label: {
+                                SettingsRowLabel(icon: "questionmark.circle", title: "About Gym App")
+                            }
                         }
+                        .padding(.horizontal, AppSpacing.md)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppCorners.large)
+                                .fill(AppColors.cardBackground)
+                        )
                     }
                 }
                 .padding(AppSpacing.screenPadding)
@@ -119,6 +142,72 @@ struct SettingsView: View {
             } message: {
                 Text("This will permanently delete your account and all cloud data. Local data will remain on this device. This cannot be undone.")
             }
+            .navigationDestination(isPresented: $showingSyncLogs) {
+                DebugSyncLogsView()
+            }
+            .alert("Reset Recovery Mode", isPresented: $showingRecoveryReset) {
+                Button("Cancel", role: .cancel) { }
+                Button("Reset & Retry", role: .destructive) {
+                    StartupGuard.fullReset()
+                }
+            } message: {
+                Text("This will reset all migration flags and exit recovery mode. The app will attempt migrations again on next launch.")
+            }
+        }
+    }
+
+    // MARK: - Recovery Mode Section
+
+    private var recoveryModeSection: some View {
+        SettingsSection(
+            title: "Recovery",
+            footer: StartupGuard.isInRecoveryMode
+                ? "The app detected startup crashes and is running in safe mode. Some features may be limited."
+                : "Recovery tools for troubleshooting issues."
+        ) {
+            if StartupGuard.isInRecoveryMode {
+                SettingsRow(icon: "exclamationmark.triangle.fill", title: "Recovery Mode") {
+                    Text("Active")
+                        .font(.subheadline)
+                        .foregroundColor(.orange)
+                }
+            }
+
+            SettingsRow(icon: "arrow.counterclockwise", title: "Crash Count") {
+                Text("\(StartupGuard.crashCount)")
+                    .font(.subheadline)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+
+            Button {
+                showingRecoveryReset = true
+            } label: {
+                HStack {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .foregroundColor(.orange)
+                        .frame(width: 28)
+                    Text("Reset & Retry Migrations")
+                        .foregroundColor(AppColors.textPrimary)
+                    Spacer()
+                }
+            }
+            .padding(.vertical, AppSpacing.sm)
+
+            Button {
+                StartupGuard.exitRecoveryMode()
+            } label: {
+                HStack {
+                    Image(systemName: "checkmark.circle")
+                        .foregroundColor(.green)
+                        .frame(width: 28)
+                    Text("Exit Recovery Mode")
+                        .foregroundColor(AppColors.textPrimary)
+                    Spacer()
+                }
+            }
+            .padding(.vertical, AppSpacing.sm)
+            .opacity(StartupGuard.isInRecoveryMode ? 1 : 0.5)
+            .disabled(!StartupGuard.isInRecoveryMode)
         }
     }
 

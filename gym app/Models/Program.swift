@@ -10,6 +10,9 @@ import Foundation
 // MARK: - Program
 
 struct Program: Identifiable, Codable, Hashable {
+    // Schema version for migration support
+    var schemaVersion: Int = SchemaVersions.program
+
     var id: UUID
     var name: String
     var programDescription: String?
@@ -51,6 +54,21 @@ struct Program: Identifiable, Codable, Hashable {
     // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Decode schema version (default to 1 for backward compatibility)
+        let version = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
+        schemaVersion = SchemaVersions.program  // Always store current version
+
+        // Handle migrations based on version
+        switch version {
+        case 1:
+            // V1 is current - decode normally
+            break
+        default:
+            // Unknown future version - attempt to decode with defaults
+            break
+        }
+
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
         programDescription = try container.decodeIfPresent(String.self, forKey: .programDescription)
@@ -64,7 +82,8 @@ struct Program: Identifiable, Codable, Hashable {
         workoutSlots = try container.decodeIfPresent([ProgramWorkoutSlot].self, forKey: .workoutSlots) ?? []
     }
 
-    private enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
+        case schemaVersion
         case id, name, programDescription, durationWeeks, startDate, endDate, isActive, createdAt, updatedAt, syncStatus, workoutSlots
     }
 

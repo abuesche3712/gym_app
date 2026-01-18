@@ -100,7 +100,7 @@ struct ModuleDetailView: View {
                                 }
                                 .buttonStyle(.plain)
                             } else {
-                                NavigationLink(destination: ExerciseDetailView(exercise: exercise, moduleId: currentModule.id)) {
+                                NavigationLink(destination: ExerciseFormView(exercise: exercise, moduleId: currentModule.id)) {
                                     ExerciseRow(exercise: exercise)
                                 }
                             }
@@ -331,7 +331,7 @@ struct SupersetGroupRow: View {
                             }
                             .buttonStyle(.plain)
                         } else {
-                            NavigationLink(destination: ExerciseDetailView(exercise: exercise, moduleId: moduleId)) {
+                            NavigationLink(destination: ExerciseFormView(exercise: exercise, moduleId: moduleId)) {
                                 CompactExerciseRow(exercise: exercise)
                             }
                         }

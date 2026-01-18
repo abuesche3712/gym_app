@@ -6,6 +6,7 @@
 //
 
 import CoreData
+import FirebaseFirestore
 
 // MARK: - Syncable Entity Protocol
 
@@ -1108,5 +1109,178 @@ public class SyncQueueEntity: NSManagedObject {
             lastAttemptAt: lastAttemptAt,
             lastError: lastError
         )
+    }
+}
+
+// MARK: - Sync Log Entity
+
+/// Persistent log entry for sync operations, useful for TestFlight debugging
+@objc(SyncLogEntity)
+public class SyncLogEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var timestamp: Date
+    @NSManaged public var context: String
+    @NSManaged public var message: String
+    @NSManaged public var severityRaw: String
+
+    var severity: SyncLogSeverity {
+        get { SyncLogSeverity(rawValue: severityRaw) ?? .info }
+        set { severityRaw = newValue.rawValue }
+    }
+
+    /// Convert to model object
+    func toModel() -> SyncLogEntry {
+        SyncLogEntry(
+            id: id,
+            timestamp: timestamp,
+            context: context,
+            message: message,
+            severity: severity
+        )
+    }
+}
+
+/// Severity levels for sync logs
+enum SyncLogSeverity: String, Codable, CaseIterable {
+    case info
+    case warning
+    case error
+
+    var icon: String {
+        switch self {
+        case .info: return "info.circle"
+        case .warning: return "exclamationmark.triangle"
+        case .error: return "xmark.circle"
+        }
+    }
+
+    var color: String {
+        switch self {
+        case .info: return "textSecondary"
+        case .warning: return "orange"
+        case .error: return "red"
+        }
+    }
+}
+
+/// Model representation of a sync log entry
+struct SyncLogEntry: Identifiable {
+    let id: UUID
+    let timestamp: Date
+    let context: String
+    let message: String
+    let severity: SyncLogSeverity
+
+    var formattedTimestamp: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MM/dd HH:mm:ss"
+        return formatter.string(from: timestamp)
+    }
+}
+
+// MARK: - Deletion Record Entity
+
+/// Tracks deleted entities for cross-device sync
+@objc(DeletionRecordEntity)
+public class DeletionRecordEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var entityTypeRaw: String
+    @NSManaged public var entityId: UUID
+    @NSManaged public var deletedAt: Date
+    @NSManaged public var syncedAt: Date?
+
+    var entityType: DeletionEntityType {
+        get { DeletionEntityType(rawValue: entityTypeRaw) ?? .module }
+        set { entityTypeRaw = newValue.rawValue }
+    }
+
+    /// Convert to model object
+    func toModel() -> DeletionRecord {
+        DeletionRecord(
+            id: id,
+            entityType: entityType,
+            entityId: entityId,
+            deletedAt: deletedAt,
+            syncedAt: syncedAt
+        )
+    }
+}
+
+/// Entity types that can be deleted and tracked
+enum DeletionEntityType: String, Codable, CaseIterable {
+    case module
+    case workout
+    case program
+    case session
+    case scheduledWorkout
+    case customExercise
+
+    /// Maps to the Firebase collection name for the entity
+    var collectionName: String {
+        switch self {
+        case .module: return "modules"
+        case .workout: return "workouts"
+        case .program: return "programs"
+        case .session: return "sessions"
+        case .scheduledWorkout: return "scheduledWorkouts"
+        case .customExercise: return "customExercises"
+        }
+    }
+}
+
+/// Model representation of a deletion record
+struct DeletionRecord: Identifiable, Codable {
+    let id: UUID
+    let entityType: DeletionEntityType
+    let entityId: UUID
+    let deletedAt: Date
+    var syncedAt: Date?
+
+    init(
+        id: UUID = UUID(),
+        entityType: DeletionEntityType,
+        entityId: UUID,
+        deletedAt: Date = Date(),
+        syncedAt: Date? = nil
+    ) {
+        self.id = id
+        self.entityType = entityType
+        self.entityId = entityId
+        self.deletedAt = deletedAt
+        self.syncedAt = syncedAt
+    }
+
+    /// For Firebase encoding
+    var firestoreData: [String: Any] {
+        var data: [String: Any] = [
+            "id": id.uuidString,
+            "entityType": entityType.rawValue,
+            "entityId": entityId.uuidString,
+            "deletedAt": deletedAt
+        ]
+        if let syncedAt = syncedAt {
+            data["syncedAt"] = syncedAt
+        }
+        return data
+    }
+
+    /// Initialize from Firebase data
+    init?(from data: [String: Any]) {
+        guard let idString = data["id"] as? String,
+              let id = UUID(uuidString: idString),
+              let entityTypeRaw = data["entityType"] as? String,
+              let entityType = DeletionEntityType(rawValue: entityTypeRaw),
+              let entityIdString = data["entityId"] as? String,
+              let entityId = UUID(uuidString: entityIdString),
+              let deletedAt = data["deletedAt"] as? Date ?? (data["deletedAt"] as? Timestamp)?.dateValue()
+        else {
+            return nil
+        }
+
+        self.id = id
+        self.entityType = entityType
+        self.entityId = entityId
+        self.deletedAt = deletedAt
+        self.syncedAt = data["syncedAt"] as? Date ?? (data["syncedAt"] as? Timestamp)?.dateValue()
     }
 }

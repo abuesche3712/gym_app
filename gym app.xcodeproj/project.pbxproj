@@ -16,6 +16,7 @@
 		B610AC072F15B4DE008B2C15 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B610AC062F15B4DE008B2C15 /* Assets.xcassets */; };
 		B610AC0A2F15B4DE008B2C15 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B610AC092F15B4DE008B2C15 /* Preview Assets.xcassets */; };
 		B610AC142F15B4DE008B2C15 /* gym_appTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC132F15B4DE008B2C15 /* gym_appTests.swift */; };
+		SSNVTST02BUILD002 /* SessionNavigatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SSNVTST01FILE001 /* SessionNavigatorTests.swift */; };
 		B610AC1E2F15B4DF008B2C15 /* gym_appUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC1D2F15B4DF008B2C15 /* gym_appUITests.swift */; };
 		B610AC202F15B4DF008B2C15 /* gym_appUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC1F2F15B4DF008B2C15 /* gym_appUITestsLaunchTests.swift */; };
 		B63EBEE32F15E55600D8C22D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B63EBEE22F15E55600D8C22D /* FirebaseAuth */; };
@@ -23,8 +24,12 @@
 		B63EBF0F2F15E73700D8C22D /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEE62F15E73700D8C22D /* AppState.swift */; };
 		B63EBF102F15E73700D8C22D /* ModuleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEE72F15E73700D8C22D /* ModuleViewModel.swift */; };
 		B63EBF112F15E73700D8C22D /* SessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEE82F15E73700D8C22D /* SessionViewModel.swift */; };
+		SESSNAV02BUILD002 /* SessionNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SESSNAV01FILE001 /* SessionNavigator.swift */; };
 		B63EBF122F15E73700D8C22D /* WorkoutViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEE92F15E73700D8C22D /* WorkoutViewModel.swift */; };
 		B63EBF132F15E73700D8C22D /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEB2F15E73700D8C22D /* Enums.swift */; };
+		SCHMAV02BUILD002 /* SchemaVersions.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCHMAV01FILE001 /* SchemaVersions.swift */; };
+		APPCFG02BUILD002 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPCFG01FILE001 /* AppConfig.swift */; };
+		LOGGER02BUILD002 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = LOGGER01FILE001 /* Logger.swift */; };
 		B63EBF142F15E73700D8C22D /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEC2F15E73700D8C22D /* Exercise.swift */; };
 		B63EBF302F15E73700D8C22D /* ExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */; };
 		A0B1C2D3E4F5067890123457 /* CustomExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */; };
@@ -94,6 +99,9 @@
 		MOREV002BUILD002 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOREV001FILE001 /* MoreView.swift */; };
 		USRPFL002BUILD002 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = USRPFL001FILE001 /* UserProfile.swift */; };
 		SYNCQU002BUILD002 /* SyncQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = SYNCQU001FILE001 /* SyncQueue.swift */; };
+		SYNCLOG02BUILD002 /* SyncLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = SYNCLOG01FILE001 /* SyncLogger.swift */; };
+		DBGSYN02BUILD002 /* DebugSyncLogsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBGSYN01FILE001 /* DebugSyncLogsView.swift */; };
+		DELTRC02BUILD002 /* DeletionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = DELTRC01FILE001 /* DeletionTracker.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -125,14 +133,17 @@
 		B610AC092F15B4DE008B2C15 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		B610AC0F2F15B4DE008B2C15 /* gym appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "gym appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B610AC132F15B4DE008B2C15 /* gym_appTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = gym_appTests.swift; sourceTree = "<group>"; };
+		SSNVTST01FILE001 /* SessionNavigatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNavigatorTests.swift; sourceTree = "<group>"; };
 		B610AC192F15B4DF008B2C15 /* gym appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "gym appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B610AC1D2F15B4DF008B2C15 /* gym_appUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = gym_appUITests.swift; sourceTree = "<group>"; };
 		B610AC1F2F15B4DF008B2C15 /* gym_appUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = gym_appUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		B63EBEE62F15E73700D8C22D /* AppState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		B63EBEE72F15E73700D8C22D /* ModuleViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModuleViewModel.swift; sourceTree = "<group>"; };
 		B63EBEE82F15E73700D8C22D /* SessionViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionViewModel.swift; sourceTree = "<group>"; };
+		SESSNAV01FILE001 /* SessionNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNavigator.swift; sourceTree = "<group>"; };
 		B63EBEE92F15E73700D8C22D /* WorkoutViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WorkoutViewModel.swift; sourceTree = "<group>"; };
 		B63EBEEB2F15E73700D8C22D /* Enums.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
+		SCHMAV01FILE001 /* SchemaVersions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaVersions.swift; sourceTree = "<group>"; };
 		B63EBEEC2F15E73700D8C22D /* Exercise.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
 		B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseLibrary.swift; sourceTree = "<group>"; };
 		A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CustomExerciseLibrary.swift; sourceTree = "<group>"; };
@@ -201,6 +212,11 @@
 		SOCAL001FILE001 /* SocialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialView.swift; sourceTree = "<group>"; };
 		ANLYT001FILE001 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
 		MOREV001FILE001 /* MoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreView.swift; sourceTree = "<group>"; };
+		SYNCLOG01FILE001 /* SyncLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncLogger.swift; sourceTree = "<group>"; };
+		APPCFG01FILE001 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		LOGGER01FILE001 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
+		DBGSYN01FILE001 /* DebugSyncLogsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSyncLogsView.swift; sourceTree = "<group>"; };
+		DELTRC01FILE001 /* DeletionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionTracker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -282,6 +298,7 @@
 			isa = PBXGroup;
 			children = (
 				B610AC132F15B4DE008B2C15 /* gym_appTests.swift */,
+				SSNVTST01FILE001 /* SessionNavigatorTests.swift */,
 			);
 			path = "gym appTests";
 			sourceTree = "<group>";
@@ -301,6 +318,7 @@
 				B63EBEE62F15E73700D8C22D /* AppState.swift */,
 				B63EBEE72F15E73700D8C22D /* ModuleViewModel.swift */,
 				PROGVM001FILE001 /* ProgramViewModel.swift */,
+				SESSNAV01FILE001 /* SessionNavigator.swift */,
 				B63EBEE82F15E73700D8C22D /* SessionViewModel.swift */,
 				B63EBEE92F15E73700D8C22D /* WorkoutViewModel.swift */,
 			);
@@ -318,6 +336,7 @@
 				B63EBEED2F15E73700D8C22D /* Module.swift */,
 				PROGAM001FILE001 /* Program.swift */,
 				RESOLV001FILE001 /* ResolvedExercise.swift */,
+				SCHMAV01FILE001 /* SchemaVersions.swift */,
 				B63EBEEE2F15E73700D8C22D /* Session.swift */,
 				B6SCHED00DE514440E0A348 /* ScheduledWorkout.swift */,
 				B63EBEEF2F15E73700D8C22D /* SetGroup.swift */,
@@ -369,6 +388,7 @@
 		B63EBEFE2F15E73700D8C22D /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				DBGSYN01FILE001 /* DebugSyncLogsView.swift */,
 				B6EXERC012F15E73700D8C22D /* ExerciseLibraryView.swift */,
 				EQUIPL001FILE001 /* EquipmentLibraryView.swift */,
 				B63EBEFD2F15E73700D8C22D /* SettingsView.swift */,
@@ -437,11 +457,15 @@
 		B63EBF0E2F15E73700D8C22D /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				APPCFG01FILE001 /* AppConfig.swift */,
 				C36DDB57BAA44FEF866BE090 /* AuthService.swift */,
 				EXRSLV001FILE001 /* ExerciseResolver.swift */,
 				B63EBF0B2F15E73700D8C22D /* FirebaseService.swift */,
 				HAPTIC001FILE001 /* HapticManager.swift */,
+				LOGGER01FILE001 /* Logger.swift */,
 				B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */,
+				DELTRC01FILE001 /* DeletionTracker.swift */,
+				SYNCLOG01FILE001 /* SyncLogger.swift */,
 				B63EBF0D2F15E73700D8C22D /* SyncManager.swift */,
 			);
 			path = Services;
@@ -681,6 +705,7 @@
 				C2D4E6F8A1B3C5D7E9F0A2B4 /* SetGroupFormView.swift in Sources */,
 				E4F6A8C0B2D4E6F8A0C2D4E6 /* ExercisePickerView.swift in Sources */,
 				B63EBF112F15E73700D8C22D /* SessionViewModel.swift in Sources */,
+				SESSNAV02BUILD002 /* SessionNavigator.swift in Sources */,
 				B63EBF282F15E73700D8C22D /* PersistenceController.swift in Sources */,
 				FB314B4CB2D940F6B27703FF /* DataSeeder.swift in Sources */,
 				B63EBF2A2F15E73700D8C22D /* FirebaseService.swift in Sources */,
@@ -734,6 +759,12 @@
 				MOREV002BUILD002 /* MoreView.swift in Sources */,
 				USRPFL002BUILD002 /* UserProfile.swift in Sources */,
 				SYNCQU002BUILD002 /* SyncQueue.swift in Sources */,
+				SYNCLOG02BUILD002 /* SyncLogger.swift in Sources */,
+				DBGSYN02BUILD002 /* DebugSyncLogsView.swift in Sources */,
+				DELTRC02BUILD002 /* DeletionTracker.swift in Sources */,
+				SCHMAV02BUILD002 /* SchemaVersions.swift in Sources */,
+				APPCFG02BUILD002 /* AppConfig.swift in Sources */,
+				LOGGER02BUILD002 /* Logger.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -742,6 +773,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B610AC142F15B4DE008B2C15 /* gym_appTests.swift in Sources */,
+				SSNVTST02BUILD002 /* SessionNavigatorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

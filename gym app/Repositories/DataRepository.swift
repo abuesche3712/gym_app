@@ -15,6 +15,8 @@ class DataRepository: ObservableObject {
     private let persistence = PersistenceController.shared
     private let firestoreService = FirestoreService.shared
     private let authService = AuthService.shared
+    private let deletionTracker = DeletionTracker.shared
+    private let logger = SyncLogger.shared
 
     private var viewContext: NSManagedObjectContext {
         persistence.container.viewContext
@@ -26,52 +28,6 @@ class DataRepository: ObservableObject {
     @Published var programs: [Program] = []
     @Published var isSyncing = false
 
-    // Track deleted item IDs to prevent re-sync
-    private let deletedModuleIdsKey = "deletedModuleIds"
-    private let deletedWorkoutIdsKey = "deletedWorkoutIds"
-    private let deletedProgramIdsKey = "deletedProgramIds"
-    private let deletedSessionIdsKey = "deletedSessionIds"
-
-    private var deletedModuleIds: Set<UUID> {
-        get {
-            let strings = UserDefaults.standard.stringArray(forKey: deletedModuleIdsKey) ?? []
-            return Set(strings.compactMap { UUID(uuidString: $0) })
-        }
-        set {
-            UserDefaults.standard.set(newValue.map { $0.uuidString }, forKey: deletedModuleIdsKey)
-        }
-    }
-
-    private var deletedWorkoutIds: Set<UUID> {
-        get {
-            let strings = UserDefaults.standard.stringArray(forKey: deletedWorkoutIdsKey) ?? []
-            return Set(strings.compactMap { UUID(uuidString: $0) })
-        }
-        set {
-            UserDefaults.standard.set(newValue.map { $0.uuidString }, forKey: deletedWorkoutIdsKey)
-        }
-    }
-
-    private var deletedProgramIds: Set<UUID> {
-        get {
-            let strings = UserDefaults.standard.stringArray(forKey: deletedProgramIdsKey) ?? []
-            return Set(strings.compactMap { UUID(uuidString: $0) })
-        }
-        set {
-            UserDefaults.standard.set(newValue.map { $0.uuidString }, forKey: deletedProgramIdsKey)
-        }
-    }
-
-    private var deletedSessionIds: Set<UUID> {
-        get {
-            let strings = UserDefaults.standard.stringArray(forKey: deletedSessionIdsKey) ?? []
-            return Set(strings.compactMap { UUID(uuidString: $0) })
-        }
-        set {
-            UserDefaults.standard.set(newValue.map { $0.uuidString }, forKey: deletedSessionIdsKey)
-        }
-    }
-
     init() {
         loadAllData()
     }
@@ -81,48 +37,59 @@ class DataRepository: ObservableObject {
     /// Sync data from Firestore on app launch (if authenticated)
     func syncFromCloud() async {
         guard authService.isAuthenticated else {
-            print("syncFromCloud: Not authenticated, skipping")
+            logger.info("Not authenticated, skipping", context: "syncFromCloud")
             return
         }
 
-        print("syncFromCloud: Starting sync...")
+        logger.info("Starting sync...", context: "syncFromCloud")
         isSyncing = true
 
-        do {
-            let cloudData = try await firestoreService.fetchAllUserData()
-            print("syncFromCloud: Fetched \(cloudData.modules.count) modules, \(cloudData.workouts.count) workouts, \(cloudData.sessions.count) sessions, \(cloudData.exercises.count) exercises, \(cloudData.programs.count) programs, \(cloudData.scheduledWorkouts.count) scheduledWorkouts")
+        let timer = PerformanceTimer("syncFromCloud", threshold: AppConfig.slowSyncThreshold)
 
-            // Merge cloud modules (last-write-wins based on updatedAt)
-            print("syncFromCloud: Local modules count: \(modules.count), deleted IDs tracked: \(deletedModuleIds.count)")
+        do {
+            // 1. Fetch and apply cloud deletions first
+            await syncDeletionsFromCloud()
+
+            let cloudData = try await firestoreService.fetchAllUserData()
+            logger.info("Fetched \(cloudData.modules.count) modules, \(cloudData.workouts.count) workouts, \(cloudData.sessions.count) sessions, \(cloudData.programs.count) programs", context: "syncFromCloud")
+
+            // 2. Push our deletions to cloud
+            await pushDeletionsToCloud()
+
+            // Merge cloud modules (with deletion-aware conflict resolution)
+            let deletedModuleIds = deletionTracker.getDeletedIds(entityType: .module)
+            logger.info("Local modules: \(modules.count), deletions tracked: \(deletedModuleIds.count)", context: "syncFromCloud")
             var totalExercises = 0
             var totalExerciseInstances = 0
             for cloudModule in cloudData.modules {
                 totalExercises += cloudModule.exercises.count
                 totalExerciseInstances += cloudModule.exerciseInstances.count
-                print("syncFromCloud: Processing cloud module '\(cloudModule.name)' (id: \(cloudModule.id)) - \(cloudModule.exercises.count) legacy exercises, \(cloudModule.exerciseInstances.count) exercise instances")
 
-                // Skip if this module was deleted locally
+                // Skip if deleted locally - check if deletion is newer than cloud edit
+                if deletionTracker.wasDeletedAfter(entityType: .module, entityId: cloudModule.id, date: cloudModule.updatedAt) {
+                    logger.info("Module '\(cloudModule.name)' was deleted locally after cloud edit, skipping", context: "syncFromCloud")
+                    continue
+                }
+
+                // Skip if deleted locally (even if deletion is older, to be safe)
                 if deletedModuleIds.contains(cloudModule.id) {
-                    print("syncFromCloud: Module '\(cloudModule.name)' was deleted locally, skipping")
+                    logger.info("Module '\(cloudModule.name)' was deleted locally, skipping", context: "syncFromCloud")
                     continue
                 }
 
                 if let local = modules.first(where: { $0.id == cloudModule.id }) {
-                    // If cloud is newer or same, update local (cloud is source of truth)
-                    if cloudModule.updatedAt >= local.updatedAt {
-                        print("syncFromCloud: Cloud module '\(cloudModule.name)' is newer or same (cloud: \(cloudModule.updatedAt), local: \(local.updatedAt)), updating local")
-                        saveModuleLocally(cloudModule)
-                    } else {
-                        print("syncFromCloud: Local module '\(cloudModule.name)' is newer (cloud: \(cloudModule.updatedAt), local: \(local.updatedAt)), keeping local")
+                    let mergedModule = local.mergedWith(cloudModule)
+                    if local.needsSync(comparedTo: mergedModule) {
+                        logger.info("Deep merging module '\(cloudModule.name)'", context: "syncFromCloud")
+                        saveModuleLocally(mergedModule)
                     }
                 } else {
-                    // New from cloud, save locally
-                    print("syncFromCloud: Module '\(cloudModule.name)' is new, saving locally")
+                    logger.info("Module '\(cloudModule.name)' is new, saving locally", context: "syncFromCloud")
                     saveModuleLocally(cloudModule)
                 }
             }
 
-            print("syncFromCloud: Total exercises across all modules - \(totalExercises) legacy, \(totalExerciseInstances) instances")
+            logger.info("Total exercises: \(totalExercises) legacy, \(totalExerciseInstances) instances", context: "syncFromCloud")
 
             // Extract custom exercises from module data (for legacy format)
             let builtInLibrary = ExerciseLibrary.shared
@@ -135,7 +102,7 @@ class DataRepository: ObservableObject {
                     let isAlreadyCustom = customLibraryPreExtract.contains(name: exercise.name)
 
                     if !isBuiltIn && !isAlreadyCustom {
-                        print("syncFromCloud: Extracting custom exercise '\(exercise.name)' from module '\(cloudModule.name)'")
+                        Logger.debug("Extracting custom exercise '\(exercise.name)' from module '\(cloudModule.name)'")
                         customLibraryPreExtract.addExercise(
                             name: exercise.name,
                             exerciseType: exercise.exerciseType,
@@ -146,39 +113,46 @@ class DataRepository: ObservableObject {
                     }
                 }
             }
-            print("syncFromCloud: Extracted \(extractedCount) custom exercises from module data")
+            Logger.debug("Extracted \(extractedCount) custom exercises from module data")
 
             // Merge cloud workouts
-            print("syncFromCloud: Local workouts count: \(workouts.count), deleted IDs tracked: \(deletedWorkoutIds.count)")
+            let deletedWorkoutIds = deletionTracker.getDeletedIds(entityType: .workout)
+            logger.info("Local workouts: \(workouts.count), deletions tracked: \(deletedWorkoutIds.count)", context: "syncFromCloud")
             for cloudWorkout in cloudData.workouts {
-                print("syncFromCloud: Processing cloud workout '\(cloudWorkout.name)' (id: \(cloudWorkout.id)) - \(cloudWorkout.moduleReferences.count) module refs")
+                // Skip if deleted locally after cloud edit
+                if deletionTracker.wasDeletedAfter(entityType: .workout, entityId: cloudWorkout.id, date: cloudWorkout.updatedAt) {
+                    logger.info("Workout '\(cloudWorkout.name)' was deleted locally after cloud edit, skipping", context: "syncFromCloud")
+                    continue
+                }
 
-                // Skip if this workout was deleted locally
                 if deletedWorkoutIds.contains(cloudWorkout.id) {
-                    print("syncFromCloud: Workout '\(cloudWorkout.name)' was deleted locally, skipping")
+                    logger.info("Workout '\(cloudWorkout.name)' was deleted locally, skipping", context: "syncFromCloud")
                     continue
                 }
 
                 if let local = workouts.first(where: { $0.id == cloudWorkout.id }) {
-                    // Cloud is source of truth - update if cloud is newer or same
-                    if cloudWorkout.updatedAt >= local.updatedAt {
-                        print("syncFromCloud: Cloud workout '\(cloudWorkout.name)' is newer or same (cloud: \(cloudWorkout.updatedAt), local: \(local.updatedAt)), updating local")
-                        saveWorkoutLocally(cloudWorkout)
-                    } else {
-                        print("syncFromCloud: Local workout '\(cloudWorkout.name)' is newer (cloud: \(cloudWorkout.updatedAt), local: \(local.updatedAt)), keeping local")
+                    let mergedWorkout = local.mergedWith(cloudWorkout)
+                    if local.needsSync(comparedTo: mergedWorkout) {
+                        logger.info("Deep merging workout '\(cloudWorkout.name)'", context: "syncFromCloud")
+                        saveWorkoutLocally(mergedWorkout)
                     }
                 } else {
-                    print("syncFromCloud: Workout '\(cloudWorkout.name)' is new, saving locally")
+                    logger.info("Workout '\(cloudWorkout.name)' is new, saving locally", context: "syncFromCloud")
                     saveWorkoutLocally(cloudWorkout)
                 }
             }
 
             // Merge cloud sessions
-            print("syncFromCloud: Local sessions count: \(sessions.count), deleted IDs tracked: \(deletedSessionIds.count)")
+            let deletedSessionIds = deletionTracker.getDeletedIds(entityType: .session)
+            logger.info("Local sessions: \(sessions.count), deletions tracked: \(deletedSessionIds.count)", context: "syncFromCloud")
             for cloudSession in cloudData.sessions {
-                // Skip if this session was deleted locally
+                // Skip if deleted locally after cloud edit
+                if deletionTracker.wasDeletedAfter(entityType: .session, entityId: cloudSession.id, date: cloudSession.date) {
+                    logger.info("Session was deleted locally after cloud edit, skipping", context: "syncFromCloud")
+                    continue
+                }
+
                 if deletedSessionIds.contains(cloudSession.id) {
-                    print("syncFromCloud: Session '\(cloudSession.workoutName)' was deleted locally, skipping")
                     continue
                 }
 
@@ -189,37 +163,40 @@ class DataRepository: ObservableObject {
 
             // Merge custom exercises
             let customLibrary = CustomExerciseLibrary.shared
-            print("syncFromCloud: Custom exercises - cloud has \(cloudData.exercises.count), local has \(customLibrary.exercises.count)")
+            Logger.verbose("Custom exercises - cloud: \(cloudData.exercises.count), local: \(customLibrary.exercises.count)")
             for cloudExercise in cloudData.exercises {
-                print("syncFromCloud: Processing custom exercise '\(cloudExercise.name)' (id: \(cloudExercise.id))")
+                Logger.verbose("Processing custom exercise '\(cloudExercise.name)'")
                 if !customLibrary.exercises.contains(where: { $0.id == cloudExercise.id }) {
-                    print("syncFromCloud: Adding custom exercise '\(cloudExercise.name)'")
+                    Logger.debug("Adding custom exercise '\(cloudExercise.name)'")
                     customLibrary.addExercise(cloudExercise)
                 } else {
-                    print("syncFromCloud: Custom exercise '\(cloudExercise.name)' already exists locally")
+                    Logger.verbose("Custom exercise '\(cloudExercise.name)' already exists locally")
                 }
             }
-            print("syncFromCloud: After sync, local custom exercises: \(customLibrary.exercises.count)")
+            Logger.debug("After sync, local custom exercises: \(customLibrary.exercises.count)")
 
             // Merge cloud programs
-            print("syncFromCloud: Local programs count: \(programs.count), deleted IDs tracked: \(deletedProgramIds.count)")
+            let deletedProgramIds = deletionTracker.getDeletedIds(entityType: .program)
+            logger.info("Local programs: \(programs.count), deletions tracked: \(deletedProgramIds.count)", context: "syncFromCloud")
             for cloudProgram in cloudData.programs {
-                // Skip if this program was deleted locally
+                // Skip if deleted locally after cloud edit
+                if deletionTracker.wasDeletedAfter(entityType: .program, entityId: cloudProgram.id, date: cloudProgram.updatedAt) {
+                    logger.info("Program '\(cloudProgram.name)' was deleted locally after cloud edit, skipping", context: "syncFromCloud")
+                    continue
+                }
+
                 if deletedProgramIds.contains(cloudProgram.id) {
-                    print("syncFromCloud: Program '\(cloudProgram.name)' was deleted locally, skipping")
+                    logger.info("Program '\(cloudProgram.name)' was deleted locally, skipping", context: "syncFromCloud")
                     continue
                 }
 
                 if let local = programs.first(where: { $0.id == cloudProgram.id }) {
-                    // Cloud is source of truth - update if cloud is newer or same
                     if cloudProgram.updatedAt >= local.updatedAt {
-                        print("syncFromCloud: Cloud program '\(cloudProgram.name)' is newer or same (cloud: \(cloudProgram.updatedAt), local: \(local.updatedAt)), updating local")
+                        logger.info("Cloud program '\(cloudProgram.name)' is newer, updating local", context: "syncFromCloud")
                         saveProgramLocally(cloudProgram)
-                    } else {
-                        print("syncFromCloud: Local program '\(cloudProgram.name)' is newer (cloud: \(cloudProgram.updatedAt), local: \(local.updatedAt)), keeping local")
                     }
                 } else {
-                    print("syncFromCloud: Program '\(cloudProgram.name)' is new, saving locally")
+                    logger.info("Program '\(cloudProgram.name)' is new, saving locally", context: "syncFromCloud")
                     saveProgramLocally(cloudProgram)
                 }
             }
@@ -242,55 +219,169 @@ class DataRepository: ObservableObject {
             // Reload all data after merge
             loadAllData()
 
-            print("syncFromCloud: Completed successfully")
+            // Cleanup old deletion records (30 days)
+            deletionTracker.cleanupOldRecords()
+            await cleanupOldDeletionsFromCloud()
+
+            logger.info("Sync completed successfully", context: "syncFromCloud")
         } catch {
-            print("syncFromCloud: Failed with error: \(error)")
+            logger.logError(error, context: "syncFromCloud", additionalInfo: "Sync failed")
         }
 
+        timer.stop()
         isSyncing = false
-        print("syncFromCloud: isSyncing set to false")
+    }
+
+    // MARK: - Deletion Sync
+
+    /// Fetch deletion records from cloud and apply them locally
+    private func syncDeletionsFromCloud() async {
+        do {
+            let cloudDeletions = try await firestoreService.fetchDeletionRecords()
+            logger.info("Fetched \(cloudDeletions.count) deletion records from cloud", context: "syncDeletionsFromCloud")
+
+            for deletion in cloudDeletions {
+                // Import to local tracker
+                deletionTracker.importFromCloud(deletion)
+
+                // Apply the deletion locally if the entity exists
+                applyDeletionLocally(deletion)
+            }
+        } catch {
+            logger.logError(error, context: "syncDeletionsFromCloud", additionalInfo: "Failed to fetch deletions")
+        }
+    }
+
+    /// Apply a deletion record by removing the local entity
+    private func applyDeletionLocally(_ deletion: DeletionRecord) {
+        switch deletion.entityType {
+        case .module:
+            if let entity = findModuleEntity(id: deletion.entityId) {
+                // Check if local module was updated after the deletion
+                if let updatedAt = entity.updatedAt, updatedAt > deletion.deletedAt {
+                    logger.info("Local module updated after deletion, keeping it", context: "applyDeletionLocally")
+                    return
+                }
+                viewContext.delete(entity)
+                save()
+                logger.info("Applied cloud deletion for module \(deletion.entityId)", context: "applyDeletionLocally")
+            }
+        case .workout:
+            if let entity = findWorkoutEntity(id: deletion.entityId) {
+                if let updatedAt = entity.updatedAt, updatedAt > deletion.deletedAt {
+                    logger.info("Local workout updated after deletion, keeping it", context: "applyDeletionLocally")
+                    return
+                }
+                viewContext.delete(entity)
+                save()
+                logger.info("Applied cloud deletion for workout \(deletion.entityId)", context: "applyDeletionLocally")
+            }
+        case .program:
+            if let entity = findProgramEntity(id: deletion.entityId) {
+                if let updatedAt = entity.updatedAt, updatedAt > deletion.deletedAt {
+                    logger.info("Local program updated after deletion, keeping it", context: "applyDeletionLocally")
+                    return
+                }
+                viewContext.delete(entity)
+                save()
+                logger.info("Applied cloud deletion for program \(deletion.entityId)", context: "applyDeletionLocally")
+            }
+        case .session:
+            if let entity = findSessionEntity(id: deletion.entityId) {
+                viewContext.delete(entity)
+                save()
+                logger.info("Applied cloud deletion for session \(deletion.entityId)", context: "applyDeletionLocally")
+            }
+        case .scheduledWorkout:
+            // Handled by WorkoutViewModel
+            NotificationCenter.default.post(
+                name: .deletionRecordSyncedFromCloud,
+                object: deletion
+            )
+        case .customExercise:
+            // Handled by CustomExerciseLibrary
+            let customLibrary = CustomExerciseLibrary.shared
+            if let exercise = customLibrary.exercises.first(where: { $0.id == deletion.entityId }) {
+                customLibrary.deleteExercise(exercise)
+                logger.info("Applied cloud deletion for custom exercise \(deletion.entityId)", context: "applyDeletionLocally")
+            }
+        }
+    }
+
+    /// Push local deletion records to cloud
+    private func pushDeletionsToCloud() async {
+        let unsyncedDeletions = deletionTracker.getUnsyncedDeletions()
+        guard !unsyncedDeletions.isEmpty else { return }
+
+        logger.info("Pushing \(unsyncedDeletions.count) deletion records to cloud", context: "pushDeletionsToCloud")
+
+        do {
+            try await firestoreService.saveDeletionRecords(unsyncedDeletions)
+
+            // Mark as synced
+            for deletion in unsyncedDeletions {
+                deletionTracker.markAsSynced(entityType: deletion.entityType, entityId: deletion.entityId)
+            }
+        } catch {
+            logger.logError(error, context: "pushDeletionsToCloud", additionalInfo: "Failed to push deletions")
+        }
+    }
+
+    /// Cleanup old deletion records from cloud (30 days)
+    private func cleanupOldDeletionsFromCloud() async {
+        let cutoffDate = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+
+        do {
+            let cleanedCount = try await firestoreService.cleanupOldDeletionRecords(olderThan: cutoffDate)
+            if cleanedCount > 0 {
+                logger.info("Cleaned up \(cleanedCount) old deletion records from cloud", context: "cleanupOldDeletionsFromCloud")
+            }
+        } catch {
+            logger.logError(error, context: "cleanupOldDeletionsFromCloud", additionalInfo: "Failed to cleanup")
+        }
     }
 
     /// Push all local data to cloud (useful for initial sync after sign-in)
     func pushAllToCloud() async {
         guard authService.isAuthenticated else {
-            print("pushAllToCloud: Not authenticated, skipping")
+            Logger.debug("pushAllToCloud: Not authenticated, skipping")
             return
         }
 
-        print("pushAllToCloud: Starting push...")
-        print("pushAllToCloud: \(modules.count) modules, \(workouts.count) workouts, \(sessions.count) sessions, \(programs.count) programs")
+        Logger.debug("pushAllToCloud: Starting - \(modules.count) modules, \(workouts.count) workouts, \(sessions.count) sessions, \(programs.count) programs")
         isSyncing = true
+
+        let timer = PerformanceTimer("pushAllToCloud", threshold: AppConfig.slowSyncThreshold)
 
         do {
             // Push all modules
             for module in modules {
-                print("pushAllToCloud: Saving module \(module.name)")
+                Logger.verbose("Saving module '\(module.name)'")
                 try await firestoreService.saveModule(module)
             }
 
             // Push all workouts
             for workout in workouts {
-                print("pushAllToCloud: Saving workout \(workout.name)")
+                Logger.verbose("Saving workout '\(workout.name)'")
                 try await firestoreService.saveWorkout(workout)
             }
 
             // Push all sessions
             for session in sessions {
-                print("pushAllToCloud: Saving session \(session.id)")
+                Logger.verbose("Saving session \(Logger.redactUUID(session.id))")
                 try await firestoreService.saveSession(session)
             }
 
             // Push custom exercises
             let customLibrary = CustomExerciseLibrary.shared
             for exercise in customLibrary.exercises {
-                print("pushAllToCloud: Saving custom exercise \(exercise.name)")
+                Logger.verbose("Saving custom exercise '\(exercise.name)'")
                 try await firestoreService.saveCustomExercise(exercise)
             }
 
             // Push all programs
             for program in programs {
-                print("pushAllToCloud: Saving program \(program.name)")
+                Logger.verbose("Saving program '\(program.name)'")
                 try await firestoreService.saveProgram(program)
             }
 
@@ -300,13 +391,13 @@ class DataRepository: ObservableObject {
             // Push user profile
             NotificationCenter.default.post(name: .requestUserProfileForSync, object: nil)
 
-            print("pushAllToCloud: Completed successfully")
+            Logger.debug("pushAllToCloud: Completed successfully")
         } catch {
-            print("pushAllToCloud: Failed with error: \(error)")
+            Logger.error(error, context: "pushAllToCloud")
         }
 
+        timer.stop()
         isSyncing = false
-        print("pushAllToCloud: isSyncing set to false")
     }
 
     // MARK: - Load All Data
@@ -328,7 +419,7 @@ class DataRepository: ObservableObject {
             let entities = try viewContext.fetch(request)
             modules = entities.map { convertToModule($0) }
         } catch {
-            print("Error loading modules: \(error)")
+            Logger.error(error, context: "loadModules")
         }
     }
 
@@ -341,7 +432,7 @@ class DataRepository: ObservableObject {
                 do {
                     try await firestoreService.saveModule(module)
                 } catch {
-                    print("Failed to sync module to cloud: \(error)")
+                    Logger.error(error, context: "saveModule cloud sync")
                 }
             }
         }
@@ -349,13 +440,12 @@ class DataRepository: ObservableObject {
 
     /// Save module to CoreData only (used during cloud sync to avoid loops)
     private func saveModuleLocally(_ module: Module) {
-        print("saveModuleLocally: Saving module '\(module.name)'")
+        Logger.verbose("Saving module '\(module.name)' locally")
         let entity = findOrCreateModuleEntity(id: module.id)
         updateModuleEntity(entity, from: module)
         save()
-        print("saveModuleLocally: Save completed, reloading modules")
         loadModules()
-        print("saveModuleLocally: Modules count after reload: \(modules.count)")
+        Logger.verbose("Modules count after reload: \(modules.count)")
     }
 
     func deleteModule(_ module: Module) {
@@ -364,17 +454,14 @@ class DataRepository: ObservableObject {
             save()
             loadModules()
 
-            // Track this deletion to prevent re-sync
-            var deleted = deletedModuleIds
-            deleted.insert(module.id)
-            deletedModuleIds = deleted
-            print("deleteModule: Tracked deletion of '\(module.name)' (id: \(module.id))")
+            // Track this deletion using DeletionTracker
+            deletionTracker.recordDeletion(entityType: .module, entityId: module.id)
+            logger.info("Deleted module '\(module.name)' (id: \(module.id))", context: "deleteModule")
 
             // Queue deletion for cloud sync if authenticated
             if authService.isAuthenticated {
                 // Queue the deletion - SyncManager will handle online/offline
                 SyncManager.shared.queueModule(module, action: .delete)
-                print("deleteModule: Queued deletion for cloud sync")
             }
         }
     }
@@ -394,7 +481,7 @@ class DataRepository: ObservableObject {
             let entities = try viewContext.fetch(request)
             workouts = entities.map { convertToWorkout($0) }
         } catch {
-            print("Error loading workouts: \(error)")
+            Logger.error(error, context: "loadWorkouts")
         }
     }
 
@@ -407,7 +494,7 @@ class DataRepository: ObservableObject {
                 do {
                     try await firestoreService.saveWorkout(workout)
                 } catch {
-                    print("Failed to sync workout to cloud: \(error)")
+                    Logger.error(error, context: "saveWorkout cloud sync")
                 }
             }
         }
@@ -427,16 +514,13 @@ class DataRepository: ObservableObject {
             save()
             loadWorkouts()
 
-            // Track this deletion to prevent re-sync
-            var deleted = deletedWorkoutIds
-            deleted.insert(workout.id)
-            deletedWorkoutIds = deleted
-            print("deleteWorkout: Tracked deletion of '\(workout.name)' (id: \(workout.id))")
+            // Track this deletion using DeletionTracker
+            deletionTracker.recordDeletion(entityType: .workout, entityId: workout.id)
+            logger.info("Deleted workout '\(workout.name)' (id: \(workout.id))", context: "deleteWorkout")
 
             // Queue deletion for cloud sync if authenticated
             if authService.isAuthenticated {
                 SyncManager.shared.queueWorkout(workout, action: .delete)
-                print("deleteWorkout: Queued deletion for cloud sync")
             }
         }
     }
@@ -455,7 +539,7 @@ class DataRepository: ObservableObject {
             let entities = try viewContext.fetch(request)
             sessions = entities.map { convertToSession($0) }
         } catch {
-            print("Error loading sessions: \(error)")
+            Logger.error(error, context: "loadSessions")
         }
     }
 
@@ -468,7 +552,7 @@ class DataRepository: ObservableObject {
                 do {
                     try await firestoreService.saveSession(session)
                 } catch {
-                    print("Failed to sync session to cloud: \(error)")
+                    Logger.error(error, context: "saveSession cloud sync")
                 }
             }
         }
@@ -488,16 +572,13 @@ class DataRepository: ObservableObject {
             save()
             loadSessions()
 
-            // Track this deletion to prevent re-sync
-            var deleted = deletedSessionIds
-            deleted.insert(session.id)
-            deletedSessionIds = deleted
-            print("deleteSession: Tracked deletion of session (id: \(session.id))")
+            // Track this deletion using DeletionTracker
+            deletionTracker.recordDeletion(entityType: .session, entityId: session.id)
+            logger.info("Deleted session (id: \(session.id))", context: "deleteSession")
 
             // Queue deletion for cloud sync if authenticated
             if authService.isAuthenticated {
                 SyncManager.shared.queueSession(session, action: .delete)
-                print("deleteSession: Queued deletion for cloud sync")
             }
         }
     }
@@ -542,7 +623,7 @@ class DataRepository: ObservableObject {
             let entities = try viewContext.fetch(request)
             programs = entities.map { convertToProgram($0) }
         } catch {
-            print("Error loading programs: \(error)")
+            Logger.error(error, context: "loadPrograms")
         }
     }
 
@@ -555,7 +636,7 @@ class DataRepository: ObservableObject {
                 do {
                     try await firestoreService.saveProgram(program)
                 } catch {
-                    print("Failed to sync program to cloud: \(error)")
+                    Logger.error(error, context: "saveProgram cloud sync")
                 }
             }
         }
@@ -575,16 +656,13 @@ class DataRepository: ObservableObject {
             save()
             loadPrograms()
 
-            // Track this deletion to prevent re-sync
-            var deleted = deletedProgramIds
-            deleted.insert(program.id)
-            deletedProgramIds = deleted
-            print("deleteProgram: Tracked deletion of '\(program.name)' (id: \(program.id))")
+            // Track this deletion using DeletionTracker
+            deletionTracker.recordDeletion(entityType: .program, entityId: program.id)
+            logger.info("Deleted program '\(program.name)' (id: \(program.id))", context: "deleteProgram")
 
             // Queue deletion for cloud sync if authenticated
             if authService.isAuthenticated {
                 SyncManager.shared.queueProgram(program, action: .delete)
-                print("deleteProgram: Queued deletion for cloud sync")
             }
         }
     }

@@ -18,8 +18,8 @@ class ProgramViewModel: ObservableObject {
     private let repository: DataRepository
     private let workoutViewModel: WorkoutViewModel
 
-    init(repository: DataRepository = .shared, workoutViewModel: WorkoutViewModel) {
-        self.repository = repository
+    init(repository: DataRepository? = nil, workoutViewModel: WorkoutViewModel) {
+        self.repository = repository ?? DataRepository.shared
         self.workoutViewModel = workoutViewModel
         loadPrograms()
     }

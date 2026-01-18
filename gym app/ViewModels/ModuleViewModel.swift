@@ -17,8 +17,8 @@ class ModuleViewModel: ObservableObject {
 
     private let repository: DataRepository
 
-    init(repository: DataRepository = .shared) {
-        self.repository = repository
+    init(repository: DataRepository? = nil) {
+        self.repository = repository ?? DataRepository.shared
         loadModules()
     }
 

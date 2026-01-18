@@ -12,6 +12,7 @@ import Foundation
 struct ExerciseMigrationManager {
     private let viewContext: NSManagedObjectContext
     private let migrationKey = "ExerciseMigrationCompleted_v1"
+    private let repairKey = "ExerciseTemplateIdRepair_v1"
 
     init(context: NSManagedObjectContext) {
         self.viewContext = context
@@ -22,6 +23,11 @@ struct ExerciseMigrationManager {
     /// Returns true if migration has already been completed
     var isMigrationCompleted: Bool {
         UserDefaults.standard.bool(forKey: migrationKey)
+    }
+
+    /// Returns true if repair has already been completed
+    var isRepairCompleted: Bool {
+        UserDefaults.standard.bool(forKey: repairKey)
     }
 
     /// Returns true if there are old Exercises that need migration
@@ -38,9 +44,112 @@ struct ExerciseMigrationManager {
                 !module.exerciseArray.isEmpty && module.exerciseInstanceArray.isEmpty
             }
         } catch {
-            print("ExerciseMigrationManager: Error checking migration status: \(error)")
+            Logger.error(error, context: "ExerciseMigrationManager checkMigration")
             return false
         }
+    }
+
+    // MARK: - Template ID Repair
+    //
+    // This repairs ExerciseInstances that have templateIds pointing to OLD random UUIDs
+    // from before ExerciseLibrary was fixed to use stable IDs. We match by exercise name
+    // and update the templateId to the new stable UUID.
+
+    /// Repairs orphaned ExerciseInstances by remapping templateIds based on name matching
+    /// This is a non-critical migration - if it fails, the app should still work
+    func repairTemplateIdsIfNeeded() {
+        guard !isRepairCompleted else {
+            Logger.debug("ExerciseMigrationManager: Template ID repair already completed")
+            return
+        }
+
+        Logger.info("ExerciseMigrationManager: Starting template ID repair...")
+
+        do {
+            try repairAllInstances()
+            markRepairComplete()
+            Logger.info("ExerciseMigrationManager: Template ID repair completed successfully")
+        } catch {
+            // Non-critical: mark as complete to avoid repeated failures, log error
+            Logger.error(error, context: "ExerciseMigrationManager repairTemplateIds - skipping")
+            markRepairComplete()  // Don't retry on next launch
+        }
+    }
+
+    private func repairAllInstances() throws {
+        // Build a lookup map from exercise name -> stable template ID (built-in library only)
+        // We only use ExerciseLibrary.shared which is NOT MainActor isolated
+        var nameToTemplateId: [String: UUID] = [:]
+        let builtInTemplateIds = Set(ExerciseLibrary.shared.exercises.map { $0.id })
+        for template in ExerciseLibrary.shared.exercises {
+            nameToTemplateId[template.name.lowercased()] = template.id
+        }
+
+        let request = NSFetchRequest<ExerciseInstanceEntity>(entityName: "ExerciseInstanceEntity")
+        let instances = try viewContext.fetch(request)
+
+        var repairedCount = 0
+
+        for instance in instances {
+            // Check if the current templateId exists in the built-in library
+            let currentTemplateId = instance.templateId
+            let existsInBuiltInLibrary = builtInTemplateIds.contains(currentTemplateId)
+
+            // Ensure nameOverride is set for ALL instances (as a backup)
+            if instance.nameOverride == nil, let module = instance.module {
+                if let exerciseName = findExerciseNameFromLegacy(instance: instance, in: module) {
+                    instance.nameOverride = exerciseName
+                    Logger.debug("Set nameOverride backup for '\(exerciseName)'")
+                }
+            }
+
+            // Only repair templateId if it's NOT in the built-in library
+            if !existsInBuiltInLibrary {
+                // Try to repair by name matching to built-in library
+                if let nameOverride = instance.nameOverride,
+                   let newTemplateId = nameToTemplateId[nameOverride.lowercased()] {
+                    instance.templateId = newTemplateId
+                    repairedCount += 1
+                    Logger.debug("Repaired instance '\(nameOverride)' -> stable templateId")
+                }
+                // For custom exercises not in built-in library, leave templateId as-is
+                // but nameOverride is already set above for fallback
+            }
+        }
+
+        // Always save if we made any changes (including nameOverride backups)
+        if viewContext.hasChanges {
+            try viewContext.save()
+            Logger.info("ExerciseMigrationManager: Repaired \(repairedCount) template IDs, updated instance backups")
+        }
+    }
+
+    /// Attempts to find the exercise name from legacy data in the module
+    private func findExerciseNameFromLegacy(instance: ExerciseInstanceEntity, in module: ModuleEntity) -> String? {
+        let legacyExercises = module.exerciseArray
+
+        // First try: match by order index
+        let orderIndex = Int(instance.orderIndex)
+        if orderIndex >= 0 && orderIndex < legacyExercises.count {
+            return legacyExercises[orderIndex].name
+        }
+
+        // Second try: match by position in instance array
+        let instanceIndex = module.exerciseInstanceArray.firstIndex { $0.id == instance.id } ?? -1
+        if instanceIndex >= 0 && instanceIndex < legacyExercises.count {
+            return legacyExercises[instanceIndex].name
+        }
+
+        // Third try: if only one exercise in both arrays, use it
+        if legacyExercises.count == 1 && module.exerciseInstanceArray.count == 1 {
+            return legacyExercises[0].name
+        }
+
+        return nil
+    }
+
+    private func markRepairComplete() {
+        UserDefaults.standard.set(true, forKey: repairKey)
     }
 
     // MARK: - Migration
@@ -48,18 +157,18 @@ struct ExerciseMigrationManager {
     /// Migrates all old Exercises to the new ExerciseInstance model
     func migrateIfNeeded() {
         guard needsMigration() else {
-            print("ExerciseMigrationManager: No migration needed")
+            Logger.debug("ExerciseMigrationManager: No migration needed")
             return
         }
 
-        print("ExerciseMigrationManager: Starting migration...")
+        Logger.info("ExerciseMigrationManager: Starting migration...")
 
         do {
             try migrateAllModules()
             markMigrationComplete()
-            print("ExerciseMigrationManager: Migration completed successfully")
+            Logger.info("ExerciseMigrationManager: Migration completed successfully")
         } catch {
-            print("ExerciseMigrationManager: Migration failed: \(error)")
+            Logger.error(error, context: "ExerciseMigrationManager migrate")
         }
     }
 

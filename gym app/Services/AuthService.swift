@@ -167,7 +167,7 @@ class AuthService: NSObject, ObservableObject {
                 }
 
                 try await userRef.setData(userData)
-                print("Created new user document for \(uid)")
+                Logger.debug("Created new user document for \(Logger.redactUserID(uid))")
             } else {
                 // Existing user - update last sign in
                 try await userRef.updateData([
@@ -175,7 +175,7 @@ class AuthService: NSObject, ObservableObject {
                 ])
             }
         } catch {
-            print("Error creating/updating user document: \(error)")
+            Logger.error(error, context: "createOrUpdateUserDocument")
         }
     }
 

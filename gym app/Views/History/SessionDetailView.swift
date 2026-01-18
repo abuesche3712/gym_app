@@ -32,7 +32,7 @@ struct SessionDetailView: View {
                         }
 
                         if let feeling = session.overallFeeling {
-                            Label(feelingText(feeling), systemImage: "face.smiling")
+                            Label("\(feeling)/10", systemImage: "star.fill")
                         }
                     }
                     .font(.subheadline)
@@ -119,16 +119,6 @@ struct SessionDetailView: View {
         }
     }
 
-    private func feelingText(_ feeling: Int) -> String {
-        switch feeling {
-        case 1: return "Terrible"
-        case 2: return "Poor"
-        case 3: return "Okay"
-        case 4: return "Good"
-        case 5: return "Great"
-        default: return "N/A"
-        }
-    }
 }
 
 // MARK: - Exercise Result View

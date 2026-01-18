@@ -211,7 +211,7 @@ struct EditRecentSetSheet: View {
 
         case .cardio:
             VStack(spacing: AppSpacing.md) {
-                TimePickerView(totalSeconds: $inputDuration, maxMinutes: 60, label: "Duration")
+                TimePickerView(totalSeconds: $inputDuration, maxMinutes: 60, maxHours: 4, label: "Duration")
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("DISTANCE")

@@ -38,9 +38,9 @@ struct DataSeeder {
 
         do {
             try viewContext.save()
-            print("DataSeeder: Successfully seeded database")
+            Logger.info("DataSeeder: Successfully seeded database")
         } catch {
-            print("DataSeeder: Error saving seeded data: \(error)")
+            Logger.error(error, context: "DataSeeder seed")
         }
     }
 

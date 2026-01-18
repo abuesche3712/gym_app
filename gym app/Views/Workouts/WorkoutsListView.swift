@@ -14,7 +14,6 @@ struct WorkoutsListView: View {
 
     @State private var showingAddWorkout = false
     @State private var searchText = ""
-    @State private var selectedWorkout: Workout?
     @State private var editingWorkout: Workout?
     @State private var showingActiveSession = false
 
@@ -47,7 +46,7 @@ struct WorkoutsListView: View {
                                 workout: workout,
                                 modules: workoutViewModel.getModulesForWorkout(workout, allModules: moduleViewModel.modules),
                                 onTap: {
-                                    selectedWorkout = workout
+                                    editingWorkout = workout
                                 },
                                 onStart: {
                                     startWorkout(workout)
@@ -96,11 +95,6 @@ struct WorkoutsListView: View {
             .sheet(isPresented: $showingAddWorkout) {
                 NavigationStack {
                     WorkoutFormView(workout: nil)
-                }
-            }
-            .sheet(item: $selectedWorkout) { workout in
-                NavigationStack {
-                    WorkoutDetailView(workout: workout)
                 }
             }
             .sheet(item: $editingWorkout) { workout in

@@ -8,6 +8,9 @@
 import Foundation
 
 struct Workout: Identifiable, Codable, Hashable {
+    // Schema version for migration support
+    var schemaVersion: Int = SchemaVersions.workout
+
     var id: UUID
     var name: String
     var moduleReferences: [ModuleReference]
@@ -46,6 +49,21 @@ struct Workout: Identifiable, Codable, Hashable {
     // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Decode schema version (default to 1 for backward compatibility)
+        let version = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
+        schemaVersion = SchemaVersions.workout  // Always store current version
+
+        // Handle migrations based on version
+        switch version {
+        case 1:
+            // V1 is current - decode normally
+            break
+        default:
+            // Unknown future version - attempt to decode with defaults
+            break
+        }
+
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
         moduleReferences = try container.decodeIfPresent([ModuleReference].self, forKey: .moduleReferences) ?? []
@@ -58,7 +76,8 @@ struct Workout: Identifiable, Codable, Hashable {
         syncStatus = try container.decodeIfPresent(SyncStatus.self, forKey: .syncStatus) ?? .synced
     }
 
-    private enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
+        case schemaVersion
         case id, name, moduleReferences, standaloneExercises, estimatedDuration, notes, createdAt, updatedAt, archived, syncStatus
     }
 
@@ -117,6 +136,81 @@ struct Workout: Identifiable, Codable, Hashable {
     /// Whether this workout has any standalone exercises
     var hasStandaloneExercises: Bool {
         !standaloneExercises.isEmpty
+    }
+
+    // MARK: - Deep Merge Support
+
+    /// Merges standalone exercises from a cloud workout, keeping the newer version of each.
+    /// Module references use simple last-write-wins since they're just references.
+    func mergedWith(_ cloudWorkout: Workout) -> Workout {
+        var result = self
+
+        // Determine which workout has newer metadata
+        let useCloudMetadata = cloudWorkout.updatedAt >= self.updatedAt
+        if useCloudMetadata {
+            result.name = cloudWorkout.name
+            result.notes = cloudWorkout.notes
+            result.estimatedDuration = cloudWorkout.estimatedDuration
+            result.archived = cloudWorkout.archived
+            // Module references use simple replacement from newer source
+            result.moduleReferences = cloudWorkout.moduleReferences
+        }
+
+        // Deep merge standalone exercises
+        result.standaloneExercises = mergeWorkoutExerciseArrays(local: self.standaloneExercises, cloud: cloudWorkout.standaloneExercises)
+
+        result.updatedAt = max(self.updatedAt, cloudWorkout.updatedAt)
+        result.syncStatus = .synced
+
+        return result
+    }
+
+    /// Merges two arrays of WorkoutExercise, keeping the newer version of each
+    private func mergeWorkoutExerciseArrays(local: [WorkoutExercise], cloud: [WorkoutExercise]) -> [WorkoutExercise] {
+        var merged: [UUID: WorkoutExercise] = [:]
+
+        for we in local {
+            merged[we.id] = we
+        }
+
+        for cloudWE in cloud {
+            if let localWE = merged[cloudWE.id] {
+                // Compare by embedded exercise's updatedAt
+                if cloudWE.exercise.updatedAt > localWE.exercise.updatedAt {
+                    merged[cloudWE.id] = cloudWE
+                }
+            } else {
+                merged[cloudWE.id] = cloudWE
+            }
+        }
+
+        return Array(merged.values).sorted { $0.order < $1.order }
+    }
+
+    /// Computes a hash of workout content for quick dirty-checking
+    var contentHash: Int {
+        var hasher = Hasher()
+        hasher.combine(name)
+        hasher.combine(notes)
+        hasher.combine(estimatedDuration)
+        hasher.combine(archived)
+
+        for ref in moduleReferences.sorted(by: { $0.order < $1.order }) {
+            hasher.combine(ref.moduleId)
+            hasher.combine(ref.order)
+        }
+
+        for we in standaloneExercises.sorted(by: { $0.order < $1.order }) {
+            hasher.combine(we.id)
+            hasher.combine(we.exercise.id)
+            hasher.combine(we.exercise.updatedAt)
+        }
+
+        return hasher.finalize()
+    }
+
+    func needsSync(comparedTo other: Workout) -> Bool {
+        self.contentHash != other.contentHash
     }
 }
 

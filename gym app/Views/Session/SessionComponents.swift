@@ -1186,9 +1186,10 @@ struct TimePickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var totalSeconds: Int
     var title: String = "Time"
-    var maxMinutes: Int = 30
+    var maxHours: Int = 4
     var onSave: (() -> Void)? = nil
 
+    @State private var hours: Int = 0
     @State private var minutes: Int = 0
     @State private var seconds: Int = 0
 
@@ -1196,20 +1197,35 @@ struct TimePickerSheet: View {
         NavigationStack {
             VStack(spacing: AppSpacing.lg) {
                 HStack(spacing: 0) {
-                    // Minutes picker
-                    Picker("Minutes", selection: $minutes) {
-                        ForEach(0...maxMinutes, id: \.self) { min in
-                            Text("\(min)").tag(min)
+                    // Hours picker
+                    Picker("Hours", selection: $hours) {
+                        ForEach(0...maxHours, id: \.self) { hr in
+                            Text("\(hr)").tag(hr)
                         }
                     }
                     .pickerStyle(.wheel)
-                    .frame(width: 80)
+                    .frame(width: 60)
+                    .clipped()
+
+                    Text("hr")
+                        .font(.headline)
+                        .foregroundColor(AppColors.textSecondary)
+                        .frame(width: 30)
+
+                    // Minutes picker
+                    Picker("Minutes", selection: $minutes) {
+                        ForEach(0..<60, id: \.self) { min in
+                            Text(String(format: "%02d", min)).tag(min)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(width: 60)
                     .clipped()
 
                     Text("min")
                         .font(.headline)
                         .foregroundColor(AppColors.textSecondary)
-                        .frame(width: 40)
+                        .frame(width: 35)
 
                     // Seconds picker
                     Picker("Seconds", selection: $seconds) {
@@ -1218,13 +1234,13 @@ struct TimePickerSheet: View {
                         }
                     }
                     .pickerStyle(.wheel)
-                    .frame(width: 80)
+                    .frame(width: 60)
                     .clipped()
 
                     Text("sec")
                         .font(.headline)
                         .foregroundColor(AppColors.textSecondary)
-                        .frame(width: 40)
+                        .frame(width: 35)
                 }
                 .frame(height: 150)
 
@@ -1241,7 +1257,7 @@ struct TimePickerSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
-                        totalSeconds = (minutes * 60) + seconds
+                        totalSeconds = (hours * 3600) + (minutes * 60) + seconds
                         onSave?()
                         dismiss()
                     }
@@ -1250,7 +1266,8 @@ struct TimePickerSheet: View {
                 }
             }
             .onAppear {
-                minutes = totalSeconds / 60
+                hours = totalSeconds / 3600
+                minutes = (totalSeconds % 3600) / 60
                 seconds = totalSeconds % 60
             }
         }

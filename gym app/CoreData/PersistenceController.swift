@@ -43,12 +43,12 @@ struct PersistenceController {
 
         container.loadPersistentStores { [container] storeDescription, error in
             if let error = error as NSError? {
-                // Log the error
-                print("⚠️ CoreData store failed to load: \(error), \(error.userInfo)")
+                // Log the error - always log CoreData errors even in release
+                Logger.error("CoreData store failed to load: \(error.localizedDescription)")
 
                 // Attempt recovery by deleting incompatible store
                 if let storeURL = storeDescription.url {
-                    print("⚠️ Attempting to delete incompatible store and recreate...")
+                    Logger.warning("Attempting to delete incompatible store and recreate...")
                     do {
                         try container.persistentStoreCoordinator.destroyPersistentStore(at: storeURL, ofType: NSSQLiteStoreType, options: nil)
                         // Delete related files
@@ -68,9 +68,9 @@ struct PersistenceController {
                                 NSInferMappingModelAutomaticallyOption: true
                             ]
                         )
-                        print("✅ Store recreated successfully")
+                        Logger.info("Store recreated successfully")
                     } catch {
-                        print("❌ Failed to recreate store: \(error)")
+                        Logger.error("Failed to recreate store: \(error.localizedDescription)")
                     }
                 }
             }
@@ -89,8 +89,18 @@ struct PersistenceController {
     // MARK: - Exercise Migration
 
     private func migrateExercisesIfNeeded() {
+        // Skip migrations if in recovery mode (previous startup crashed)
+        if StartupGuard.isInRecoveryMode {
+            Logger.warning("PersistenceController: Skipping migrations - recovery mode active")
+            return
+        }
+
         let migrationManager = ExerciseMigrationManager(context: container.viewContext)
         migrationManager.migrateIfNeeded()
+
+        // Template ID repair - repairs ExerciseInstances created before stable UUIDs
+        // This is safe now - the MainActor issue was fixed
+        migrationManager.repairTemplateIdsIfNeeded()
     }
 
     // MARK: - Model Creation
@@ -129,6 +139,12 @@ struct PersistenceController {
 
         // Create library cache entities
         let progressionSchemeEntity = createProgressionSchemeEntity()
+
+        // Create sync logging entity
+        let syncLogEntity = createSyncLogEntity()
+
+        // Create deletion tracking entity
+        let deletionRecordEntity = createDeletionRecordEntity()
 
         // Set up relationships
         setupRelationships(
@@ -181,7 +197,11 @@ struct PersistenceController {
             // Program entities
             programEntity, programWorkoutSlotEntity,
             // Library cache entities
-            progressionSchemeEntity
+            progressionSchemeEntity,
+            // Sync logging entity
+            syncLogEntity,
+            // Deletion tracking entity
+            deletionRecordEntity
         ]
 
         return model
@@ -670,6 +690,38 @@ struct PersistenceController {
         return entity
     }
 
+    private static func createSyncLogEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "SyncLogEntity"
+        entity.managedObjectClassName = "SyncLogEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("timestamp", type: .dateAttributeType),
+            createAttribute("context", type: .stringAttributeType),
+            createAttribute("message", type: .stringAttributeType),
+            createAttribute("severityRaw", type: .stringAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createDeletionRecordEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "DeletionRecordEntity"
+        entity.managedObjectClassName = "DeletionRecordEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("entityTypeRaw", type: .stringAttributeType),
+            createAttribute("entityId", type: .UUIDAttributeType),
+            createAttribute("deletedAt", type: .dateAttributeType),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true)
+        ]
+
+        return entity
+    }
+
     // MARK: - Relationship Setup
 
     private static func setupRelationships(
@@ -1111,8 +1163,7 @@ struct PersistenceController {
             do {
                 try context.save()
             } catch {
-                let nsError = error as NSError
-                print("Error saving context: \(nsError), \(nsError.userInfo)")
+                Logger.error(error, context: "CoreData save")
             }
         }
     }

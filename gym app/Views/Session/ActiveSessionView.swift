@@ -214,10 +214,12 @@ struct ActiveSessionView: View {
                     currentModuleIndex: sessionViewModel.currentModuleIndex,
                     currentExerciseIndex: sessionViewModel.currentExerciseIndex,
                     onJumpTo: { moduleIndex, exerciseIndex in
-                        sessionViewModel.currentModuleIndex = moduleIndex
-                        sessionViewModel.currentExerciseIndex = exerciseIndex
-                        sessionViewModel.currentSetGroupIndex = 0
-                        sessionViewModel.currentSetIndex = 0
+                        sessionViewModel.setPosition(
+                            moduleIndex: moduleIndex,
+                            exerciseIndex: exerciseIndex,
+                            setGroupIndex: 0,
+                            setIndex: 0
+                        )
                         showWorkoutOverview = false
                     },
                     onUpdateSet: { moduleIndex, exerciseIndex, setGroupIndex, setIndex, weight, reps, rpe, duration, holdTime, distance in
@@ -864,21 +866,7 @@ struct ActiveSessionView: View {
     }
 
     private func goToPreviousExercise() {
-        if sessionViewModel.currentExerciseIndex > 0 {
-            // Go to previous exercise in same module
-            sessionViewModel.currentExerciseIndex -= 1
-            sessionViewModel.currentSetGroupIndex = 0
-            sessionViewModel.currentSetIndex = 0
-        } else if sessionViewModel.currentModuleIndex > 0 {
-            // Go to last exercise of previous module
-            sessionViewModel.currentModuleIndex -= 1
-            if let session = sessionViewModel.currentSession {
-                let previousModule = session.completedModules[sessionViewModel.currentModuleIndex]
-                sessionViewModel.currentExerciseIndex = previousModule.completedExercises.count - 1
-                sessionViewModel.currentSetGroupIndex = 0
-                sessionViewModel.currentSetIndex = 0
-            }
-        }
+        sessionViewModel.goToPreviousExercise()
     }
 
     // MARK: - Add Set
@@ -916,6 +904,9 @@ struct ActiveSessionView: View {
         session.completedModules[sessionViewModel.currentModuleIndex] = module
 
         sessionViewModel.currentSession = session
+
+        // Refresh the navigator so it sees the new set
+        sessionViewModel.refreshNavigator()
     }
 
     // MARK: - Delete Set
@@ -958,6 +949,9 @@ struct ActiveSessionView: View {
         session.completedModules[sessionViewModel.currentModuleIndex] = module
 
         sessionViewModel.currentSession = session
+
+        // Refresh the navigator so it sees the updated structure
+        sessionViewModel.refreshNavigator()
     }
 
     // MARK: - Update Exercise
@@ -972,17 +966,17 @@ struct ActiveSessionView: View {
 
         // Reset set indices if we're on the current exercise
         if moduleIndex == sessionViewModel.currentModuleIndex && exerciseIndex == sessionViewModel.currentExerciseIndex {
-            sessionViewModel.currentSetGroupIndex = 0
             // Find first incomplete set
             for (groupIndex, setGroup) in exercise.completedSetGroups.enumerated() {
                 for (setIndex, set) in setGroup.sets.enumerated() {
                     if !set.completed {
-                        sessionViewModel.currentSetGroupIndex = groupIndex
-                        sessionViewModel.currentSetIndex = setIndex
+                        sessionViewModel.jumpToSet(setGroupIndex: groupIndex, setIndex: setIndex)
                         return
                     }
                 }
             }
+            // If all sets complete, jump to first set
+            sessionViewModel.jumpToSet(setGroupIndex: 0, setIndex: 0)
         }
     }
 
@@ -1065,16 +1059,18 @@ struct ActiveSessionView: View {
 
         // Update current exercise index if needed
         if moduleIndex == sessionViewModel.currentModuleIndex {
+            var newExerciseIndex = sessionViewModel.currentExerciseIndex
             if sessionViewModel.currentExerciseIndex == from {
                 // We moved the current exercise
-                sessionViewModel.currentExerciseIndex = to
+                newExerciseIndex = to
             } else if from < sessionViewModel.currentExerciseIndex && to >= sessionViewModel.currentExerciseIndex {
                 // Moved an exercise from before to after current
-                sessionViewModel.currentExerciseIndex -= 1
+                newExerciseIndex = sessionViewModel.currentExerciseIndex - 1
             } else if from > sessionViewModel.currentExerciseIndex && to <= sessionViewModel.currentExerciseIndex {
                 // Moved an exercise from after to before current
-                sessionViewModel.currentExerciseIndex += 1
+                newExerciseIndex = sessionViewModel.currentExerciseIndex + 1
             }
+            sessionViewModel.setPosition(exerciseIndex: newExerciseIndex)
         }
     }
 
@@ -1259,9 +1255,7 @@ struct ActiveSessionView: View {
             if let currentPos = supersetIndices.firstIndex(of: sessionViewModel.currentExerciseIndex),
                currentPos < supersetIndices.count - 1 {
                 // Move to next exercise in superset
-                sessionViewModel.currentExerciseIndex = supersetIndices[currentPos + 1]
-                sessionViewModel.currentSetGroupIndex = 0
-                sessionViewModel.currentSetIndex = 0
+                sessionViewModel.moveToExercise(supersetIndices[currentPos + 1])
                 return
             }
         }
@@ -1269,18 +1263,13 @@ struct ActiveSessionView: View {
         // Normal advance
         if sessionViewModel.currentExerciseIndex < module.completedExercises.count - 1 {
             // Next exercise in same module
-            sessionViewModel.currentExerciseIndex += 1
-            sessionViewModel.currentSetGroupIndex = 0
-            sessionViewModel.currentSetIndex = 0
+            sessionViewModel.goToNextExercise()
         } else if sessionViewModel.currentModuleIndex < session.completedModules.count - 1 {
             // Moving to next module - show transition
             let currentModuleName = module.moduleName
             let nextModule = session.completedModules[sessionViewModel.currentModuleIndex + 1]
             showModuleTransitionAnimation(from: currentModuleName, to: nextModule.moduleName) {
-                sessionViewModel.currentModuleIndex += 1
-                sessionViewModel.currentExerciseIndex = 0
-                sessionViewModel.currentSetGroupIndex = 0
-                sessionViewModel.currentSetIndex = 0
+                sessionViewModel.goToNextModule()
             }
         } else {
             // Workout complete - show animation

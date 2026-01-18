@@ -9,6 +9,9 @@
 import Foundation
 
 struct ExerciseInstance: Identifiable, Codable, Hashable {
+    // Schema version for migration support
+    var schemaVersion: Int = SchemaVersions.exerciseInstance
+
     var id: UUID
     var templateId: UUID  // Required - links to ExerciseTemplate
     var setGroups: [SetGroup]
@@ -50,6 +53,21 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
     // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Decode schema version (default to 1 for backward compatibility)
+        let version = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
+        schemaVersion = SchemaVersions.exerciseInstance  // Always store current version
+
+        // Handle migrations based on version
+        switch version {
+        case 1:
+            // V1 is current - decode normally
+            break
+        default:
+            // Unknown future version - attempt to decode with defaults
+            break
+        }
+
         id = try container.decode(UUID.self, forKey: .id)
         templateId = try container.decode(UUID.self, forKey: .templateId)
         setGroups = try container.decodeIfPresent([SetGroup].self, forKey: .setGroups) ?? []
@@ -62,7 +80,8 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
     }
 
-    private enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
+        case schemaVersion
         case id, templateId, setGroups, supersetGroupId, order, notes, nameOverride, exerciseTypeOverride, createdAt, updatedAt
     }
 
@@ -77,12 +96,15 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
     }
 
     /// Creates an instance from a template with default set groups
+    /// Always stores nameOverride as a fallback in case template lookup fails
     static func from(template: ExerciseTemplate, order: Int = 0) -> ExerciseInstance {
         ExerciseInstance(
             templateId: template.id,
             setGroups: template.defaultSetGroups,
             order: order,
-            notes: nil
+            notes: nil,
+            nameOverride: template.name,  // Store name as backup
+            exerciseTypeOverride: template.exerciseType  // Store type as backup
         )
     }
 }

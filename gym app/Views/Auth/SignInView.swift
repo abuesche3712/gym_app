@@ -86,10 +86,10 @@ struct SignInView: View {
             do {
                 try await authService.handleAppleAuthorization(authorization)
             } catch {
-                print("Failed to handle Apple authorization: \(error)")
+                Logger.error(error, context: "handleAppleAuthorization")
             }
         case .failure(let error):
-            print("Sign in with Apple failed: \(error)")
+            Logger.error(error, context: "signInWithApple")
         }
     }
 }

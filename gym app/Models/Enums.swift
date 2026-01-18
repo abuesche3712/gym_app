@@ -402,4 +402,7 @@ extension Notification.Name {
 
     /// Posted to request user profile for sync to cloud
     static let requestUserProfileForSync = Notification.Name("requestUserProfileForSync")
+
+    /// Posted when a deletion record is synced from cloud (for scheduled workouts)
+    static let deletionRecordSyncedFromCloud = Notification.Name("deletionRecordSyncedFromCloud")
 }

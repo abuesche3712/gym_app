@@ -3,6 +3,8 @@
 //  gym app
 //
 //  ViewModel for managing workout sessions (active logging)
+//  Focuses on: session lifecycle, timer management, data persistence
+//  Navigation logic is delegated to SessionNavigator
 //
 
 import Foundation
@@ -14,10 +16,9 @@ class SessionViewModel: ObservableObject {
     // Current session state
     @Published var currentSession: Session?
     @Published var isSessionActive = false
-    @Published var currentModuleIndex = 0
-    @Published var currentExerciseIndex = 0
-    @Published var currentSetGroupIndex = 0
-    @Published var currentSetIndex = 0
+
+    // Navigation state (published for UI binding)
+    @Published private(set) var navigator: SessionNavigator?
 
     // Timer state
     @Published var restTimerSeconds = 0
@@ -37,8 +38,8 @@ class SessionViewModel: ObservableObject {
     private var timerCancellable: AnyCancellable?
     private var sessionTimerCancellable: AnyCancellable?
 
-    init(repository: DataRepository = .shared) {
-        self.repository = repository
+    init(repository: DataRepository? = nil) {
+        self.repository = repository ?? DataRepository.shared
         loadSessions()
     }
 
@@ -47,15 +48,36 @@ class SessionViewModel: ObservableObject {
         sessions = repository.sessions
     }
 
+    // MARK: - Navigation Accessors (delegated to navigator)
+
+    var currentModuleIndex: Int { navigator?.currentModuleIndex ?? 0 }
+    var currentExerciseIndex: Int { navigator?.currentExerciseIndex ?? 0 }
+    var currentSetGroupIndex: Int { navigator?.currentSetGroupIndex ?? 0 }
+    var currentSetIndex: Int { navigator?.currentSetIndex ?? 0 }
+
+    var currentModule: CompletedModule? { navigator?.currentModule }
+    var currentExercise: SessionExercise? { navigator?.currentExercise }
+    var currentSetGroup: CompletedSetGroup? { navigator?.currentSetGroup }
+    var currentSet: SetData? { navigator?.currentSet }
+
+    var isLastSet: Bool { navigator?.isLastSet ?? true }
+    var isInSuperset: Bool { navigator?.isInSuperset ?? false }
+    var shouldRestAfterSuperset: Bool { navigator?.shouldRestAfterSuperset ?? false }
+    var currentSupersetExercises: [SessionExercise]? { navigator?.currentSupersetExercises }
+    var supersetPosition: Int? { navigator?.supersetPosition }
+    var supersetTotal: Int? { navigator?.supersetTotal }
+    var overallProgress: Double { navigator?.overallProgress ?? 0 }
+
     // MARK: - Session Management
 
     func startSession(workout: Workout, modules: [Module]) {
+        // Use unified accessor to handle both legacy and normalized exercise models
         var completedModules = modules.map { module in
             CompletedModule(
                 moduleId: module.id,
                 moduleName: module.name,
                 moduleType: module.type,
-                completedExercises: module.exercises.map { exercise in
+                completedExercises: module.allExercisesAsLegacy().map { exercise in
                     convertExerciseToSession(exercise)
                 }
             )
@@ -80,10 +102,9 @@ class SessionViewModel: ObservableObject {
             completedModules: completedModules
         )
 
-        currentModuleIndex = 0
-        currentExerciseIndex = 0
-        currentSetGroupIndex = 0
-        currentSetIndex = 0
+        // Create navigator with the modules
+        navigator = SessionNavigator(modules: completedModules)
+
         sessionStartTime = Date()
         isSessionActive = true
 
@@ -139,6 +160,7 @@ class SessionViewModel: ObservableObject {
         stopRestTimer()
 
         currentSession = nil
+        navigator = nil
         isSessionActive = false
     }
 
@@ -146,6 +168,7 @@ class SessionViewModel: ObservableObject {
         stopSessionTimer()
         stopRestTimer()
         currentSession = nil
+        navigator = nil
         isSessionActive = false
     }
 
@@ -160,20 +183,21 @@ class SessionViewModel: ObservableObject {
         distance: Double? = nil,
         completed: Bool = true
     ) {
-        guard var session = currentSession else { return }
+        guard var session = currentSession,
+              let nav = navigator else { return }
 
-        // Navigate to current set
-        guard currentModuleIndex < session.completedModules.count else { return }
-        var module = session.completedModules[currentModuleIndex]
+        // Navigate to current set using navigator's indices
+        guard nav.currentModuleIndex < session.completedModules.count else { return }
+        var module = session.completedModules[nav.currentModuleIndex]
 
-        guard currentExerciseIndex < module.completedExercises.count else { return }
-        var exercise = module.completedExercises[currentExerciseIndex]
+        guard nav.currentExerciseIndex < module.completedExercises.count else { return }
+        var exercise = module.completedExercises[nav.currentExerciseIndex]
 
-        guard currentSetGroupIndex < exercise.completedSetGroups.count else { return }
-        var setGroup = exercise.completedSetGroups[currentSetGroupIndex]
+        guard nav.currentSetGroupIndex < exercise.completedSetGroups.count else { return }
+        var setGroup = exercise.completedSetGroups[nav.currentSetGroupIndex]
 
-        guard currentSetIndex < setGroup.sets.count else { return }
-        var setData = setGroup.sets[currentSetIndex]
+        guard nav.currentSetIndex < setGroup.sets.count else { return }
+        var setData = setGroup.sets[nav.currentSetIndex]
 
         // Update set data
         setData.weight = weight ?? setData.weight
@@ -185,10 +209,10 @@ class SessionViewModel: ObservableObject {
         setData.completed = completed
 
         // Put it all back together
-        setGroup.sets[currentSetIndex] = setData
-        exercise.completedSetGroups[currentSetGroupIndex] = setGroup
-        module.completedExercises[currentExerciseIndex] = exercise
-        session.completedModules[currentModuleIndex] = module
+        setGroup.sets[nav.currentSetIndex] = setData
+        exercise.completedSetGroups[nav.currentSetGroupIndex] = setGroup
+        module.completedExercises[nav.currentExerciseIndex] = exercise
+        session.completedModules[nav.currentModuleIndex] = module
 
         currentSession = session
 
@@ -196,160 +220,74 @@ class SessionViewModel: ObservableObject {
         advanceToNextSet()
     }
 
+    // MARK: - Navigation (delegated to navigator)
+
     func advanceToNextSet() {
-        guard let session = currentSession else { return }
-        let module = session.completedModules[currentModuleIndex]
-        let exercise = module.completedExercises[currentExerciseIndex]
-        let setGroup = exercise.completedSetGroups[currentSetGroupIndex]
-
-        // Check if this exercise is in a superset
-        if let supersetId = exercise.supersetGroupId {
-            // Find all exercises in this superset
-            let supersetIndices = module.completedExercises.enumerated()
-                .filter { $0.element.supersetGroupId == supersetId }
-                .map { $0.offset }
-
-            guard let currentSupersetPosition = supersetIndices.firstIndex(of: currentExerciseIndex) else {
-                // Fallback to normal flow if something is wrong
-                advanceNormally(module: module, exercise: exercise, setGroup: setGroup, session: session)
-                return
-            }
-
-            let isLastInSuperset = currentSupersetPosition == supersetIndices.count - 1
-
-            if isLastInSuperset {
-                // We've done all exercises in the superset for this set
-                // Check if there are more sets
-                if currentSetIndex < setGroup.sets.count - 1 {
-                    // Go back to first exercise in superset, next set number
-                    currentExerciseIndex = supersetIndices[0]
-                    currentSetIndex += 1
-                } else {
-                    // Superset round complete, move to next set group or next non-superset exercise
-                    moveToNextAfterSuperset(module: module, supersetIndices: supersetIndices, session: session)
-                }
-            } else {
-                // Move to next exercise in superset, same set number
-                currentExerciseIndex = supersetIndices[currentSupersetPosition + 1]
-                // Keep same setGroupIndex and setIndex
-            }
-        } else {
-            // Normal (non-superset) flow
-            advanceNormally(module: module, exercise: exercise, setGroup: setGroup, session: session)
-        }
-    }
-
-    private func advanceNormally(module: CompletedModule, exercise: SessionExercise, setGroup: CompletedSetGroup, session: Session) {
-        if currentSetIndex < setGroup.sets.count - 1 {
-            // Next set in current set group
-            currentSetIndex += 1
-        } else if currentSetGroupIndex < exercise.completedSetGroups.count - 1 {
-            // Next set group
-            currentSetGroupIndex += 1
-            currentSetIndex = 0
-        } else if currentExerciseIndex < module.completedExercises.count - 1 {
-            // Next exercise
-            currentExerciseIndex += 1
-            currentSetGroupIndex = 0
-            currentSetIndex = 0
-        } else if currentModuleIndex < session.completedModules.count - 1 {
-            // Next module
-            currentModuleIndex += 1
-            currentExerciseIndex = 0
-            currentSetGroupIndex = 0
-            currentSetIndex = 0
-        }
-        // else: end of workout
-    }
-
-    private func moveToNextAfterSuperset(module: CompletedModule, supersetIndices: [Int], session: Session) {
-        // Find the first exercise index after the superset
-        let maxSupersetIndex = supersetIndices.max() ?? currentExerciseIndex
-
-        if maxSupersetIndex < module.completedExercises.count - 1 {
-            // Move to next exercise after superset
-            currentExerciseIndex = maxSupersetIndex + 1
-            currentSetGroupIndex = 0
-            currentSetIndex = 0
-        } else if currentModuleIndex < session.completedModules.count - 1 {
-            // Move to next module
-            currentModuleIndex += 1
-            currentExerciseIndex = 0
-            currentSetGroupIndex = 0
-            currentSetIndex = 0
-        }
-        // else: end of workout
-    }
-
-    /// Returns true if we just finished the last exercise in a superset round (time to rest)
-    var shouldRestAfterSuperset: Bool {
-        guard let module = currentModule,
-              let exercise = currentExercise,
-              let supersetId = exercise.supersetGroupId else {
-            return false
-        }
-
-        let supersetIndices = module.completedExercises.enumerated()
-            .filter { $0.element.supersetGroupId == supersetId }
-            .map { $0.offset }
-
-        guard let currentSupersetPosition = supersetIndices.firstIndex(of: currentExerciseIndex) else {
-            return false
-        }
-
-        // We should rest if we're at the last exercise in the superset
-        return currentSupersetPosition == supersetIndices.count - 1
-    }
-
-    /// Gets all exercises in the current superset (for display purposes)
-    var currentSupersetExercises: [SessionExercise]? {
-        guard let module = currentModule,
-              let exercise = currentExercise,
-              let supersetId = exercise.supersetGroupId else {
-            return nil
-        }
-
-        return module.completedExercises.filter { $0.supersetGroupId == supersetId }
-    }
-
-    /// Current position within the superset (1-based for display)
-    var supersetPosition: Int? {
-        guard let module = currentModule,
-              let exercise = currentExercise,
-              let supersetId = exercise.supersetGroupId else {
-            return nil
-        }
-
-        let supersetIndices = module.completedExercises.enumerated()
-            .filter { $0.element.supersetGroupId == supersetId }
-            .map { $0.offset }
-
-        guard let position = supersetIndices.firstIndex(of: currentExerciseIndex) else {
-            return nil
-        }
-
-        return position + 1
-    }
-
-    /// Total exercises in current superset
-    var supersetTotal: Int? {
-        currentSupersetExercises?.count
+        navigator?.advanceToNextSet()
+        // Trigger UI update by reassigning (struct is value type)
+        objectWillChange.send()
     }
 
     func skipExercise() {
-        guard let session = currentSession else { return }
-        let module = session.completedModules[currentModuleIndex]
+        navigator?.skipExercise()
+        objectWillChange.send()
+    }
 
-        if currentExerciseIndex < module.completedExercises.count - 1 {
-            currentExerciseIndex += 1
-            currentSetGroupIndex = 0
-            currentSetIndex = 0
-        } else if currentModuleIndex < session.completedModules.count - 1 {
-            currentModuleIndex += 1
-            currentExerciseIndex = 0
-            currentSetGroupIndex = 0
-            currentSetIndex = 0
+    func skipModule() {
+        guard var session = currentSession else { return }
+
+        if let skippedModuleId = navigator?.skipModule() {
+            // Track the skipped module in the session
+            session.skippedModuleIds.append(skippedModuleId)
+            currentSession = session
         }
+        objectWillChange.send()
+    }
+
+    /// Goes to the previous exercise
+    func goToPreviousExercise() {
+        navigator?.goToPreviousExercise()
+        objectWillChange.send()
+    }
+
+    /// Goes to the next exercise (skipping remaining sets)
+    func goToNextExercise() {
+        navigator?.goToNextExercise()
+        objectWillChange.send()
+    }
+
+    /// Goes to the next module (skipping remaining exercises)
+    func goToNextModule() {
+        navigator?.goToNextModule()
+        objectWillChange.send()
+    }
+
+    /// Moves to a specific exercise within the current module
+    func moveToExercise(_ index: Int) {
+        navigator?.moveToExercise(index)
+        objectWillChange.send()
+    }
+
+    /// Jumps to a specific set within the current exercise
+    func jumpToSet(setGroupIndex: Int, setIndex: Int) {
+        navigator?.jumpToSet(setGroupIndex: setGroupIndex, setIndex: setIndex)
+        objectWillChange.send()
+    }
+
+    /// Sets position directly (for complex navigation)
+    func setPosition(
+        moduleIndex: Int? = nil,
+        exerciseIndex: Int? = nil,
+        setGroupIndex: Int? = nil,
+        setIndex: Int? = nil
+    ) {
+        navigator?.setPosition(
+            moduleIndex: moduleIndex,
+            exerciseIndex: exerciseIndex,
+            setGroupIndex: setGroupIndex,
+            setIndex: setIndex
+        )
+        objectWillChange.send()
     }
 
     /// Update the distance unit for an exercise during the active session
@@ -362,62 +300,28 @@ class SessionViewModel: ObservableObject {
         currentSession = session
     }
 
-    func skipModule() {
-        guard var session = currentSession else { return }
+    /// Refreshes the navigator with the current session's modules while preserving position.
+    /// Call this after modifying currentSession (e.g., adding/removing sets) so the navigator
+    /// reflects the updated structure.
+    func refreshNavigator() {
+        guard let session = currentSession else { return }
 
-        // Mark current module as skipped
-        session.skippedModuleIds.append(session.completedModules[currentModuleIndex].moduleId)
-        currentSession = session
+        // Preserve current position
+        let moduleIndex = navigator?.currentModuleIndex ?? 0
+        let exerciseIndex = navigator?.currentExerciseIndex ?? 0
+        let setGroupIndex = navigator?.currentSetGroupIndex ?? 0
+        let setIndex = navigator?.currentSetIndex ?? 0
 
-        if currentModuleIndex < session.completedModules.count - 1 {
-            currentModuleIndex += 1
-            currentExerciseIndex = 0
-            currentSetGroupIndex = 0
-            currentSetIndex = 0
-        }
-    }
+        // Recreate navigator with updated modules
+        navigator = SessionNavigator(
+            modules: session.completedModules,
+            moduleIndex: moduleIndex,
+            exerciseIndex: exerciseIndex,
+            setGroupIndex: setGroupIndex,
+            setIndex: setIndex
+        )
 
-    // MARK: - Current Position Accessors
-
-    var currentModule: CompletedModule? {
-        guard let session = currentSession,
-              currentModuleIndex < session.completedModules.count else { return nil }
-        return session.completedModules[currentModuleIndex]
-    }
-
-    var currentExercise: SessionExercise? {
-        guard let module = currentModule,
-              currentExerciseIndex < module.completedExercises.count else { return nil }
-        return module.completedExercises[currentExerciseIndex]
-    }
-
-    var currentSetGroup: CompletedSetGroup? {
-        guard let exercise = currentExercise,
-              currentSetGroupIndex < exercise.completedSetGroups.count else { return nil }
-        return exercise.completedSetGroups[currentSetGroupIndex]
-    }
-
-    var currentSet: SetData? {
-        guard let setGroup = currentSetGroup,
-              currentSetIndex < setGroup.sets.count else { return nil }
-        return setGroup.sets[currentSetIndex]
-    }
-
-    var isLastSet: Bool {
-        guard let session = currentSession else { return true }
-        let lastModuleIndex = session.completedModules.count - 1
-        guard currentModuleIndex == lastModuleIndex else { return false }
-
-        let module = session.completedModules[currentModuleIndex]
-        let lastExerciseIndex = module.completedExercises.count - 1
-        guard currentExerciseIndex == lastExerciseIndex else { return false }
-
-        let exercise = module.completedExercises[currentExerciseIndex]
-        let lastSetGroupIndex = exercise.completedSetGroups.count - 1
-        guard currentSetGroupIndex == lastSetGroupIndex else { return false }
-
-        let setGroup = exercise.completedSetGroups[currentSetGroupIndex]
-        return currentSetIndex == setGroup.sets.count - 1
+        objectWillChange.send()
     }
 
     // MARK: - Timer Management
@@ -468,6 +372,18 @@ class SessionViewModel: ObservableObject {
         restTimerTotal = 0
         restTimerStartTime = nil
         restTimerDuration = 0
+
+        // Auto-advance to next exercise if all sets of current exercise are completed
+        if let exercise = currentExercise, allSetsCompleted(exercise) {
+            goToNextExercise()
+        }
+    }
+
+    /// Check if all sets of an exercise are completed
+    private func allSetsCompleted(_ exercise: SessionExercise) -> Bool {
+        exercise.completedSetGroups.allSatisfy { group in
+            group.sets.allSatisfy { $0.completed }
+        }
     }
 
     private func startSessionTimer() {
