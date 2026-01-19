@@ -19,6 +19,11 @@ struct HomeView: View {
     @State private var showingTodayWorkoutDetail = false
     @State private var showingQuickSchedule = false
 
+    // Session recovery state
+    @State private var showingRecoveryAlert = false
+    @State private var recoverableSession: Session?
+    @State private var recoveryInfo: (workoutName: String, startTime: Date, lastUpdated: Date)?
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -106,7 +111,48 @@ struct HomeView: View {
                     }
                 )
             }
+            .alert("Resume Workout?", isPresented: $showingRecoveryAlert) {
+                Button("Resume") {
+                    if let session = recoverableSession {
+                        sessionViewModel.resumeSession(session)
+                        showingActiveSession = true
+                    }
+                }
+                Button("Discard", role: .destructive) {
+                    sessionViewModel.discardRecoverableSession()
+                    recoverableSession = nil
+                    recoveryInfo = nil
+                }
+            } message: {
+                if let info = recoveryInfo {
+                    Text("You have an unfinished '\(info.workoutName)' workout from \(formatRecoveryTime(info.startTime)). Would you like to resume?")
+                } else {
+                    Text("You have an unfinished workout. Would you like to resume?")
+                }
+            }
+            .onAppear {
+                checkForRecoverableSession()
+            }
         }
+    }
+
+    // MARK: - Session Recovery
+
+    private func checkForRecoverableSession() {
+        // Don't show recovery if already in a session
+        guard !sessionViewModel.isSessionActive else { return }
+
+        if let session = sessionViewModel.checkForRecoverableSession() {
+            recoverableSession = session
+            recoveryInfo = sessionViewModel.getRecoverableSessionInfo()
+            showingRecoveryAlert = true
+        }
+    }
+
+    private func formatRecoveryTime(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 
     // MARK: - Today's Workout Bar

@@ -1346,6 +1346,34 @@ enum DeletionEntityType: String, Codable, CaseIterable {
     }
 }
 
+// MARK: - In-Progress Session Entity
+
+/// Stores a JSON-encoded Session for crash recovery
+@objc(InProgressSessionEntity)
+public class InProgressSessionEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var sessionData: Data?
+    @NSManaged public var lastUpdated: Date
+    @NSManaged public var workoutId: UUID
+    @NSManaged public var workoutName: String?
+    @NSManaged public var startTime: Date?
+
+    /// Decode the stored session data back to a Session model
+    func toSession() -> Session? {
+        guard let data = sessionData else { return nil }
+        return try? JSONDecoder().decode(Session.self, from: data)
+    }
+
+    /// Update the entity from a Session model
+    func update(from session: Session) {
+        self.sessionData = try? JSONEncoder().encode(session)
+        self.lastUpdated = Date()
+        self.workoutId = session.workoutId
+        self.workoutName = session.workoutName
+        self.startTime = session.date
+    }
+}
+
 /// Model representation of a deletion record
 struct DeletionRecord: Identifiable, Codable {
     let id: UUID

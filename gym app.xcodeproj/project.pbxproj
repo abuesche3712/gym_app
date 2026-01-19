@@ -17,6 +17,7 @@
 		B610AC0A2F15B4DE008B2C15 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B610AC092F15B4DE008B2C15 /* Preview Assets.xcassets */; };
 		B610AC142F15B4DE008B2C15 /* gym_appTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC132F15B4DE008B2C15 /* gym_appTests.swift */; };
 		SSNVTST02BUILD002 /* SessionNavigatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SSNVTST01FILE001 /* SessionNavigatorTests.swift */; };
+		EXINSTST02BUILD /* ExerciseInstanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXINSTST01FILE /* ExerciseInstanceTests.swift */; };
 		B610AC1E2F15B4DF008B2C15 /* gym_appUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC1D2F15B4DF008B2C15 /* gym_appUITests.swift */; };
 		B610AC202F15B4DF008B2C15 /* gym_appUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC1F2F15B4DF008B2C15 /* gym_appUITestsLaunchTests.swift */; };
 		B63EBEE32F15E55600D8C22D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B63EBEE22F15E55600D8C22D /* FirebaseAuth */; };
@@ -75,6 +76,7 @@
 		7E3A26543EA449B5824C3A63 /* WorkoutOverviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */; };
 		9A12E7530EDF4ADE85E5FEA3 /* ExerciseModificationSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA5B70D29F142CF8BE80E2D /* ExerciseModificationSheets.swift */; };
 		FORMATTING002HELPERS002 /* FormattingHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = FORMATTING001HELPERS001 /* FormattingHelpers.swift */; };
+		DEBOUNCER002BUILD002 /* Debouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEBOUNCER001FILE001 /* Debouncer.swift */; };
 		SUPERSET002HELPER002 /* SupersetHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = SUPERSET001HELPER001 /* SupersetHelper.swift */; };
 		9245BCBAC81C4E3C9670553C /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C36DDB57BAA44FEF866BE090 /* AuthService.swift */; };
 		AB8059E04FED4CAC94B1D5DB /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D9B5EAEA83B489586ACDC15 /* SignInView.swift */; };
@@ -83,6 +85,7 @@
 		EXRSLV002BUILD002 /* ExerciseResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXRSLV001FILE001 /* ExerciseResolver.swift */; };
 		HAPTIC002BUILD002 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = HAPTIC001FILE001 /* HapticManager.swift */; };
 		ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANIMCO001FILE001 /* AnimatedComponents.swift */; };
+		SYCERR002BUILD002 /* SyncErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = SYCERR001FILE001 /* SyncErrorBanner.swift */; };
 		HOMESC002BUILD002 /* HomeScheduleSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = HOMESC001FILE001 /* HomeScheduleSheets.swift */; };
 		EQUIPL002BUILD002 /* EquipmentLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EQUIPL001FILE001 /* EquipmentLibraryView.swift */; };
 		PROGAM002BUILD002 /* Program.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROGAM001FILE001 /* Program.swift */; };
@@ -135,6 +138,7 @@
 		B610AC0F2F15B4DE008B2C15 /* gym appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "gym appTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B610AC132F15B4DE008B2C15 /* gym_appTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = gym_appTests.swift; sourceTree = "<group>"; };
 		SSNVTST01FILE001 /* SessionNavigatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNavigatorTests.swift; sourceTree = "<group>"; };
+		EXINSTST01FILE /* ExerciseInstanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseInstanceTests.swift; sourceTree = "<group>"; };
 		B610AC192F15B4DF008B2C15 /* gym appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "gym appUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B610AC1D2F15B4DF008B2C15 /* gym_appUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = gym_appUITests.swift; sourceTree = "<group>"; };
 		B610AC1F2F15B4DF008B2C15 /* gym_appUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = gym_appUITestsLaunchTests.swift; sourceTree = "<group>"; };
@@ -190,6 +194,7 @@
 		4EA5B70D29F142CF8BE80E2D /* ExerciseModificationSheets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseModificationSheets.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F647890123456A /* IntervalTimerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IntervalTimerView.swift; sourceTree = "<group>"; };
 		FORMATTING001HELPERS001 /* FormattingHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FormattingHelpers.swift; sourceTree = "<group>"; };
+		DEBOUNCER001FILE001 /* Debouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debouncer.swift; sourceTree = "<group>"; };
 		SUPERSET001HELPER001 /* SupersetHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SupersetHelper.swift; sourceTree = "<group>"; };
 		C36DDB57BAA44FEF866BE090 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		8D9B5EAEA83B489586ACDC15 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
@@ -199,6 +204,7 @@
 		EXRSLV001FILE001 /* ExerciseResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseResolver.swift; sourceTree = "<group>"; };
 		HAPTIC001FILE001 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		ANIMCO001FILE001 /* AnimatedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedComponents.swift; sourceTree = "<group>"; };
+		SYCERR001FILE001 /* SyncErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorBanner.swift; sourceTree = "<group>"; };
 		HOMESC001FILE001 /* HomeScheduleSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScheduleSheets.swift; sourceTree = "<group>"; };
 		EQUIPL001FILE001 /* EquipmentLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentLibraryView.swift; sourceTree = "<group>"; };
 		PROGAM001FILE001 /* Program.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Program.swift; sourceTree = "<group>"; };
@@ -301,6 +307,7 @@
 			children = (
 				B610AC132F15B4DE008B2C15 /* gym_appTests.swift */,
 				SSNVTST01FILE001 /* SessionNavigatorTests.swift */,
+				EXINSTST01FILE /* ExerciseInstanceTests.swift */,
 			);
 			path = "gym appTests";
 			sourceTree = "<group>";
@@ -434,6 +441,7 @@
 			isa = PBXGroup;
 			children = (
 				ANIMCO001FILE001 /* AnimatedComponents.swift */,
+				SYCERR001FILE001 /* SyncErrorBanner.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -487,6 +495,7 @@
 			children = (
 				FORMATTING001HELPERS001 /* FormattingHelpers.swift */,
 				SUPERSET001HELPER001 /* SupersetHelper.swift */,
+				DEBOUNCER001FILE001 /* Debouncer.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -747,6 +756,7 @@
 				0DE55B310BEE4A628944C240 /* LibraryExerciseEditView.swift in Sources */,
 				FORMATTING002HELPERS002 /* FormattingHelpers.swift in Sources */,
 				SUPERSET002HELPER002 /* SupersetHelper.swift in Sources */,
+				DEBOUNCER002BUILD002 /* Debouncer.swift in Sources */,
 				9245BCBAC81C4E3C9670553C /* AuthService.swift in Sources */,
 				AB8059E04FED4CAC94B1D5DB /* SignInView.swift in Sources */,
 				EXINST002BUILD002 /* ExerciseInstance.swift in Sources */,
@@ -754,6 +764,7 @@
 				EXRSLV002BUILD002 /* ExerciseResolver.swift in Sources */,
 				HAPTIC002BUILD002 /* HapticManager.swift in Sources */,
 				ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */,
+				SYCERR002BUILD002 /* SyncErrorBanner.swift in Sources */,
 				HOMESC002BUILD002 /* HomeScheduleSheets.swift in Sources */,
 				EQUIPL002BUILD002 /* EquipmentLibraryView.swift in Sources */,
 				PROGAM002BUILD002 /* Program.swift in Sources */,
@@ -786,6 +797,7 @@
 			files = (
 				B610AC142F15B4DE008B2C15 /* gym_appTests.swift in Sources */,
 				SSNVTST02BUILD002 /* SessionNavigatorTests.swift in Sources */,
+				EXINSTST02BUILD /* ExerciseInstanceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

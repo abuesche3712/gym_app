@@ -53,20 +53,30 @@ class CustomExerciseLibrary: ObservableObject {
 
     // MARK: - Save
 
+    /// Returns false if validation fails or exercise already exists
+    @discardableResult
     func addExercise(
         name: String,
         exerciseType: ExerciseType,
         primary: [MuscleGroup] = [],
         secondary: [MuscleGroup] = []
-    ) {
+    ) -> Bool {
+        // Validate name is not empty
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else {
+            Logger.warning("Cannot add custom exercise with empty name")
+            return false
+        }
+
         // Check if exercise with same name already exists
-        guard !exercises.contains(where: { $0.name.lowercased() == name.lowercased() }) else {
-            return
+        guard !exercises.contains(where: { $0.name.lowercased() == trimmedName.lowercased() }) else {
+            Logger.debug("Custom exercise '\(trimmedName)' already exists")
+            return false
         }
 
         let entity = CustomExerciseTemplateEntity(context: viewContext)
         entity.id = UUID()
-        entity.name = name
+        entity.name = trimmedName
         entity.categoryRaw = ExerciseCategory.fullBody.rawValue
         entity.exerciseType = exerciseType
         entity.primaryMuscles = primary
@@ -76,10 +86,18 @@ class CustomExerciseLibrary: ObservableObject {
 
         save()
         loadExercises()
+        return true
     }
 
-    func addExercise(_ template: ExerciseTemplate) {
-        addExercise(
+    /// Returns false if validation fails or exercise already exists
+    @discardableResult
+    func addExercise(_ template: ExerciseTemplate) -> Bool {
+        guard !template.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            Logger.warning("Cannot add custom exercise with empty template name")
+            return false
+        }
+
+        return addExercise(
             name: template.name,
             exerciseType: template.exerciseType,
             primary: template.primaryMuscles,

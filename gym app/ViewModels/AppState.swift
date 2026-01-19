@@ -9,6 +9,22 @@ import Foundation
 import SwiftUI
 import Combine
 
+// MARK: - Sync Error Info
+
+/// Information about a sync error to display to the user
+struct SyncErrorInfo: Identifiable {
+    let id = UUID()
+    let message: String
+    let timestamp: Date
+    var isRetryable: Bool
+
+    init(message: String, timestamp: Date = Date(), isRetryable: Bool = true) {
+        self.message = message
+        self.timestamp = timestamp
+        self.isRetryable = isRetryable
+    }
+}
+
 @preconcurrency @MainActor
 class AppState: ObservableObject {
     static let shared = AppState()
@@ -42,6 +58,7 @@ class AppState: ObservableObject {
     // Sync state
     @Published var isSyncing = false
     @Published var lastSyncDate: Date?
+    @Published var syncError: SyncErrorInfo?
 
     private let repository = DataRepository.shared
     private let firestoreService = FirestoreService.shared
@@ -104,6 +121,20 @@ class AppState: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+
+        // Listen for SyncManager state changes to surface errors
+        SyncManager.shared.$syncState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                if case .error(let message) = state {
+                    self?.syncError = SyncErrorInfo(
+                        message: message,
+                        timestamp: Date(),
+                        isRetryable: true
+                    )
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func applyUserProfile(_ profile: UserProfile) {
@@ -153,19 +184,43 @@ class AppState: ObservableObject {
         }
 
         isSyncing = true
+        syncError = nil  // Clear previous error
 
-        // Sync from cloud first (gets latest data)
-        await repository.syncFromCloud()
+        do {
+            // Sync from cloud first (gets latest data)
+            try await repository.syncFromCloudThrowing()
 
-        // Then push any local changes
-        await repository.pushAllToCloud()
+            // Then push any local changes
+            try await repository.pushAllToCloudThrowing()
 
-        lastSyncDate = Date()
-        UserDefaults.standard.set(lastSyncDate, forKey: "lastSyncDate")
+            lastSyncDate = Date()
+            UserDefaults.standard.set(lastSyncDate, forKey: "lastSyncDate")
+        } catch {
+            syncError = SyncErrorInfo(
+                message: "Sync failed: \(error.localizedDescription)",
+                timestamp: Date(),
+                isRetryable: true
+            )
+            Logger.error(error, context: "AppState.triggerSync")
+        }
+
         isSyncing = false
 
         // Refresh all view models
         refreshAllData()
+    }
+
+    // MARK: - Sync Error Management
+
+    /// Dismiss the current sync error
+    func dismissSyncError() {
+        syncError = nil
+    }
+
+    /// Retry sync after an error
+    func retrySyncAfterError() async {
+        syncError = nil
+        await triggerSync()
     }
 }
 

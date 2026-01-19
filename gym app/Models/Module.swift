@@ -72,6 +72,12 @@ struct Module: Identifiable, Codable, Hashable {
     // MARK: - Exercise Management
 
     mutating func addExercise(_ instance: ExerciseInstance) {
+        // Validate before adding
+        guard instance.isValid else {
+            Logger.warning("Attempted to add invalid exercise: '\(instance.name)'")
+            return
+        }
+
         var newInstance = instance
         newInstance.order = exercises.count
         exercises.append(newInstance)

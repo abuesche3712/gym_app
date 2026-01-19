@@ -230,6 +230,152 @@ class DataRepository: ObservableObject {
         isSyncing = false
     }
 
+    /// Throwing version of syncFromCloud for error propagation to UI
+    func syncFromCloudThrowing() async throws {
+        guard authService.isAuthenticated else {
+            logger.info("Not authenticated, skipping", context: "syncFromCloudThrowing")
+            return
+        }
+
+        logger.info("Starting sync...", context: "syncFromCloudThrowing")
+        isSyncing = true
+
+        let timer = PerformanceTimer("syncFromCloudThrowing", threshold: AppConfig.slowSyncThreshold)
+
+        defer {
+            timer.stop()
+            isSyncing = false
+        }
+
+        // 1. Fetch and apply cloud deletions first
+        await syncDeletionsFromCloud()
+
+        let cloudData = try await firestoreService.fetchAllUserData()
+        logger.info("Fetched \(cloudData.modules.count) modules, \(cloudData.workouts.count) workouts, \(cloudData.sessions.count) sessions, \(cloudData.programs.count) programs", context: "syncFromCloudThrowing")
+
+        // 2. Push our deletions to cloud
+        await pushDeletionsToCloud()
+
+        // Merge cloud modules (with deletion-aware conflict resolution)
+        let deletedModuleIds = deletionTracker.getDeletedIds(entityType: .module)
+        for cloudModule in cloudData.modules {
+            if deletionTracker.wasDeletedAfter(entityType: .module, entityId: cloudModule.id, date: cloudModule.updatedAt) {
+                continue
+            }
+            if deletedModuleIds.contains(cloudModule.id) {
+                continue
+            }
+            if let local = modules.first(where: { $0.id == cloudModule.id }) {
+                let mergedModule = local.mergedWith(cloudModule)
+                if local.needsSync(comparedTo: mergedModule) {
+                    saveModuleLocally(mergedModule)
+                }
+            } else {
+                saveModuleLocally(cloudModule)
+            }
+        }
+
+        // Extract custom exercises from module data
+        let builtInLibrary = ExerciseLibrary.shared
+        let customLibraryPreExtract = CustomExerciseLibrary.shared
+        for cloudModule in cloudData.modules {
+            for exerciseInstance in cloudModule.exercises {
+                let name = exerciseInstance.name
+                let isBuiltInTemplate = exerciseInstance.templateId.flatMap { builtInLibrary.template(id: $0) } != nil
+                let isAlreadyCustom = customLibraryPreExtract.contains(name: name)
+
+                if !isBuiltInTemplate && !isAlreadyCustom {
+                    customLibraryPreExtract.addExercise(
+                        name: name,
+                        exerciseType: exerciseInstance.exerciseType
+                    )
+                }
+            }
+        }
+
+        // Merge cloud workouts
+        let deletedWorkoutIds = deletionTracker.getDeletedIds(entityType: .workout)
+        for cloudWorkout in cloudData.workouts {
+            if deletionTracker.wasDeletedAfter(entityType: .workout, entityId: cloudWorkout.id, date: cloudWorkout.updatedAt) {
+                continue
+            }
+            if deletedWorkoutIds.contains(cloudWorkout.id) {
+                continue
+            }
+            if let local = workouts.first(where: { $0.id == cloudWorkout.id }) {
+                let mergedWorkout = local.mergedWith(cloudWorkout)
+                if local.needsSync(comparedTo: mergedWorkout) {
+                    saveWorkoutLocally(mergedWorkout)
+                }
+            } else {
+                saveWorkoutLocally(cloudWorkout)
+            }
+        }
+
+        // Merge cloud sessions
+        let deletedSessionIds = deletionTracker.getDeletedIds(entityType: .session)
+        for cloudSession in cloudData.sessions {
+            if deletionTracker.wasDeletedAfter(entityType: .session, entityId: cloudSession.id, date: cloudSession.date) {
+                continue
+            }
+            if deletedSessionIds.contains(cloudSession.id) {
+                continue
+            }
+            if !sessions.contains(where: { $0.id == cloudSession.id }) {
+                saveSessionLocally(cloudSession)
+            }
+        }
+
+        // Merge custom exercises
+        let customLibrary = CustomExerciseLibrary.shared
+        for cloudExercise in cloudData.exercises {
+            if !customLibrary.exercises.contains(where: { $0.id == cloudExercise.id }) {
+                customLibrary.addExercise(cloudExercise)
+            }
+        }
+
+        // Merge cloud programs
+        let deletedProgramIds = deletionTracker.getDeletedIds(entityType: .program)
+        for cloudProgram in cloudData.programs {
+            if deletionTracker.wasDeletedAfter(entityType: .program, entityId: cloudProgram.id, date: cloudProgram.updatedAt) {
+                continue
+            }
+            if deletedProgramIds.contains(cloudProgram.id) {
+                continue
+            }
+            if let local = programs.first(where: { $0.id == cloudProgram.id }) {
+                if cloudProgram.updatedAt >= local.updatedAt {
+                    saveProgramLocally(cloudProgram)
+                }
+            } else {
+                saveProgramLocally(cloudProgram)
+            }
+        }
+
+        // Merge cloud scheduled workouts
+        NotificationCenter.default.post(
+            name: .scheduledWorkoutsSyncedFromCloud,
+            object: cloudData.scheduledWorkouts
+        )
+
+        // Merge user profile
+        if let cloudProfile = cloudData.profile {
+            NotificationCenter.default.post(
+                name: .userProfileSyncedFromCloud,
+                object: cloudProfile
+            )
+        }
+
+        // Reload all data after merge
+        loadAllData()
+
+        // Cleanup old deletion records (30 days)
+        deletionTracker.cleanupOldRecords()
+        await cleanupOldDeletionsFromCloud()
+
+        logger.info("Sync completed successfully", context: "syncFromCloudThrowing")
+    }
+
     // MARK: - Deletion Sync
 
     /// Fetch deletion records from cloud and apply them locally
@@ -396,6 +542,58 @@ class DataRepository: ObservableObject {
 
         timer.stop()
         isSyncing = false
+    }
+
+    /// Throwing version of pushAllToCloud for error propagation to UI
+    func pushAllToCloudThrowing() async throws {
+        guard authService.isAuthenticated else {
+            Logger.debug("pushAllToCloudThrowing: Not authenticated, skipping")
+            return
+        }
+
+        Logger.debug("pushAllToCloudThrowing: Starting - \(modules.count) modules, \(workouts.count) workouts, \(sessions.count) sessions, \(programs.count) programs")
+        isSyncing = true
+
+        let timer = PerformanceTimer("pushAllToCloudThrowing", threshold: AppConfig.slowSyncThreshold)
+
+        defer {
+            timer.stop()
+            isSyncing = false
+        }
+
+        // Push all modules
+        for module in modules {
+            try await firestoreService.saveModule(module)
+        }
+
+        // Push all workouts
+        for workout in workouts {
+            try await firestoreService.saveWorkout(workout)
+        }
+
+        // Push all sessions
+        for session in sessions {
+            try await firestoreService.saveSession(session)
+        }
+
+        // Push custom exercises
+        let customLibrary = CustomExerciseLibrary.shared
+        for exercise in customLibrary.exercises {
+            try await firestoreService.saveCustomExercise(exercise)
+        }
+
+        // Push all programs
+        for program in programs {
+            try await firestoreService.saveProgram(program)
+        }
+
+        // Request scheduled workouts from WorkoutViewModel and push them
+        NotificationCenter.default.post(name: .requestScheduledWorkoutsForSync, object: nil)
+
+        // Push user profile
+        NotificationCenter.default.post(name: .requestUserProfileForSync, object: nil)
+
+        Logger.debug("pushAllToCloudThrowing: Completed successfully")
     }
 
     // MARK: - Load All Data
@@ -1268,5 +1466,68 @@ class DataRepository: ObservableObject {
             syncStatus: entity.syncStatus,
             workoutSlots: slots
         )
+    }
+
+    // MARK: - In-Progress Session Recovery
+
+    /// Save the current session state for crash recovery
+    func saveInProgressSession(_ session: Session) {
+        // Delete any existing in-progress session first
+        let request = NSFetchRequest<InProgressSessionEntity>(entityName: "InProgressSessionEntity")
+
+        do {
+            if let existing = try viewContext.fetch(request).first {
+                existing.update(from: session)
+            } else {
+                let entity = InProgressSessionEntity(context: viewContext)
+                entity.id = UUID()
+                entity.update(from: session)
+            }
+
+            try viewContext.save()
+            Logger.debug("Saved in-progress session for crash recovery")
+        } catch {
+            Logger.error(error, context: "DataRepository.saveInProgressSession")
+        }
+    }
+
+    /// Load any previously saved in-progress session
+    func loadInProgressSession() -> Session? {
+        let request = NSFetchRequest<InProgressSessionEntity>(entityName: "InProgressSessionEntity")
+
+        guard let entity = try? viewContext.fetch(request).first else {
+            return nil
+        }
+
+        return entity.toSession()
+    }
+
+    /// Get metadata about the in-progress session without fully decoding
+    func getInProgressSessionInfo() -> (workoutName: String, startTime: Date, lastUpdated: Date)? {
+        let request = NSFetchRequest<InProgressSessionEntity>(entityName: "InProgressSessionEntity")
+
+        guard let entity = try? viewContext.fetch(request).first,
+              let workoutName = entity.workoutName,
+              let startTime = entity.startTime else {
+            return nil
+        }
+
+        return (workoutName, startTime, entity.lastUpdated)
+    }
+
+    /// Clear the in-progress session (call after session ends or is cancelled)
+    func clearInProgressSession() {
+        let request = NSFetchRequest<InProgressSessionEntity>(entityName: "InProgressSessionEntity")
+
+        do {
+            let entities = try viewContext.fetch(request)
+            for entity in entities {
+                viewContext.delete(entity)
+            }
+            try viewContext.save()
+            Logger.debug("Cleared in-progress session")
+        } catch {
+            Logger.error(error, context: "DataRepository.clearInProgressSession")
+        }
     }
 }

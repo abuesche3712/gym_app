@@ -143,6 +143,20 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         // Truly optional
         supersetGroupId = try container.decodeIfPresent(UUID.self, forKey: .supersetGroupId)
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
+
+        // MARK: - Data Sanitization
+
+        // Ensure name is never empty
+        if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            name = "Unnamed Exercise"
+            Logger.warning("Loaded exercise with empty name, using placeholder")
+        }
+
+        // Clamp order to non-negative
+        if order < 0 {
+            order = 0
+            Logger.warning("Loaded exercise with negative order, clamped to 0")
+        }
     }
 
     enum CodingKeys: String, CodingKey {
@@ -191,9 +205,17 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
 
     /// Creates an instance from a template, copying all data
     static func from(template: ExerciseTemplate, order: Int = 0) -> ExerciseInstance {
-        ExerciseInstance(
+        // Validate inputs - log warning for bad data
+        if template.name.isEmpty {
+            Logger.warning("Creating instance from template with empty name")
+        }
+        if order < 0 {
+            Logger.warning("Creating instance with negative order \(order), clamping to 0")
+        }
+
+        return ExerciseInstance(
             templateId: template.id,
-            name: template.name,
+            name: template.name.isEmpty ? "Unknown Exercise" : template.name,  // Fallback just in case
             exerciseType: template.exerciseType,
             cardioMetric: template.cardioMetric,
             distanceUnit: template.distanceUnit,
@@ -203,7 +225,39 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
             primaryMuscles: template.primaryMuscles,
             secondaryMuscles: template.secondaryMuscles,
             setGroups: template.defaultSetGroups,
-            order: order
+            order: max(0, order)  // Clamp to non-negative
         )
+    }
+
+    // MARK: - Validation
+
+    enum ValidationError: LocalizedError {
+        case emptyName
+        case invalidSetGroups
+        case negativeOrder
+
+        var errorDescription: String? {
+            switch self {
+            case .emptyName: return "Exercise name cannot be empty"
+            case .invalidSetGroups: return "Exercise must have at least one set group"
+            case .negativeOrder: return "Order cannot be negative"
+            }
+        }
+    }
+
+    /// Validates the instance and throws if invalid
+    func validate() throws {
+        if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            throw ValidationError.emptyName
+        }
+        if order < 0 {
+            throw ValidationError.negativeOrder
+        }
+        // Note: empty setGroups is allowed for newly added exercises
+    }
+
+    /// Returns true if this instance has valid data for use in a workout
+    var isValid: Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && order >= 0
     }
 }

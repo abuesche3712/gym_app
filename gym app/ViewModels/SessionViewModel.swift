@@ -39,6 +39,9 @@ class SessionViewModel: ObservableObject {
     private var sessionTimerCancellable: AnyCancellable?
     private var foregroundCancellable: AnyCancellable?
 
+    // Auto-save debouncer for crash recovery (saves at most every 2 seconds)
+    private let autoSaveDebouncer = Debouncer(delay: 2.0)
+
     init(repository: DataRepository? = nil) {
         self.repository = repository ?? DataRepository.shared
         loadSessions()
@@ -208,6 +211,62 @@ class SessionViewModel: ObservableObject {
         startSessionTimer()
     }
 
+    // MARK: - Session Recovery
+
+    /// Check if there's a recoverable in-progress session
+    func checkForRecoverableSession() -> Session? {
+        return repository.loadInProgressSession()
+    }
+
+    /// Get info about recoverable session without fully loading it
+    func getRecoverableSessionInfo() -> (workoutName: String, startTime: Date, lastUpdated: Date)? {
+        return repository.getInProgressSessionInfo()
+    }
+
+    /// Resume a previously saved in-progress session
+    func resumeSession(_ session: Session) {
+        currentSession = session
+        navigator = SessionNavigator(modules: session.completedModules)
+        sessionStartTime = session.date
+        isSessionActive = true
+
+        // Calculate elapsed time since the original session started
+        sessionElapsedSeconds = Int(Date().timeIntervalSince(session.date))
+
+        startSessionTimer()
+
+        // Navigate to first incomplete set
+        findAndNavigateToFirstIncompleteSet()
+    }
+
+    /// Discard a saved in-progress session
+    func discardRecoverableSession() {
+        repository.clearInProgressSession()
+    }
+
+    /// Finds the first incomplete set and navigates to it
+    private func findAndNavigateToFirstIncompleteSet() {
+        guard let session = currentSession else { return }
+
+        for (mIdx, module) in session.completedModules.enumerated() {
+            for (eIdx, exercise) in module.completedExercises.enumerated() {
+                for (sgIdx, setGroup) in exercise.completedSetGroups.enumerated() {
+                    for (sIdx, set) in setGroup.sets.enumerated() {
+                        if !set.completed {
+                            navigator?.setPosition(
+                                moduleIndex: mIdx,
+                                exerciseIndex: eIdx,
+                                setGroupIndex: sgIdx,
+                                setIndex: sIdx
+                            )
+                            return
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /// Converts a ResolvedExercise to a SessionExercise for use in an active session
     private func convertResolvedExerciseToSession(_ resolved: ResolvedExercise) -> SessionExercise {
         SessionExercise(
@@ -258,6 +317,10 @@ class SessionViewModel: ObservableObject {
         stopSessionTimer()
         stopRestTimer()
 
+        // Clear in-progress session (no longer needed)
+        autoSaveDebouncer.cancel()
+        repository.clearInProgressSession()
+
         currentSession = nil
         navigator = nil
         isSessionActive = false
@@ -266,6 +329,11 @@ class SessionViewModel: ObservableObject {
     func cancelSession() {
         stopSessionTimer()
         stopRestTimer()
+
+        // Clear in-progress session
+        autoSaveDebouncer.cancel()
+        repository.clearInProgressSession()
+
         currentSession = nil
         navigator = nil
         isSessionActive = false
@@ -315,8 +383,20 @@ class SessionViewModel: ObservableObject {
 
         currentSession = session
 
+        // Auto-save for crash recovery
+        autoSaveInProgressSession()
+
         // Auto-advance to next set
         advanceToNextSet()
+    }
+
+    // MARK: - Auto-Save for Crash Recovery
+
+    private func autoSaveInProgressSession() {
+        guard let session = currentSession else { return }
+        autoSaveDebouncer.debounce { [weak self] in
+            self?.repository.saveInProgressSession(session)
+        }
     }
 
     // MARK: - Navigation (delegated to navigator)

@@ -8,7 +8,7 @@
 import CoreData
 
 struct PersistenceController {
-    static let shared = PersistenceController()
+     static let shared = PersistenceController()
 
     static var preview: PersistenceController = {
         let result = PersistenceController(inMemory: true)
@@ -126,6 +126,9 @@ struct PersistenceController {
         // Create deletion tracking entity
         let deletionRecordEntity = createDeletionRecordEntity()
 
+        // Create in-progress session entity (for crash recovery)
+        let inProgressSessionEntity = createInProgressSessionEntity()
+
         // Set up relationships
         setupRelationships(
             moduleEntity: moduleEntity,
@@ -181,7 +184,9 @@ struct PersistenceController {
             // Sync logging entity
             syncLogEntity,
             // Deletion tracking entity
-            deletionRecordEntity
+            deletionRecordEntity,
+            // In-progress session entity (crash recovery)
+            inProgressSessionEntity
         ]
 
         return model
@@ -710,6 +715,23 @@ struct PersistenceController {
             createAttribute("entityId", type: .UUIDAttributeType),
             createAttribute("deletedAt", type: .dateAttributeType),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true)
+        ]
+
+        return entity
+    }
+
+    private static func createInProgressSessionEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "InProgressSessionEntity"
+        entity.managedObjectClassName = "InProgressSessionEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("sessionData", type: .binaryDataAttributeType, optional: true),
+            createAttribute("lastUpdated", type: .dateAttributeType),
+            createAttribute("workoutId", type: .UUIDAttributeType),
+            createAttribute("workoutName", type: .stringAttributeType, optional: true),
+            createAttribute("startTime", type: .dateAttributeType, optional: true)
         ]
 
         return entity
