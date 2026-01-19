@@ -287,7 +287,9 @@ class FirestoreService: ObservableObject {
 
     private func decodeModule(from data: [String: Any]) throws -> Module {
         // Recursively convert all Firestore Timestamps to ISO8601 strings
-        let convertedData = convertTimestamps(data) as! [String: Any]
+        guard let convertedData = convertTimestamps(data) as? [String: Any] else {
+            throw FirestoreError.decodingFailed
+        }
 
         let jsonData = try JSONSerialization.data(withJSONObject: convertedData)
         let decoder = JSONDecoder()
@@ -312,7 +314,9 @@ class FirestoreService: ObservableObject {
 
     private func decodeWorkout(from data: [String: Any]) throws -> Workout {
         // Recursively convert all Firestore Timestamps to ISO8601 strings
-        let convertedData = convertTimestamps(data) as! [String: Any]
+        guard let convertedData = convertTimestamps(data) as? [String: Any] else {
+            throw FirestoreError.decodingFailed
+        }
 
         let jsonData = try JSONSerialization.data(withJSONObject: convertedData)
         let decoder = JSONDecoder()
@@ -337,7 +341,9 @@ class FirestoreService: ObservableObject {
 
     private func decodeSession(from data: [String: Any]) throws -> Session {
         // Recursively convert all Firestore Timestamps to ISO8601 strings
-        let convertedData = convertTimestamps(data) as! [String: Any]
+        guard let convertedData = convertTimestamps(data) as? [String: Any] else {
+            throw FirestoreError.decodingFailed
+        }
 
         let jsonData = try JSONSerialization.data(withJSONObject: convertedData)
         let decoder = JSONDecoder()
@@ -401,7 +407,9 @@ class FirestoreService: ObservableObject {
 
     private func decodeProgram(from data: [String: Any]) throws -> Program {
         // Recursively convert all Firestore Timestamps to ISO8601 strings
-        let convertedData = convertTimestamps(data) as! [String: Any]
+        guard let convertedData = convertTimestamps(data) as? [String: Any] else {
+            throw FirestoreError.decodingFailed
+        }
 
         let jsonData = try JSONSerialization.data(withJSONObject: convertedData)
         let decoder = JSONDecoder()
@@ -430,7 +438,9 @@ class FirestoreService: ObservableObject {
 
     private func decodeScheduledWorkout(from data: [String: Any]) throws -> ScheduledWorkout {
         // Recursively convert all Firestore Timestamps to ISO8601 strings
-        let convertedData = convertTimestamps(data) as! [String: Any]
+        guard let convertedData = convertTimestamps(data) as? [String: Any] else {
+            throw FirestoreError.decodingFailed
+        }
 
         let jsonData = try JSONSerialization.data(withJSONObject: convertedData)
         let decoder = JSONDecoder()

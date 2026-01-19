@@ -122,28 +122,13 @@ struct SessionNavigator {
               let supersetId = exercise.supersetGroupId else {
             return false
         }
-
-        let supersetIndices = module.completedExercises.enumerated()
-            .filter { $0.element.supersetGroupId == supersetId }
-            .map { $0.offset }
-
-        guard let currentSupersetPosition = supersetIndices.firstIndex(of: currentExerciseIndex) else {
-            return false
-        }
-
-        // We should rest if we're at the last exercise in the superset
-        return currentSupersetPosition == supersetIndices.count - 1
+        return SupersetHelper.isLastInSuperset(itemIndex: currentExerciseIndex, in: module.completedExercises, for: supersetId)
     }
 
     /// Gets all exercises in the current superset (for display purposes)
     var currentSupersetExercises: [SessionExercise]? {
-        guard let module = currentModule,
-              let exercise = currentExercise,
-              let supersetId = exercise.supersetGroupId else {
-            return nil
-        }
-
-        return module.completedExercises.filter { $0.supersetGroupId == supersetId }
+        guard let module = currentModule, let exercise = currentExercise else { return nil }
+        return SupersetHelper.itemsInSuperset(of: exercise, in: module.completedExercises)
     }
 
     /// Current position within the superset (1-based for display)
@@ -153,16 +138,7 @@ struct SessionNavigator {
               let supersetId = exercise.supersetGroupId else {
             return nil
         }
-
-        let supersetIndices = module.completedExercises.enumerated()
-            .filter { $0.element.supersetGroupId == supersetId }
-            .map { $0.offset }
-
-        guard let position = supersetIndices.firstIndex(of: currentExerciseIndex) else {
-            return nil
-        }
-
-        return position + 1
+        return SupersetHelper.displayPosition(of: currentExerciseIndex, in: module.completedExercises, for: supersetId)
     }
 
     /// Total exercises in current superset
@@ -189,10 +165,8 @@ struct SessionNavigator {
 
     /// Handles superset navigation (A→B→A→B pattern)
     private mutating func advanceInSuperset(module: CompletedModule, supersetId: UUID, setGroup: CompletedSetGroup) {
-        // Find all exercises in this superset
-        let supersetIndices = module.completedExercises.enumerated()
-            .filter { $0.element.supersetGroupId == supersetId }
-            .map { $0.offset }
+        // Find all exercises in this superset using shared helper
+        let supersetIndices = SupersetHelper.indices(in: module.completedExercises, for: supersetId)
 
         guard let currentSupersetPosition = supersetIndices.firstIndex(of: currentExerciseIndex) else {
             // Fallback to normal flow if something is wrong

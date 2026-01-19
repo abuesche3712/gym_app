@@ -32,7 +32,7 @@ struct PersistenceController {
         container = NSPersistentContainer(name: "GymApp", managedObjectModel: model)
 
         if inMemory {
-            container.persistentStoreDescriptions.first!.url = URL(fileURLWithPath: "/dev/null")
+            container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
         } else {
             // Enable lightweight migration for schema changes (adding optional attributes is supported)
             if let description = container.persistentStoreDescriptions.first {

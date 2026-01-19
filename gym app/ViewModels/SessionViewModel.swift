@@ -37,6 +37,7 @@ class SessionViewModel: ObservableObject {
     private let repository: DataRepository
     private var timerCancellable: AnyCancellable?
     private var sessionTimerCancellable: AnyCancellable?
+    private var foregroundCancellable: AnyCancellable?
 
     init(repository: DataRepository? = nil) {
         self.repository = repository ?? DataRepository.shared
@@ -104,37 +105,19 @@ class SessionViewModel: ObservableObject {
         guard let module = currentModule,
               let exercise = currentExercise,
               let supersetId = exercise.supersetGroupId else { return false }
-
-        let supersetIndices = module.completedExercises.enumerated()
-            .filter { $0.element.supersetGroupId == supersetId }
-            .map { $0.offset }
-
-        guard let currentSupersetPosition = supersetIndices.firstIndex(of: currentExerciseIndex) else {
-            return false
-        }
-        return currentSupersetPosition == supersetIndices.count - 1
+        return SupersetHelper.isLastInSuperset(itemIndex: currentExerciseIndex, in: module.completedExercises, for: supersetId)
     }
 
     var currentSupersetExercises: [SessionExercise]? {
-        guard let module = currentModule,
-              let exercise = currentExercise,
-              let supersetId = exercise.supersetGroupId else { return nil }
-        return module.completedExercises.filter { $0.supersetGroupId == supersetId }
+        guard let module = currentModule, let exercise = currentExercise else { return nil }
+        return SupersetHelper.itemsInSuperset(of: exercise, in: module.completedExercises)
     }
 
     var supersetPosition: Int? {
         guard let module = currentModule,
               let exercise = currentExercise,
               let supersetId = exercise.supersetGroupId else { return nil }
-
-        let supersetIndices = module.completedExercises.enumerated()
-            .filter { $0.element.supersetGroupId == supersetId }
-            .map { $0.offset }
-
-        guard let position = supersetIndices.firstIndex(of: currentExerciseIndex) else {
-            return nil
-        }
-        return position + 1
+        return SupersetHelper.displayPosition(of: currentExerciseIndex, in: module.completedExercises, for: supersetId)
     }
 
     var supersetTotal: Int? { currentSupersetExercises?.count }
@@ -455,16 +438,8 @@ class SessionViewModel: ObservableObject {
                 self?.updateRestTimer()
             }
 
-        // Listen for foreground to update timer
-        NotificationCenter.default.addObserver(
-            forName: UIApplication.willEnterForegroundNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.updateRestTimer()
-            }
-        }
+        // Use Combine for foreground notification (properly cleaned up)
+        setupForegroundObserver()
     }
 
     private func updateRestTimer() {
@@ -482,12 +457,18 @@ class SessionViewModel: ObservableObject {
 
     func stopRestTimer() {
         timerCancellable?.cancel()
-        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
+        timerCancellable = nil
         isRestTimerRunning = false
         restTimerSeconds = 0
         restTimerTotal = 0
         restTimerStartTime = nil
         restTimerDuration = 0
+
+        // Only cancel foreground observer if session timer is also stopped
+        if sessionTimerCancellable == nil {
+            foregroundCancellable?.cancel()
+            foregroundCancellable = nil
+        }
 
         // Auto-advance to next exercise if all sets of current exercise are completed
         if let exercise = currentExercise, allSetsCompleted(exercise) {
@@ -511,16 +492,8 @@ class SessionViewModel: ObservableObject {
                 self?.updateElapsedTime()
             }
 
-        // Also update when app returns to foreground
-        NotificationCenter.default.addObserver(
-            forName: UIApplication.willEnterForegroundNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.updateElapsedTime()
-            }
-        }
+        // Use Combine for foreground notification
+        setupForegroundObserver()
     }
 
     private func updateElapsedTime() {
@@ -530,7 +503,27 @@ class SessionViewModel: ObservableObject {
 
     private func stopSessionTimer() {
         sessionTimerCancellable?.cancel()
-        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
+        sessionTimerCancellable = nil
+
+        // Only cancel foreground observer if rest timer is also stopped
+        if timerCancellable == nil {
+            foregroundCancellable?.cancel()
+            foregroundCancellable = nil
+        }
+    }
+
+    /// Sets up foreground observer using Combine (only once, shared by both timers)
+    private func setupForegroundObserver() {
+        // Only set up if not already observing
+        guard foregroundCancellable == nil else { return }
+
+        foregroundCancellable = NotificationCenter.default
+            .publisher(for: UIApplication.willEnterForegroundNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateRestTimer()
+                self?.updateElapsedTime()
+            }
     }
 
     // MARK: - History

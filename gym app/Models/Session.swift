@@ -78,22 +78,12 @@ struct Session: Identifiable, Codable, Hashable {
     }
 
     var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        return formatter.string(from: date)
+        formatDate(date)
     }
 
     var formattedDuration: String? {
         guard let duration = duration else { return nil }
-        if duration >= 60 {
-            let hours = duration / 60
-            let mins = duration % 60
-            if mins > 0 {
-                return "\(hours)h \(mins)m"
-            }
-            return "\(hours) hour\(hours > 1 ? "s" : "")"
-        }
-        return "\(duration) min"
+        return formatDurationMinutes(duration)
     }
 
     var totalExercisesCompleted: Int {

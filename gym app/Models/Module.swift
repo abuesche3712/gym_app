@@ -96,26 +96,7 @@ struct Module: Identifiable, Codable, Hashable {
 
     /// Groups exercises by superset, maintaining original order
     var groupedExercises: [[ExerciseInstance]] {
-        var groups: [[ExerciseInstance]] = []
-        var processedIds: Set<UUID> = []
-
-        for instance in exercises.sorted(by: { $0.order < $1.order }) {
-            guard !processedIds.contains(instance.id) else { continue }
-
-            if let supersetId = instance.supersetGroupId {
-                // Find all instances in this superset
-                let supersetInstances = exercises.filter { $0.supersetGroupId == supersetId }
-                    .sorted(by: { $0.order < $1.order })
-                groups.append(supersetInstances)
-                supersetInstances.forEach { processedIds.insert($0.id) }
-            } else {
-                // Single instance (not in a superset)
-                groups.append([instance])
-                processedIds.insert(instance.id)
-            }
-        }
-
-        return groups
+        SupersetHelper.grouped(items: exercises.sorted(by: { $0.order < $1.order }))
     }
 
     /// Link exercises together as a superset
@@ -166,26 +147,16 @@ struct Module: Identifiable, Codable, Hashable {
 
     /// Cleans up orphaned superset IDs (exercises with a supersetGroupId that no other exercise shares)
     mutating func cleanupOrphanedSupersets() {
-        var changed = false
-
-        var supersetCounts: [UUID: Int] = [:]
-        for instance in exercises {
-            if let supersetId = instance.supersetGroupId {
-                supersetCounts[supersetId, default: 0] += 1
-            }
-        }
+        let orphanedIds = SupersetHelper.orphanedSupersetIds(in: exercises)
+        guard !orphanedIds.isEmpty else { return }
 
         for i in exercises.indices {
-            if let supersetId = exercises[i].supersetGroupId,
-               supersetCounts[supersetId] ?? 0 < 2 {
+            if let supersetId = exercises[i].supersetGroupId, orphanedIds.contains(supersetId) {
                 exercises[i].supersetGroupId = nil
-                changed = true
             }
         }
 
-        if changed {
-            updatedAt = Date()
-        }
+        updatedAt = Date()
     }
 
     /// Number of exercises in this module

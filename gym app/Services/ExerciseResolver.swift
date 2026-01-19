@@ -70,6 +70,7 @@ class ExerciseResolver: ObservableObject {
     }
 
     /// Legacy alias for allExercises
+    @available(*, deprecated, renamed: "allExercises")
     var allTemplates: [ExerciseTemplate] {
         allExercises
     }
@@ -194,16 +195,19 @@ class ExerciseResolver: ObservableObject {
     }
 
     /// Legacy alias for search()
+    @available(*, deprecated, renamed: "search")
     func searchTemplates(_ query: String) -> [ExerciseTemplate] {
         search(query)
     }
 
     /// Legacy alias for exercises(for category:)
+    @available(*, deprecated, message: "Use exercises(for:) instead")
     func templates(for category: ExerciseCategory) -> [ExerciseTemplate] {
         exercises(for: category)
     }
 
     /// Legacy alias for exercises(for type:)
+    @available(*, deprecated, message: "Use exercises(for:) instead")
     func templates(for exerciseType: ExerciseType) -> [ExerciseTemplate] {
         exercises(for: exerciseType)
     }

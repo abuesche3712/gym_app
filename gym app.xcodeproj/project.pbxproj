@@ -75,6 +75,7 @@
 		7E3A26543EA449B5824C3A63 /* WorkoutOverviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */; };
 		9A12E7530EDF4ADE85E5FEA3 /* ExerciseModificationSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA5B70D29F142CF8BE80E2D /* ExerciseModificationSheets.swift */; };
 		FORMATTING002HELPERS002 /* FormattingHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = FORMATTING001HELPERS001 /* FormattingHelpers.swift */; };
+		SUPERSET002HELPER002 /* SupersetHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = SUPERSET001HELPER001 /* SupersetHelper.swift */; };
 		9245BCBAC81C4E3C9670553C /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C36DDB57BAA44FEF866BE090 /* AuthService.swift */; };
 		AB8059E04FED4CAC94B1D5DB /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D9B5EAEA83B489586ACDC15 /* SignInView.swift */; };
 		EXINST002BUILD002 /* ExerciseInstance.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXINST001FILE001 /* ExerciseInstance.swift */; };
@@ -189,6 +190,7 @@
 		4EA5B70D29F142CF8BE80E2D /* ExerciseModificationSheets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseModificationSheets.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F647890123456A /* IntervalTimerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IntervalTimerView.swift; sourceTree = "<group>"; };
 		FORMATTING001HELPERS001 /* FormattingHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FormattingHelpers.swift; sourceTree = "<group>"; };
+		SUPERSET001HELPER001 /* SupersetHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SupersetHelper.swift; sourceTree = "<group>"; };
 		C36DDB57BAA44FEF866BE090 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		8D9B5EAEA83B489586ACDC15 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		0057BC06B76642D3A14ACCD3 /* gym_app.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = gym_app.entitlements; sourceTree = "<group>"; };
@@ -484,6 +486,7 @@
 			isa = PBXGroup;
 			children = (
 				FORMATTING001HELPERS001 /* FormattingHelpers.swift */,
+				SUPERSET001HELPER001 /* SupersetHelper.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -743,6 +746,7 @@
 				00FCCDDAC9AD41A7AAD9E386 /* ImplementPickerView.swift in Sources */,
 				0DE55B310BEE4A628944C240 /* LibraryExerciseEditView.swift in Sources */,
 				FORMATTING002HELPERS002 /* FormattingHelpers.swift in Sources */,
+				SUPERSET002HELPER002 /* SupersetHelper.swift in Sources */,
 				9245BCBAC81C4E3C9670553C /* AuthService.swift in Sources */,
 				AB8059E04FED4CAC94B1D5DB /* SignInView.swift in Sources */,
 				EXINST002BUILD002 /* ExerciseInstance.swift in Sources */,
