@@ -496,14 +496,24 @@ struct PersistenceController {
 
         entity.properties = [
             createAttribute("id", type: .UUIDAttributeType),
-            createAttribute("templateId", type: .UUIDAttributeType),  // Required - links to template
+            createAttribute("templateId", type: .UUIDAttributeType, optional: true),  // Optional - for reference only
             createAttribute("supersetGroupIdRaw", type: .stringAttributeType, optional: true),
             createAttribute("notes", type: .stringAttributeType, optional: true),
             createAttribute("orderIndex", type: .integer32AttributeType),
             createAttribute("createdAt", type: .dateAttributeType, optional: true),
             createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true),
-            // Optional overrides (fallbacks when template lookup fails)
+            // Direct exercise data (self-contained, no template lookup needed)
+            createAttribute("name", type: .stringAttributeType, optional: true),
+            createAttribute("exerciseTypeRaw", type: .stringAttributeType, optional: true),
+            createAttribute("cardioMetricRaw", type: .stringAttributeType, optional: true),
+            createAttribute("distanceUnitRaw", type: .stringAttributeType, optional: true),
+            createAttribute("mobilityTrackingRaw", type: .stringAttributeType, optional: true),
+            createAttribute("isBodyweight", type: .booleanAttributeType, defaultValue: false),
+            createAttribute("recoveryActivityTypeRaw", type: .stringAttributeType, optional: true),
+            createAttribute("primaryMusclesData", type: .binaryDataAttributeType, optional: true),
+            createAttribute("secondaryMusclesData", type: .binaryDataAttributeType, optional: true),
+            // Legacy override fields (kept for migration)
             createAttribute("nameOverride", type: .stringAttributeType, optional: true),
             createAttribute("exerciseTypeOverrideRaw", type: .stringAttributeType, optional: true),
             createAttribute("mobilityTrackingOverrideRaw", type: .stringAttributeType, optional: true),

@@ -221,6 +221,8 @@ struct MuscleGroupsDisplay: View {
         // Create a sample ExerciseInstance for preview
         let sampleInstance = ExerciseInstance(
             templateId: UUID(),
+            name: "Bench Press",
+            exerciseType: .strength,
             setGroups: [SetGroup(sets: 3, targetReps: 10)]
         )
         ExerciseDetailView(

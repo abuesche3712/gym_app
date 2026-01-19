@@ -42,7 +42,8 @@ class CustomExerciseLibrary: ObservableObject {
                     category: .fullBody,
                     exerciseType: entity.exerciseType,
                     primary: entity.primaryMuscles,
-                    secondary: entity.secondaryMuscles
+                    secondary: entity.secondaryMuscles,
+                    isCustom: true
                 )
             }
         } catch {

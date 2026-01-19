@@ -494,24 +494,19 @@ struct QuickExerciseFormView: View {
             )
         }
 
-        // Determine the template ID - use selected template or generate a custom ID
-        let templateId = selectedTemplate?.id ?? UUID()
-        let isCustomExercise = selectedTemplate == nil
-
-        // Only set nameOverride if different from template name (or if custom exercise)
-        let nameOverrideValue: String? = {
-            if isCustomExercise {
-                return trimmedName
-            } else if trimmedName != selectedTemplate?.name {
-                return trimmedName
-            }
-            return nil
-        }()
-
+        // Create self-contained instance with all data
         let instance = ExerciseInstance(
-            templateId: templateId,
-            setGroups: [setGroup],
-            nameOverride: nameOverrideValue
+            templateId: selectedTemplate?.id,
+            name: trimmedName,
+            exerciseType: exerciseType,
+            cardioMetric: cardioMetric,
+            distanceUnit: distanceUnit,
+            mobilityTracking: .repsOnly,
+            isBodyweight: selectedTemplate?.isBodyweight ?? false,
+            recoveryActivityType: selectedTemplate?.recoveryActivityType,
+            primaryMuscles: selectedTemplate?.primaryMuscles ?? [],
+            secondaryMuscles: selectedTemplate?.secondaryMuscles ?? [],
+            setGroups: [setGroup]
         )
 
         onSave(instance)

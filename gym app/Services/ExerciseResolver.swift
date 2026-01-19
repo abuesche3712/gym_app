@@ -87,8 +87,9 @@ class ExerciseResolver: ObservableObject {
     // MARK: - Single Resolution
 
     /// Resolves a single instance to a ResolvedExercise
+    /// Template lookup is optional now since instance contains all needed data
     func resolve(_ instance: ExerciseInstance) -> ResolvedExercise {
-        let template = templateCache[instance.templateId]
+        let template = instance.templateId.flatMap { templateCache[$0] }
         return ResolvedExercise(instance: instance, template: template)
     }
 
@@ -127,30 +128,36 @@ class ExerciseResolver: ObservableObject {
     // MARK: - Orphan Handling
 
     /// Creates a placeholder template for an orphaned instance
+    /// Note: With self-contained instances, this is rarely needed
     func createPlaceholderTemplate(for instance: ExerciseInstance) -> ExerciseTemplate {
         ExerciseTemplate(
-            id: instance.templateId,
-            name: instance.nameOverride ?? "Deleted Exercise",
+            id: instance.templateId ?? UUID(),
+            name: instance.name,
             category: .fullBody,
-            exerciseType: .strength,  // Default for orphaned exercises
+            exerciseType: instance.exerciseType,
             isArchived: true,
             isCustom: true
         )
     }
 
     /// Resolves an instance, creating a placeholder template if needed
+    /// Note: Template is optional now since instance has all data
     func resolveWithPlaceholder(_ instance: ExerciseInstance) -> ResolvedExercise {
-        if let template = templateCache[instance.templateId] {
+        if let templateId = instance.templateId, let template = templateCache[templateId] {
             return ResolvedExercise(instance: instance, template: template)
         } else {
-            let placeholder = createPlaceholderTemplate(for: instance)
-            return ResolvedExercise(instance: instance, template: placeholder)
+            // Instance already has all needed data, template is optional
+            return ResolvedExercise(instance: instance, template: nil)
         }
     }
 
     /// Finds all orphaned instances (templates that no longer exist)
+    /// Note: Less critical now since instances are self-contained
     func findOrphans(in instances: [ExerciseInstance]) -> [ExerciseInstance] {
-        instances.filter { templateCache[$0.templateId] == nil }
+        instances.filter { instance in
+            guard let templateId = instance.templateId else { return false }
+            return templateCache[templateId] == nil
+        }
     }
 
     // MARK: - Search & Filtering

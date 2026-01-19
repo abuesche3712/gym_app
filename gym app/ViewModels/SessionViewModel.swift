@@ -48,25 +48,138 @@ class SessionViewModel: ObservableObject {
         sessions = repository.sessions
     }
 
-    // MARK: - Navigation Accessors (delegated to navigator)
+    // MARK: - Navigation Accessors
+    // Note: These read from the live currentSession using navigator's indices,
+    // not from the navigator's stale module copy.
 
     var currentModuleIndex: Int { navigator?.currentModuleIndex ?? 0 }
     var currentExerciseIndex: Int { navigator?.currentExerciseIndex ?? 0 }
     var currentSetGroupIndex: Int { navigator?.currentSetGroupIndex ?? 0 }
     var currentSetIndex: Int { navigator?.currentSetIndex ?? 0 }
 
-    var currentModule: CompletedModule? { navigator?.currentModule }
-    var currentExercise: SessionExercise? { navigator?.currentExercise }
-    var currentSetGroup: CompletedSetGroup? { navigator?.currentSetGroup }
-    var currentSet: SetData? { navigator?.currentSet }
+    var currentModule: CompletedModule? {
+        guard let session = currentSession,
+              currentModuleIndex < session.completedModules.count else { return nil }
+        return session.completedModules[currentModuleIndex]
+    }
 
-    var isLastSet: Bool { navigator?.isLastSet ?? true }
-    var isInSuperset: Bool { navigator?.isInSuperset ?? false }
-    var shouldRestAfterSuperset: Bool { navigator?.shouldRestAfterSuperset ?? false }
-    var currentSupersetExercises: [SessionExercise]? { navigator?.currentSupersetExercises }
-    var supersetPosition: Int? { navigator?.supersetPosition }
-    var supersetTotal: Int? { navigator?.supersetTotal }
-    var overallProgress: Double { navigator?.overallProgress ?? 0 }
+    var currentExercise: SessionExercise? {
+        guard let module = currentModule,
+              currentExerciseIndex < module.completedExercises.count else { return nil }
+        return module.completedExercises[currentExerciseIndex]
+    }
+
+    var currentSetGroup: CompletedSetGroup? {
+        guard let exercise = currentExercise,
+              currentSetGroupIndex < exercise.completedSetGroups.count else { return nil }
+        return exercise.completedSetGroups[currentSetGroupIndex]
+    }
+
+    var currentSet: SetData? {
+        guard let setGroup = currentSetGroup,
+              currentSetIndex < setGroup.sets.count else { return nil }
+        return setGroup.sets[currentSetIndex]
+    }
+
+    var isLastSet: Bool {
+        guard let session = currentSession else { return true }
+        let lastModuleIndex = session.completedModules.count - 1
+        guard currentModuleIndex == lastModuleIndex, lastModuleIndex >= 0 else { return false }
+
+        let module = session.completedModules[currentModuleIndex]
+        let lastExerciseIndex = module.completedExercises.count - 1
+        guard currentExerciseIndex == lastExerciseIndex, lastExerciseIndex >= 0 else { return false }
+
+        let exercise = module.completedExercises[currentExerciseIndex]
+        let lastSetGroupIndex = exercise.completedSetGroups.count - 1
+        guard currentSetGroupIndex == lastSetGroupIndex, lastSetGroupIndex >= 0 else { return false }
+
+        let setGroup = exercise.completedSetGroups[currentSetGroupIndex]
+        return currentSetIndex == setGroup.sets.count - 1
+    }
+
+    var isInSuperset: Bool { currentExercise?.supersetGroupId != nil }
+
+    var shouldRestAfterSuperset: Bool {
+        guard let module = currentModule,
+              let exercise = currentExercise,
+              let supersetId = exercise.supersetGroupId else { return false }
+
+        let supersetIndices = module.completedExercises.enumerated()
+            .filter { $0.element.supersetGroupId == supersetId }
+            .map { $0.offset }
+
+        guard let currentSupersetPosition = supersetIndices.firstIndex(of: currentExerciseIndex) else {
+            return false
+        }
+        return currentSupersetPosition == supersetIndices.count - 1
+    }
+
+    var currentSupersetExercises: [SessionExercise]? {
+        guard let module = currentModule,
+              let exercise = currentExercise,
+              let supersetId = exercise.supersetGroupId else { return nil }
+        return module.completedExercises.filter { $0.supersetGroupId == supersetId }
+    }
+
+    var supersetPosition: Int? {
+        guard let module = currentModule,
+              let exercise = currentExercise,
+              let supersetId = exercise.supersetGroupId else { return nil }
+
+        let supersetIndices = module.completedExercises.enumerated()
+            .filter { $0.element.supersetGroupId == supersetId }
+            .map { $0.offset }
+
+        guard let position = supersetIndices.firstIndex(of: currentExerciseIndex) else {
+            return nil
+        }
+        return position + 1
+    }
+
+    var supersetTotal: Int? { currentSupersetExercises?.count }
+
+    var overallProgress: Double {
+        guard let session = currentSession else { return 0 }
+        let modules = session.completedModules
+
+        let totalSets = modules.reduce(0) { moduleSum, module in
+            moduleSum + module.completedExercises.reduce(0) { exerciseSum, exercise in
+                exerciseSum + exercise.completedSetGroups.reduce(0) { setGroupSum, setGroup in
+                    setGroupSum + setGroup.sets.count
+                }
+            }
+        }
+
+        guard totalSets > 0 else { return 0 }
+
+        var completedSets = 0
+
+        for i in 0..<currentModuleIndex {
+            for exercise in modules[i].completedExercises {
+                for setGroup in exercise.completedSetGroups {
+                    completedSets += setGroup.sets.count
+                }
+            }
+        }
+
+        if let module = currentModule {
+            for i in 0..<currentExerciseIndex {
+                for setGroup in module.completedExercises[i].completedSetGroups {
+                    completedSets += setGroup.sets.count
+                }
+            }
+
+            if let exercise = currentExercise {
+                for i in 0..<currentSetGroupIndex {
+                    completedSets += exercise.completedSetGroups[i].sets.count
+                }
+                completedSets += currentSetIndex
+            }
+        }
+
+        return Double(completedSets) / Double(totalSets)
+    }
 
     // MARK: - Session Management
 

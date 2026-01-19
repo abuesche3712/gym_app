@@ -125,238 +125,71 @@ struct EditableExerciseRow: View {
     let exercise: SessionExercise
     let onChange: (SessionExercise) -> Void
 
-    @State private var isExpanded = false
+    @State private var showEditSheet = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Exercise header
-            Button {
-                withAnimation {
-                    isExpanded.toggle()
-                }
-            } label: {
-                HStack {
+        Button {
+            showEditSheet = true
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(exercise.exerciseName)
                         .font(.subheadline)
                         .fontWeight(.medium)
                         .foregroundColor(.primary)
 
-                    Spacer()
-
-                    Text("\(totalSets) sets")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    Text(exerciseSummary)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-            }
-            .buttonStyle(.plain)
 
-            // Expanded set editing
-            if isExpanded {
-                VStack(spacing: 8) {
-                    ForEach(Array(exercise.completedSetGroups.enumerated()), id: \.element.id) { groupIndex, setGroup in
-                        if setGroup.isInterval {
-                            // Interval sets (simplified view)
-                            HStack {
-                                Image(systemName: "timer")
-                                    .font(.caption)
-                                    .foregroundColor(.orange)
-                                Text("Interval: \(setGroup.rounds) rounds")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Spacer()
-                            }
-                        } else {
-                            ForEach(Array(setGroup.sets.enumerated()), id: \.element.id) { setIndex, setData in
-                                EditableSetRow(
-                                    setData: setData,
-                                    exerciseType: exercise.exerciseType,
-                                    isBodyweight: exercise.isBodyweight,
-                                    distanceUnit: exercise.distanceUnit,
-                                    onChange: { updatedSet in
-                                        var updatedExercise = exercise
-                                        updatedExercise.completedSetGroups[groupIndex].sets[setIndex] = updatedSet
-                                        onChange(updatedExercise)
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-                .padding(.leading)
-            }
-        }
-        .padding(.vertical, 4)
-    }
+                Spacer()
 
-    private var totalSets: Int {
-        exercise.completedSetGroups.reduce(0) { $0 + $1.sets.count }
-    }
-}
-
-// MARK: - Editable Set Row
-
-struct EditableSetRow: View {
-    let setData: SetData
-    let exerciseType: ExerciseType
-    let isBodyweight: Bool
-    let distanceUnit: DistanceUnit
-    let onChange: (SetData) -> Void
-
-    @State private var weight: Double
-    @State private var reps: Int
-    @State private var rpe: Int?
-    @State private var duration: Int
-    @State private var holdTime: Int
-    @State private var distance: Double
-
-    init(setData: SetData, exerciseType: ExerciseType, isBodyweight: Bool, distanceUnit: DistanceUnit, onChange: @escaping (SetData) -> Void) {
-        self.setData = setData
-        self.exerciseType = exerciseType
-        self.isBodyweight = isBodyweight
-        self.distanceUnit = distanceUnit
-        self.onChange = onChange
-
-        _weight = State(initialValue: setData.weight ?? 0)
-        _reps = State(initialValue: setData.reps ?? 0)
-        _rpe = State(initialValue: setData.rpe)
-        _duration = State(initialValue: setData.duration ?? 0)
-        _holdTime = State(initialValue: setData.holdTime ?? 0)
-        _distance = State(initialValue: setData.distance ?? 0)
-    }
-
-    var body: some View {
-        HStack(spacing: 8) {
-            // Set number badge
-            Text("\(setData.setNumber)")
-                .font(.caption.weight(.semibold))
-                .foregroundColor(.secondary)
-                .frame(width: 24, height: 24)
-                .background(Circle().fill(Color(.systemGray5)))
-
-            // Fields based on exercise type
-            switch exerciseType {
-            case .strength:
-                strengthFields
-            case .cardio:
-                cardioFields
-            case .isometric:
-                isometricFields
-            case .explosive:
-                explosiveFields
-            case .mobility:
-                mobilityFields
-            case .recovery:
-                recoveryFields
-            }
-
-            // Completed indicator
-            if setData.completed {
-                Image(systemName: "checkmark.circle.fill")
+                Image(systemName: "chevron.right")
                     .font(.caption)
-                    .foregroundColor(.green)
-            }
-        }
-        .onChange(of: weight) { _, _ in updateSet() }
-        .onChange(of: reps) { _, _ in updateSet() }
-        .onChange(of: rpe) { _, _ in updateSet() }
-        .onChange(of: duration) { _, _ in updateSet() }
-        .onChange(of: holdTime) { _, _ in updateSet() }
-        .onChange(of: distance) { _, _ in updateSet() }
-    }
-
-    @ViewBuilder
-    private var strengthFields: some View {
-        if !isBodyweight {
-            compactTextField("Weight", value: $weight, unit: "lbs")
-        }
-        compactIntField("Reps", value: $reps)
-        compactIntPicker("RPE", value: Binding(
-            get: { rpe ?? 0 },
-            set: { rpe = $0 == 0 ? nil : $0 }
-        ), range: 0...10)
-    }
-
-    @ViewBuilder
-    private var cardioFields: some View {
-        compactIntField("Time", value: $duration, unit: "s")
-        compactTextField("Dist", value: $distance, unit: distanceUnit.abbreviation)
-    }
-
-    @ViewBuilder
-    private var isometricFields: some View {
-        compactIntField("Hold", value: $holdTime, unit: "s")
-    }
-
-    @ViewBuilder
-    private var explosiveFields: some View {
-        compactIntField("Reps", value: $reps)
-    }
-
-    @ViewBuilder
-    private var mobilityFields: some View {
-        compactIntField("Reps", value: $reps)
-        compactIntField("Time", value: $duration, unit: "s")
-    }
-
-    @ViewBuilder
-    private var recoveryFields: some View {
-        compactIntField("Time", value: $duration, unit: "s")
-    }
-
-    private func compactTextField(_ label: String, value: Binding<Double>, unit: String? = nil) -> some View {
-        HStack(spacing: 2) {
-            TextField(label, value: value, format: .number)
-                .keyboardType(.decimalPad)
-                .frame(width: 50)
-                .textFieldStyle(.roundedBorder)
-                .font(.caption)
-            if let unit = unit {
-                Text(unit)
-                    .font(.caption2)
                     .foregroundColor(.secondary)
             }
         }
-    }
-
-    private func compactIntField(_ label: String, value: Binding<Int>, unit: String? = nil) -> some View {
-        HStack(spacing: 2) {
-            TextField(label, value: value, format: .number)
-                .keyboardType(.numberPad)
-                .frame(width: 40)
-                .textFieldStyle(.roundedBorder)
-                .font(.caption)
-            if let unit = unit {
-                Text(unit)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
+        .buttonStyle(.plain)
+        .padding(.vertical, 4)
+        .sheet(isPresented: $showEditSheet) {
+            EditExerciseSheet(
+                exercise: exercise,
+                moduleIndex: 0,  // Not used for history editing
+                exerciseIndex: 0,  // Not used for history editing
+                onSave: { _, _, updatedExercise in
+                    onChange(updatedExercise)
+                }
+            )
         }
     }
 
-    private func compactIntPicker(_ label: String, value: Binding<Int>, range: ClosedRange<Int>) -> some View {
-        Picker(label, selection: value) {
-            Text("-").tag(0)
-            ForEach(Array(range.dropFirst()), id: \.self) { val in
-                Text("\(val)").tag(val)
-            }
-        }
-        .pickerStyle(.menu)
-        .font(.caption)
-    }
+    private var exerciseSummary: String {
+        let totalSets = exercise.completedSetGroups.reduce(0) { $0 + $1.sets.count }
+        let completedSets = exercise.completedSetGroups.flatMap { $0.sets }.filter { $0.completed }.count
 
-    private func updateSet() {
-        var updated = setData
-        updated.weight = weight > 0 ? weight : nil
-        updated.reps = reps > 0 ? reps : nil
-        updated.rpe = rpe
-        updated.duration = duration > 0 ? duration : nil
-        updated.holdTime = holdTime > 0 ? holdTime : nil
-        updated.distance = distance > 0 ? distance : nil
-        onChange(updated)
+        switch exercise.exerciseType {
+        case .strength:
+            let firstSet = exercise.completedSetGroups.flatMap { $0.sets }.first { $0.completed }
+            if let weight = firstSet?.weight, let reps = firstSet?.reps {
+                return "\(completedSets)/\(totalSets) sets · \(formatWeight(weight)) lbs × \(reps)"
+            }
+            return "\(completedSets)/\(totalSets) sets"
+        case .cardio:
+            let firstSet = exercise.completedSetGroups.flatMap { $0.sets }.first { $0.completed }
+            if let duration = firstSet?.duration, duration > 0 {
+                return "\(completedSets)/\(totalSets) sets · \(formatDuration(duration))"
+            }
+            return "\(completedSets)/\(totalSets) sets"
+        case .isometric:
+            let firstSet = exercise.completedSetGroups.flatMap { $0.sets }.first { $0.completed }
+            if let holdTime = firstSet?.holdTime, holdTime > 0 {
+                return "\(completedSets)/\(totalSets) sets · \(holdTime)s hold"
+            }
+            return "\(completedSets)/\(totalSets) sets"
+        default:
+            return "\(completedSets)/\(totalSets) sets completed"
+        }
     }
 }
 

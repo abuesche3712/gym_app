@@ -11,7 +11,7 @@ import SwiftUI
 
 struct WorkoutOverviewSheet: View {
     @Environment(\.dismiss) private var dismiss
-    let session: Session?
+    @Binding var session: Session?
     let currentModuleIndex: Int
     let currentExerciseIndex: Int
     let onJumpTo: (Int, Int) -> Void
@@ -24,24 +24,6 @@ struct WorkoutOverviewSheet: View {
     @State private var editingSetLocation: SetLocation?
     @State private var addExerciseModuleIndex: Int? = nil
     @State private var showAddExerciseSheet = false
-
-    init(
-        session: Session?,
-        currentModuleIndex: Int,
-        currentExerciseIndex: Int,
-        onJumpTo: @escaping (Int, Int) -> Void,
-        onUpdateSet: @escaping (Int, Int, Int, Int, Double?, Int?, Int?, Int?, Int?, Double?) -> Void,
-        onAddExercise: @escaping (Int, String, ExerciseType, CardioMetric, DistanceUnit) -> Void,
-        onReorderExercise: ((Int, Int, Int) -> Void)? = nil
-    ) {
-        self.session = session
-        self.currentModuleIndex = currentModuleIndex
-        self.currentExerciseIndex = currentExerciseIndex
-        self.onJumpTo = onJumpTo
-        self.onUpdateSet = onUpdateSet
-        self.onAddExercise = onAddExercise
-        self.onReorderExercise = onReorderExercise
-    }
 
     var body: some View {
         NavigationStack {

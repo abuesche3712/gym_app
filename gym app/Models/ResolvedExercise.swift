@@ -2,8 +2,9 @@
 //  ResolvedExercise.swift
 //  gym app
 //
-//  A hydrated view model that combines ExerciseInstance + ExerciseTemplate.
-//  This is what Views consume - they don't need to know about the split.
+//  A view model wrapper around ExerciseInstance.
+//  Since ExerciseInstance now stores all data directly, this is mostly a pass-through.
+//  Kept for API compatibility and minor template-only lookups (like category).
 //
 
 import Foundation
@@ -15,51 +16,23 @@ struct ResolvedExercise: Identifiable, Hashable, ExerciseMetrics {
     // MARK: - Identity
 
     var id: UUID { instance.id }
-    var templateId: UUID { instance.templateId }
+    var templateId: UUID? { instance.templateId }
 
-    // MARK: - Resolved Properties
+    // MARK: - Direct Properties (from instance)
 
-    /// Name: uses instance override if set, otherwise template name
-    var name: String {
-        instance.nameOverride ?? template?.name ?? "Unknown Exercise"
-    }
+    var name: String { instance.name }
+    var exerciseType: ExerciseType { instance.exerciseType }
+    var cardioMetric: CardioMetric { instance.cardioMetric }
+    var mobilityTracking: MobilityTracking { instance.mobilityTracking }
+    var distanceUnit: DistanceUnit { instance.distanceUnit }
+    var isBodyweight: Bool { instance.isBodyweight }
+    var recoveryActivityType: RecoveryActivityType? { instance.recoveryActivityType }
+    var primaryMuscles: [MuscleGroup] { instance.primaryMuscles }
+    var secondaryMuscles: [MuscleGroup] { instance.secondaryMuscles }
 
-    // MARK: - Template Properties (pass-through with defaults)
-
-    var exerciseType: ExerciseType {
-        template?.exerciseType ?? .strength
-    }
-
+    // Category is only on template (not critical for display)
     var category: ExerciseCategory {
         template?.category ?? .fullBody
-    }
-
-    var cardioMetric: CardioMetric {
-        template?.cardioMetric ?? .timeOnly
-    }
-
-    var mobilityTracking: MobilityTracking {
-        template?.mobilityTracking ?? .repsOnly
-    }
-
-    var distanceUnit: DistanceUnit {
-        template?.distanceUnit ?? .meters
-    }
-
-    var isBodyweight: Bool {
-        template?.isBodyweight ?? false
-    }
-
-    var recoveryActivityType: RecoveryActivityType? {
-        template?.recoveryActivityType
-    }
-
-    var primaryMuscles: [MuscleGroup] {
-        template?.primaryMuscles ?? []
-    }
-
-    var secondaryMuscles: [MuscleGroup] {
-        template?.secondaryMuscles ?? []
     }
 
     // MARK: - Instance Properties
@@ -67,12 +40,7 @@ struct ResolvedExercise: Identifiable, Hashable, ExerciseMetrics {
     var setGroups: [SetGroup] { instance.setGroups }
     var supersetGroupId: UUID? { instance.supersetGroupId }
     var order: Int { instance.order }
-
-    /// Notes from instance, falling back to template default notes
-    var notes: String? {
-        instance.notes ?? template?.defaultNotes
-    }
-
+    var notes: String? { instance.notes }
     var createdAt: Date { instance.createdAt }
     var updatedAt: Date { instance.updatedAt }
 
@@ -131,6 +99,12 @@ struct ResolvedExercise: Identifiable, Hashable, ExerciseMetrics {
 // MARK: - Convenience Initializers
 
 extension ResolvedExercise {
+    /// Creates a ResolvedExercise without template lookup (instance has all data)
+    init(instance: ExerciseInstance) {
+        self.instance = instance
+        self.template = nil
+    }
+
     /// Creates a placeholder for an orphaned instance
     static func orphan(from instance: ExerciseInstance) -> ResolvedExercise {
         ResolvedExercise(instance: instance, template: nil)
@@ -140,8 +114,13 @@ extension ResolvedExercise {
 // MARK: - ExerciseInstance Extension
 
 extension ExerciseInstance {
-    /// Resolves this instance with the given template
-    func resolved(with template: ExerciseTemplate?) -> ResolvedExercise {
+    /// Resolves this instance (template lookup is optional now)
+    func resolved(with template: ExerciseTemplate? = nil) -> ResolvedExercise {
         ResolvedExercise(instance: self, template: template)
+    }
+
+    /// Resolves without template lookup
+    func resolved() -> ResolvedExercise {
+        ResolvedExercise(instance: self)
     }
 }

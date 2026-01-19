@@ -273,16 +273,30 @@ struct ExercisePickerView: View {
     // MARK: - Actions
 
     private func addCustomExercise() {
+        let trimmedName = customName.trimmingCharacters(in: .whitespaces)
+
         if saveToLibrary && !isNameInLibrary {
             customLibrary.addExercise(
-                name: customName.trimmingCharacters(in: .whitespaces),
+                name: trimmedName,
                 exerciseType: selectedExerciseType,
                 primary: selectedPrimaryMuscles,
                 secondary: selectedSecondaryMuscles
             )
         }
-        selectedTemplate = nil
-        onSelect(nil)
+
+        // Create template to return - either from library or as temporary
+        let template = customLibrary.template(named: trimmedName)
+            ?? ExerciseTemplate(
+                id: UUID(),
+                name: trimmedName,
+                category: .fullBody,
+                exerciseType: selectedExerciseType,
+                primary: selectedPrimaryMuscles,
+                secondary: selectedSecondaryMuscles
+            )
+
+        selectedTemplate = template
+        onSelect(template)
         dismiss()
     }
 

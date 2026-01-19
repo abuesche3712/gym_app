@@ -25,7 +25,6 @@ struct ActiveSessionView: View {
     @State private var statsOpacity: Double = 0
     @State private var showRecentSets = false
     @State private var showWorkoutOverview = false
-    @State private var showSubstituteExercise = false
     @State private var showEditExercise = false
     @State private var showIntervalTimer = false
     @State private var intervalSetGroupIndex: Int = 0
@@ -169,15 +168,6 @@ struct ActiveSessionView: View {
                     }
                 )
             }
-            .sheet(isPresented: $showSubstituteExercise) {
-                SubstituteExerciseSheet(
-                    currentExercise: sessionViewModel.currentExercise,
-                    onSubstitute: { name, type, cardioMetric, distanceUnit in
-                        substituteCurrentExercise(name: name, type: type, cardioMetric: cardioMetric, distanceUnit: distanceUnit)
-                        showSubstituteExercise = false
-                    }
-                )
-            }
             .sheet(isPresented: $showEditExercise) {
                 if let exercise = sessionViewModel.currentExercise {
                     EditExerciseSheet(
@@ -210,7 +200,7 @@ struct ActiveSessionView: View {
             }
             .sheet(isPresented: $showWorkoutOverview) {
                 WorkoutOverviewSheet(
-                    session: sessionViewModel.currentSession,
+                    session: $sessionViewModel.currentSession,
                     currentModuleIndex: sessionViewModel.currentModuleIndex,
                     currentExerciseIndex: sessionViewModel.currentExerciseIndex,
                     onJumpTo: { moduleIndex, exerciseIndex in
@@ -410,34 +400,12 @@ struct ActiveSessionView: View {
             // Header
             HStack {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    HStack(spacing: AppSpacing.sm) {
-                        Text(exercise.exerciseName)
-                            .font(.title3.bold())
-                            .foregroundColor(AppColors.textPrimary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        // Swap button inline with exercise name
-                        Button {
-                            showSubstituteExercise = true
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "arrow.2.squarepath")
-                                    .font(.system(size: 12))
-                                Text("Swap")
-                                    .font(.caption.weight(.medium))
-                            }
-                            .foregroundColor(AppColors.textTertiary)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(
-                                Capsule()
-                                    .fill(AppColors.surfaceLight)
-                            )
-                        }
-                        .fixedSize()
-                    }
+                    Text(exercise.exerciseName)
+                        .font(.title3.bold())
+                        .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                     Text(exerciseSetsSummary(exercise))
                         .font(.subheadline)
@@ -978,36 +946,6 @@ struct ActiveSessionView: View {
             // If all sets complete, jump to first set
             sessionViewModel.jumpToSet(setGroupIndex: 0, setIndex: 0)
         }
-    }
-
-    // MARK: - Substitute Exercise
-
-    private func substituteCurrentExercise(name: String, type: ExerciseType, cardioMetric: CardioMetric, distanceUnit: DistanceUnit) {
-        guard var session = sessionViewModel.currentSession else { return }
-        guard sessionViewModel.currentModuleIndex < session.completedModules.count else { return }
-
-        var module = session.completedModules[sessionViewModel.currentModuleIndex]
-        guard sessionViewModel.currentExerciseIndex < module.completedExercises.count else { return }
-        var exercise = module.completedExercises[sessionViewModel.currentExerciseIndex]
-
-        // Store original name if not already a substitution
-        let originalName = exercise.isSubstitution ? exercise.originalExerciseName : exercise.exerciseName
-
-        // Update exercise with new info
-        exercise.originalExerciseName = originalName
-        exercise.isSubstitution = true
-        exercise.exerciseName = name
-        exercise.exerciseType = type
-        exercise.cardioMetric = cardioMetric
-        exercise.distanceUnit = distanceUnit
-
-        // If exercise type changed, we may need to adjust set data structure
-        // For now, keep the same sets but they'll need different inputs
-
-        module.completedExercises[sessionViewModel.currentExerciseIndex] = exercise
-        session.completedModules[sessionViewModel.currentModuleIndex] = module
-
-        sessionViewModel.currentSession = session
     }
 
     // MARK: - Add Exercise to Module

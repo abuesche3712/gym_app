@@ -327,20 +327,22 @@ struct ExerciseFormView: View {
 
     private func loadExistingExercise() {
         if let instance = instance {
-            // Resolve the instance to get combined data
-            let resolved = ExerciseResolver.shared.resolve(instance)
-            name = resolved.name
-            exerciseType = resolved.exerciseType
-            trackTime = resolved.cardioMetric.tracksTime
-            trackDistance = resolved.cardioMetric.tracksDistance
-            trackReps = resolved.mobilityTracking.tracksReps
-            trackDuration = resolved.mobilityTracking.tracksDuration
-            distanceUnit = resolved.distanceUnit
+            // Instance now stores all data directly
+            name = instance.name
+            exerciseType = instance.exerciseType
+            trackTime = instance.cardioMetric.tracksTime
+            trackDistance = instance.cardioMetric.tracksDistance
+            trackReps = instance.mobilityTracking.tracksReps
+            trackDuration = instance.mobilityTracking.tracksDuration
+            distanceUnit = instance.distanceUnit
             notes = instance.notes ?? ""
             setGroups = instance.setGroups
-            primaryMuscles = resolved.primaryMuscles
-            secondaryMuscles = resolved.secondaryMuscles
-            selectedTemplate = ExerciseLibrary.shared.template(id: instance.templateId)
+            primaryMuscles = instance.primaryMuscles
+            secondaryMuscles = instance.secondaryMuscles
+            // Template lookup is optional now
+            if let templateId = instance.templateId {
+                selectedTemplate = ExerciseLibrary.shared.template(id: templateId)
+            }
         }
     }
 
@@ -350,36 +352,36 @@ struct ExerciseFormView: View {
 
         guard var module = moduleViewModel.getModule(id: moduleId) else { return }
 
-        // Determine the template ID - use selected template or generate a custom ID
-        let templateId = selectedTemplate?.id ?? UUID()
-        let isCustomExercise = selectedTemplate == nil
-
-        // Only set nameOverride if different from template name (or if custom exercise)
-        let nameOverrideValue: String? = {
-            if isCustomExercise {
-                return trimmedName
-            } else if trimmedName != selectedTemplate?.name {
-                return trimmedName
-            }
-            return nil
-        }()
-
         if var existingInstance = instance {
-            // Update existing instance
-            existingInstance.nameOverride = nameOverrideValue
+            // Update existing instance - all data stored directly
+            existingInstance.name = trimmedName
+            existingInstance.exerciseType = exerciseType
+            existingInstance.cardioMetric = cardioMetric
+            existingInstance.distanceUnit = distanceUnit
+            existingInstance.mobilityTracking = mobilityTracking
+            existingInstance.primaryMuscles = primaryMuscles
+            existingInstance.secondaryMuscles = secondaryMuscles
             existingInstance.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
             existingInstance.setGroups = setGroups
             existingInstance.updatedAt = Date()
 
             module.updateExercise(existingInstance)
         } else {
-            // Create new instance
+            // Create new instance - copy all data from template if selected
             let newInstance = ExerciseInstance(
-                templateId: templateId,
+                templateId: selectedTemplate?.id,
+                name: trimmedName,
+                exerciseType: exerciseType,
+                cardioMetric: cardioMetric,
+                distanceUnit: distanceUnit,
+                mobilityTracking: mobilityTracking,
+                isBodyweight: selectedTemplate?.isBodyweight ?? false,
+                recoveryActivityType: selectedTemplate?.recoveryActivityType,
+                primaryMuscles: primaryMuscles,
+                secondaryMuscles: secondaryMuscles,
                 setGroups: setGroups,
                 order: module.exercises.count,
-                notes: trimmedNotes.isEmpty ? nil : trimmedNotes,
-                nameOverride: nameOverrideValue
+                notes: trimmedNotes.isEmpty ? nil : trimmedNotes
             )
             module.addExercise(newInstance)
         }

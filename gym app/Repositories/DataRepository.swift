@@ -96,16 +96,16 @@ class DataRepository: ObservableObject {
             var extractedCount = 0
             for cloudModule in cloudData.modules {
                 for exerciseInstance in cloudModule.exercises {
-                    // Only extract if there's a custom name override and template not found in built-in library
-                    guard let customName = exerciseInstance.nameOverride else { continue }
-                    let isBuiltInTemplate = builtInLibrary.template(id: exerciseInstance.templateId) != nil
-                    let isAlreadyCustom = customLibraryPreExtract.contains(name: customName)
+                    // Extract custom exercises: no template ID or template not found in built-in library
+                    let name = exerciseInstance.name
+                    let isBuiltInTemplate = exerciseInstance.templateId.flatMap { builtInLibrary.template(id: $0) } != nil
+                    let isAlreadyCustom = customLibraryPreExtract.contains(name: name)
 
                     if !isBuiltInTemplate && !isAlreadyCustom {
-                        Logger.debug("Extracting custom exercise '\(customName)' from module '\(cloudModule.name)'")
+                        Logger.debug("Extracting custom exercise '\(name)' from module '\(cloudModule.name)'")
                         customLibraryPreExtract.addExercise(
-                            name: customName,
-                            exerciseType: .strength  // Default for extracted custom exercises
+                            name: name,
+                            exerciseType: exerciseInstance.exerciseType
                         )
                         extractedCount += 1
                     }
@@ -710,14 +710,89 @@ class DataRepository: ObservableObject {
                 )
             }
 
+            // Migration: use direct fields, falling back to legacy overrides, then template lookup
+            let name: String = instanceEntity.name
+                ?? instanceEntity.nameOverride
+                ?? ExerciseResolver.shared.getTemplate(id: instanceEntity.templateId ?? UUID())?.name
+                ?? "Unknown Exercise"
+
+            let exerciseType: ExerciseType = {
+                if let raw = instanceEntity.exerciseTypeRaw, let type = ExerciseType(rawValue: raw) {
+                    return type
+                }
+                if let override = instanceEntity.exerciseTypeOverride {
+                    return override
+                }
+                if let templateId = instanceEntity.templateId,
+                   let template = ExerciseResolver.shared.getTemplate(id: templateId) {
+                    return template.exerciseType
+                }
+                return .strength
+            }()
+
+            let cardioMetric: CardioTracking = {
+                if let raw = instanceEntity.cardioMetricRaw, let metric = CardioTracking(rawValue: raw) {
+                    return metric
+                }
+                if let override = instanceEntity.cardioMetricOverride {
+                    return override
+                }
+                if let templateId = instanceEntity.templateId,
+                   let template = ExerciseResolver.shared.getTemplate(id: templateId) {
+                    return template.cardioMetric
+                }
+                return .timeOnly
+            }()
+
+            let distanceUnit: DistanceUnit = {
+                if let raw = instanceEntity.distanceUnitRaw, let unit = DistanceUnit(rawValue: raw) {
+                    return unit
+                }
+                if let override = instanceEntity.distanceUnitOverride {
+                    return override
+                }
+                if let templateId = instanceEntity.templateId,
+                   let template = ExerciseResolver.shared.getTemplate(id: templateId) {
+                    return template.distanceUnit
+                }
+                return .meters
+            }()
+
+            let mobilityTracking: MobilityTracking = {
+                if let raw = instanceEntity.mobilityTrackingRaw, let tracking = MobilityTracking(rawValue: raw) {
+                    return tracking
+                }
+                if let override = instanceEntity.mobilityTrackingOverride {
+                    return override
+                }
+                if let templateId = instanceEntity.templateId,
+                   let template = ExerciseResolver.shared.getTemplate(id: templateId) {
+                    return template.mobilityTracking
+                }
+                return .repsOnly
+            }()
+
+            // Get other fields from entity or template
+            let template = instanceEntity.templateId.flatMap { ExerciseResolver.shared.getTemplate(id: $0) }
+            let primaryMuscles = instanceEntity.primaryMuscles.isEmpty ? (template?.primaryMuscles ?? []) : instanceEntity.primaryMuscles
+            let secondaryMuscles = instanceEntity.secondaryMuscles.isEmpty ? (template?.secondaryMuscles ?? []) : instanceEntity.secondaryMuscles
+
             return ExerciseInstance(
                 id: instanceEntity.id,
                 templateId: instanceEntity.templateId,
+                name: name,
+                exerciseType: exerciseType,
+                cardioMetric: cardioMetric,
+                distanceUnit: distanceUnit,
+                mobilityTracking: mobilityTracking,
+                isBodyweight: instanceEntity.isBodyweight || (template?.isBodyweight ?? false),
+                recoveryActivityType: instanceEntity.recoveryActivityType ?? template?.recoveryActivityType,
+                primaryMuscles: primaryMuscles,
+                secondaryMuscles: secondaryMuscles,
                 setGroups: setGroups,
                 supersetGroupId: instanceEntity.supersetGroupId,
                 order: Int(instanceEntity.orderIndex),
                 notes: instanceEntity.notes,
-                nameOverride: instanceEntity.nameOverride,
                 createdAt: instanceEntity.createdAt ?? Date(),
                 updatedAt: instanceEntity.updatedAt ?? Date()
             )
@@ -738,7 +813,18 @@ class DataRepository: ObservableObject {
             instanceEntity.orderIndex = Int32(index)
             instanceEntity.createdAt = instance.createdAt
             instanceEntity.updatedAt = instance.updatedAt
-            instanceEntity.nameOverride = instance.nameOverride
+
+            // Save direct fields (new self-contained model)
+            instanceEntity.name = instance.name
+            instanceEntity.exerciseType = instance.exerciseType
+            instanceEntity.cardioMetric = instance.cardioMetric
+            instanceEntity.distanceUnit = instance.distanceUnit
+            instanceEntity.mobilityTracking = instance.mobilityTracking
+            instanceEntity.isBodyweight = instance.isBodyweight
+            instanceEntity.recoveryActivityType = instance.recoveryActivityType
+            instanceEntity.primaryMuscles = instance.primaryMuscles
+            instanceEntity.secondaryMuscles = instance.secondaryMuscles
+
             instanceEntity.module = moduleEntity
 
             // Add set groups

@@ -15,7 +15,6 @@ struct ExerciseLibraryView: View {
     @State private var selectedSource: ExerciseSource = .all
     @State private var showingAddExercise = false
     @State private var exerciseToEdit: ExerciseTemplate? = nil
-    @State private var providedExerciseToView: ExerciseTemplate? = nil
 
     enum ExerciseSource {
         case all, provided, custom
@@ -46,10 +45,6 @@ struct ExerciseLibraryView: View {
 
         // Sort alphabetically
         return exercises.sorted { $0.name < $1.name }
-    }
-
-    private var customExerciseIds: Set<UUID> {
-        Set(resolver.customExercises.map { $0.id })
     }
 
     var body: some View {
@@ -120,15 +115,11 @@ struct ExerciseLibraryView: View {
                     ForEach(filteredExercises) { exercise in
                         ExerciseLibraryRow(
                             exercise: exercise,
-                            isCustom: customExerciseIds.contains(exercise.id),
+                            isCustom: exercise.isCustom,
                             onTap: {
-                                if customExerciseIds.contains(exercise.id) {
-                                    exerciseToEdit = exercise
-                                } else {
-                                    providedExerciseToView = exercise
-                                }
+                                exerciseToEdit = exercise
                             },
-                            onDelete: customExerciseIds.contains(exercise.id) ? {
+                            onDelete: exercise.isCustom ? {
                                 customLibrary.deleteExercise(exercise)
                             } : nil
                         )
@@ -153,10 +144,7 @@ struct ExerciseLibraryView: View {
             AddExerciseSheet()
         }
         .sheet(item: $exerciseToEdit) { exercise in
-            EditCustomExerciseSheet(exercise: exercise)
-        }
-        .sheet(item: $providedExerciseToView) { exercise in
-            ProvidedExerciseDetailSheet(exercise: exercise)
+            ExerciseEditSheet(exercise: exercise)
         }
     }
 }
@@ -395,43 +383,84 @@ private struct AddExerciseSheet: View {
     }
 }
 
-// MARK: - Edit Exercise Sheet
+// MARK: - Exercise Edit Sheet (Unified for all exercises)
 
-private struct EditCustomExerciseSheet: View {
+private struct ExerciseEditSheet: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var customLibrary = CustomExerciseLibrary.shared
+    @StateObject private var libraryService = LibraryService.shared
 
     let exercise: ExerciseTemplate
 
     @State private var name: String
     @State private var exerciseType: ExerciseType
+    @State private var primaryMuscles: Set<MuscleGroup>
+    @State private var secondaryMuscles: Set<MuscleGroup>
+    @State private var selectedImplementIds: Set<UUID>
+
+    // Grid layout
+    private let columns = [
+        GridItem(.flexible()),
+        GridItem(.flexible())
+    ]
 
     init(exercise: ExerciseTemplate) {
         self.exercise = exercise
         _name = State(initialValue: exercise.name)
         _exerciseType = State(initialValue: exercise.exerciseType)
+        _primaryMuscles = State(initialValue: Set(exercise.primaryMuscles))
+        _secondaryMuscles = State(initialValue: Set(exercise.secondaryMuscles))
+        // TODO: Load implement IDs from exercise if stored
+        _selectedImplementIds = State(initialValue: [])
     }
 
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    private var hasChanges: Bool {
+        name != exercise.name ||
+        exerciseType != exercise.exerciseType ||
+        Set(exercise.primaryMuscles) != primaryMuscles ||
+        Set(exercise.secondaryMuscles) != secondaryMuscles ||
+        !selectedImplementIds.isEmpty
+    }
+
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Name") {
-                    TextField("Exercise name", text: $name)
-                }
+            ScrollView {
+                VStack(spacing: AppSpacing.lg) {
+                    // Header Card
+                    headerCard
 
-                Section("Type") {
-                    Picker("Type", selection: $exerciseType) {
-                        ForEach(ExerciseType.allCases) { type in
-                            Text(type.displayName).tag(type)
-                        }
-                    }
+                    // Type Selection
+                    typeSection
+
+                    // Primary Muscles Grid
+                    muscleSection(
+                        title: "Primary Muscles",
+                        subtitle: "Main muscles worked",
+                        selected: $primaryMuscles,
+                        excluded: secondaryMuscles,
+                        accentColor: AppColors.accentBlue
+                    )
+
+                    // Secondary Muscles Grid
+                    muscleSection(
+                        title: "Secondary Muscles",
+                        subtitle: "Supporting muscles",
+                        selected: $secondaryMuscles,
+                        excluded: primaryMuscles,
+                        accentColor: AppColors.accentTeal
+                    )
+
+                    // Equipment Grid
+                    equipmentSection
                 }
+                .padding(AppSpacing.screenPadding)
             }
-            .navigationTitle("Edit Exercise")
+            .background(AppColors.background.ignoresSafeArea())
+            .navigationTitle(exercise.isCustom ? "Edit Exercise" : "Exercise Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -439,129 +468,222 @@ private struct EditCustomExerciseSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        var updated = exercise
-                        updated.name = name.trimmingCharacters(in: .whitespaces)
-                        updated.exerciseType = exerciseType
-                        customLibrary.updateExercise(updated)
-                        dismiss()
+                        saveChanges()
                     }
-                    .disabled(!canSave)
+                    .disabled(!canSave || !hasChanges)
                 }
             }
         }
     }
-}
 
-// MARK: - Provided Exercise Detail Sheet (View-Only)
+    // MARK: - Header Card
 
-private struct ProvidedExerciseDetailSheet: View {
-    @Environment(\.dismiss) private var dismiss
+    private var headerCard: some View {
+        VStack(spacing: AppSpacing.md) {
+            HStack(spacing: AppSpacing.md) {
+                // Type indicator
+                ZStack {
+                    Circle()
+                        .fill(exerciseTypeColor.opacity(0.15))
+                        .frame(width: 50, height: 50)
 
-    let exercise: ExerciseTemplate
-
-    var body: some View {
-        NavigationStack {
-            List {
-                // Header
-                Section {
-                    HStack(spacing: AppSpacing.md) {
-                        // Type indicator
-                        Circle()
-                            .fill(exerciseTypeColor)
-                            .frame(width: 12, height: 12)
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(exercise.name)
-                                .font(.title2.bold())
-
-                            Text(exercise.exerciseType.displayName)
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.textSecondary)
-                        }
-
-                        Spacer()
-
-                        Image(systemName: exerciseTypeIcon)
-                            .font(.title2)
-                            .foregroundColor(exerciseTypeColor)
-                    }
-                    .listRowBackground(Color.clear)
+                    Image(systemName: exerciseTypeIcon)
+                        .font(.title2)
+                        .foregroundColor(exerciseTypeColor)
                 }
 
-                // Primary Muscles
-                if !exercise.primaryMuscles.isEmpty {
-                    Section {
-                        ForEach(exercise.primaryMuscles, id: \.self) { muscle in
-                            HStack(spacing: AppSpacing.sm) {
-                                Image(systemName: "figure.arms.open")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(AppColors.accentBlue)
-                                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 4) {
+                    if exercise.isCustom {
+                        TextField("Exercise name", text: $name)
+                            .font(.title3.bold())
+                            .foregroundColor(AppColors.textPrimary)
+                    } else {
+                        Text(exercise.name)
+                            .font(.title3.bold())
+                            .foregroundColor(AppColors.textPrimary)
+                    }
 
-                                Text(muscle.rawValue)
-                                    .font(.body)
-                                    .foregroundColor(AppColors.textPrimary)
-                            }
-                        }
-                    } header: {
-                        HStack {
-                            Text("Primary Muscles")
-                            Spacer()
-                            Text("\(exercise.primaryMuscles.count)")
-                                .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
+                    HStack(spacing: AppSpacing.sm) {
+                        Text(exerciseType.displayName)
+                            .font(.subheadline)
+                            .foregroundColor(AppColors.textSecondary)
+
+                        if exercise.isCustom {
+                            Text("Custom")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundColor(AppColors.accentTeal)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Capsule().fill(AppColors.accentTeal.opacity(0.15)))
                         }
                     }
                 }
 
-                // Secondary Muscles
-                if !exercise.secondaryMuscles.isEmpty {
-                    Section {
-                        ForEach(exercise.secondaryMuscles, id: \.self) { muscle in
-                            HStack(spacing: AppSpacing.sm) {
-                                Image(systemName: "figure.arms.open")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(AppColors.textTertiary)
-                                    .frame(width: 24)
-
-                                Text(muscle.rawValue)
-                                    .font(.body)
-                                    .foregroundColor(AppColors.textSecondary)
-                            }
-                        }
-                    } header: {
-                        HStack {
-                            Text("Secondary Muscles")
-                            Spacer()
-                            Text("\(exercise.secondaryMuscles.count)")
-                                .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
-                        }
-                    }
-                }
-
-                // No muscles specified
-                if exercise.primaryMuscles.isEmpty && exercise.secondaryMuscles.isEmpty {
-                    Section("Muscles") {
-                        Text("No muscles specified")
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-                }
+                Spacer()
             }
-            .listStyle(.insetGrouped)
-            .navigationTitle("Exercise Details")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                        .foregroundColor(AppColors.accentBlue)
+        }
+        .padding(AppSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .fill(AppColors.cardBackground)
+        )
+    }
+
+    // MARK: - Type Section
+
+    private var typeSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("Exercise Type")
+                .font(.headline)
+                .foregroundColor(AppColors.textPrimary)
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.sm) {
+                ForEach(ExerciseType.allCases) { type in
+                    Button {
+                        exerciseType = type
+                    } label: {
+                        VStack(spacing: 6) {
+                            Image(systemName: type.icon)
+                                .font(.system(size: 20))
+
+                            Text(type.displayName)
+                                .font(.caption)
+                                .lineLimit(1)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, AppSpacing.sm)
+                        .foregroundColor(exerciseType == type ? .white : AppColors.textPrimary)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppCorners.medium)
+                                .fill(exerciseType == type ? exerciseTypeColor(for: type) : AppColors.cardBackground)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppCorners.medium)
+                                .stroke(exerciseType == type ? exerciseTypeColor(for: type) : AppColors.border, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
     }
+
+    // MARK: - Muscle Section
+
+    private func muscleSection(
+        title: String,
+        subtitle: String,
+        selected: Binding<Set<MuscleGroup>>,
+        excluded: Set<MuscleGroup>,
+        accentColor: Color
+    ) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
+
+                    Spacer()
+
+                    if !selected.wrappedValue.isEmpty {
+                        Text("\(selected.wrappedValue.count) selected")
+                            .font(.caption)
+                            .foregroundColor(accentColor)
+                    }
+                }
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+
+            LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
+                ForEach(MuscleGroup.allCases, id: \.self) { muscle in
+                    if !excluded.contains(muscle) {
+                        MuscleChip(
+                            muscle: muscle,
+                            isSelected: selected.wrappedValue.contains(muscle),
+                            accentColor: accentColor
+                        ) {
+                            if selected.wrappedValue.contains(muscle) {
+                                selected.wrappedValue.remove(muscle)
+                            } else {
+                                selected.wrappedValue.insert(muscle)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Equipment Section
+
+    private var equipmentSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text("Equipment")
+                        .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
+
+                    Spacer()
+
+                    if !selectedImplementIds.isEmpty {
+                        Text("\(selectedImplementIds.count) selected")
+                            .font(.caption)
+                            .foregroundColor(AppColors.accentCyan)
+                    }
+                }
+
+                Text("What equipment does this exercise use?")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+
+            LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
+                ForEach(libraryService.implements, id: \.id) { implement in
+                    EquipmentChip(
+                        name: implement.name,
+                        isSelected: selectedImplementIds.contains(implement.id)
+                    ) {
+                        if selectedImplementIds.contains(implement.id) {
+                            selectedImplementIds.remove(implement.id)
+                        } else {
+                            selectedImplementIds.insert(implement.id)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Save
+
+    private func saveChanges() {
+        var updated = exercise
+        updated.name = name.trimmingCharacters(in: .whitespaces)
+        updated.exerciseType = exerciseType
+        updated.primaryMuscles = Array(primaryMuscles)
+        updated.secondaryMuscles = Array(secondaryMuscles)
+
+        if exercise.isCustom {
+            customLibrary.updateExercise(updated)
+        } else {
+            customLibrary.addExercise(updated)
+        }
+        dismiss()
+    }
+
+    // MARK: - Helpers
 
     private var exerciseTypeColor: Color {
-        switch exercise.exerciseType {
+        exerciseTypeColor(for: exerciseType)
+    }
+
+    private func exerciseTypeColor(for type: ExerciseType) -> Color {
+        switch type {
         case .strength: return AppColors.accentBlue
         case .cardio: return AppColors.warning
         case .mobility: return AppColors.accentTeal
@@ -572,14 +694,110 @@ private struct ProvidedExerciseDetailSheet: View {
     }
 
     private var exerciseTypeIcon: String {
-        switch exercise.exerciseType {
-        case .strength: return "dumbbell.fill"
-        case .cardio: return "heart.fill"
-        case .isometric: return "timer"
-        case .explosive: return "bolt.fill"
-        case .mobility: return "figure.flexibility"
-        case .recovery: return "leaf.fill"
+        exerciseType.icon
+    }
+}
+
+// MARK: - Muscle Chip
+
+private struct MuscleChip: View {
+    let muscle: MuscleGroup
+    let isSelected: Bool
+    let accentColor: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: muscle.icon)
+                    .font(.system(size: 14))
+
+                Text(muscle.rawValue)
+                    .font(.subheadline)
+                    .lineLimit(1)
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16))
+                }
+            }
+            .foregroundColor(isSelected ? .white : AppColors.textPrimary)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .fill(isSelected ? accentColor : AppColors.cardBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .stroke(isSelected ? accentColor : AppColors.border, lineWidth: 1)
+            )
         }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Equipment Chip
+
+private struct EquipmentChip: View {
+    let name: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    private var icon: String {
+        switch name.lowercased() {
+        case "barbell": return "figure.strengthtraining.traditional"
+        case "dumbbell", "dumbbells": return "dumbbell.fill"
+        case "cable", "cables": return "cable.connector"
+        case "machine": return "gearshape.fill"
+        case "kettlebell": return "figure.strengthtraining.functional"
+        case "box": return "square.stack.3d.up.fill"
+        case "band", "bands", "resistance band": return "circle.hexagonpath.fill"
+        case "bodyweight": return "figure.stand"
+        case "pull-up bar", "pullup bar": return "figure.climbing"
+        case "bench": return "bed.double.fill"
+        case "ez bar", "ez-bar": return "line.diagonal"
+        case "trap bar": return "hexagon"
+        case "smith machine": return "square.stack.3d.down.right"
+        case "rings": return "circle.circle"
+        case "medicine ball", "med ball": return "basketball.fill"
+        case "foam roller": return "capsule.fill"
+        default: return "wrench.and.screwdriver.fill"
+        }
+    }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+
+                Text(name)
+                    .font(.subheadline)
+                    .lineLimit(1)
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16))
+                }
+            }
+            .foregroundColor(isSelected ? .white : AppColors.textPrimary)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .fill(isSelected ? AppColors.accentCyan : AppColors.cardBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .stroke(isSelected ? AppColors.accentCyan : AppColors.border, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 

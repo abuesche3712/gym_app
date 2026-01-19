@@ -29,13 +29,27 @@ struct SessionNavigator {
         self.modules = modules
     }
 
-    /// Creates a navigator with initial position
+    /// Creates a navigator with initial position (indices are clamped to valid bounds)
     init(modules: [CompletedModule], moduleIndex: Int, exerciseIndex: Int, setGroupIndex: Int, setIndex: Int) {
         self.modules = modules
-        self.currentModuleIndex = moduleIndex
-        self.currentExerciseIndex = exerciseIndex
-        self.currentSetGroupIndex = setGroupIndex
-        self.currentSetIndex = setIndex
+
+        // Clamp module index
+        let clampedModuleIndex = modules.isEmpty ? 0 : max(0, min(moduleIndex, modules.count - 1))
+        self.currentModuleIndex = clampedModuleIndex
+
+        // Clamp exercise index
+        let exerciseCount = modules.isEmpty ? 0 : modules[clampedModuleIndex].completedExercises.count
+        let clampedExerciseIndex = exerciseCount == 0 ? 0 : max(0, min(exerciseIndex, exerciseCount - 1))
+        self.currentExerciseIndex = clampedExerciseIndex
+
+        // Clamp set group index
+        let setGroupCount = exerciseCount == 0 ? 0 : modules[clampedModuleIndex].completedExercises[clampedExerciseIndex].completedSetGroups.count
+        let clampedSetGroupIndex = setGroupCount == 0 ? 0 : max(0, min(setGroupIndex, setGroupCount - 1))
+        self.currentSetGroupIndex = clampedSetGroupIndex
+
+        // Clamp set index
+        let setCount = setGroupCount == 0 ? 0 : modules[clampedModuleIndex].completedExercises[clampedExerciseIndex].completedSetGroups[clampedSetGroupIndex].sets.count
+        self.currentSetIndex = setCount == 0 ? 0 : max(0, min(setIndex, setCount - 1))
     }
 
     // MARK: - Current Position Accessors

@@ -92,12 +92,11 @@ struct SetRowView: View {
     @State private var timerStartTime: Date?
     @State private var isStopwatchMode: Bool = false  // true = counting up, false = counting down
     @State private var showRPEPicker: Bool = false
-    @State private var showTimePicker: Bool = false  // For manual time entry on distance-based cardio
+    @State private var showTimePicker: Bool = false  // For manual time entry on cardio/mobility
+    @State private var showHoldTimePicker: Bool = false  // For manual hold time entry on isometric
     @State private var showDistanceUnitPicker: Bool = false  // For changing distance unit
     @State private var durationManuallySet: Bool = false  // Track if user manually set duration via picker
     @State private var justCompleted: Bool = false  // For completion glow animation
-    @State private var swipeOffset: CGFloat = 0  // For swipe-to-complete gesture
-    @State private var isSwipeActive: Bool = false  // Track if swipe threshold reached
 
     private var hasTimedTarget: Bool {
         (exercise.exerciseType == .cardio && exercise.tracksTime && flatSet.targetDuration != nil) ||
@@ -111,87 +110,39 @@ struct SetRowView: View {
         return flatSet.targetDuration ?? 0
     }
 
-    private let swipeThreshold: CGFloat = 100
-
     var body: some View {
-        ZStack(alignment: .leading) {
-            // Swipe background (revealed on swipe)
-            if !flatSet.setData.completed {
-                HStack {
-                    Image(systemName: isSwipeActive ? "checkmark.circle.fill" : "checkmark.circle")
-                        .font(.system(size: 24, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding(.leading, AppSpacing.lg)
-                    Text(isSwipeActive ? "Release to log" : "Swipe to log")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundColor(.white.opacity(0.9))
-                    Spacer()
+        HStack(spacing: AppSpacing.sm) {
+            // Set number indicator
+            setNumberBadge
+
+            if flatSet.setData.completed {
+                // Completed state - show summary
+                completedView
+            } else {
+                // Input fields based on exercise type - fills available space
+                inputFieldsView
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Same as last set button (friction reduction)
+                if previousCompletedSet != nil {
+                    sameAsLastButton
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(isSwipeActive ? AppColors.success : AppColors.success.opacity(0.7))
-                )
-            }
 
-            // Main content
-            HStack(spacing: AppSpacing.sm) {
-                // Set number indicator
-                setNumberBadge
-
-                if flatSet.setData.completed {
-                    // Completed state - show summary
-                    completedView
-                } else {
-                    // Input fields based on exercise type - fills available space
-                    inputFieldsView
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    // Same as last set button (friction reduction)
-                    if previousCompletedSet != nil {
-                        sameAsLastButton
-                    }
-
-                    // Delete button (if available and set not completed)
-                    if let onDelete = onDelete {
-                        deleteButton(action: onDelete)
-                    }
-
-                    // Log button
-                    logButton
+                // Delete button (if available and set not completed)
+                if let onDelete = onDelete {
+                    deleteButton(action: onDelete)
                 }
+
+                // Log button
+                logButton
             }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(isHighlighted ? AppColors.accentBlue.opacity(0.08) : backgroundColor)
-            )
-            .offset(x: swipeOffset)
-            .gesture(
-                flatSet.setData.completed ? nil : DragGesture(minimumDistance: 20)
-                    .onChanged { value in
-                        // Only allow right swipe
-                        if value.translation.width > 0 {
-                            swipeOffset = value.translation.width
-                            isSwipeActive = swipeOffset > swipeThreshold
-                            if isSwipeActive && !flatSet.setData.completed {
-                                HapticManager.shared.soft()
-                            }
-                        }
-                    }
-                    .onEnded { value in
-                        if swipeOffset > swipeThreshold {
-                            // Complete the set via swipe
-                            triggerSwipeComplete()
-                        }
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            swipeOffset = 0
-                            isSwipeActive = false
-                        }
-                    }
-            )
         }
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.medium)
+                .fill(backgroundColor)
+        )
         .completionGlow(isActive: justCompleted, color: AppColors.success)
         .overlay(
             RoundedRectangle(cornerRadius: AppCorners.medium)
@@ -227,6 +178,12 @@ struct SetRowView: View {
                 }
             )
         }
+        .sheet(isPresented: $showHoldTimePicker) {
+            TimePickerSheet(
+                totalSeconds: $inputHoldTime,
+                title: "Hold Time"
+            )
+        }
     }
 
     // MARK: - Subviews
@@ -256,7 +213,9 @@ struct SetRowView: View {
         if flatSet.setData.completed {
             return AppColors.success.opacity(0.05)
         } else if timerRunning {
-            return AppColors.accentBlue.opacity(0.1)
+            return AppColors.accentBlue.opacity(0.15)
+        } else if isHighlighted {
+            return AppColors.accentBlue.opacity(0.08)
         }
         return AppColors.surfaceLight
     }
@@ -394,32 +353,21 @@ struct SetRowView: View {
                     HStack(spacing: 8) {
                         if let targetDuration = flatSet.targetDuration, targetDuration > 0 {
                             // Has time target - show countdown timer
-                            if timerRunning {
-                                Text(formatDuration(timerSecondsRemaining))
-                                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                                    .foregroundColor(timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.accentBlue)
+                            // Always tappable for manual entry
+                            Button {
+                                showTimePicker = true
+                            } label: {
+                                Text(timerRunning ? formatDuration(timerSecondsRemaining) : formatDuration(inputDuration))
+                                    .font(.system(size: 18, weight: timerRunning ? .bold : .semibold, design: .rounded))
+                                    .foregroundColor(timerRunning ? (timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.accentBlue) : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
                                     .monospacedDigit()
                                     .multilineTextAlignment(.center)
                                     .frame(width: 70, alignment: .center)
                                     .padding(.vertical, 10)
                                     .padding(.horizontal, 8)
                                     .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                            } else {
-                                // Tappable to manually edit time
-                                Button {
-                                    showTimePicker = true
-                                } label: {
-                                    Text(formatDuration(inputDuration))
-                                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                        .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
-                                        .multilineTextAlignment(.center)
-                                        .frame(width: 70, alignment: .center)
-                                        .padding(.vertical, 10)
-                                        .padding(.horizontal, 8)
-                                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                                }
-                                .buttonStyle(.plain)
                             }
+                            .buttonStyle(.plain)
 
                             Button {
                                 toggleTimer()
@@ -433,31 +381,21 @@ struct SetRowView: View {
                             .buttonStyle(.plain)
                         } else {
                             // No time target (distance-based) - show stopwatch to time the run
-                            if timerRunning {
-                                Text(formatDuration(stopwatchSeconds))
-                                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                                    .foregroundColor(AppColors.accentBlue)
+                            // Always tappable for manual entry
+                            Button {
+                                showTimePicker = true
+                            } label: {
+                                Text(timerRunning ? formatDuration(stopwatchSeconds) : formatDuration(inputDuration))
+                                    .font(.system(size: 18, weight: timerRunning ? .bold : .semibold, design: .rounded))
+                                    .foregroundColor(timerRunning ? AppColors.accentBlue : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
                                     .monospacedDigit()
                                     .multilineTextAlignment(.center)
                                     .frame(width: 70, alignment: .center)
                                     .padding(.vertical, 10)
                                     .padding(.horizontal, 8)
                                     .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                            } else {
-                                Button {
-                                    showTimePicker = true
-                                } label: {
-                                    Text(formatDuration(inputDuration))
-                                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                        .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
-                                        .multilineTextAlignment(.center)
-                                        .frame(width: 70, alignment: .center)
-                                        .padding(.vertical, 10)
-                                        .padding(.horizontal, 8)
-                                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                                }
-                                .buttonStyle(.plain)
                             }
+                            .buttonStyle(.plain)
 
                             Button {
                                 toggleStopwatch()
@@ -532,39 +470,33 @@ struct SetRowView: View {
             HStack(spacing: AppSpacing.sm) {
                 VStack(spacing: 4) {
                     HStack(spacing: 8) {
-                        if timerRunning {
-                            Text(formatDuration(timerSecondsRemaining))
-                                .font(.system(size: 18, weight: .bold, design: .rounded))
-                                .foregroundColor(timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.accentBlue)
+                        // Always tappable for manual entry
+                        Button {
+                            showHoldTimePicker = true
+                        } label: {
+                            Text(timerRunning ? formatDuration(timerSecondsRemaining) : formatDuration(inputHoldTime))
+                                .font(.system(size: 18, weight: timerRunning ? .bold : .semibold, design: .rounded))
+                                .foregroundColor(timerRunning ? (timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.accentBlue) : (inputHoldTime > 0 ? AppColors.textPrimary : AppColors.textTertiary))
                                 .monospacedDigit()
                                 .multilineTextAlignment(.center)
                                 .frame(width: 70, alignment: .center)
                                 .padding(.vertical, 10)
                                 .padding(.horizontal, 8)
                                 .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                        } else {
-                            Text(formatDuration(inputHoldTime))
-                                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                .foregroundColor(AppColors.textPrimary)
-                                .multilineTextAlignment(.center)
-                                .frame(width: 70, alignment: .center)
-                                .padding(.vertical, 10)
-                                .padding(.horizontal, 8)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
                         }
+                        .buttonStyle(.plain)
 
-                        if hasTimedTarget {
-                            Button {
-                                toggleTimer()
-                            } label: {
-                                Image(systemName: timerRunning ? "stop.fill" : "play.fill")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentBlue)
-                                    .frame(width: 36, height: 36)
-                                    .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentBlue.opacity(0.15)))
-                            }
-                            .buttonStyle(.plain)
+                        // Timer button (always show for isometric)
+                        Button {
+                            toggleTimer()
+                        } label: {
+                            Image(systemName: timerRunning ? "stop.fill" : "play.fill")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentBlue)
+                                .frame(width: 36, height: 36)
+                                .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentBlue.opacity(0.15)))
                         }
+                        .buttonStyle(.plain)
                     }
 
                     Text("hold")
@@ -749,35 +681,39 @@ struct SetRowView: View {
                     }
                 }
 
-                // Duration with timer/stopwatch
+                // Duration - tappable for manual entry
                 VStack(spacing: 4) {
-                    Button {
-                        toggleStopwatch()
-                    } label: {
-                        HStack(spacing: 4) {
-                            if timerRunning {
-                                Image(systemName: "stop.fill")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(AppColors.error)
-                            } else {
-                                Image(systemName: "play.fill")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(AppColors.success)
-                            }
-                            Text(timerRunning ? formatDuration(stopwatchSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
-                                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                .foregroundColor(timerRunning ? AppColors.accentBlue : AppColors.textPrimary)
+                    HStack(spacing: 8) {
+                        // Time display - always tappable for manual entry
+                        Button {
+                            showTimePicker = true
+                        } label: {
+                            Text(timerRunning ? formatDuration(stopwatchSeconds) : formatDuration(inputDuration))
+                                .font(.system(size: 18, weight: timerRunning ? .bold : .semibold, design: .rounded))
+                                .foregroundColor(timerRunning ? AppColors.accentBlue : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
                                 .monospacedDigit()
                                 .multilineTextAlignment(.center)
+                                .frame(width: 70, alignment: .center)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 8)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
                         }
-                        .frame(width: 100, alignment: .center)
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 12)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(timerRunning ? AppColors.accentBlue.opacity(0.1) : AppColors.cardBackground))
-                    }
-                    .buttonStyle(.plain)
+                        .buttonStyle(.plain)
 
-                    Text("duration")
+                        // Stopwatch toggle button
+                        Button {
+                            toggleStopwatch()
+                        } label: {
+                            Image(systemName: timerRunning ? "stop.fill" : "stopwatch")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentTeal)
+                                .frame(width: 36, height: 36)
+                                .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentTeal.opacity(0.15)))
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    Text("time")
                         .font(.caption2.weight(.medium))
                         .foregroundColor(AppColors.textTertiary)
                 }
@@ -1106,28 +1042,6 @@ struct SetRowView: View {
         NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
 
         HapticManager.shared.timerComplete()
-    }
-
-    // MARK: - Swipe Complete
-
-    private func triggerSwipeComplete() {
-        focusedField = nil
-        HapticManager.shared.setCompleted()
-
-        let rpeValue = Int(inputRPE)
-        let validRPE = rpeValue.flatMap { $0 >= 1 && $0 <= 10 ? $0 : nil }
-        onLog(
-            Double(inputWeight),
-            Int(inputReps),
-            validRPE,
-            inputDuration > 0 ? inputDuration : nil,
-            inputHoldTime > 0 ? inputHoldTime : nil,
-            Double(inputDistance),
-            Double(inputHeight),
-            inputQuality > 0 ? inputQuality : nil,
-            inputIntensity > 0 ? inputIntensity : nil,
-            Int(inputTemperature)
-        )
     }
 
     // MARK: - Helpers

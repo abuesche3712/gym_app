@@ -193,7 +193,7 @@ public class ExerciseEntity: NSManagedObject, SyncableEntity {
 @objc(ExerciseInstanceEntity)
 public class ExerciseInstanceEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var id: UUID
-    @NSManaged public var templateId: UUID  // Required - links to ExerciseTemplate
+    @NSManaged public var templateId: UUID?  // Optional - for reference only
     @NSManaged public var supersetGroupIdRaw: String?
     @NSManaged public var notes: String?
     @NSManaged public var orderIndex: Int32
@@ -203,7 +203,18 @@ public class ExerciseInstanceEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var module: ModuleEntity?
     @NSManaged public var setGroups: NSOrderedSet?
 
-    // Optional overrides (fallbacks when template lookup fails)
+    // Direct exercise data (self-contained, no template lookup needed)
+    @NSManaged public var name: String?
+    @NSManaged public var exerciseTypeRaw: String?
+    @NSManaged public var cardioMetricRaw: String?
+    @NSManaged public var distanceUnitRaw: String?
+    @NSManaged public var mobilityTrackingRaw: String?
+    @NSManaged public var isBodyweight: Bool
+    @NSManaged public var recoveryActivityTypeRaw: String?
+    @NSManaged public var primaryMusclesData: Data?
+    @NSManaged public var secondaryMusclesData: Data?
+
+    // Legacy override fields (kept for migration)
     @NSManaged public var nameOverride: String?
     @NSManaged public var exerciseTypeOverrideRaw: String?
     @NSManaged public var mobilityTrackingOverrideRaw: String?
@@ -224,6 +235,80 @@ public class ExerciseInstanceEntity: NSManagedObject, SyncableEntity {
             supersetGroupIdRaw = newValue?.uuidString
         }
     }
+
+    // MARK: - Direct Field Accessors
+
+    var exerciseType: ExerciseType {
+        get {
+            guard let raw = exerciseTypeRaw else { return .strength }
+            return ExerciseType(rawValue: raw) ?? .strength
+        }
+        set {
+            exerciseTypeRaw = newValue.rawValue
+        }
+    }
+
+    var cardioMetric: CardioTracking {
+        get {
+            guard let raw = cardioMetricRaw else { return .timeOnly }
+            return CardioTracking(rawValue: raw) ?? .timeOnly
+        }
+        set {
+            cardioMetricRaw = newValue.rawValue
+        }
+    }
+
+    var distanceUnit: DistanceUnit {
+        get {
+            guard let raw = distanceUnitRaw else { return .meters }
+            return DistanceUnit(rawValue: raw) ?? .meters
+        }
+        set {
+            distanceUnitRaw = newValue.rawValue
+        }
+    }
+
+    var mobilityTracking: MobilityTracking {
+        get {
+            guard let raw = mobilityTrackingRaw else { return .repsOnly }
+            return MobilityTracking(rawValue: raw) ?? .repsOnly
+        }
+        set {
+            mobilityTrackingRaw = newValue.rawValue
+        }
+    }
+
+    var recoveryActivityType: RecoveryActivityType? {
+        get {
+            guard let raw = recoveryActivityTypeRaw else { return nil }
+            return RecoveryActivityType(rawValue: raw)
+        }
+        set {
+            recoveryActivityTypeRaw = newValue?.rawValue
+        }
+    }
+
+    var primaryMuscles: [MuscleGroup] {
+        get {
+            guard let data = primaryMusclesData else { return [] }
+            return (try? JSONDecoder().decode([MuscleGroup].self, from: data)) ?? []
+        }
+        set {
+            primaryMusclesData = try? JSONEncoder().encode(newValue)
+        }
+    }
+
+    var secondaryMuscles: [MuscleGroup] {
+        get {
+            guard let data = secondaryMusclesData else { return [] }
+            return (try? JSONDecoder().decode([MuscleGroup].self, from: data)) ?? []
+        }
+        set {
+            secondaryMusclesData = try? JSONEncoder().encode(newValue)
+        }
+    }
+
+    // MARK: - Legacy Override Accessors (for migration)
 
     var exerciseTypeOverride: ExerciseType? {
         get {
