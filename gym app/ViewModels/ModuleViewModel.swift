@@ -30,7 +30,10 @@ class ModuleViewModel: ObservableObject {
     }
 
     func saveModule(_ module: Module) {
-        repository.saveModule(module)
+        var moduleToSave = module
+        // Clean up any orphaned superset IDs before saving
+        moduleToSave.cleanupOrphanedSupersets()
+        repository.saveModule(moduleToSave)
         loadModules()
     }
 

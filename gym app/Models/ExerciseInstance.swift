@@ -19,9 +19,12 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
     var order: Int
     var notes: String?
 
-    // Optional overrides (rarely used - for edge cases)
+    // Optional overrides (used as fallbacks when template lookup fails)
     var nameOverride: String?
     var exerciseTypeOverride: ExerciseType?
+    var mobilityTrackingOverride: MobilityTracking?
+    var cardioMetricOverride: CardioMetric?
+    var distanceUnitOverride: DistanceUnit?
 
     var createdAt: Date
     var updatedAt: Date
@@ -35,6 +38,9 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         notes: String? = nil,
         nameOverride: String? = nil,
         exerciseTypeOverride: ExerciseType? = nil,
+        mobilityTrackingOverride: MobilityTracking? = nil,
+        cardioMetricOverride: CardioMetric? = nil,
+        distanceUnitOverride: DistanceUnit? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -46,6 +52,9 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         self.notes = notes
         self.nameOverride = nameOverride
         self.exerciseTypeOverride = exerciseTypeOverride
+        self.mobilityTrackingOverride = mobilityTrackingOverride
+        self.cardioMetricOverride = cardioMetricOverride
+        self.distanceUnitOverride = distanceUnitOverride
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -76,13 +85,18 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
         nameOverride = try container.decodeIfPresent(String.self, forKey: .nameOverride)
         exerciseTypeOverride = try container.decodeIfPresent(ExerciseType.self, forKey: .exerciseTypeOverride)
+        mobilityTrackingOverride = try container.decodeIfPresent(MobilityTracking.self, forKey: .mobilityTrackingOverride)
+        cardioMetricOverride = try container.decodeIfPresent(CardioMetric.self, forKey: .cardioMetricOverride)
+        distanceUnitOverride = try container.decodeIfPresent(DistanceUnit.self, forKey: .distanceUnitOverride)
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
     }
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion
-        case id, templateId, setGroups, supersetGroupId, order, notes, nameOverride, exerciseTypeOverride, createdAt, updatedAt
+        case id, templateId, setGroups, supersetGroupId, order, notes
+        case nameOverride, exerciseTypeOverride, mobilityTrackingOverride, cardioMetricOverride, distanceUnitOverride
+        case createdAt, updatedAt
     }
 
     /// Whether this instance is part of a superset
@@ -96,15 +110,18 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
     }
 
     /// Creates an instance from a template with default set groups
-    /// Always stores nameOverride as a fallback in case template lookup fails
+    /// Always stores overrides as fallbacks in case template lookup fails
     static func from(template: ExerciseTemplate, order: Int = 0) -> ExerciseInstance {
         ExerciseInstance(
             templateId: template.id,
             setGroups: template.defaultSetGroups,
             order: order,
             notes: nil,
-            nameOverride: template.name,  // Store name as backup
-            exerciseTypeOverride: template.exerciseType  // Store type as backup
+            nameOverride: template.name,
+            exerciseTypeOverride: template.exerciseType,
+            mobilityTrackingOverride: template.mobilityTracking,
+            cardioMetricOverride: template.cardioMetric,
+            distanceUnitOverride: template.distanceUnit
         )
     }
 }

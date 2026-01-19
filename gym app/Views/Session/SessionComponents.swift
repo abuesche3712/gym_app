@@ -874,11 +874,21 @@ struct SetRowView: View {
 
             let rpeValue = Int(inputRPE)
             let validRPE = rpeValue.flatMap { $0 >= 1 && $0 <= 10 ? $0 : nil }
+
+            // For cardio/recovery, only save duration if user explicitly set it (timer/stopwatch/picker)
+            // This prevents scheduled duration from being saved as if it were actual completed time
+            let durationToSave: Int?
+            if exercise.exerciseType == .cardio || exercise.exerciseType == .recovery {
+                durationToSave = durationManuallySet && inputDuration > 0 ? inputDuration : nil
+            } else {
+                durationToSave = inputDuration > 0 ? inputDuration : nil
+            }
+
             onLog(
                 Double(inputWeight),
                 Int(inputReps),
                 validRPE,
-                inputDuration > 0 ? inputDuration : nil,
+                durationToSave,
                 inputHoldTime > 0 ? inputHoldTime : nil,
                 Double(inputDistance),
                 Double(inputHeight),
@@ -990,6 +1000,7 @@ struct SetRowView: View {
                 inputHoldTime = elapsed
             } else {
                 inputDuration = elapsed
+                durationManuallySet = true
             }
         } else {
             startTimer()
@@ -1051,6 +1062,7 @@ struct SetRowView: View {
             inputHoldTime = targetTimerSeconds
         } else {
             inputDuration = targetTimerSeconds
+            durationManuallySet = true
         }
     }
 
@@ -1096,6 +1108,7 @@ struct SetRowView: View {
         timerRunning = false
         isStopwatchMode = false
         inputDuration = stopwatchSeconds
+        durationManuallySet = true
         timerStartTime = nil
         NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
 

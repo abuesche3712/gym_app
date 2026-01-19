@@ -523,9 +523,12 @@ struct PersistenceController {
             createAttribute("createdAt", type: .dateAttributeType, optional: true),
             createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true),
-            // Optional overrides
+            // Optional overrides (fallbacks when template lookup fails)
             createAttribute("nameOverride", type: .stringAttributeType, optional: true),
-            createAttribute("exerciseTypeOverrideRaw", type: .stringAttributeType, optional: true)
+            createAttribute("exerciseTypeOverrideRaw", type: .stringAttributeType, optional: true),
+            createAttribute("mobilityTrackingOverrideRaw", type: .stringAttributeType, optional: true),
+            createAttribute("cardioMetricOverrideRaw", type: .stringAttributeType, optional: true),
+            createAttribute("distanceUnitOverrideRaw", type: .stringAttributeType, optional: true)
         ]
 
         return entity

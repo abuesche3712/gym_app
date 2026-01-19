@@ -250,6 +250,106 @@ struct Module: Identifiable, Codable, Hashable {
         return r.resolveGrouped(exerciseInstances)
     }
 
+    // MARK: - Unified Superset Methods (Works with either model)
+
+    /// Creates a superset from exercise IDs, using the appropriate model
+    mutating func createSupersetUnified(exerciseIds: [UUID]) {
+        if usesNormalizedModel {
+            createInstanceSuperset(instanceIds: exerciseIds)
+        } else {
+            createSuperset(exerciseIds: exerciseIds)
+        }
+    }
+
+    /// Breaks a single exercise from its superset, using the appropriate model
+    mutating func breakSupersetUnified(exerciseId: UUID) {
+        if usesNormalizedModel {
+            breakInstanceSuperset(instanceId: exerciseId)
+        } else {
+            breakSuperset(exerciseId: exerciseId)
+        }
+    }
+
+    /// Breaks all exercises in a superset group, using the appropriate model
+    mutating func breakSupersetGroupUnified(supersetGroupId: UUID) {
+        if usesNormalizedModel {
+            breakInstanceSupersetGroup(supersetGroupId: supersetGroupId)
+        } else {
+            breakSupersetGroup(supersetGroupId: supersetGroupId)
+        }
+    }
+
+    /// Cleans up orphaned superset IDs (exercises with a supersetGroupId that no other exercise shares)
+    /// This fixes data corruption where an exercise appears to be in a superset but is actually alone
+    mutating func cleanupOrphanedSupersets() {
+        var changed = false
+
+        // Cleanup legacy exercises
+        var supersetCounts: [UUID: Int] = [:]
+        for exercise in exercises {
+            if let supersetId = exercise.supersetGroupId {
+                supersetCounts[supersetId, default: 0] += 1
+            }
+        }
+
+        for i in exercises.indices {
+            if let supersetId = exercises[i].supersetGroupId,
+               supersetCounts[supersetId] ?? 0 < 2 {
+                exercises[i].supersetGroupId = nil
+                changed = true
+            }
+        }
+
+        // Cleanup exercise instances
+        var instanceSupersetCounts: [UUID: Int] = [:]
+        for instance in exerciseInstances {
+            if let supersetId = instance.supersetGroupId {
+                instanceSupersetCounts[supersetId, default: 0] += 1
+            }
+        }
+
+        for i in exerciseInstances.indices {
+            if let supersetId = exerciseInstances[i].supersetGroupId,
+               instanceSupersetCounts[supersetId] ?? 0 < 2 {
+                exerciseInstances[i].supersetGroupId = nil
+                changed = true
+            }
+        }
+
+        if changed {
+            updatedAt = Date()
+        }
+    }
+
+    /// Returns grouped exercises using the appropriate model
+    /// Must be called from MainActor context since ExerciseResolver may be needed
+    @MainActor
+    var groupedExercisesUnified: [[Exercise]] {
+        if usesNormalizedModel {
+            // Convert resolved exercise instances to legacy Exercise for UI
+            let resolved = resolvedExercises()
+            var groups: [[Exercise]] = []
+            var processedIds: Set<UUID> = []
+
+            for resolvedExercise in resolved {
+                guard !processedIds.contains(resolvedExercise.id) else { continue }
+
+                if let supersetId = resolvedExercise.supersetGroupId {
+                    let supersetExercises = resolved
+                        .filter { $0.supersetGroupId == supersetId }
+                        .map { $0.toLegacyExercise() }
+                    groups.append(supersetExercises)
+                    resolved.filter { $0.supersetGroupId == supersetId }.forEach { processedIds.insert($0.id) }
+                } else {
+                    groups.append([resolvedExercise.toLegacyExercise()])
+                    processedIds.insert(resolvedExercise.id)
+                }
+            }
+            return groups
+        }
+        return groupedExercises
+    }
+
     /// Whether this module uses the new normalized model
     var usesNormalizedModel: Bool {
         !exerciseInstances.isEmpty
@@ -278,7 +378,9 @@ struct Module: Identifiable, Codable, Hashable {
     /// Returns all exercises as legacy Exercise objects, regardless of storage model.
     /// - If using normalized model: resolves instances and converts to Exercise
     /// - If using legacy model: returns exercises directly
-    /// - Falls back to legacy exercises if resolution fails (returns "Unknown Exercise")
+    /// - Falls back to legacy exercises if:
+    ///   - Resolution fails (returns "Unknown Exercise")
+    ///   - Legacy model has more exercises (partial migration)
     /// Must be called from MainActor context since ExerciseResolver is MainActor-isolated.
     @MainActor
     func allExercisesAsLegacy(using resolver: ExerciseResolver? = nil) -> [Exercise] {
@@ -292,6 +394,12 @@ struct Module: Identifiable, Codable, Hashable {
             // Fall back to legacy exercises if we have them and resolution failed
             if hasUnknown && !exercises.isEmpty {
                 Logger.warning("Module '\(name)': Falling back to legacy exercises due to resolution failure")
+                return exercises
+            }
+
+            // Fall back to legacy if it has more exercises (partial migration)
+            if exercises.count > resolved.count {
+                Logger.warning("Module '\(name)': Falling back to legacy exercises (\(exercises.count) vs \(resolved.count) normalized)")
                 return exercises
             }
 

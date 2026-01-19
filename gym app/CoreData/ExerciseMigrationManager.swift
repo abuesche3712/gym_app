@@ -12,7 +12,7 @@ import Foundation
 struct ExerciseMigrationManager {
     private let viewContext: NSManagedObjectContext
     private let migrationKey = "ExerciseMigrationCompleted_v1"
-    private let repairKey = "ExerciseTemplateIdRepair_v1"
+    private let repairKey = "ExerciseTemplateIdRepair_v3"  // Bumped to v3 to set all tracking overrides
 
     init(context: NSManagedObjectContext) {
         self.viewContext = context
@@ -77,23 +77,34 @@ struct ExerciseMigrationManager {
     }
 
     private func repairAllInstances() throws {
-        // Build a lookup map from exercise name -> stable template ID (built-in library only)
+        // Build lookup maps from exercise name -> template info (built-in library only)
         // We only use ExerciseLibrary.shared which is NOT MainActor isolated
         var nameToTemplateId: [String: UUID] = [:]
+        var nameToExerciseType: [String: ExerciseType] = [:]
+        var nameToMobilityTracking: [String: MobilityTracking] = [:]
+        var nameToCardioMetric: [String: CardioMetric] = [:]
+        var nameToDistanceUnit: [String: DistanceUnit] = [:]
         let builtInTemplateIds = Set(ExerciseLibrary.shared.exercises.map { $0.id })
         for template in ExerciseLibrary.shared.exercises {
-            nameToTemplateId[template.name.lowercased()] = template.id
+            let key = template.name.lowercased()
+            nameToTemplateId[key] = template.id
+            nameToExerciseType[key] = template.exerciseType
+            nameToMobilityTracking[key] = template.mobilityTracking
+            nameToCardioMetric[key] = template.cardioMetric
+            nameToDistanceUnit[key] = template.distanceUnit
         }
 
         let request = NSFetchRequest<ExerciseInstanceEntity>(entityName: "ExerciseInstanceEntity")
         let instances = try viewContext.fetch(request)
 
         var repairedCount = 0
+        var trackingFixCount = 0
 
         for instance in instances {
             // Check if the current templateId exists in the built-in library
             let currentTemplateId = instance.templateId
             let existsInBuiltInLibrary = builtInTemplateIds.contains(currentTemplateId)
+            let nameKey = instance.nameOverride?.lowercased()
 
             // Ensure nameOverride is set for ALL instances (as a backup)
             if instance.nameOverride == nil, let module = instance.module {
@@ -103,24 +114,68 @@ struct ExerciseMigrationManager {
                 }
             }
 
+            // Ensure exerciseTypeOverride is set for ALL instances (as a backup)
+            if instance.exerciseTypeOverrideRaw == nil {
+                if let key = nameKey, let exerciseType = nameToExerciseType[key] {
+                    instance.exerciseTypeOverrideRaw = exerciseType.rawValue
+                    trackingFixCount += 1
+                } else if let module = instance.module,
+                          let legacyType = findExerciseTypeFromLegacy(instance: instance, in: module) {
+                    instance.exerciseTypeOverrideRaw = legacyType.rawValue
+                    trackingFixCount += 1
+                }
+            }
+
+            // Ensure mobilityTrackingOverride is set for ALL instances
+            if instance.mobilityTrackingOverrideRaw == nil {
+                if let key = nameKey, let mobilityTracking = nameToMobilityTracking[key] {
+                    instance.mobilityTrackingOverrideRaw = mobilityTracking.rawValue
+                    trackingFixCount += 1
+                } else if let module = instance.module,
+                          let legacyTracking = findMobilityTrackingFromLegacy(instance: instance, in: module) {
+                    instance.mobilityTrackingOverrideRaw = legacyTracking.rawValue
+                    trackingFixCount += 1
+                }
+            }
+
+            // Ensure cardioMetricOverride is set for ALL instances
+            if instance.cardioMetricOverrideRaw == nil {
+                if let key = nameKey, let cardioMetric = nameToCardioMetric[key] {
+                    instance.cardioMetricOverrideRaw = cardioMetric.rawValue
+                    trackingFixCount += 1
+                } else if let module = instance.module,
+                          let legacyMetric = findCardioMetricFromLegacy(instance: instance, in: module) {
+                    instance.cardioMetricOverrideRaw = legacyMetric.rawValue
+                    trackingFixCount += 1
+                }
+            }
+
+            // Ensure distanceUnitOverride is set for ALL instances
+            if instance.distanceUnitOverrideRaw == nil {
+                if let key = nameKey, let distanceUnit = nameToDistanceUnit[key] {
+                    instance.distanceUnitOverrideRaw = distanceUnit.rawValue
+                    trackingFixCount += 1
+                } else if let module = instance.module,
+                          let legacyUnit = findDistanceUnitFromLegacy(instance: instance, in: module) {
+                    instance.distanceUnitOverrideRaw = legacyUnit.rawValue
+                    trackingFixCount += 1
+                }
+            }
+
             // Only repair templateId if it's NOT in the built-in library
             if !existsInBuiltInLibrary {
-                // Try to repair by name matching to built-in library
-                if let nameOverride = instance.nameOverride,
-                   let newTemplateId = nameToTemplateId[nameOverride.lowercased()] {
+                if let key = nameKey, let newTemplateId = nameToTemplateId[key] {
                     instance.templateId = newTemplateId
                     repairedCount += 1
-                    Logger.debug("Repaired instance '\(nameOverride)' -> stable templateId")
+                    Logger.debug("Repaired instance '\(instance.nameOverride ?? "unknown")' -> stable templateId")
                 }
-                // For custom exercises not in built-in library, leave templateId as-is
-                // but nameOverride is already set above for fallback
             }
         }
 
-        // Always save if we made any changes (including nameOverride backups)
+        // Always save if we made any changes
         if viewContext.hasChanges {
             try viewContext.save()
-            Logger.info("ExerciseMigrationManager: Repaired \(repairedCount) template IDs, updated instance backups")
+            Logger.info("ExerciseMigrationManager: Repaired \(repairedCount) template IDs, \(trackingFixCount) tracking settings")
         }
     }
 
@@ -143,6 +198,80 @@ struct ExerciseMigrationManager {
         // Third try: if only one exercise in both arrays, use it
         if legacyExercises.count == 1 && module.exerciseInstanceArray.count == 1 {
             return legacyExercises[0].name
+        }
+
+        return nil
+    }
+
+    /// Attempts to find the exercise type from legacy data in the module
+    private func findExerciseTypeFromLegacy(instance: ExerciseInstanceEntity, in module: ModuleEntity) -> ExerciseType? {
+        let legacyExercises = module.exerciseArray
+
+        // First try: match by order index
+        let orderIndex = Int(instance.orderIndex)
+        if orderIndex >= 0 && orderIndex < legacyExercises.count {
+            return legacyExercises[orderIndex].exerciseType
+        }
+
+        // Second try: match by position in instance array
+        let instanceIndex = module.exerciseInstanceArray.firstIndex { $0.id == instance.id } ?? -1
+        if instanceIndex >= 0 && instanceIndex < legacyExercises.count {
+            return legacyExercises[instanceIndex].exerciseType
+        }
+
+        // Third try: if only one exercise in both arrays, use it
+        if legacyExercises.count == 1 && module.exerciseInstanceArray.count == 1 {
+            return legacyExercises[0].exerciseType
+        }
+
+        return nil
+    }
+
+    /// Attempts to find the mobility tracking from legacy data in the module
+    /// Note: Legacy ExerciseEntity doesn't store mobilityTracking, so we only use built-in library lookup
+    private func findMobilityTrackingFromLegacy(instance: ExerciseInstanceEntity, in module: ModuleEntity) -> MobilityTracking? {
+        // ExerciseEntity doesn't have mobilityTracking field in CoreData schema
+        // Return nil to use built-in library lookup or defaults
+        return nil
+    }
+
+    /// Attempts to find the cardio metric from legacy data in the module
+    private func findCardioMetricFromLegacy(instance: ExerciseInstanceEntity, in module: ModuleEntity) -> CardioMetric? {
+        let legacyExercises = module.exerciseArray
+
+        let orderIndex = Int(instance.orderIndex)
+        if orderIndex >= 0 && orderIndex < legacyExercises.count {
+            return legacyExercises[orderIndex].cardioMetric
+        }
+
+        let instanceIndex = module.exerciseInstanceArray.firstIndex { $0.id == instance.id } ?? -1
+        if instanceIndex >= 0 && instanceIndex < legacyExercises.count {
+            return legacyExercises[instanceIndex].cardioMetric
+        }
+
+        if legacyExercises.count == 1 && module.exerciseInstanceArray.count == 1 {
+            return legacyExercises[0].cardioMetric
+        }
+
+        return nil
+    }
+
+    /// Attempts to find the distance unit from legacy data in the module
+    private func findDistanceUnitFromLegacy(instance: ExerciseInstanceEntity, in module: ModuleEntity) -> DistanceUnit? {
+        let legacyExercises = module.exerciseArray
+
+        let orderIndex = Int(instance.orderIndex)
+        if orderIndex >= 0 && orderIndex < legacyExercises.count {
+            return legacyExercises[orderIndex].distanceUnit
+        }
+
+        let instanceIndex = module.exerciseInstanceArray.firstIndex { $0.id == instance.id } ?? -1
+        if instanceIndex >= 0 && instanceIndex < legacyExercises.count {
+            return legacyExercises[instanceIndex].distanceUnit
+        }
+
+        if legacyExercises.count == 1 && module.exerciseInstanceArray.count == 1 {
+            return legacyExercises[0].distanceUnit
         }
 
         return nil

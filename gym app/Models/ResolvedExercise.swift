@@ -34,15 +34,15 @@ struct ResolvedExercise: Identifiable, Hashable {
     }
 
     var cardioMetric: CardioMetric {
-        template?.cardioMetric ?? .timeOnly
+        instance.cardioMetricOverride ?? template?.cardioMetric ?? .timeOnly
     }
 
     var mobilityTracking: MobilityTracking {
-        template?.mobilityTracking ?? .repsOnly
+        instance.mobilityTrackingOverride ?? template?.mobilityTracking ?? .repsOnly
     }
 
     var distanceUnit: DistanceUnit {
-        template?.distanceUnit ?? .meters
+        instance.distanceUnitOverride ?? template?.distanceUnit ?? .meters
     }
 
     var muscleGroupIds: Set<UUID> {

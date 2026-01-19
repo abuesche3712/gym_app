@@ -721,6 +721,9 @@ class DataRepository: ObservableObject {
                 notes: instanceEntity.notes,
                 nameOverride: instanceEntity.nameOverride,
                 exerciseTypeOverride: instanceEntity.exerciseTypeOverride,
+                mobilityTrackingOverride: instanceEntity.mobilityTrackingOverride,
+                cardioMetricOverride: instanceEntity.cardioMetricOverride,
+                distanceUnitOverride: instanceEntity.distanceUnitOverride,
                 createdAt: instanceEntity.createdAt ?? Date(),
                 updatedAt: instanceEntity.updatedAt ?? Date()
             )
@@ -743,6 +746,9 @@ class DataRepository: ObservableObject {
             instanceEntity.updatedAt = instance.updatedAt
             instanceEntity.nameOverride = instance.nameOverride
             instanceEntity.exerciseTypeOverride = instance.exerciseTypeOverride
+            instanceEntity.mobilityTrackingOverride = instance.mobilityTrackingOverride
+            instanceEntity.cardioMetricOverride = instance.cardioMetricOverride
+            instanceEntity.distanceUnitOverride = instance.distanceUnitOverride
             instanceEntity.module = moduleEntity
 
             // Add set groups

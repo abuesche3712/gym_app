@@ -65,14 +65,14 @@ struct ModuleDetailView: View {
 
             // Exercises Section
             Section {
-                if currentModule.exercises.isEmpty {
+                if !currentModule.hasExercises {
                     ContentUnavailableView(
                         "No Exercises",
                         systemImage: "dumbbell",
                         description: Text("Add exercises to this module")
                     )
                 } else {
-                    ForEach(currentModule.groupedExercises, id: \.first?.id) { exerciseGroup in
+                    ForEach(currentModule.groupedExercisesUnified, id: \.first?.id) { exerciseGroup in
                         if exerciseGroup.count > 1 {
                             // Superset group
                             SupersetGroupRow(
@@ -111,7 +111,7 @@ struct ModuleDetailView: View {
                 }
             } header: {
                 HStack {
-                    Text("Exercises (\(currentModule.exercises.count))")
+                    Text("Exercises (\(currentModule.exerciseCount))")
                     Spacer()
                     if isSelectingForSuperset {
                         Button("Done") {
@@ -151,7 +151,7 @@ struct ModuleDetailView: View {
                         Label("Add Exercise", systemImage: "plus")
                     }
 
-                    if currentModule.exercises.count >= 2 {
+                    if currentModule.exerciseCount >= 2 {
                         Divider()
 
                         Button {
@@ -222,13 +222,13 @@ struct ModuleDetailView: View {
 
     private func createSuperset() {
         var updatedModule = currentModule
-        updatedModule.createSuperset(exerciseIds: Array(selectedExerciseIds))
+        updatedModule.createSupersetUnified(exerciseIds: Array(selectedExerciseIds))
         moduleViewModel.saveModule(updatedModule)
     }
 
     private func breakSupersetGroup(_ supersetGroupId: UUID) {
         var updatedModule = currentModule
-        updatedModule.breakSupersetGroup(supersetGroupId: supersetGroupId)
+        updatedModule.breakSupersetGroupUnified(supersetGroupId: supersetGroupId)
         moduleViewModel.saveModule(updatedModule)
     }
 }

@@ -452,21 +452,53 @@ struct AddExerciseToModuleSheet: View {
     let onAdd: (String, ExerciseType, CardioTracking, DistanceUnit) -> Void
 
     @State private var exerciseName: String = ""
+    @State private var selectedTemplate: ExerciseTemplate?
     @State private var exerciseType: ExerciseType = .strength
     @State private var cardioMetric: CardioTracking = .timeOnly
     @State private var distanceUnit: DistanceUnit = .meters
+    @State private var showingExercisePicker = false
 
     var body: some View {
         NavigationStack {
             Form {
                 moduleInfoSection
-                exerciseDetailsSection
+                exercisePickerSection
                 cardioSettingsSection
-                quickAddSection
             }
             .navigationTitle("Add Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
+            .sheet(isPresented: $showingExercisePicker) {
+                ExercisePickerView(
+                    selectedTemplate: $selectedTemplate,
+                    customName: $exerciseName,
+                    onSelect: { template in
+                        if let template = template {
+                            exerciseName = template.name
+                            exerciseType = template.exerciseType
+                            selectedTemplate = template
+                            // Set cardio settings from template
+                            if template.exerciseType == .cardio {
+                                cardioMetric = template.cardioMetric
+                                distanceUnit = template.distanceUnit
+                            }
+                        }
+                    },
+                    onSelectWithDetails: { template, type, muscles, implements in
+                        if let template = template {
+                            exerciseName = template.name
+                            exerciseType = template.exerciseType
+                            selectedTemplate = template
+                            if template.exerciseType == .cardio {
+                                cardioMetric = template.cardioMetric
+                                distanceUnit = template.distanceUnit
+                            }
+                        } else {
+                            exerciseType = type
+                        }
+                    }
+                )
+            }
         }
     }
 
@@ -482,12 +514,30 @@ struct AddExerciseToModuleSheet: View {
         }
     }
 
-    private var exerciseDetailsSection: some View {
-        Section("Exercise Details") {
-            TextField("Exercise Name", text: $exerciseName)
-            Picker("Type", selection: $exerciseType) {
-                ForEach(ExerciseType.allCases) { type in
-                    Label(type.rawValue.capitalized, systemImage: type.icon).tag(type)
+    private var exercisePickerSection: some View {
+        Section("Exercise") {
+            Button {
+                showingExercisePicker = true
+            } label: {
+                HStack {
+                    Text("Exercise")
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Text(exerciseName.isEmpty ? "Select exercise..." : exerciseName)
+                        .foregroundColor(exerciseName.isEmpty ? .secondary : .primary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            if !exerciseName.isEmpty {
+                HStack {
+                    Text("Type")
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Text(exerciseType.displayName)
+                        .foregroundColor(.secondary)
                 }
             }
         }
@@ -495,7 +545,7 @@ struct AddExerciseToModuleSheet: View {
 
     @ViewBuilder
     private var cardioSettingsSection: some View {
-        if exerciseType == .cardio {
+        if exerciseType == .cardio && !exerciseName.isEmpty {
             Section("Cardio Settings") {
                 Picker("Track", selection: $cardioMetric) {
                     Text("Time").tag(CardioTracking.timeOnly)
@@ -515,33 +565,6 @@ struct AddExerciseToModuleSheet: View {
         }
     }
 
-    private var quickAddSection: some View {
-        Section("Quick Add") {
-            ForEach(suggestedExercises, id: \.name) { suggestion in
-                Button {
-                    exerciseName = suggestion.name
-                    exerciseType = suggestion.type
-                } label: {
-                    suggestionRow(suggestion)
-                }
-            }
-        }
-    }
-
-    private func suggestionRow(_ suggestion: (name: String, type: ExerciseType)) -> some View {
-        HStack {
-            Image(systemName: suggestion.type.icon)
-                .foregroundColor(AppColors.textSecondary)
-                .frame(width: 24)
-            Text(suggestion.name)
-                .foregroundColor(AppColors.textPrimary)
-            Spacer()
-            Text(suggestion.type.rawValue.capitalized)
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
-        }
-    }
-
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
@@ -558,20 +581,5 @@ struct AddExerciseToModuleSheet: View {
             .disabled(exerciseName.isEmpty)
         }
     }
-
-    private var suggestedExercises: [(name: String, type: ExerciseType)] {
-        [
-            ("Bench Press", .strength),
-            ("Squat", .strength),
-            ("Deadlift", .strength),
-            ("Overhead Press", .strength),
-            ("Pull-ups", .strength),
-            ("Rows", .strength),
-            ("Lunges", .strength),
-            ("Dumbbell Curls", .strength),
-            ("Plank", .isometric),
-            ("Treadmill Run", .cardio),
-            ("Stretching", .mobility)
-        ]
-    }
 }
+

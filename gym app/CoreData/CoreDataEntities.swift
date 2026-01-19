@@ -203,9 +203,12 @@ public class ExerciseInstanceEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var module: ModuleEntity?
     @NSManaged public var setGroups: NSOrderedSet?
 
-    // Optional overrides (rarely used)
+    // Optional overrides (fallbacks when template lookup fails)
     @NSManaged public var nameOverride: String?
     @NSManaged public var exerciseTypeOverrideRaw: String?
+    @NSManaged public var mobilityTrackingOverrideRaw: String?
+    @NSManaged public var cardioMetricOverrideRaw: String?
+    @NSManaged public var distanceUnitOverrideRaw: String?
 
     public override func willSave() {
         super.willSave()
@@ -229,6 +232,36 @@ public class ExerciseInstanceEntity: NSManagedObject, SyncableEntity {
         }
         set {
             exerciseTypeOverrideRaw = newValue?.rawValue
+        }
+    }
+
+    var mobilityTrackingOverride: MobilityTracking? {
+        get {
+            guard let raw = mobilityTrackingOverrideRaw else { return nil }
+            return MobilityTracking(rawValue: raw)
+        }
+        set {
+            mobilityTrackingOverrideRaw = newValue?.rawValue
+        }
+    }
+
+    var cardioMetricOverride: CardioMetric? {
+        get {
+            guard let raw = cardioMetricOverrideRaw else { return nil }
+            return CardioMetric(rawValue: raw)
+        }
+        set {
+            cardioMetricOverrideRaw = newValue?.rawValue
+        }
+    }
+
+    var distanceUnitOverride: DistanceUnit? {
+        get {
+            guard let raw = distanceUnitOverrideRaw else { return nil }
+            return DistanceUnit(rawValue: raw)
+        }
+        set {
+            distanceUnitOverrideRaw = newValue?.rawValue
         }
     }
 
