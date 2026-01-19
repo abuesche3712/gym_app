@@ -151,7 +151,7 @@ struct SettingsView: View {
                     StartupGuard.fullReset()
                 }
             } message: {
-                Text("This will reset all migration flags and exit recovery mode. The app will attempt migrations again on next launch.")
+                Text("This will exit recovery mode and clear crash history. The app will start normally on next launch.")
             }
         }
     }
@@ -186,7 +186,7 @@ struct SettingsView: View {
                     Image(systemName: "arrow.triangle.2.circlepath")
                         .foregroundColor(.orange)
                         .frame(width: 28)
-                    Text("Reset & Retry Migrations")
+                    Text("Reset Startup State")
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
                 }

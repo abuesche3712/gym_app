@@ -23,7 +23,8 @@ struct Program: Identifiable, Codable, Hashable {
     var createdAt: Date
     var updatedAt: Date
     var syncStatus: SyncStatus
-    var workoutSlots: [ProgramWorkoutSlot]
+    var workoutSlots: [ProgramWorkoutSlot]  // Legacy workout-only slots
+    var moduleSlots: [ProgramSlot]           // Unified slots (workouts and modules)
 
     init(
         id: UUID = UUID(),
@@ -36,7 +37,8 @@ struct Program: Identifiable, Codable, Hashable {
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         syncStatus: SyncStatus = .pendingSync,
-        workoutSlots: [ProgramWorkoutSlot] = []
+        workoutSlots: [ProgramWorkoutSlot] = [],
+        moduleSlots: [ProgramSlot] = []
     ) {
         self.id = id
         self.name = name
@@ -49,42 +51,36 @@ struct Program: Identifiable, Codable, Hashable {
         self.updatedAt = updatedAt
         self.syncStatus = syncStatus
         self.workoutSlots = workoutSlots
+        self.moduleSlots = moduleSlots
     }
 
-    // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        // Decode schema version (default to 1 for backward compatibility)
-        let version = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
-        schemaVersion = SchemaVersions.program  // Always store current version
+        schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? SchemaVersions.program
 
-        // Handle migrations based on version
-        switch version {
-        case 1:
-            // V1 is current - decode normally
-            break
-        default:
-            // Unknown future version - attempt to decode with defaults
-            break
-        }
-
+        // Required fields
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
-        programDescription = try container.decodeIfPresent(String.self, forKey: .programDescription)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        syncStatus = try container.decode(SyncStatus.self, forKey: .syncStatus)
+
+        // Optional with defaults
         durationWeeks = try container.decodeIfPresent(Int.self, forKey: .durationWeeks) ?? 4
+        isActive = try container.decodeIfPresent(Bool.self, forKey: .isActive) ?? false
+        workoutSlots = try container.decodeIfPresent([ProgramWorkoutSlot].self, forKey: .workoutSlots) ?? []
+        moduleSlots = try container.decodeIfPresent([ProgramSlot].self, forKey: .moduleSlots) ?? []
+
+        // Truly optional
+        programDescription = try container.decodeIfPresent(String.self, forKey: .programDescription)
         startDate = try container.decodeIfPresent(Date.self, forKey: .startDate)
         endDate = try container.decodeIfPresent(Date.self, forKey: .endDate)
-        isActive = try container.decodeIfPresent(Bool.self, forKey: .isActive) ?? false
-        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
-        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
-        syncStatus = try container.decodeIfPresent(SyncStatus.self, forKey: .syncStatus) ?? .synced
-        workoutSlots = try container.decodeIfPresent([ProgramWorkoutSlot].self, forKey: .workoutSlots) ?? []
     }
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion
-        case id, name, programDescription, durationWeeks, startDate, endDate, isActive, createdAt, updatedAt, syncStatus, workoutSlots
+        case id, name, programDescription, durationWeeks, startDate, endDate, isActive, createdAt, updatedAt, syncStatus, workoutSlots, moduleSlots
     }
 
     // MARK: - Computed Properties
@@ -137,6 +133,73 @@ struct Program: Identifiable, Codable, Hashable {
             workoutSlots[index] = slot
             updatedAt = Date()
         }
+    }
+
+    // MARK: - Unified Slot Management (for both workouts and modules)
+
+    /// Get all unified slots for a specific day of week
+    func unifiedSlots(for dayOfWeek: Int) -> [ProgramSlot] {
+        moduleSlots
+            .filter { $0.dayOfWeek == dayOfWeek && $0.scheduleType == .weekly }
+            .sorted { $0.order < $1.order }
+    }
+
+    /// Get all unified slots for a specific week and day
+    func unifiedSlots(forWeek weekNumber: Int, dayOfWeek: Int) -> [ProgramSlot] {
+        var result = moduleSlots.filter {
+            $0.scheduleType == .weekly && $0.dayOfWeek == dayOfWeek
+        }
+
+        let weekSpecific = moduleSlots.filter {
+            $0.scheduleType == .specificWeek &&
+            $0.weekNumber == weekNumber &&
+            $0.dayOfWeek == dayOfWeek
+        }
+        result.append(contentsOf: weekSpecific)
+
+        return result.sorted { $0.order < $1.order }
+    }
+
+    mutating func addModuleSlot(_ slot: ProgramSlot) {
+        moduleSlots.append(slot)
+        updatedAt = Date()
+    }
+
+    mutating func removeModuleSlot(_ slotId: UUID) {
+        moduleSlots.removeAll { $0.id == slotId }
+        updatedAt = Date()
+    }
+
+    mutating func updateModuleSlot(_ slot: ProgramSlot) {
+        if let index = moduleSlots.firstIndex(where: { $0.id == slot.id }) {
+            moduleSlots[index] = slot
+            updatedAt = Date()
+        }
+    }
+
+    /// Combined view of all slots (both legacy workoutSlots and new moduleSlots) for display
+    func allSlotsForDay(_ dayOfWeek: Int) -> [ProgramSlot] {
+        // Convert legacy workout slots to unified format
+        let legacyAsUnified = workoutSlots
+            .filter { $0.dayOfWeek == dayOfWeek && $0.scheduleType == .weekly }
+            .map { legacy in
+                ProgramSlot(
+                    id: legacy.id,
+                    content: .workout(id: legacy.workoutId, name: legacy.workoutName),
+                    scheduleType: legacy.scheduleType,
+                    dayOfWeek: legacy.dayOfWeek,
+                    weekNumber: legacy.weekNumber,
+                    specificDateOffset: legacy.specificDateOffset,
+                    order: legacy.order,
+                    notes: legacy.notes
+                )
+            }
+
+        // Get new unified slots
+        let unified = unifiedSlots(for: dayOfWeek)
+
+        // Combine and sort
+        return (legacyAsUnified + unified).sorted { $0.order < $1.order }
     }
 
     // MARK: - Schedule Generation
@@ -307,5 +370,121 @@ extension Int {
         let days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
         guard self >= 0 && self < 7 else { return "?" }
         return days[self]
+    }
+}
+
+// MARK: - Program Slot Content (Workout or Module)
+
+enum ProgramSlotContent: Codable, Hashable {
+    case workout(id: UUID, name: String)
+    case module(id: UUID, name: String, type: ModuleType)
+
+    var displayName: String {
+        switch self {
+        case .workout(_, let name), .module(_, let name, _):
+            return name
+        }
+    }
+
+    var id: UUID {
+        switch self {
+        case .workout(let id, _), .module(let id, _, _):
+            return id
+        }
+    }
+
+    var isWorkout: Bool {
+        if case .workout = self { return true }
+        return false
+    }
+
+    var isModule: Bool {
+        if case .module = self { return true }
+        return false
+    }
+
+    var moduleType: ModuleType? {
+        if case .module(_, _, let type) = self { return type }
+        return nil
+    }
+}
+
+// MARK: - Program Slot (Unified Workout or Module Slot)
+
+struct ProgramSlot: Identifiable, Codable, Hashable {
+    var id: UUID
+    var content: ProgramSlotContent
+    var scheduleType: SlotScheduleType
+    var dayOfWeek: Int?       // 0 = Sunday, 6 = Saturday
+    var weekNumber: Int?      // 1-based (for specificWeek type)
+    var specificDateOffset: Int?  // Days from program start (for specificDate type)
+    var order: Int
+    var notes: String?
+
+    init(
+        id: UUID = UUID(),
+        content: ProgramSlotContent,
+        scheduleType: SlotScheduleType = .weekly,
+        dayOfWeek: Int? = nil,
+        weekNumber: Int? = nil,
+        specificDateOffset: Int? = nil,
+        order: Int = 0,
+        notes: String? = nil
+    ) {
+        self.id = id
+        self.content = content
+        self.scheduleType = scheduleType
+        self.dayOfWeek = dayOfWeek
+        self.weekNumber = weekNumber
+        self.specificDateOffset = specificDateOffset
+        self.order = order
+        self.notes = notes
+    }
+
+    var displayName: String {
+        content.displayName
+    }
+
+    var isWorkout: Bool {
+        content.isWorkout
+    }
+
+    var isModule: Bool {
+        content.isModule
+    }
+
+    /// Create a weekly recurring workout slot
+    static func weeklyWorkout(
+        workoutId: UUID,
+        workoutName: String,
+        dayOfWeek: Int,
+        order: Int = 0,
+        notes: String? = nil
+    ) -> ProgramSlot {
+        ProgramSlot(
+            content: .workout(id: workoutId, name: workoutName),
+            scheduleType: .weekly,
+            dayOfWeek: dayOfWeek,
+            order: order,
+            notes: notes
+        )
+    }
+
+    /// Create a weekly recurring module slot
+    static func weeklyModule(
+        moduleId: UUID,
+        moduleName: String,
+        moduleType: ModuleType,
+        dayOfWeek: Int,
+        order: Int = 0,
+        notes: String? = nil
+    ) -> ProgramSlot {
+        ProgramSlot(
+            content: .module(id: moduleId, name: moduleName, type: moduleType),
+            scheduleType: .weekly,
+            dayOfWeek: dayOfWeek,
+            order: order,
+            notes: notes
+        )
     }
 }

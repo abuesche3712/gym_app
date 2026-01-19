@@ -18,7 +18,7 @@ struct WorkoutFormView: View {
     @State private var notes: String = ""
     @State private var estimatedDuration: String = ""
     @State private var selectedModuleIds: [UUID] = []
-    @State private var standaloneExercises: [Exercise] = []
+    @State private var standaloneExercises: [ExerciseInstance] = []
 
     @State private var showingModulePicker = false
     @State private var showingExercisePicker = false
@@ -83,15 +83,16 @@ struct WorkoutFormView: View {
                     Text("No exercises added")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(Array(standaloneExercises.enumerated()), id: \.element.id) { index, exercise in
+                    ForEach(Array(standaloneExercises.enumerated()), id: \.element.id) { index, instance in
+                        let resolved = ExerciseResolver.shared.resolve(instance)
                         HStack {
-                            Image(systemName: exercise.exerciseType.icon)
+                            Image(systemName: resolved.exerciseType.icon)
                                 .foregroundStyle(AppColors.accentBlue)
 
                             VStack(alignment: .leading) {
-                                Text(exercise.name)
+                                Text(resolved.name)
                                     .font(.subheadline)
-                                Text(exercise.formattedSetScheme.isEmpty ? "No sets" : exercise.formattedSetScheme)
+                                Text(resolved.formattedSetScheme.isEmpty ? "No sets" : resolved.formattedSetScheme)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -144,8 +145,8 @@ struct WorkoutFormView: View {
             ModulePickerView(selectedModuleIds: $selectedModuleIds)
         }
         .sheet(isPresented: $showingExercisePicker) {
-            QuickExerciseFormView { exercise in
-                standaloneExercises.append(exercise)
+            QuickExerciseFormView { instance in
+                standaloneExercises.append(instance)
             }
         }
         .onAppear {
@@ -160,7 +161,7 @@ struct WorkoutFormView: View {
                     .map { $0.moduleId }
                 standaloneExercises = workout.standaloneExercises
                     .sorted { $0.order < $1.order }
-                    .map { $0.exercise }
+                    .map(\.exercise)
             }
         }
     }
@@ -190,8 +191,8 @@ struct WorkoutFormView: View {
             ModuleReference(moduleId: moduleId, order: index)
         }
 
-        let workoutExercises = standaloneExercises.enumerated().map { index, exercise in
-            WorkoutExercise(exercise: exercise, order: index)
+        let workoutExercises = standaloneExercises.enumerated().map { index, instance in
+            WorkoutExercise(exercise: instance, order: index)
         }
 
         if var existingWorkout = workout {
@@ -316,13 +317,11 @@ struct ModulePickerView: View {
 struct QuickExerciseFormView: View {
     @Environment(\.dismiss) private var dismiss
 
-    let onSave: (Exercise) -> Void
+    let onSave: (ExerciseInstance) -> Void
 
     @State private var name: String = ""
     @State private var selectedTemplate: ExerciseTemplate?
     @State private var exerciseType: ExerciseType = .strength
-    @State private var muscleGroupIds: Set<UUID> = []
-    @State private var implementIds: Set<UUID> = []
 
     @State private var sets: Int = 3
     @State private var reps: Int = 10
@@ -448,22 +447,7 @@ struct QuickExerciseFormView: View {
                             name = template.name
                             exerciseType = template.exerciseType
                             selectedTemplate = template
-                            muscleGroupIds = template.muscleGroupIds
-                            implementIds = template.implementIds
                         }
-                    },
-                    onSelectWithDetails: { template, type, muscles, implements in
-                        if let template = template {
-                            name = template.name
-                            exerciseType = template.exerciseType
-                            selectedTemplate = template
-                            muscleGroupIds = template.muscleGroupIds
-                            implementIds = template.implementIds
-                        } else {
-                            exerciseType = type
-                        }
-                        muscleGroupIds.formUnion(muscles)
-                        implementIds.formUnion(implements)
                     }
                 )
             }
@@ -510,18 +494,27 @@ struct QuickExerciseFormView: View {
             )
         }
 
-        let exercise = Exercise(
-            name: trimmedName,
-            templateId: selectedTemplate?.id,
-            exerciseType: exerciseType,
-            cardioMetric: cardioMetric,
-            distanceUnit: distanceUnit,
+        // Determine the template ID - use selected template or generate a custom ID
+        let templateId = selectedTemplate?.id ?? UUID()
+        let isCustomExercise = selectedTemplate == nil
+
+        // Only set nameOverride if different from template name (or if custom exercise)
+        let nameOverrideValue: String? = {
+            if isCustomExercise {
+                return trimmedName
+            } else if trimmedName != selectedTemplate?.name {
+                return trimmedName
+            }
+            return nil
+        }()
+
+        let instance = ExerciseInstance(
+            templateId: templateId,
             setGroups: [setGroup],
-            muscleGroupIds: muscleGroupIds,
-            implementIds: implementIds
+            nameOverride: nameOverrideValue
         )
 
-        onSave(exercise)
+        onSave(instance)
         dismiss()
     }
 }

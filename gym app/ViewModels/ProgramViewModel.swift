@@ -109,6 +109,47 @@ class ProgramViewModel: ObservableObject {
         saveProgram(updatedProgram)
     }
 
+    // MARK: - Module Slot Management
+
+    func addModuleSlot(
+        to program: Program,
+        moduleId: UUID,
+        moduleName: String,
+        moduleType: ModuleType,
+        dayOfWeek: Int,
+        scheduleType: SlotScheduleType = .weekly,
+        weekNumber: Int? = nil
+    ) {
+        var updatedProgram = program
+
+        // Calculate order based on existing slots for this day (both workout and module)
+        let existingSlotsForDay = program.allSlotsForDay(dayOfWeek)
+        let newOrder = existingSlotsForDay.count
+
+        let slot = ProgramSlot(
+            content: .module(id: moduleId, name: moduleName, type: moduleType),
+            scheduleType: scheduleType,
+            dayOfWeek: dayOfWeek,
+            weekNumber: weekNumber,
+            order: newOrder
+        )
+
+        updatedProgram.addModuleSlot(slot)
+        saveProgram(updatedProgram)
+    }
+
+    func removeModuleSlot(_ slotId: UUID, from program: Program) {
+        var updatedProgram = program
+        updatedProgram.removeModuleSlot(slotId)
+        saveProgram(updatedProgram)
+    }
+
+    func updateModuleSlot(_ slot: ProgramSlot, in program: Program) {
+        var updatedProgram = program
+        updatedProgram.updateModuleSlot(slot)
+        saveProgram(updatedProgram)
+    }
+
     // MARK: - Program Activation
 
     /// Activate a program starting from a given date

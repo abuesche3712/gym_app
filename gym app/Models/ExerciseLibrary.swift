@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ExerciseTemplate: Identifiable, Codable, Hashable {
+struct ExerciseTemplate: Identifiable, Codable, Hashable, ExerciseMetrics {
     let id: UUID
     var name: String
     var category: ExerciseCategory
@@ -18,9 +18,9 @@ struct ExerciseTemplate: Identifiable, Codable, Hashable {
     var mobilityTracking: MobilityTracking
     var distanceUnit: DistanceUnit
 
-    // Physical attributes
-    var muscleGroupIds: Set<UUID>
-    var implementIds: Set<UUID>
+    // Physical attributes - using enum arrays for simplicity
+    var primaryMuscles: [MuscleGroup]
+    var secondaryMuscles: [MuscleGroup]
     var isBodyweight: Bool
     var recoveryActivityType: RecoveryActivityType?
 
@@ -34,10 +34,6 @@ struct ExerciseTemplate: Identifiable, Codable, Hashable {
     var createdAt: Date
     var updatedAt: Date
 
-    // Legacy muscle data (for backward compatibility)
-    var primaryMuscles: [MuscleGroup]
-    var secondaryMuscles: [MuscleGroup]
-
     init(
         id: UUID = UUID(),
         name: String,
@@ -48,8 +44,6 @@ struct ExerciseTemplate: Identifiable, Codable, Hashable {
         distanceUnit: DistanceUnit = .meters,
         primary: [MuscleGroup] = [],
         secondary: [MuscleGroup] = [],
-        muscleGroupIds: Set<UUID> = [],
-        implementIds: Set<UUID> = [],
         isBodyweight: Bool = false,
         recoveryActivityType: RecoveryActivityType? = nil,
         defaultSetGroups: [SetGroup] = [],
@@ -68,8 +62,6 @@ struct ExerciseTemplate: Identifiable, Codable, Hashable {
         self.distanceUnit = distanceUnit
         self.primaryMuscles = primary
         self.secondaryMuscles = secondary
-        self.muscleGroupIds = muscleGroupIds
-        self.implementIds = implementIds
         self.isBodyweight = isBodyweight
         self.recoveryActivityType = recoveryActivityType
         self.defaultSetGroups = defaultSetGroups
@@ -84,25 +76,10 @@ struct ExerciseTemplate: Identifiable, Codable, Hashable {
         Array(Set(primaryMuscles + secondaryMuscles))
     }
 
-    /// Whether this cardio exercise should log time
-    var tracksTime: Bool {
-        exerciseType == .cardio && cardioMetric.tracksTime
-    }
+    // MARK: - ExerciseMetrics Conformance
 
-    /// Whether this cardio exercise should log distance
-    var tracksDistance: Bool {
-        exerciseType == .cardio && cardioMetric.tracksDistance
-    }
-
-    /// Whether this mobility exercise should log reps
-    var mobilityTracksReps: Bool {
-        exerciseType == .mobility && mobilityTracking.tracksReps
-    }
-
-    /// Whether this mobility exercise should log duration
-    var mobilityTracksDuration: Bool {
-        exerciseType == .mobility && mobilityTracking.tracksDuration
-    }
+    /// Templates don't have supersets - that's an instance-level concept
+    var supersetGroupId: UUID? { nil }
 }
 
 enum ExerciseCategory: String, CaseIterable, Identifiable, Codable {
@@ -229,10 +206,16 @@ private enum BuiltInExerciseId {
 }
 
 // MARK: - Exercise Library
+//
+// NOTE: Use ExerciseResolver.shared for all exercise lookups.
+// This struct provides the static exercise definitions.
+// Query methods below are for internal/migration use only.
+//
 
 struct ExerciseLibrary {
     static let shared = ExerciseLibrary()
 
+    /// The built-in exercise definitions. Use ExerciseResolver for lookups.
     let exercises: [ExerciseTemplate]
 
     private init() {

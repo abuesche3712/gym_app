@@ -355,8 +355,6 @@ class FirestoreService: ObservableObject {
             "exerciseType": template.exerciseType.rawValue,
             "primaryMuscles": template.primaryMuscles.map { $0.rawValue },
             "secondaryMuscles": template.secondaryMuscles.map { $0.rawValue },
-            "muscleGroupIds": Array(template.muscleGroupIds).map { $0.uuidString },
-            "implementIds": Array(template.implementIds).map { $0.uuidString },
             "updatedAt": FieldValue.serverTimestamp()
         ]
     }
@@ -376,18 +374,13 @@ class FirestoreService: ObservableObject {
         let primaryMuscles = (data["primaryMuscles"] as? [String])?.compactMap { MuscleGroup(rawValue: $0) } ?? []
         let secondaryMuscles = (data["secondaryMuscles"] as? [String])?.compactMap { MuscleGroup(rawValue: $0) } ?? []
 
-        let muscleGroupIds = Set((data["muscleGroupIds"] as? [String])?.compactMap { UUID(uuidString: $0) } ?? [])
-        let implementIds = Set((data["implementIds"] as? [String])?.compactMap { UUID(uuidString: $0) } ?? [])
-
         return ExerciseTemplate(
             id: id,
             name: name,
             category: category,
             exerciseType: exerciseType,
             primary: primaryMuscles,
-            secondary: secondaryMuscles,
-            muscleGroupIds: muscleGroupIds,
-            implementIds: implementIds
+            secondary: secondaryMuscles
         )
     }
 

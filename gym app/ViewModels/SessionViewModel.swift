@@ -71,27 +71,28 @@ class SessionViewModel: ObservableObject {
     // MARK: - Session Management
 
     func startSession(workout: Workout, modules: [Module]) {
-        // Use unified accessor to handle both legacy and normalized exercise models
+        // Resolve exercises through ExerciseResolver and convert to session format
         var completedModules = modules.map { module in
             CompletedModule(
                 moduleId: module.id,
                 moduleName: module.name,
                 moduleType: module.type,
-                completedExercises: module.allExercisesAsLegacy().map { exercise in
-                    convertExerciseToSession(exercise)
+                completedExercises: module.resolvedExercises().map { resolved in
+                    convertResolvedExerciseToSession(resolved)
                 }
             )
         }
 
         // Add standalone exercises as a pseudo-module if any exist
         if !workout.standaloneExercises.isEmpty {
+            let resolver = ExerciseResolver.shared
             let standaloneModule = CompletedModule(
                 moduleId: UUID(),
                 moduleName: "Exercises",
                 moduleType: .strength,  // Default type for standalone exercises
                 completedExercises: workout.standaloneExercises
                     .sorted { $0.order < $1.order }
-                    .map { convertExerciseToSession($0.exercise) }
+                    .map { convertResolvedExerciseToSession(resolver.resolve($0.exercise)) }
             )
             completedModules.append(standaloneModule)
         }
@@ -111,17 +112,17 @@ class SessionViewModel: ObservableObject {
         startSessionTimer()
     }
 
-    /// Converts an Exercise to a SessionExercise for use in an active session
-    private func convertExerciseToSession(_ exercise: Exercise) -> SessionExercise {
+    /// Converts a ResolvedExercise to a SessionExercise for use in an active session
+    private func convertResolvedExerciseToSession(_ resolved: ResolvedExercise) -> SessionExercise {
         SessionExercise(
-            exerciseId: exercise.id,
-            exerciseName: exercise.name,
-            exerciseType: exercise.exerciseType,
-            cardioMetric: exercise.cardioMetric,
-            mobilityTracking: exercise.mobilityTracking,
-            distanceUnit: exercise.distanceUnit,
-            supersetGroupId: exercise.supersetGroupId,
-            completedSetGroups: exercise.setGroups.map { setGroup in
+            exerciseId: resolved.id,
+            exerciseName: resolved.name,
+            exerciseType: resolved.exerciseType,
+            cardioMetric: resolved.cardioMetric,
+            mobilityTracking: resolved.mobilityTracking,
+            distanceUnit: resolved.distanceUnit,
+            supersetGroupId: resolved.supersetGroupId,
+            completedSetGroups: resolved.setGroups.map { setGroup in
                 CompletedSetGroup(
                     setGroupId: setGroup.id,
                     restPeriod: setGroup.restPeriod,
@@ -141,8 +142,10 @@ class SessionViewModel: ObservableObject {
                     intervalRestDuration: setGroup.intervalRestDuration
                 )
             },
-            isBodyweight: exercise.isBodyweight,
-            recoveryActivityType: exercise.recoveryActivityType
+            isBodyweight: resolved.isBodyweight,
+            recoveryActivityType: resolved.recoveryActivityType,
+            primaryMuscles: resolved.primaryMuscles,
+            secondaryMuscles: resolved.secondaryMuscles
         )
     }
 
@@ -436,6 +439,12 @@ class SessionViewModel: ObservableObject {
         for index in offsets {
             deleteSession(sessions[index])
         }
+    }
+
+    /// Update an existing session (for editing completed sessions)
+    func updateSession(_ session: Session) {
+        repository.saveSession(session)
+        loadSessions()
     }
 
     // Get last session data for an exercise (for showing previous performance)

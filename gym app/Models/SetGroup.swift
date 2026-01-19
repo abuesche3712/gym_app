@@ -71,11 +71,17 @@ struct SetGroup: Identifiable, Codable, Hashable {
         self.implementMeasurableStringValue = implementMeasurableStringValue
     }
 
-    // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Required fields
         id = try container.decode(UUID.self, forKey: .id)
-        sets = try container.decodeIfPresent(Int.self, forKey: .sets) ?? 1
+        sets = try container.decode(Int.self, forKey: .sets)
+
+        // Optional with defaults
+        isInterval = try container.decodeIfPresent(Bool.self, forKey: .isInterval) ?? false
+
+        // Truly optional (target values)
         targetReps = try container.decodeIfPresent(Int.self, forKey: .targetReps)
         targetWeight = try container.decodeIfPresent(Double.self, forKey: .targetWeight)
         targetRPE = try container.decodeIfPresent(Int.self, forKey: .targetRPE)
@@ -85,7 +91,6 @@ struct SetGroup: Identifiable, Codable, Hashable {
         targetHoldTime = try container.decodeIfPresent(Int.self, forKey: .targetHoldTime)
         restPeriod = try container.decodeIfPresent(Int.self, forKey: .restPeriod)
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
-        isInterval = try container.decodeIfPresent(Bool.self, forKey: .isInterval) ?? false
         workDuration = try container.decodeIfPresent(Int.self, forKey: .workDuration)
         intervalRestDuration = try container.decodeIfPresent(Int.self, forKey: .intervalRestDuration)
         implementMeasurableLabel = try container.decodeIfPresent(String.self, forKey: .implementMeasurableLabel)
@@ -110,7 +115,7 @@ struct SetGroup: Identifiable, Codable, Hashable {
     var formattedTarget: String {
         // Interval mode has special formatting
         if isInterval, let work = workDuration, let rest = intervalRestDuration {
-            return "\(sets) rounds: \(formatDuration(work)) on / \(formatDuration(rest)) off"
+            return "\(sets) rounds: \(formatDurationVerbose(work)) on / \(formatDurationVerbose(rest)) off"
         }
 
         var parts: [String] = []
@@ -118,11 +123,12 @@ struct SetGroup: Identifiable, Codable, Hashable {
         if let reps = targetReps {
             parts.append("\(sets)x\(reps)")
         } else if let distance = targetDistance {
-            parts.append("\(sets)x\(formatDistance(distance))")
+            let unit = targetDistanceUnit ?? .meters
+            parts.append("\(sets)x\(formatDistance(distance, unit: unit))")
         } else if let duration = targetDuration {
-            parts.append("\(sets)x\(formatDuration(duration))")
+            parts.append("\(sets)x\(formatDurationVerbose(duration))")
         } else if let holdTime = targetHoldTime {
-            parts.append("\(sets)x\(formatDuration(holdTime)) hold")
+            parts.append("\(sets)x\(formatDurationVerbose(holdTime)) hold")
         } else {
             parts.append("\(sets) sets")
         }
@@ -146,28 +152,8 @@ struct SetGroup: Identifiable, Codable, Hashable {
         return parts.joined(separator: " ")
     }
 
-    private func formatDistance(_ distance: Double) -> String {
-        let unit = targetDistanceUnit ?? .meters
-        if distance == floor(distance) {
-            return "\(Int(distance))\(unit.abbreviation)"
-        }
-        return String(format: "%.1f%@", distance, unit.abbreviation)
-    }
-
-    private func formatDuration(_ seconds: Int) -> String {
-        if seconds >= 60 {
-            let mins = seconds / 60
-            let secs = seconds % 60
-            if secs > 0 {
-                return "\(mins)m \(secs)s"
-            }
-            return "\(mins) min"
-        }
-        return "\(seconds)s"
-    }
-
     var formattedRest: String? {
         guard let rest = restPeriod else { return nil }
-        return formatDuration(rest) + " rest"
+        return formatDurationVerbose(rest) + " rest"
     }
 }

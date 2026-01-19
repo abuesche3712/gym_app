@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct ExerciseLibraryView: View {
+    @StateObject private var resolver = ExerciseResolver.shared
     @ObservedObject private var customLibrary = CustomExerciseLibrary.shared
-    @StateObject private var libraryService = LibraryService.shared
     @State private var searchText = ""
     @State private var selectedType: ExerciseType? = nil
     @State private var selectedSource: ExerciseSource = .all
@@ -21,23 +21,17 @@ struct ExerciseLibraryView: View {
         case all, provided, custom
     }
 
-    private var allExercises: [ExerciseTemplate] {
-        let provided = ExerciseLibrary.shared.exercises
-        let custom = customLibrary.exercises
-        return provided + custom
-    }
-
     private var filteredExercises: [ExerciseTemplate] {
         var exercises: [ExerciseTemplate]
 
         // Filter by source
         switch selectedSource {
         case .all:
-            exercises = allExercises
+            exercises = resolver.allExercises
         case .provided:
-            exercises = ExerciseLibrary.shared.exercises
+            exercises = resolver.builtInExercises
         case .custom:
-            exercises = customLibrary.exercises
+            exercises = resolver.customExercises
         }
 
         // Filter by type
@@ -55,7 +49,7 @@ struct ExerciseLibraryView: View {
     }
 
     private var customExerciseIds: Set<UUID> {
-        Set(customLibrary.exercises.map { $0.id })
+        Set(resolver.customExercises.map { $0.id })
     }
 
     var body: some View {
@@ -96,7 +90,7 @@ struct ExerciseLibraryView: View {
                 // Stats - clickable source filters
                 HStack(spacing: AppSpacing.sm) {
                     SourceFilterPill(
-                        value: "\(ExerciseLibrary.shared.exercises.count)",
+                        value: "\(resolver.builtInExercises.count)",
                         label: "Provided",
                         isSelected: selectedSource == .provided,
                         action: {
@@ -106,7 +100,7 @@ struct ExerciseLibraryView: View {
                         }
                     )
                     SourceFilterPill(
-                        value: "\(customLibrary.exercises.count)",
+                        value: "\(resolver.customExercises.count)",
                         label: "Custom",
                         isSelected: selectedSource == .custom,
                         action: {
@@ -255,8 +249,6 @@ private struct ExerciseLibraryRow: View {
     let onTap: () -> Void
     var onDelete: (() -> Void)? = nil
 
-    @StateObject private var libraryService = LibraryService.shared
-
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: AppSpacing.md) {
@@ -289,7 +281,7 @@ private struct ExerciseLibraryRow: View {
                             .font(.caption)
                             .foregroundColor(AppColors.textTertiary)
 
-                        if !exercise.muscleGroupIds.isEmpty {
+                        if !exercise.primaryMuscles.isEmpty {
                             Text("•")
                                 .foregroundColor(AppColors.textTertiary)
                             Text(muscleNames)
@@ -328,10 +320,7 @@ private struct ExerciseLibraryRow: View {
     }
 
     private var muscleNames: String {
-        let names = exercise.muscleGroupIds.compactMap { id in
-            libraryService.getMuscleGroup(id: id)?.name
-        }
-        return names.joined(separator: ", ")
+        exercise.primaryMuscles.map { $0.rawValue }.joined(separator: ", ")
     }
 
     private var typeColor: Color {
@@ -365,8 +354,6 @@ private struct AddExerciseSheet: View {
 
     @State private var name = ""
     @State private var exerciseType: ExerciseType = .strength
-    @State private var selectedMuscleGroups: Set<UUID> = []
-    @State private var selectedImplements: Set<UUID> = []
 
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
@@ -386,16 +373,6 @@ private struct AddExerciseSheet: View {
                         }
                     }
                 }
-
-                Section("Muscles Worked") {
-                    MuscleGroupGridCompact(selectedIds: $selectedMuscleGroups)
-                        .padding(.vertical, 4)
-                }
-
-                Section("Equipment") {
-                    ImplementGridCompact(selectedIds: $selectedImplements)
-                        .padding(.vertical, 4)
-                }
             }
             .navigationTitle("Add Exercise")
             .navigationBarTitleDisplayMode(.inline)
@@ -407,9 +384,7 @@ private struct AddExerciseSheet: View {
                     Button("Save") {
                         customLibrary.addExercise(
                             name: name.trimmingCharacters(in: .whitespaces),
-                            exerciseType: exerciseType,
-                            muscleGroupIds: selectedMuscleGroups,
-                            implementIds: selectedImplements
+                            exerciseType: exerciseType
                         )
                         dismiss()
                     }
@@ -430,15 +405,11 @@ private struct EditCustomExerciseSheet: View {
 
     @State private var name: String
     @State private var exerciseType: ExerciseType
-    @State private var selectedMuscleGroups: Set<UUID>
-    @State private var selectedImplements: Set<UUID>
 
     init(exercise: ExerciseTemplate) {
         self.exercise = exercise
         _name = State(initialValue: exercise.name)
         _exerciseType = State(initialValue: exercise.exerciseType)
-        _selectedMuscleGroups = State(initialValue: exercise.muscleGroupIds)
-        _selectedImplements = State(initialValue: exercise.implementIds)
     }
 
     private var canSave: Bool {
@@ -459,16 +430,6 @@ private struct EditCustomExerciseSheet: View {
                         }
                     }
                 }
-
-                Section("Muscles Worked") {
-                    MuscleGroupGridCompact(selectedIds: $selectedMuscleGroups)
-                        .padding(.vertical, 4)
-                }
-
-                Section("Equipment") {
-                    ImplementGridCompact(selectedIds: $selectedImplements)
-                        .padding(.vertical, 4)
-                }
             }
             .navigationTitle("Edit Exercise")
             .navigationBarTitleDisplayMode(.inline)
@@ -478,14 +439,9 @@ private struct EditCustomExerciseSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        let updated = ExerciseTemplate(
-                            id: exercise.id,
-                            name: name.trimmingCharacters(in: .whitespaces),
-                            category: .fullBody,
-                            exerciseType: exerciseType,
-                            muscleGroupIds: selectedMuscleGroups,
-                            implementIds: selectedImplements
-                        )
+                        var updated = exercise
+                        updated.name = name.trimmingCharacters(in: .whitespaces)
+                        updated.exerciseType = exerciseType
                         customLibrary.updateExercise(updated)
                         dismiss()
                     }
@@ -500,19 +456,8 @@ private struct EditCustomExerciseSheet: View {
 
 private struct ProvidedExerciseDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var libraryService = LibraryService.shared
 
     let exercise: ExerciseTemplate
-
-    private var muscleGroups: [MuscleGroupEntity] {
-        exercise.muscleGroupIds.compactMap { libraryService.getMuscleGroup(id: $0) }
-            .sorted { $0.name < $1.name }
-    }
-
-    private var equipment: [ImplementEntity] {
-        exercise.implementIds.compactMap { libraryService.getImplement(id: $0) }
-            .sorted { $0.name < $1.name }
-    }
 
     var body: some View {
         NavigationStack {
@@ -543,60 +488,62 @@ private struct ProvidedExerciseDetailSheet: View {
                     .listRowBackground(Color.clear)
                 }
 
-                // Muscles
-                Section {
-                    if muscleGroups.isEmpty {
-                        Text("No muscles specified")
-                            .foregroundColor(AppColors.textTertiary)
-                    } else {
-                        ForEach(muscleGroups, id: \.id) { muscle in
+                // Primary Muscles
+                if !exercise.primaryMuscles.isEmpty {
+                    Section {
+                        ForEach(exercise.primaryMuscles, id: \.self) { muscle in
                             HStack(spacing: AppSpacing.sm) {
                                 Image(systemName: "figure.arms.open")
                                     .font(.system(size: 14))
                                     .foregroundColor(AppColors.accentBlue)
                                     .frame(width: 24)
 
-                                Text(muscle.name)
+                                Text(muscle.rawValue)
                                     .font(.body)
                                     .foregroundColor(AppColors.textPrimary)
                             }
                         }
-                    }
-                } header: {
-                    HStack {
-                        Text("Muscles Worked")
-                        Spacer()
-                        Text("\(muscleGroups.count)")
-                            .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
+                    } header: {
+                        HStack {
+                            Text("Primary Muscles")
+                            Spacer()
+                            Text("\(exercise.primaryMuscles.count)")
+                                .font(.caption)
+                                .foregroundColor(AppColors.textTertiary)
+                        }
                     }
                 }
 
-                // Equipment
-                Section {
-                    if equipment.isEmpty {
-                        Text("No equipment required")
-                            .foregroundColor(AppColors.textTertiary)
-                    } else {
-                        ForEach(equipment, id: \.id) { equip in
+                // Secondary Muscles
+                if !exercise.secondaryMuscles.isEmpty {
+                    Section {
+                        ForEach(exercise.secondaryMuscles, id: \.self) { muscle in
                             HStack(spacing: AppSpacing.sm) {
-                                Image(systemName: EquipmentIconMapper.icon(for: equip.name))
+                                Image(systemName: "figure.arms.open")
                                     .font(.system(size: 14))
-                                    .foregroundColor(AppColors.accentBlue)
+                                    .foregroundColor(AppColors.textTertiary)
                                     .frame(width: 24)
 
-                                Text(equip.name)
+                                Text(muscle.rawValue)
                                     .font(.body)
-                                    .foregroundColor(AppColors.textPrimary)
+                                    .foregroundColor(AppColors.textSecondary)
                             }
                         }
+                    } header: {
+                        HStack {
+                            Text("Secondary Muscles")
+                            Spacer()
+                            Text("\(exercise.secondaryMuscles.count)")
+                                .font(.caption)
+                                .foregroundColor(AppColors.textTertiary)
+                        }
                     }
-                } header: {
-                    HStack {
-                        Text("Equipment")
-                        Spacer()
-                        Text("\(equipment.count)")
-                            .font(.caption)
+                }
+
+                // No muscles specified
+                if exercise.primaryMuscles.isEmpty && exercise.secondaryMuscles.isEmpty {
+                    Section("Muscles") {
+                        Text("No muscles specified")
                             .foregroundColor(AppColors.textTertiary)
                     }
                 }

@@ -58,24 +58,52 @@ func formatWeight(_ weight: Double) -> String {
 
 // MARK: - Distance Formatting
 
-/// Formats distance, removing decimal if it's a whole number
-/// e.g., 1.0 -> "1", 1.5 -> "1.50"
-func formatDistance(_ distance: Double) -> String {
+/// Formats distance with unit suffix
+/// e.g., 1.0, .miles -> "1 mi", 1.5, .kilometers -> "1.5 km"
+func formatDistance(_ distance: Double, unit: DistanceUnit) -> String {
+    if distance == floor(distance) {
+        return "\(Int(distance)) \(unit.abbreviation)"
+    }
+    return String(format: "%.1f %@", distance, unit.abbreviation)
+}
+
+/// Formats distance value only, no unit
+/// e.g., 1.0 -> "1", 1.5 -> "1.5"
+func formatDistanceValue(_ distance: Double) -> String {
     if distance == floor(distance) {
         return "\(Int(distance))"
     }
-    return String(format: "%.2f", distance)
+    return String(format: "%.1f", distance)
 }
 
 // MARK: - Height Formatting
 
-/// Formats height in inches with feet conversion for display
-/// e.g., 24.0 -> "24\"", 36.5 -> "36.5\""
+/// Formats height in inches with unit suffix
+/// e.g., 24.0 -> "24 in", 36.5 -> "36.5 in"
 func formatHeight(_ height: Double) -> String {
     if height == floor(height) {
-        return "\(Int(height))\""
+        return "\(Int(height)) in"
     }
-    return String(format: "%.1f\"", height)
+    return String(format: "%.1f in", height)
+}
+
+/// Formats height value only, no unit
+/// e.g., 24.0 -> "24", 36.5 -> "36.5"
+func formatHeightValue(_ height: Double) -> String {
+    if height == floor(height) {
+        return "\(Int(height))"
+    }
+    return String(format: "%.1f", height)
+}
+
+// MARK: - Pace Formatting
+
+/// Formats pace in seconds per unit as "M:SS"
+/// e.g., 480 -> "8:00", 510 -> "8:30"
+func formatPace(_ pace: Double) -> String {
+    let minutes = Int(pace) / 60
+    let seconds = Int(pace) % 60
+    return String(format: "%d:%02d", minutes, seconds)
 }
 
 // MARK: - Volume Formatting

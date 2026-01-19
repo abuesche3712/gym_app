@@ -49,35 +49,27 @@ struct Session: Identifiable, Codable, Hashable {
         self.syncStatus = syncStatus
     }
 
-    // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        // Decode schema version (default to 1 for backward compatibility)
-        let version = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
-        schemaVersion = SchemaVersions.session  // Always store current version
+        schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? SchemaVersions.session
 
-        // Handle migrations based on version
-        switch version {
-        case 1:
-            // V1 is current - decode normally
-            break
-        default:
-            // Unknown future version - attempt to decode with defaults
-            break
-        }
-
+        // Required fields
         id = try container.decode(UUID.self, forKey: .id)
         workoutId = try container.decode(UUID.self, forKey: .workoutId)
-        workoutName = try container.decodeIfPresent(String.self, forKey: .workoutName) ?? "Unknown"
+        workoutName = try container.decode(String.self, forKey: .workoutName)
         date = try container.decode(Date.self, forKey: .date)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        syncStatus = try container.decode(SyncStatus.self, forKey: .syncStatus)
+
+        // Optional with defaults
         completedModules = try container.decodeIfPresent([CompletedModule].self, forKey: .completedModules) ?? []
         skippedModuleIds = try container.decodeIfPresent([UUID].self, forKey: .skippedModuleIds) ?? []
+
+        // Truly optional
         duration = try container.decodeIfPresent(Int.self, forKey: .duration)
         overallFeeling = try container.decodeIfPresent(Int.self, forKey: .overallFeeling)
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
-        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
-        syncStatus = try container.decodeIfPresent(SyncStatus.self, forKey: .syncStatus) ?? .synced
     }
 
     enum CodingKeys: String, CodingKey {
@@ -117,6 +109,12 @@ struct Session: Identifiable, Codable, Hashable {
             }
         }
     }
+
+    /// Whether this session can still be edited (within 30 days of creation)
+    var isEditable: Bool {
+        let daysSinceCreation = Calendar.current.dateComponents([.day], from: createdAt, to: Date()).day ?? 0
+        return daysSinceCreation <= 30
+    }
 }
 
 // MARK: - Completed Module
@@ -148,15 +146,20 @@ struct CompletedModule: Identifiable, Codable, Hashable {
         self.notes = notes
     }
 
-    // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Required fields
         id = try container.decode(UUID.self, forKey: .id)
         moduleId = try container.decode(UUID.self, forKey: .moduleId)
-        moduleName = try container.decodeIfPresent(String.self, forKey: .moduleName) ?? "Unknown"
-        moduleType = try container.decodeIfPresent(ModuleType.self, forKey: .moduleType) ?? .strength
+        moduleName = try container.decode(String.self, forKey: .moduleName)
+        moduleType = try container.decode(ModuleType.self, forKey: .moduleType)
+
+        // Optional with defaults
         completedExercises = try container.decodeIfPresent([SessionExercise].self, forKey: .completedExercises) ?? []
         skipped = try container.decodeIfPresent(Bool.self, forKey: .skipped) ?? false
+
+        // Truly optional
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
     }
 
@@ -167,7 +170,7 @@ struct CompletedModule: Identifiable, Codable, Hashable {
 
 // MARK: - Session Exercise
 
-struct SessionExercise: Identifiable, Codable, Hashable {
+struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
     var id: UUID
     var exerciseId: UUID
     var exerciseName: String // Denormalized
@@ -180,6 +183,10 @@ struct SessionExercise: Identifiable, Codable, Hashable {
     var notes: String?
     var isBodyweight: Bool // True for bodyweight exercises (pull-ups, dips) - shows "BW + X" format
     var recoveryActivityType: RecoveryActivityType? // For recovery exercises
+
+    // Muscle groups (editable during session)
+    var primaryMuscles: [MuscleGroup]
+    var secondaryMuscles: [MuscleGroup]
 
     // Ad-hoc modifications during session
     var isSubstitution: Bool
@@ -202,6 +209,8 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         notes: String? = nil,
         isBodyweight: Bool = false,
         recoveryActivityType: RecoveryActivityType? = nil,
+        primaryMuscles: [MuscleGroup] = [],
+        secondaryMuscles: [MuscleGroup] = [],
         isSubstitution: Bool = false,
         originalExerciseName: String? = nil,
         isAdHoc: Bool = false,
@@ -219,56 +228,47 @@ struct SessionExercise: Identifiable, Codable, Hashable {
         self.notes = notes
         self.isBodyweight = isBodyweight
         self.recoveryActivityType = recoveryActivityType
+        self.primaryMuscles = primaryMuscles
+        self.secondaryMuscles = secondaryMuscles
         self.isSubstitution = isSubstitution
         self.originalExerciseName = originalExerciseName
         self.isAdHoc = isAdHoc
         self.progressionRecommendation = progressionRecommendation
     }
 
-    // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Required fields
         id = try container.decode(UUID.self, forKey: .id)
         exerciseId = try container.decode(UUID.self, forKey: .exerciseId)
-        exerciseName = try container.decodeIfPresent(String.self, forKey: .exerciseName) ?? "Unknown"
-        exerciseType = try container.decodeIfPresent(ExerciseType.self, forKey: .exerciseType) ?? .strength
+        exerciseName = try container.decode(String.self, forKey: .exerciseName)
+        exerciseType = try container.decode(ExerciseType.self, forKey: .exerciseType)
+
+        // Optional with defaults
         cardioMetric = try container.decodeIfPresent(CardioMetric.self, forKey: .cardioMetric) ?? .timeOnly
         mobilityTracking = try container.decodeIfPresent(MobilityTracking.self, forKey: .mobilityTracking) ?? .repsOnly
         distanceUnit = try container.decodeIfPresent(DistanceUnit.self, forKey: .distanceUnit) ?? .meters
-        supersetGroupId = try container.decodeIfPresent(UUID.self, forKey: .supersetGroupId)
         completedSetGroups = try container.decodeIfPresent([CompletedSetGroup].self, forKey: .completedSetGroups) ?? []
-        notes = try container.decodeIfPresent(String.self, forKey: .notes)
         isBodyweight = try container.decodeIfPresent(Bool.self, forKey: .isBodyweight) ?? false
-        recoveryActivityType = try container.decodeIfPresent(RecoveryActivityType.self, forKey: .recoveryActivityType)
+        primaryMuscles = try container.decodeIfPresent([MuscleGroup].self, forKey: .primaryMuscles) ?? []
+        secondaryMuscles = try container.decodeIfPresent([MuscleGroup].self, forKey: .secondaryMuscles) ?? []
         isSubstitution = try container.decodeIfPresent(Bool.self, forKey: .isSubstitution) ?? false
-        originalExerciseName = try container.decodeIfPresent(String.self, forKey: .originalExerciseName)
         isAdHoc = try container.decodeIfPresent(Bool.self, forKey: .isAdHoc) ?? false
+
+        // Truly optional
+        supersetGroupId = try container.decodeIfPresent(UUID.self, forKey: .supersetGroupId)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        recoveryActivityType = try container.decodeIfPresent(RecoveryActivityType.self, forKey: .recoveryActivityType)
+        originalExerciseName = try container.decodeIfPresent(String.self, forKey: .originalExerciseName)
         progressionRecommendation = try container.decodeIfPresent(ProgressionRecommendation.self, forKey: .progressionRecommendation)
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, exerciseId, exerciseName, exerciseType, cardioMetric, mobilityTracking, distanceUnit
         case supersetGroupId, completedSetGroups, notes, isBodyweight, recoveryActivityType
+        case primaryMuscles, secondaryMuscles
         case isSubstitution, originalExerciseName, isAdHoc, progressionRecommendation
-    }
-
-    var isInSuperset: Bool {
-        supersetGroupId != nil
-    }
-
-    /// Whether this cardio exercise should log time
-    var tracksTime: Bool {
-        exerciseType == .cardio && cardioMetric.tracksTime
-    }
-
-    /// Whether this cardio exercise should log distance
-    var tracksDistance: Bool {
-        exerciseType == .cardio && cardioMetric.tracksDistance
-    }
-
-    /// Legacy: Whether this is primarily distance-based (for target display)
-    var isDistanceBased: Bool {
-        exerciseType == .cardio && cardioMetric == .distanceOnly
     }
 
     var totalVolume: Double {
@@ -317,14 +317,19 @@ struct CompletedSetGroup: Identifiable, Codable, Hashable {
         self.intervalRestDuration = intervalRestDuration
     }
 
-    // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Required fields
         id = try container.decode(UUID.self, forKey: .id)
         setGroupId = try container.decode(UUID.self, forKey: .setGroupId)
-        restPeriod = try container.decodeIfPresent(Int.self, forKey: .restPeriod)
+
+        // Optional with defaults
         sets = try container.decodeIfPresent([SetData].self, forKey: .sets) ?? []
         isInterval = try container.decodeIfPresent(Bool.self, forKey: .isInterval) ?? false
+
+        // Truly optional
+        restPeriod = try container.decodeIfPresent(Int.self, forKey: .restPeriod)
         workDuration = try container.decodeIfPresent(Int.self, forKey: .workDuration)
         intervalRestDuration = try container.decodeIfPresent(Int.self, forKey: .intervalRestDuration)
     }
@@ -407,15 +412,20 @@ struct SetData: Identifiable, Codable, Hashable {
         self.restAfter = restAfter
     }
 
-    // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Required fields
         id = try container.decode(UUID.self, forKey: .id)
-        setNumber = try container.decodeIfPresent(Int.self, forKey: .setNumber) ?? 1
+        setNumber = try container.decode(Int.self, forKey: .setNumber)
+
+        // Optional with defaults
+        completed = try container.decodeIfPresent(Bool.self, forKey: .completed) ?? true
+
+        // Truly optional (metric data)
         weight = try container.decodeIfPresent(Double.self, forKey: .weight)
         reps = try container.decodeIfPresent(Int.self, forKey: .reps)
         rpe = try container.decodeIfPresent(Int.self, forKey: .rpe)
-        completed = try container.decodeIfPresent(Bool.self, forKey: .completed) ?? true
         duration = try container.decodeIfPresent(Int.self, forKey: .duration)
         distance = try container.decodeIfPresent(Double.self, forKey: .distance)
         pace = try container.decodeIfPresent(Double.self, forKey: .pace)

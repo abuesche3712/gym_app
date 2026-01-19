@@ -209,6 +209,10 @@ struct EditExerciseSheet: View {
     @State private var cardioMetric: CardioTracking = .timeOnly
     @State private var distanceUnit: DistanceUnit = .meters
 
+    // Muscle groups (read from exercise, display-only)
+    @State private var primaryMuscles: [MuscleGroup] = []
+    @State private var secondaryMuscles: [MuscleGroup] = []
+
     var body: some View {
         NavigationStack {
             Form {
@@ -249,7 +253,7 @@ struct EditExerciseSheet: View {
                         HStack {
                             Text("Hold Time")
                             Spacer()
-                            Text(formatDuration(targetHoldTime))
+                            Text(formatDurationVerbose(targetHoldTime))
                                 .foregroundColor(AppColors.textSecondary)
                         }
                         Stepper("Seconds: \(targetHoldTime)", value: $targetHoldTime, in: 5...300, step: 5)
@@ -257,7 +261,7 @@ struct EditExerciseSheet: View {
                         HStack {
                             Text("Duration")
                             Spacer()
-                            Text(formatDuration(targetDuration))
+                            Text(formatDurationVerbose(targetDuration))
                                 .foregroundColor(AppColors.textSecondary)
                         }
                         Stepper("Seconds: \(targetDuration)", value: $targetDuration, in: 0...3600, step: 30)
@@ -288,6 +292,33 @@ struct EditExerciseSheet: View {
                                 ForEach(DistanceUnit.allCases) { unit in
                                     Text(unit.rawValue.capitalized).tag(unit)
                                 }
+                            }
+                        }
+                    }
+                }
+
+                // Muscle Groups (display-only)
+                if !primaryMuscles.isEmpty || !secondaryMuscles.isEmpty {
+                    Section("Muscles") {
+                        if !primaryMuscles.isEmpty {
+                            HStack {
+                                Text("Primary")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Text(primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
+                                    .font(.subheadline)
+                            }
+                        }
+                        if !secondaryMuscles.isEmpty {
+                            HStack {
+                                Text("Secondary")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Text(secondaryMuscles.map { $0.rawValue }.joined(separator: ", "))
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
                             }
                         }
                     }
@@ -345,6 +376,10 @@ struct EditExerciseSheet: View {
         exerciseType = exercise.exerciseType
         cardioMetric = exercise.cardioMetric
         distanceUnit = exercise.distanceUnit
+
+        // Load muscle groups
+        primaryMuscles = exercise.primaryMuscles
+        secondaryMuscles = exercise.secondaryMuscles
 
         // Count total sets
         numberOfSets = exercise.completedSetGroups.reduce(0) { $0 + $1.sets.count }
@@ -430,18 +465,6 @@ struct EditExerciseSheet: View {
         onSave(moduleIndex, exerciseIndex, updatedExercise)
         dismiss()
     }
-
-    private func formatDuration(_ seconds: Int) -> String {
-        if seconds >= 60 {
-            let mins = seconds / 60
-            let secs = seconds % 60
-            if secs > 0 {
-                return "\(mins):\(String(format: "%02d", secs))"
-            }
-            return "\(mins) min"
-        }
-        return "\(seconds)s"
-    }
 }
 
 // MARK: - Add Exercise to Module Sheet
@@ -482,19 +505,6 @@ struct AddExerciseToModuleSheet: View {
                                 cardioMetric = template.cardioMetric
                                 distanceUnit = template.distanceUnit
                             }
-                        }
-                    },
-                    onSelectWithDetails: { template, type, muscles, implements in
-                        if let template = template {
-                            exerciseName = template.name
-                            exerciseType = template.exerciseType
-                            selectedTemplate = template
-                            if template.exerciseType == .cardio {
-                                cardioMetric = template.cardioMetric
-                                distanceUnit = template.distanceUnit
-                            }
-                        } else {
-                            exerciseType = type
                         }
                     }
                 )

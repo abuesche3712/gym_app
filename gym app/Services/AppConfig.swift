@@ -158,21 +158,12 @@ enum StartupGuard {
         Logger.info("StartupGuard: Manually exited recovery mode")
     }
 
-    /// Reset all migration flags to allow retrying
-    static func resetMigrationFlags() {
-        UserDefaults.standard.removeObject(forKey: "ExerciseMigrationCompleted_v1")
-        UserDefaults.standard.removeObject(forKey: "ExerciseTemplateIdRepair_v1")
-        UserDefaults.standard.synchronize()
-        Logger.info("StartupGuard: Reset all migration flags")
-    }
-
     /// Full reset - clears all startup guard state
     static func fullReset() {
         UserDefaults.standard.removeObject(forKey: startupInProgressKey)
         UserDefaults.standard.removeObject(forKey: crashCountKey)
         UserDefaults.standard.removeObject(forKey: lastSuccessfulStartupKey)
         UserDefaults.standard.removeObject(forKey: recoveryModeKey)
-        resetMigrationFlags()
         Logger.info("StartupGuard: Full reset completed")
     }
 }

@@ -81,26 +81,6 @@ struct PersistenceController {
 
         // Seed default data on first launch
         seedDataIfNeeded()
-
-        // Migrate old Exercise data to ExerciseInstance (if needed)
-        migrateExercisesIfNeeded()
-    }
-
-    // MARK: - Exercise Migration
-
-    private func migrateExercisesIfNeeded() {
-        // Skip migrations if in recovery mode (previous startup crashed)
-        if StartupGuard.isInRecoveryMode {
-            Logger.warning("PersistenceController: Skipping migrations - recovery mode active")
-            return
-        }
-
-        let migrationManager = ExerciseMigrationManager(context: container.viewContext)
-        migrationManager.migrateIfNeeded()
-
-        // Template ID repair - repairs ExerciseInstances created before stable UUIDs
-        // This is safe now - the MainActor issue was fixed
-        migrationManager.repairTemplateIdsIfNeeded()
     }
 
     // MARK: - Model Creation

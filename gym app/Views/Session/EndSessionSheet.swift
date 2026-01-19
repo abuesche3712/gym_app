@@ -294,7 +294,7 @@ struct EndSessionSheet: View {
                 parts.append(formatDuration(duration))
             }
             if let distance = set.distance, distance > 0 {
-                parts.append("\(formatDistance(distance)) \(exercise.distanceUnit.abbreviation)")
+                parts.append("\(formatDistanceValue(distance)) \(exercise.distanceUnit.abbreviation)")
             }
             return parts.isEmpty ? "–" : parts.joined(separator: " / ")
 
@@ -614,7 +614,7 @@ struct SetEditSheet: View {
         rpe = setData.rpe ?? 0
         duration = setData.duration ?? 0
         holdTime = setData.holdTime ?? 0
-        distance = setData.distance.map { formatDistance($0) } ?? ""
+        distance = setData.distance.map { formatDistanceValue($0) } ?? ""
         height = setData.height.map { String(format: "%.1f", $0) } ?? ""
         quality = setData.quality ?? 0
         intensity = setData.intensity ?? 0

@@ -17,7 +17,7 @@ struct ExerciseFormView: View {
     @EnvironmentObject var moduleViewModel: ModuleViewModel
     @Environment(\.dismiss) private var dismiss
 
-    let exercise: Exercise?
+    let instance: ExerciseInstance?
     let moduleId: UUID
 
     @State private var name: String = ""
@@ -31,22 +31,19 @@ struct ExerciseFormView: View {
     @State private var notes: String = ""
     @State private var setGroups: [SetGroup] = []
 
-    // Library system fields
-    @State private var muscleGroupIds: Set<UUID> = []
-    @State private var implementIds: Set<UUID> = []
+    // Muscle groups from template
+    @State private var primaryMuscles: [MuscleGroup] = []
+    @State private var secondaryMuscles: [MuscleGroup] = []
 
     @State private var showingAddSetGroup = false
     @State private var editingSetGroup: EditingIndex?
     @State private var showingExercisePicker = false
 
-    private var isEditing: Bool { exercise != nil }
+    private var isEditing: Bool { instance != nil }
 
-    /// Check if Bodyweight implement is selected
-    private var hasBodyweightImplement: Bool {
-        let libraryService = LibraryService.shared
-        return implementIds.contains { id in
-            libraryService.getImplement(id: id)?.name.lowercased() == "bodyweight"
-        }
+    /// Check if exercise is bodyweight-based
+    private var isBodyweight: Bool {
+        selectedTemplate?.isBodyweight ?? false
     }
 
     /// Computed CardioTracking from toggle states
@@ -101,7 +98,6 @@ struct ExerciseFormView: View {
                     cardioMetric: cardioMetric,
                     mobilityTracking: mobilityTracking,
                     distanceUnit: distanceUnit,
-                    implementIds: implementIds,
                     existingSetGroup: nil
                 ) { newSetGroup in
                     setGroups.append(newSetGroup)
@@ -115,7 +111,6 @@ struct ExerciseFormView: View {
                     cardioMetric: cardioMetric,
                     mobilityTracking: mobilityTracking,
                     distanceUnit: distanceUnit,
-                    implementIds: implementIds,
                     existingSetGroup: setGroups[editing.index]
                 ) { updatedSetGroup in
                     setGroups[editing.index] = updatedSetGroup
@@ -131,26 +126,10 @@ struct ExerciseFormView: View {
                         name = template.name
                         exerciseType = template.exerciseType
                         selectedTemplate = template
-                        // Copy muscle groups and implements from template
-                        muscleGroupIds = template.muscleGroupIds
-                        implementIds = template.implementIds
+                        // Copy muscle groups from template
+                        primaryMuscles = template.primaryMuscles
+                        secondaryMuscles = template.secondaryMuscles
                     }
-                },
-                onSelectWithDetails: { template, type, muscles, implements in
-                    if let template = template {
-                        name = template.name
-                        exerciseType = template.exerciseType
-                        selectedTemplate = template
-                        // Copy muscle groups and implements from template
-                        muscleGroupIds = template.muscleGroupIds
-                        implementIds = template.implementIds
-                    } else {
-                        // Custom exercise - use the type from picker
-                        exerciseType = type
-                    }
-                    // Also merge any additional selections from the picker
-                    muscleGroupIds.formUnion(muscles)
-                    implementIds.formUnion(implements)
                 }
             )
         }
@@ -249,43 +228,38 @@ struct ExerciseFormView: View {
         }
     }
 
-    // MARK: - Muscles & Equipment Section
+    // MARK: - Muscles Section
 
     private var musclesAndEquipmentSection: some View {
-        Section("Muscles & Equipment") {
-            // Muscle Groups
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                HStack {
-                    Text("Muscles Worked")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    if !muscleGroupIds.isEmpty {
-                        Text("\(muscleGroupIds.count) selected")
-                            .font(.caption)
-                            .foregroundColor(.blue)
+        Section("Muscles") {
+            if !primaryMuscles.isEmpty || !secondaryMuscles.isEmpty {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    if !primaryMuscles.isEmpty {
+                        HStack {
+                            Text("Primary")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text(primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
+                                .font(.subheadline)
+                        }
+                    }
+                    if !secondaryMuscles.isEmpty {
+                        HStack {
+                            Text("Secondary")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text(secondaryMuscles.map { $0.rawValue }.joined(separator: ", "))
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
-                MuscleGroupGridCompact(selectedIds: $muscleGroupIds)
+            } else {
+                Text("No muscles specified")
+                    .foregroundColor(.secondary)
             }
-            .padding(.vertical, 4)
-
-            // Equipment
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                HStack {
-                    Text("Equipment")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    if !implementIds.isEmpty {
-                        Text("\(implementIds.count) selected")
-                            .font(.caption)
-                            .foregroundColor(.teal)
-                    }
-                }
-                ImplementGridCompact(selectedIds: $implementIds)
-            }
-            .padding(.vertical, 4)
         }
     }
 
@@ -352,21 +326,21 @@ struct ExerciseFormView: View {
     }
 
     private func loadExistingExercise() {
-        if let exercise = exercise {
-            name = exercise.name
-            exerciseType = exercise.exerciseType
-            trackTime = exercise.cardioMetric.tracksTime
-            trackDistance = exercise.cardioMetric.tracksDistance
-            trackReps = exercise.mobilityTracking.tracksReps
-            trackDuration = exercise.mobilityTracking.tracksDuration
-            distanceUnit = exercise.distanceUnit
-            notes = exercise.notes ?? ""
-            setGroups = exercise.setGroups
-            muscleGroupIds = exercise.muscleGroupIds
-            implementIds = exercise.implementIds
-            if let templateId = exercise.templateId {
-                selectedTemplate = ExerciseLibrary.shared.template(id: templateId)
-            }
+        if let instance = instance {
+            // Resolve the instance to get combined data
+            let resolved = ExerciseResolver.shared.resolve(instance)
+            name = resolved.name
+            exerciseType = resolved.exerciseType
+            trackTime = resolved.cardioMetric.tracksTime
+            trackDistance = resolved.cardioMetric.tracksDistance
+            trackReps = resolved.mobilityTracking.tracksReps
+            trackDuration = resolved.mobilityTracking.tracksDuration
+            distanceUnit = resolved.distanceUnit
+            notes = instance.notes ?? ""
+            setGroups = instance.setGroups
+            primaryMuscles = resolved.primaryMuscles
+            secondaryMuscles = resolved.secondaryMuscles
+            selectedTemplate = ExerciseLibrary.shared.template(id: instance.templateId)
         }
     }
 
@@ -376,43 +350,40 @@ struct ExerciseFormView: View {
 
         guard var module = moduleViewModel.getModule(id: moduleId) else { return }
 
-        if var existingExercise = exercise {
-            // Update existing
-            existingExercise.name = trimmedName
-            existingExercise.templateId = selectedTemplate?.id
-            existingExercise.exerciseType = exerciseType
-            existingExercise.cardioMetric = cardioMetric
-            existingExercise.mobilityTracking = mobilityTracking
-            existingExercise.distanceUnit = distanceUnit
-            existingExercise.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
-            existingExercise.setGroups = setGroups
-            existingExercise.muscleGroupIds = muscleGroupIds
-            existingExercise.implementIds = implementIds
-            existingExercise.isBodyweight = hasBodyweightImplement
-            existingExercise.updatedAt = Date()
+        // Determine the template ID - use selected template or generate a custom ID
+        let templateId = selectedTemplate?.id ?? UUID()
+        let isCustomExercise = selectedTemplate == nil
 
-            if let index = module.exercises.firstIndex(where: { $0.id == existingExercise.id }) {
-                module.exercises[index] = existingExercise
+        // Only set nameOverride if different from template name (or if custom exercise)
+        let nameOverrideValue: String? = {
+            if isCustomExercise {
+                return trimmedName
+            } else if trimmedName != selectedTemplate?.name {
+                return trimmedName
             }
+            return nil
+        }()
+
+        if var existingInstance = instance {
+            // Update existing instance
+            existingInstance.nameOverride = nameOverrideValue
+            existingInstance.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
+            existingInstance.setGroups = setGroups
+            existingInstance.updatedAt = Date()
+
+            module.updateExercise(existingInstance)
         } else {
-            // Create new
-            let newExercise = Exercise(
-                name: trimmedName,
-                templateId: selectedTemplate?.id,
-                exerciseType: exerciseType,
-                cardioMetric: cardioMetric,
-                mobilityTracking: mobilityTracking,
-                distanceUnit: distanceUnit,
+            // Create new instance
+            let newInstance = ExerciseInstance(
+                templateId: templateId,
                 setGroups: setGroups,
+                order: module.exercises.count,
                 notes: trimmedNotes.isEmpty ? nil : trimmedNotes,
-                muscleGroupIds: muscleGroupIds,
-                implementIds: implementIds,
-                isBodyweight: hasBodyweightImplement
+                nameOverride: nameOverrideValue
             )
-            module.exercises.append(newExercise)
+            module.addExercise(newInstance)
         }
 
-        module.updatedAt = Date()
         moduleViewModel.saveModule(module)
         dismiss()
     }
@@ -455,7 +426,7 @@ struct SetGroupEditRow: View {
 
 #Preview {
     NavigationStack {
-        ExerciseFormView(exercise: nil, moduleId: UUID())
+        ExerciseFormView(instance: nil, moduleId: UUID())
             .environmentObject(ModuleViewModel())
     }
 }

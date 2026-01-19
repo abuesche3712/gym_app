@@ -60,10 +60,8 @@ class DataRepository: ObservableObject {
             let deletedModuleIds = deletionTracker.getDeletedIds(entityType: .module)
             logger.info("Local modules: \(modules.count), deletions tracked: \(deletedModuleIds.count)", context: "syncFromCloud")
             var totalExercises = 0
-            var totalExerciseInstances = 0
             for cloudModule in cloudData.modules {
                 totalExercises += cloudModule.exercises.count
-                totalExerciseInstances += cloudModule.exerciseInstances.count
 
                 // Skip if deleted locally - check if deletion is newer than cloud edit
                 if deletionTracker.wasDeletedAfter(entityType: .module, entityId: cloudModule.id, date: cloudModule.updatedAt) {
@@ -89,25 +87,25 @@ class DataRepository: ObservableObject {
                 }
             }
 
-            logger.info("Total exercises: \(totalExercises) legacy, \(totalExerciseInstances) instances", context: "syncFromCloud")
+            logger.info("Total exercises: \(totalExercises) instances", context: "syncFromCloud")
 
-            // Extract custom exercises from module data (for legacy format)
+            // Extract custom exercises from module data
+            // Only extract exercises with name overrides that aren't already in custom library
             let builtInLibrary = ExerciseLibrary.shared
             let customLibraryPreExtract = CustomExerciseLibrary.shared
             var extractedCount = 0
             for cloudModule in cloudData.modules {
-                for exercise in cloudModule.exercises {
-                    // Check if this exercise is NOT in the built-in library and NOT already in custom library
-                    let isBuiltIn = builtInLibrary.exercises.contains { $0.name.lowercased() == exercise.name.lowercased() }
-                    let isAlreadyCustom = customLibraryPreExtract.contains(name: exercise.name)
+                for exerciseInstance in cloudModule.exercises {
+                    // Only extract if there's a custom name override and template not found in built-in library
+                    guard let customName = exerciseInstance.nameOverride else { continue }
+                    let isBuiltInTemplate = builtInLibrary.template(id: exerciseInstance.templateId) != nil
+                    let isAlreadyCustom = customLibraryPreExtract.contains(name: customName)
 
-                    if !isBuiltIn && !isAlreadyCustom {
-                        Logger.debug("Extracting custom exercise '\(exercise.name)' from module '\(cloudModule.name)'")
+                    if !isBuiltInTemplate && !isAlreadyCustom {
+                        Logger.debug("Extracting custom exercise '\(customName)' from module '\(cloudModule.name)'")
                         customLibraryPreExtract.addExercise(
-                            name: exercise.name,
-                            exerciseType: exercise.exerciseType,
-                            muscleGroupIds: [],
-                            implementIds: []
+                            name: customName,
+                            exerciseType: .strength  // Default for extracted custom exercises
                         )
                         extractedCount += 1
                     }
@@ -679,12 +677,12 @@ class DataRepository: ObservableObject {
 
     /// Resolves exercise instances for a module using ExerciseResolver
     func resolveExercises(for module: Module) -> [ResolvedExercise] {
-        ExerciseResolver.shared.resolve(module.exerciseInstances)
+        ExerciseResolver.shared.resolve(module.exercises)
     }
 
     /// Resolves exercise instances grouped by superset
     func resolveExercisesGrouped(for module: Module) -> [[ResolvedExercise]] {
-        ExerciseResolver.shared.resolveGrouped(module.exerciseInstances)
+        ExerciseResolver.shared.resolveGrouped(module.exercises)
     }
 
     /// Converts ExerciseInstance entities from CoreData to model objects
@@ -720,10 +718,6 @@ class DataRepository: ObservableObject {
                 order: Int(instanceEntity.orderIndex),
                 notes: instanceEntity.notes,
                 nameOverride: instanceEntity.nameOverride,
-                exerciseTypeOverride: instanceEntity.exerciseTypeOverride,
-                mobilityTrackingOverride: instanceEntity.mobilityTrackingOverride,
-                cardioMetricOverride: instanceEntity.cardioMetricOverride,
-                distanceUnitOverride: instanceEntity.distanceUnitOverride,
                 createdAt: instanceEntity.createdAt ?? Date(),
                 updatedAt: instanceEntity.updatedAt ?? Date()
             )
@@ -745,10 +739,6 @@ class DataRepository: ObservableObject {
             instanceEntity.createdAt = instance.createdAt
             instanceEntity.updatedAt = instance.updatedAt
             instanceEntity.nameOverride = instance.nameOverride
-            instanceEntity.exerciseTypeOverride = instance.exerciseTypeOverride
-            instanceEntity.mobilityTrackingOverride = instance.mobilityTrackingOverride
-            instanceEntity.cardioMetricOverride = instance.cardioMetricOverride
-            instanceEntity.distanceUnitOverride = instance.distanceUnitOverride
             instanceEntity.module = moduleEntity
 
             // Add set groups
@@ -814,126 +804,35 @@ class DataRepository: ObservableObject {
         entity.updatedAt = module.updatedAt
         entity.syncStatus = module.syncStatus
 
-        // Clear existing exercises
+        // Clear existing legacy exercises (no longer used)
         if let existingExercises = entity.exercises {
             for case let exercise as ExerciseEntity in existingExercises {
-                viewContext.delete(exercise)
+                self.viewContext.delete(exercise)
             }
         }
-
-        // Add exercises
-        let exerciseEntities = module.exercises.enumerated().map { index, exercise in
-            let exerciseEntity = ExerciseEntity(context: viewContext)
-            exerciseEntity.id = exercise.id
-            exerciseEntity.name = exercise.name
-            exerciseEntity.templateId = exercise.templateId
-            exerciseEntity.exerciseType = exercise.exerciseType
-            exerciseEntity.cardioMetric = exercise.cardioMetric
-            exerciseEntity.distanceUnit = exercise.distanceUnit
-            exerciseEntity.trackingMetrics = exercise.trackingMetrics
-            exerciseEntity.notes = exercise.notes
-            exerciseEntity.orderIndex = Int32(index)
-            exerciseEntity.createdAt = exercise.createdAt
-            exerciseEntity.updatedAt = exercise.updatedAt
-            exerciseEntity.module = entity
-            // Library system fields
-            exerciseEntity.muscleGroupIds = exercise.muscleGroupIds
-            exerciseEntity.implementIds = exercise.implementIds
-
-            // Add set groups
-            let setGroupEntities = exercise.setGroups.enumerated().map { sgIndex, setGroup in
-                let sgEntity = SetGroupEntity(context: viewContext)
-                sgEntity.id = setGroup.id
-                sgEntity.sets = Int32(setGroup.sets)
-                sgEntity.targetReps = Int32(setGroup.targetReps ?? 0)
-                sgEntity.targetWeight = setGroup.targetWeight ?? 0
-                sgEntity.targetRPE = Int32(setGroup.targetRPE ?? 0)
-                sgEntity.targetDuration = Int32(setGroup.targetDuration ?? 0)
-                sgEntity.targetDistance = setGroup.targetDistance ?? 0
-                sgEntity.targetHoldTime = Int32(setGroup.targetHoldTime ?? 0)
-                sgEntity.restPeriod = Int32(setGroup.restPeriod ?? 0)
-                sgEntity.notes = setGroup.notes
-                sgEntity.orderIndex = Int32(sgIndex)
-                sgEntity.exercise = exerciseEntity
-                // Interval fields
-                sgEntity.isInterval = setGroup.isInterval
-                sgEntity.workDuration = Int32(setGroup.workDuration ?? 0)
-                sgEntity.intervalRestDuration = Int32(setGroup.intervalRestDuration ?? 0)
-                // Implement measurable fields
-                sgEntity.implementMeasurableLabel = setGroup.implementMeasurableLabel
-                sgEntity.implementMeasurableUnit = setGroup.implementMeasurableUnit
-                sgEntity.implementMeasurableValue = setGroup.implementMeasurableValue ?? 0
-                sgEntity.implementMeasurableStringValue = setGroup.implementMeasurableStringValue
-                return sgEntity
-            }
-            exerciseEntity.setGroups = NSOrderedSet(array: setGroupEntities)
-            return exerciseEntity
-        }
-        entity.exercises = NSOrderedSet(array: exerciseEntities)
+        entity.exercises = nil
 
         // Clear existing exercise instances
         if let existingInstances = entity.exerciseInstances {
             for case let instance as ExerciseInstanceEntity in existingInstances {
-                viewContext.delete(instance)
+                self.viewContext.delete(instance)
             }
         }
 
-        // Add exercise instances (new normalized model)
-        let instanceEntities = createExerciseInstanceEntities(from: module.exerciseInstances, for: entity)
+        // Add exercise instances
+        let instanceEntities = createExerciseInstanceEntities(from: module.exercises, for: entity)
         entity.exerciseInstances = NSOrderedSet(array: instanceEntities)
     }
 
     private func convertToModule(_ entity: ModuleEntity) -> Module {
-        // Load old-style exercises (for backward compatibility)
-        let exercises = entity.exerciseArray.map { exerciseEntity in
-            let setGroups = exerciseEntity.setGroupArray.map { sgEntity in
-                SetGroup(
-                    id: sgEntity.id,
-                    sets: Int(sgEntity.sets),
-                    targetReps: sgEntity.targetReps > 0 ? Int(sgEntity.targetReps) : nil,
-                    targetWeight: sgEntity.targetWeight > 0 ? sgEntity.targetWeight : nil,
-                    targetRPE: sgEntity.targetRPE > 0 ? Int(sgEntity.targetRPE) : nil,
-                    targetDuration: sgEntity.targetDuration > 0 ? Int(sgEntity.targetDuration) : nil,
-                    targetDistance: sgEntity.targetDistance > 0 ? sgEntity.targetDistance : nil,
-                    targetHoldTime: sgEntity.targetHoldTime > 0 ? Int(sgEntity.targetHoldTime) : nil,
-                    restPeriod: sgEntity.restPeriod > 0 ? Int(sgEntity.restPeriod) : nil,
-                    notes: sgEntity.notes,
-                    isInterval: sgEntity.isInterval,
-                    workDuration: sgEntity.workDuration > 0 ? Int(sgEntity.workDuration) : nil,
-                    intervalRestDuration: sgEntity.intervalRestDuration > 0 ? Int(sgEntity.intervalRestDuration) : nil,
-                    implementMeasurableLabel: sgEntity.implementMeasurableLabel,
-                    implementMeasurableUnit: sgEntity.implementMeasurableUnit,
-                    implementMeasurableValue: sgEntity.implementMeasurableValue > 0 ? sgEntity.implementMeasurableValue : nil,
-                    implementMeasurableStringValue: sgEntity.implementMeasurableStringValue
-                )
-            }
-
-            return Exercise(
-                id: exerciseEntity.id,
-                name: exerciseEntity.name,
-                templateId: exerciseEntity.templateId,
-                exerciseType: exerciseEntity.exerciseType,
-                cardioMetric: exerciseEntity.cardioMetric,
-                distanceUnit: exerciseEntity.distanceUnit,
-                setGroups: setGroups,
-                trackingMetrics: exerciseEntity.trackingMetrics,
-                notes: exerciseEntity.notes,
-                createdAt: exerciseEntity.createdAt ?? Date(),
-                updatedAt: exerciseEntity.updatedAt ?? Date(),
-                muscleGroupIds: exerciseEntity.muscleGroupIds,
-                implementIds: exerciseEntity.implementIds
-            )
-        }
-
-        // Load new-style exercise instances (normalized model)
-        let exerciseInstances = convertExerciseInstanceEntities(entity.exerciseInstanceArray)
+        // Load exercise instances
+        let exercises = convertExerciseInstanceEntities(entity.exerciseInstanceArray)
 
         return Module(
             id: entity.id,
             name: entity.name,
             type: entity.type,
             exercises: exercises,
-            exerciseInstances: exerciseInstances,
             notes: entity.notes,
             estimatedDuration: entity.estimatedDuration > 0 ? Int(entity.estimatedDuration) : nil,
             createdAt: entity.createdAt ?? Date(),

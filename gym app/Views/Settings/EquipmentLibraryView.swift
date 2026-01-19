@@ -327,12 +327,10 @@ private struct EquipmentDetailSheet: View {
         var isStringBased: Bool
     }
 
-    /// All exercises that use this equipment
+    /// All exercises that use this equipment (not tracked in simplified model)
     private var exercisesUsingEquipment: [ExerciseTemplate] {
-        let allExercises = ExerciseLibrary.shared.exercises + customLibrary.exercises
-        return allExercises
-            .filter { $0.implementIds.contains(equipment.id) }
-            .sorted { $0.name < $1.name }
+        // Equipment-exercise linking has been simplified
+        return []
     }
 
     init(equipment: ImplementEntity) {

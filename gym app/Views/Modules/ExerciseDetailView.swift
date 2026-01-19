@@ -11,45 +11,49 @@ struct ExerciseDetailView: View {
     @EnvironmentObject var moduleViewModel: ModuleViewModel
     @Environment(\.dismiss) private var dismiss
 
-    let exercise: Exercise
+    let instance: ExerciseInstance
     let moduleId: UUID
 
     @State private var showingEditExercise = false
 
-    private var currentExercise: Exercise {
+    private var currentInstance: ExerciseInstance {
         if let module = moduleViewModel.getModule(id: moduleId),
-           let ex = module.exercises.first(where: { $0.id == exercise.id }) {
-            return ex
+           let inst = module.exercises.first(where: { $0.id == instance.id }) {
+            return inst
         }
-        return exercise
+        return instance
+    }
+
+    private var resolved: ResolvedExercise {
+        ExerciseResolver.shared.resolve(currentInstance)
     }
 
     var body: some View {
         List {
             // Exercise Info
             Section("Info") {
-                LabeledContent("Name", value: currentExercise.name)
-                LabeledContent("Type", value: currentExercise.exerciseType.displayName)
+                LabeledContent("Name", value: resolved.name)
+                LabeledContent("Type", value: resolved.exerciseType.displayName)
             }
 
-            // Muscles & Equipment
-            if !currentExercise.muscleGroupIds.isEmpty || !currentExercise.implementIds.isEmpty {
-                Section("Muscles & Equipment") {
-                    if !currentExercise.muscleGroupIds.isEmpty {
+            // Muscles
+            if !resolved.primaryMuscles.isEmpty || !resolved.secondaryMuscles.isEmpty {
+                Section("Muscles") {
+                    if !resolved.primaryMuscles.isEmpty {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Muscles")
+                            Text("Primary")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                            ExerciseMuscleGroupsDisplay(muscleGroupIds: currentExercise.muscleGroupIds)
+                            MuscleGroupsDisplay(muscles: resolved.primaryMuscles, color: .blue)
                         }
                     }
 
-                    if !currentExercise.implementIds.isEmpty {
+                    if !resolved.secondaryMuscles.isEmpty {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Equipment")
+                            Text("Secondary")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                            ExerciseImplementsDisplay(implementIds: currentExercise.implementIds)
+                            MuscleGroupsDisplay(muscles: resolved.secondaryMuscles, color: .secondary)
                         }
                     }
                 }
@@ -57,11 +61,11 @@ struct ExerciseDetailView: View {
 
             // Set Groups
             Section("Sets") {
-                if currentExercise.setGroups.isEmpty {
+                if resolved.setGroups.isEmpty {
                     Text("No sets defined")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(Array(currentExercise.setGroups.enumerated()), id: \.element.id) { index, setGroup in
+                    ForEach(Array(resolved.setGroups.enumerated()), id: \.element.id) { index, setGroup in
                         SetGroupRow(setGroup: setGroup, index: index + 1)
                     }
                 }
@@ -70,7 +74,7 @@ struct ExerciseDetailView: View {
             // Tracking Metrics
             Section("Tracking") {
                 FlowLayout(spacing: 8) {
-                    ForEach(currentExercise.trackingMetrics, id: \.self) { metric in
+                    ForEach(resolved.trackingMetrics, id: \.self) { metric in
                         Text(metric.displayName)
                             .font(.caption)
                             .padding(.horizontal, 10)
@@ -82,7 +86,7 @@ struct ExerciseDetailView: View {
             }
 
             // Notes
-            if let notes = currentExercise.notes, !notes.isEmpty {
+            if let notes = resolved.notes, !notes.isEmpty {
                 Section("Notes") {
                     Text(notes)
                         .foregroundStyle(.secondary)
@@ -90,7 +94,7 @@ struct ExerciseDetailView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .navigationTitle(currentExercise.name)
+        .navigationTitle(resolved.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -103,7 +107,7 @@ struct ExerciseDetailView: View {
         }
         .sheet(isPresented: $showingEditExercise) {
             NavigationStack {
-                ExerciseFormView(exercise: currentExercise, moduleId: moduleId)
+                ExerciseFormView(instance: currentInstance, moduleId: moduleId)
             }
         }
     }
@@ -193,52 +197,19 @@ struct FlowLayout: Layout {
 
 // MARK: - Muscle Groups Display
 
-struct ExerciseMuscleGroupsDisplay: View {
-    let muscleGroupIds: Set<UUID>
-    @StateObject private var libraryService = LibraryService.shared
-
-    private var muscleNames: [String] {
-        muscleGroupIds.compactMap { id in
-            libraryService.getMuscleGroup(id: id)?.name
-        }.sorted()
-    }
+struct MuscleGroupsDisplay: View {
+    let muscles: [MuscleGroup]
+    var color: Color = .blue
 
     var body: some View {
         FlowLayout(spacing: 6) {
-            ForEach(muscleNames, id: \.self) { name in
-                Text(name)
+            ForEach(muscles, id: \.self) { muscle in
+                Text(muscle.rawValue)
                     .font(.caption)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(Color.blue.opacity(0.15))
-                    .foregroundColor(.blue)
-                    .clipShape(Capsule())
-            }
-        }
-    }
-}
-
-// MARK: - Implements Display
-
-struct ExerciseImplementsDisplay: View {
-    let implementIds: Set<UUID>
-    @StateObject private var libraryService = LibraryService.shared
-
-    private var implementNames: [String] {
-        implementIds.compactMap { id in
-            libraryService.getImplement(id: id)?.name
-        }.sorted()
-    }
-
-    var body: some View {
-        FlowLayout(spacing: 6) {
-            ForEach(implementNames, id: \.self) { name in
-                Text(name)
-                    .font(.caption)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(Color.teal.opacity(0.15))
-                    .foregroundColor(.teal)
+                    .background(color.opacity(0.15))
+                    .foregroundColor(color)
                     .clipShape(Capsule())
             }
         }
@@ -247,8 +218,13 @@ struct ExerciseImplementsDisplay: View {
 
 #Preview {
     NavigationStack {
+        // Create a sample ExerciseInstance for preview
+        let sampleInstance = ExerciseInstance(
+            templateId: UUID(),
+            setGroups: [SetGroup(sets: 3, targetReps: 10)]
+        )
         ExerciseDetailView(
-            exercise: Module.sampleStrength.exercises[0],
+            instance: sampleInstance,
             moduleId: UUID()
         )
         .environmentObject(ModuleViewModel())

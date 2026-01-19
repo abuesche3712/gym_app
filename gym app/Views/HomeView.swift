@@ -594,7 +594,7 @@ struct HomeView: View {
 
                 // Volume stat
                 VStack(spacing: AppSpacing.xs) {
-                    Text(formatVolumeShort(volumeThisWeek))
+                    Text(formatVolume(volumeThisWeek))
                         .font(.system(size: 36, weight: .bold, design: .rounded))
                         .foregroundColor(Color(hex: "A78BFA"))  // Purple
 
@@ -745,13 +745,6 @@ struct HomeView: View {
         }
 
         return streak
-    }
-
-    private func formatVolumeShort(_ volume: Double) -> String {
-        if volume >= 1000 {
-            return String(format: "%.0fk", volume / 1000)
-        }
-        return String(format: "%.0f", volume)
     }
 
     // MARK: - Helper Functions

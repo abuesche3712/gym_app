@@ -345,7 +345,7 @@ struct WorkoutOverviewSheet: View {
             // Show both time and distance targets if they exist
             var parts: [String] = []
             if let t = set.duration, t > 0 { parts.append(formatDuration(t)) }
-            if let d = set.distance, d > 0 { parts.append(formatDistance(d)) }
+            if let d = set.distance, d > 0 { parts.append(formatDistanceValue(d)) }
             return parts.isEmpty ? "—" : parts.joined(separator: " / ")
         case .mobility, .explosive:
             return set.reps.map { "\($0) reps" } ?? "—"
@@ -528,6 +528,6 @@ struct EditSetSheet: View {
         inputRPE = set.rpe ?? 0
         inputDuration = set.duration ?? 0
         inputHoldTime = set.holdTime ?? 0
-        inputDistance = set.distance.map { formatDistance($0) } ?? ""
+        inputDistance = set.distance.map { formatDistanceValue($0) } ?? ""
     }
 }

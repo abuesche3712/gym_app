@@ -46,34 +46,26 @@ struct Workout: Identifiable, Codable, Hashable {
         self.syncStatus = syncStatus
     }
 
-    // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        // Decode schema version (default to 1 for backward compatibility)
-        let version = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
-        schemaVersion = SchemaVersions.workout  // Always store current version
+        schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? SchemaVersions.workout
 
-        // Handle migrations based on version
-        switch version {
-        case 1:
-            // V1 is current - decode normally
-            break
-        default:
-            // Unknown future version - attempt to decode with defaults
-            break
-        }
-
+        // Required fields
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        syncStatus = try container.decode(SyncStatus.self, forKey: .syncStatus)
+
+        // Optional with defaults
         moduleReferences = try container.decodeIfPresent([ModuleReference].self, forKey: .moduleReferences) ?? []
         standaloneExercises = try container.decodeIfPresent([WorkoutExercise].self, forKey: .standaloneExercises) ?? []
+        archived = try container.decodeIfPresent(Bool.self, forKey: .archived) ?? false
+
+        // Truly optional
         estimatedDuration = try container.decodeIfPresent(Int.self, forKey: .estimatedDuration)
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
-        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
-        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
-        archived = try container.decodeIfPresent(Bool.self, forKey: .archived) ?? false
-        syncStatus = try container.decodeIfPresent(SyncStatus.self, forKey: .syncStatus) ?? .synced
     }
 
     enum CodingKeys: String, CodingKey {
@@ -108,7 +100,7 @@ struct Workout: Identifiable, Codable, Hashable {
 
     // MARK: - Standalone Exercise Management
 
-    mutating func addStandaloneExercise(_ exercise: Exercise) {
+    mutating func addStandaloneExercise(_ exercise: ExerciseInstance) {
         let order = standaloneExercises.count
         let workoutExercise = WorkoutExercise(exercise: exercise, order: order)
         standaloneExercises.append(workoutExercise)
@@ -219,13 +211,13 @@ struct Workout: Identifiable, Codable, Hashable {
 /// An exercise added directly to a workout (not via a module)
 struct WorkoutExercise: Identifiable, Codable, Hashable {
     var id: UUID
-    var exercise: Exercise
+    var exercise: ExerciseInstance
     var order: Int
     var notes: String?
 
     init(
         id: UUID = UUID(),
-        exercise: Exercise,
+        exercise: ExerciseInstance,
         order: Int,
         notes: String? = nil
     ) {
@@ -235,12 +227,15 @@ struct WorkoutExercise: Identifiable, Codable, Hashable {
         self.notes = notes
     }
 
-    // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Required fields
         id = try container.decode(UUID.self, forKey: .id)
-        exercise = try container.decode(Exercise.self, forKey: .exercise)
-        order = try container.decodeIfPresent(Int.self, forKey: .order) ?? 0
+        exercise = try container.decode(ExerciseInstance.self, forKey: .exercise)
+        order = try container.decode(Int.self, forKey: .order)
+
+        // Truly optional
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
     }
 
@@ -272,13 +267,18 @@ struct ModuleReference: Identifiable, Codable, Hashable {
         self.notes = notes
     }
 
-    // Custom decoder to handle missing fields from older Firebase documents
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Required fields
         id = try container.decode(UUID.self, forKey: .id)
         moduleId = try container.decode(UUID.self, forKey: .moduleId)
-        order = try container.decodeIfPresent(Int.self, forKey: .order) ?? 0
+        order = try container.decode(Int.self, forKey: .order)
+
+        // Optional with defaults
         isRequired = try container.decodeIfPresent(Bool.self, forKey: .isRequired) ?? true
+
+        // Truly optional
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
     }
 

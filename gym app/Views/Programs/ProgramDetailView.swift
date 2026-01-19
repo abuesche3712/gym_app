@@ -218,7 +218,7 @@ struct ProgramDetailView: View {
             Text("Weekly Schedule")
                 .font(.headline)
 
-            Text("Tap + to add a workout, tap X to remove")
+            Text("Tap + to add a workout or module, tap X to remove")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
@@ -230,6 +230,13 @@ struct ProgramDetailView: View {
                 },
                 onSlotRemove: { slotId in
                     programViewModel.removeWorkoutSlot(slotId, from: currentProgram)
+                    // If program is active, update the schedule
+                    if currentProgram.isActive {
+                        programViewModel.updateActiveProgramSchedule(currentProgram)
+                    }
+                },
+                onModuleSlotRemove: { slotId in
+                    programViewModel.removeModuleSlot(slotId, from: currentProgram)
                     // If program is active, update the schedule
                     if currentProgram.isActive {
                         programViewModel.updateActiveProgramSchedule(currentProgram)
@@ -259,10 +266,10 @@ struct ProgramDetailView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(currentProgram.workoutSlots.isEmpty)
+                .disabled(currentProgram.workoutSlots.isEmpty && currentProgram.moduleSlots.isEmpty)
 
-                if currentProgram.workoutSlots.isEmpty {
-                    Text("Add workouts to the weekly schedule before activating")
+                if currentProgram.workoutSlots.isEmpty && currentProgram.moduleSlots.isEmpty {
+                    Text("Add workouts or modules to the weekly schedule before activating")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)

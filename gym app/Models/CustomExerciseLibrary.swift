@@ -4,6 +4,10 @@
 //
 //  User's local exercise library - persists custom exercises locally
 //
+//  NOTE: Use ExerciseResolver.shared for all exercise lookups.
+//  This class manages persistence of custom exercises.
+//  Query methods below are deprecated - use ExerciseResolver instead.
+//
 
 import Foundation
 import CoreData
@@ -35,10 +39,10 @@ class CustomExerciseLibrary: ObservableObject {
                 ExerciseTemplate(
                     id: entity.id,
                     name: entity.name,
-                    category: .fullBody,  // Deprecated - always use fullBody
+                    category: .fullBody,
                     exerciseType: entity.exerciseType,
-                    muscleGroupIds: entity.muscleGroupIds,
-                    implementIds: entity.implementIds
+                    primary: entity.primaryMuscles,
+                    secondary: entity.secondaryMuscles
                 )
             }
         } catch {
@@ -51,8 +55,8 @@ class CustomExerciseLibrary: ObservableObject {
     func addExercise(
         name: String,
         exerciseType: ExerciseType,
-        muscleGroupIds: Set<UUID> = [],
-        implementIds: Set<UUID> = []
+        primary: [MuscleGroup] = [],
+        secondary: [MuscleGroup] = []
     ) {
         // Check if exercise with same name already exists
         guard !exercises.contains(where: { $0.name.lowercased() == name.lowercased() }) else {
@@ -62,10 +66,10 @@ class CustomExerciseLibrary: ObservableObject {
         let entity = CustomExerciseTemplateEntity(context: viewContext)
         entity.id = UUID()
         entity.name = name
-        entity.categoryRaw = ExerciseCategory.fullBody.rawValue  // Deprecated
+        entity.categoryRaw = ExerciseCategory.fullBody.rawValue
         entity.exerciseType = exerciseType
-        entity.muscleGroupIds = muscleGroupIds
-        entity.implementIds = implementIds
+        entity.primaryMuscles = primary
+        entity.secondaryMuscles = secondary
         entity.createdAt = Date()
         entity.updatedAt = Date()
 
@@ -77,8 +81,8 @@ class CustomExerciseLibrary: ObservableObject {
         addExercise(
             name: template.name,
             exerciseType: template.exerciseType,
-            muscleGroupIds: template.muscleGroupIds,
-            implementIds: template.implementIds
+            primary: template.primaryMuscles,
+            secondary: template.secondaryMuscles
         )
     }
 
@@ -92,8 +96,8 @@ class CustomExerciseLibrary: ObservableObject {
             if let entity = try viewContext.fetch(request).first {
                 entity.name = template.name
                 entity.exerciseType = template.exerciseType
-                entity.muscleGroupIds = template.muscleGroupIds
-                entity.implementIds = template.implementIds
+                entity.primaryMuscles = template.primaryMuscles
+                entity.secondaryMuscles = template.secondaryMuscles
                 entity.updatedAt = Date()
                 save()
                 loadExercises()
@@ -148,21 +152,25 @@ class CustomExerciseLibrary: ObservableObject {
         }
     }
 
-    // MARK: - Search
+    // MARK: - Search (Deprecated - Use ExerciseResolver)
 
+    /// Deprecated: Use ExerciseResolver.shared.search() instead
     func search(_ query: String) -> [ExerciseTemplate] {
         guard !query.isEmpty else { return exercises }
         return exercises.filter { $0.name.localizedCaseInsensitiveContains(query) }
     }
 
+    /// Deprecated: Use ExerciseResolver.shared.exercises(for:) instead
     func exercises(for category: ExerciseCategory) -> [ExerciseTemplate] {
         exercises.filter { $0.category == category }
     }
 
+    /// Deprecated: Use ExerciseResolver.shared.findTemplate(named:) instead
     func template(named name: String) -> ExerciseTemplate? {
         exercises.first { $0.name.lowercased() == name.lowercased() }
     }
 
+    /// For duplicate checking during add - still valid to use
     func contains(name: String) -> Bool {
         exercises.contains { $0.name.lowercased() == name.lowercased() }
     }

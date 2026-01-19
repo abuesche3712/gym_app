@@ -1,13 +1,14 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2025-01-18
+> **Last updated:** 2025-01-19
 
 ## Last Session Summary
-- Fixed Swift 6 concurrency warnings (moved `.shared` access from default params to init bodies)
-- Implemented deep merge strategy for sync conflict resolution
-- Added `mergedWith()`, `contentHash`, `needsSync()` to Module and Workout
-- Created ModuleMergeTests.swift with comprehensive unit tests
+- Simplified Codable implementations (removed empty migration switches, organized by required/optional)
+- Made ExerciseResolver single source of truth for exercise lookups
+- Deleted ExerciseMigrationManager (no backward compatibility needed)
+- Cleaned up SchemaVersions.swift (removed unused migration stubs)
+- Reset local data for clean slate
 
 ## Project Overview
 
@@ -40,6 +41,73 @@ Key files:
 - `FirebaseService.swift` - Firebase-specific calls (thin wrapper)
 - `SyncManager.swift` - sync orchestration
 - `PersistenceController.swift` - CoreData stack
+
+### Exercise Data Model (Jan 2025)
+
+The exercise system uses a normalized architecture with four distinct types:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     EXERCISE DATA FLOW                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ExerciseTemplate (Library)                                     │
+│  ├── id: UUID (stable, never changes)                          │
+│  ├── name, category, exerciseType                              │
+│  ├── primaryMuscles, secondaryMuscles                          │
+│  └── isCustom, isArchived                                      │
+│           │                                                     │
+│           │ templateId reference                                │
+│           ▼                                                     │
+│  ExerciseInstance (Module Planning)                            │
+│  ├── id: UUID                                                  │
+│  ├── templateId → ExerciseTemplate                             │
+│  ├── setGroups: [SetGroup]                                     │
+│  ├── supersetGroupId (optional)                                │
+│  └── order, notes, nameOverride                                │
+│           │                                                     │
+│           │ resolve via ExerciseResolver                        │
+│           ▼                                                     │
+│  ResolvedExercise (View Model)                                 │
+│  ├── instance: ExerciseInstance                                │
+│  ├── template: ExerciseTemplate?                               │
+│  └── Computed: name, exerciseType, muscles, etc.               │
+│           │                                                     │
+│           │ snapshot during session                             │
+│           ▼                                                     │
+│  SessionExercise (Logged Data)                                 │
+│  ├── exerciseId, exerciseName (denormalized)                   │
+│  ├── exerciseType, primaryMuscles, secondaryMuscles            │
+│  ├── completedSetGroups: [CompletedSetGroup]                   │
+│  └── isSubstitution, isAdHoc, progressionRecommendation        │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**ExerciseTemplate** - Canonical definition in the exercise library
+- Built-in exercises in `ExerciseLibrary.shared` (stable UUIDs)
+- Custom exercises in `CustomExerciseLibrary.shared` (user-created)
+- Immutable reference data (name, muscles, type)
+
+**ExerciseInstance** - A planned exercise within a Module
+- References template via `templateId`
+- Contains workout-specific configuration (sets, reps, weight targets)
+- Supports supersets via `supersetGroupId`
+
+**ResolvedExercise** - Hydrated view model for UI rendering
+- Combines instance + template data
+- Created on-demand via `ExerciseResolver.shared.resolve(instance)`
+- Handles orphaned instances (template deleted) gracefully
+
+**SessionExercise** - Logged workout data (denormalized snapshot)
+- Captures exercise state at time of workout
+- Stores actual completed sets/reps/weights
+- Independent of template changes (historical accuracy)
+
+**Key service:** `ExerciseResolver.shared`
+- Single source of truth for all exercise lookups
+- Caches templates from both built-in and custom libraries
+- Methods: `search()`, `resolve()`, `getTemplate()`, `allExercises`
 
 ### Recent Refactoring (Jan 2025)
 Modularized `ActiveSessionView.swift` from ~2600 lines into:
@@ -128,12 +196,11 @@ func needsSync(comparedTo other: Module) -> Bool
 
 ### Schema Versioning (Jan 2025)
 
-All Codable models now include schema versioning for safe future migrations.
+All Codable models include schema versioning for future migrations.
 
 **Central version registry:** `SchemaVersions.swift`
 ```swift
 enum SchemaVersions {
-    static let exercise = 1
     static let exerciseInstance = 1
     static let module = 1
     static let workout = 1
@@ -144,39 +211,27 @@ enum SchemaVersions {
 }
 ```
 
-**How it works:**
-1. Each model has `schemaVersion: Int` property (defaults to current version from `SchemaVersions`)
-2. Decoder reads version with `decodeIfPresent` (defaults to 1 for backward compatibility)
-3. Switch on version in `init(from decoder:)` to handle migrations
-4. Always stores current version after decoding
-
-**Migration pattern:**
+**Current decoders:** Clean, organized by field type:
 ```swift
 init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    let version = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
-    schemaVersion = SchemaVersions.exercise  // Always current
+    schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? SchemaVersions.module
 
-    switch version {
-    case 1:
-        break  // Current version
-    case 2:
-        // Future: migrate from v2 format
-        break
-    default:
-        break  // Unknown future version - best effort
-    }
-    // ... decode fields
+    // Required fields - fail if missing
+    id = try container.decode(UUID.self, forKey: .id)
+    name = try container.decode(String.self, forKey: .name)
+
+    // Optional with defaults
+    exercises = try container.decodeIfPresent([ExerciseInstance].self, forKey: .exercises) ?? []
+
+    // Truly optional
+    notes = try container.decodeIfPresent(String.self, forKey: .notes)
 }
 ```
 
-**To bump a version:**
-1. Increment version in `SchemaVersions`
-2. Add migration case in decoder's switch statement
-3. Implement migration logic in `*Migrations` enum if complex
-4. Update this documentation
+**To bump a version:** Increment in `SchemaVersions`, then handle in decoder if needed.
 
-**Models with versioning:** Exercise, ExerciseInstance, Module, Workout, Session, Program
+**Models with versioning:** ExerciseInstance, Module, Workout, Session, Program
 
 ### Logging & Debug Configuration (Jan 2025)
 

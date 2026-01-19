@@ -14,6 +14,11 @@ struct SessionDetailView: View {
     let session: Session
 
     @State private var showingDeleteConfirmation = false
+    @State private var showingEditSession = false
+
+    private var currentSession: Session {
+        sessionViewModel.sessions.first { $0.id == session.id } ?? session
+    }
 
     var body: some View {
         List {
@@ -95,14 +100,30 @@ struct SessionDetailView: View {
         .navigationTitle("Session Details")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .destructiveAction) {
-                Button(role: .destructive) {
-                    showingDeleteConfirmation = true
-                } label: {
-                    Image(systemName: "trash")
-                        .foregroundColor(AppColors.error)
+            ToolbarItem(placement: .primaryAction) {
+                HStack(spacing: 16) {
+                    // Edit button (only shown if session is editable)
+                    if currentSession.isEditable {
+                        Button {
+                            showingEditSession = true
+                        } label: {
+                            Image(systemName: "pencil")
+                                .foregroundColor(.accentColor)
+                        }
+                    }
+
+                    // Delete button
+                    Button(role: .destructive) {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        Image(systemName: "trash")
+                            .foregroundColor(AppColors.error)
+                    }
                 }
             }
+        }
+        .sheet(isPresented: $showingEditSession) {
+            EditSessionView(session: currentSession)
         }
         .confirmationDialog(
             "Delete Workout?",
@@ -235,7 +256,7 @@ struct ExerciseResultView: View {
 
             var parts: [String] = []
             if totalDistance > 0 {
-                parts.append("\(formatDistance(totalDistance))\(exercise.distanceUnit.abbreviation)")
+                parts.append("\(formatDistanceValue(totalDistance)) \(exercise.distanceUnit.abbreviation)")
             }
             if totalDuration > 0 {
                 parts.append(formatDuration(totalDuration))
@@ -394,7 +415,7 @@ struct ExerciseResultView: View {
                 parts.append(formatDuration(duration))
             }
             if let distance = set.distance, distance > 0 {
-                parts.append("\(formatDistance(distance))\(exercise.distanceUnit.abbreviation)")
+                parts.append("\(formatDistanceValue(distance)) \(exercise.distanceUnit.abbreviation)")
             }
             if let pace = set.pace, pace > 0 {
                 parts.append("@ \(formatPace(pace))/\(exercise.distanceUnit.abbreviation)")
@@ -443,21 +464,6 @@ struct ExerciseResultView: View {
         }
 
         return nil
-    }
-
-    // formatDistance() and formatWeight() use global FormattingHelpers
-
-    private func formatHeight(_ height: Double) -> String {
-        if height == floor(height) {
-            return "\(Int(height)) in"
-        }
-        return String(format: "%.1f in", height)
-    }
-
-    private func formatPace(_ pace: Double) -> String {
-        let minutes = Int(pace) / 60
-        let seconds = Int(pace) % 60
-        return String(format: "%d:%02d", minutes, seconds)
     }
 }
 

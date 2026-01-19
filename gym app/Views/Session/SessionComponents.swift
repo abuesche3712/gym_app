@@ -848,7 +848,7 @@ struct SetRowView: View {
                 inputHoldTime = holdTime
             }
             if let distance = prevSet.distance {
-                inputDistance = formatDistance(distance)
+                inputDistance = formatDistanceValue(distance)
             }
             // Light haptic to confirm action
             HapticManager.shared.soft()
@@ -947,7 +947,7 @@ struct SetRowView: View {
                 parts.append(formatDuration(duration))
             }
             if let distance = set.distance, distance > 0 {
-                parts.append("\(formatDistance(distance)) \(exercise.distanceUnit.abbreviation)")
+                parts.append("\(formatDistanceValue(distance)) \(exercise.distanceUnit.abbreviation)")
             }
             return parts.isEmpty ? "Completed" : parts.joined(separator: " / ")
         case .explosive:
@@ -981,13 +981,6 @@ struct SetRowView: View {
             }
             return "Completed"
         }
-    }
-
-    private func formatHeight(_ height: Double) -> String {
-        if height == floor(height) {
-            return "\(Int(height)) in"
-        }
-        return String(format: "%.1f in", height)
     }
 
     // MARK: - Timer Functions
@@ -1158,7 +1151,7 @@ struct SetRowView: View {
                 inputDuration = setData.duration ?? flatSet.targetDuration ?? 0
             }
             inputHoldTime = setData.holdTime ?? flatSet.targetHoldTime ?? 0
-            inputDistance = setData.distance.map { formatDistance($0) } ?? flatSet.targetDistance.map { formatDistance($0) } ?? ""
+            inputDistance = setData.distance.map { formatDistanceValue($0) } ?? flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
         } else {
             // Smart auto-fill: Use last session values if no target values exist
             // Priority: target values > last session values > empty
@@ -1179,14 +1172,14 @@ struct SetRowView: View {
             if !durationManuallySet {
                 inputDuration = flatSet.targetDuration ?? lastDuration ?? 0
             }
-            inputDistance = flatSet.targetDistance.map { formatDistance($0) }
-                ?? lastDistance.map { formatDistance($0) }
+            inputDistance = flatSet.targetDistance.map { formatDistanceValue($0) }
+                ?? lastDistance.map { formatDistanceValue($0) }
                 ?? ""
         }
 
         // Always load these from setData if present
         inputRPE = setData.rpe.map { "\($0)" } ?? ""
-        inputHeight = setData.height.map { formatHeight($0).replacingOccurrences(of: " in", with: "") } ?? ""
+        inputHeight = setData.height.map { formatHeightValue($0) } ?? ""
         inputQuality = setData.quality ?? 0
         inputIntensity = setData.intensity ?? 0
         inputTemperature = setData.temperature.map { "\($0)" } ?? ""

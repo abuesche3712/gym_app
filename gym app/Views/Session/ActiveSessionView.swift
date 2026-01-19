@@ -1398,7 +1398,7 @@ struct ActiveSessionView: View {
                         metricPill(value: formatDuration(duration), label: "time", color: AppColors.accentBlue)
                     }
                     if let distance = set.distance, distance > 0 {
-                        metricPill(value: formatDistance(distance), label: exercise.distanceUnit.abbreviation, color: AppColors.accentTeal)
+                        metricPill(value: formatDistanceValue(distance), label: exercise.distanceUnit.abbreviation, color: AppColors.accentTeal)
                     }
 
                 case .explosive:

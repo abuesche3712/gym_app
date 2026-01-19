@@ -596,8 +596,9 @@ struct ModulePreviewRow: View {
 
             // Exercise list
             if !module.exercises.isEmpty {
+                let resolvedExercises = module.resolvedExercises()
                 VStack(alignment: .leading, spacing: 4) {
-                    ForEach(module.exercises.prefix(5)) { exercise in
+                    ForEach(Array(resolvedExercises.prefix(5))) { exercise in
                         HStack(spacing: AppSpacing.sm) {
                             Text("•")
                                 .foregroundColor(AppColors.textTertiary)

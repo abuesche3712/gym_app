@@ -30,7 +30,6 @@
 		SCHMAV02BUILD002 /* SchemaVersions.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCHMAV01FILE001 /* SchemaVersions.swift */; };
 		APPCFG02BUILD002 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPCFG01FILE001 /* AppConfig.swift */; };
 		LOGGER02BUILD002 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = LOGGER01FILE001 /* Logger.swift */; };
-		B63EBF142F15E73700D8C22D /* Exercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEC2F15E73700D8C22D /* Exercise.swift */; };
 		B63EBF302F15E73700D8C22D /* ExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */; };
 		A0B1C2D3E4F5067890123457 /* CustomExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */; };
 		B63EBF152F15E73700D8C22D /* Module.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEED2F15E73700D8C22D /* Module.swift */; };
@@ -40,6 +39,7 @@
 		B63EBF182F15E73700D8C22D /* Workout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF02F15E73700D8C22D /* Workout.swift */; };
 		B63EBF192F15E73700D8C22D /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF22F15E73700D8C22D /* HistoryView.swift */; };
 		B63EBF1A2F15E73700D8C22D /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF32F15E73700D8C22D /* SessionDetailView.swift */; };
+		AC0ED3886796C115F34301E5 /* EditSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E042C6DBCCF889BD355F6AC1 /* EditSessionView.swift */; };
 		B63EBF1B2F15E73700D8C22D /* ExerciseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF52F15E73700D8C22D /* ExerciseDetailView.swift */; };
 		B63EBF1C2F15E73700D8C22D /* ExerciseFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF62F15E73700D8C22D /* ExerciseFormView.swift */; };
 		C2D4E6F8A1B3C5D7E9F0A2B4 /* SetGroupFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E5F7A9B1C3D5E7F9A1B3C5 /* SetGroupFormView.swift */; };
@@ -80,7 +80,6 @@
 		EXINST002BUILD002 /* ExerciseInstance.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXINST001FILE001 /* ExerciseInstance.swift */; };
 		RESOLV002BUILD002 /* ResolvedExercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = RESOLV001FILE001 /* ResolvedExercise.swift */; };
 		EXRSLV002BUILD002 /* ExerciseResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXRSLV001FILE001 /* ExerciseResolver.swift */; };
-		EXMIGR002BUILD002 /* ExerciseMigrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXMIGR001FILE001 /* ExerciseMigrationManager.swift */; };
 		HAPTIC002BUILD002 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = HAPTIC001FILE001 /* HapticManager.swift */; };
 		ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANIMCO001FILE001 /* AnimatedComponents.swift */; };
 		HOMESC002BUILD002 /* HomeScheduleSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = HOMESC001FILE001 /* HomeScheduleSheets.swift */; };
@@ -102,6 +101,7 @@
 		SYNCLOG02BUILD002 /* SyncLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = SYNCLOG01FILE001 /* SyncLogger.swift */; };
 		DBGSYN02BUILD002 /* DebugSyncLogsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBGSYN01FILE001 /* DebugSyncLogsView.swift */; };
 		DELTRC02BUILD002 /* DeletionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = DELTRC01FILE001 /* DeletionTracker.swift */; };
+		E3A1B2C3D4E5F60000000002 /* ExerciseMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A1B2C3D4E5F60000000001 /* ExerciseMetrics.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -144,7 +144,6 @@
 		B63EBEE92F15E73700D8C22D /* WorkoutViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WorkoutViewModel.swift; sourceTree = "<group>"; };
 		B63EBEEB2F15E73700D8C22D /* Enums.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
 		SCHMAV01FILE001 /* SchemaVersions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaVersions.swift; sourceTree = "<group>"; };
-		B63EBEEC2F15E73700D8C22D /* Exercise.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Exercise.swift; sourceTree = "<group>"; };
 		B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseLibrary.swift; sourceTree = "<group>"; };
 		A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CustomExerciseLibrary.swift; sourceTree = "<group>"; };
 		B63EBEED2F15E73700D8C22D /* Module.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Module.swift; sourceTree = "<group>"; };
@@ -156,6 +155,7 @@
 		B63EBEF02F15E73700D8C22D /* Workout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Workout.swift; sourceTree = "<group>"; };
 		B63EBEF22F15E73700D8C22D /* HistoryView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		B63EBEF32F15E73700D8C22D /* SessionDetailView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
+		E042C6DBCCF889BD355F6AC1 /* EditSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditSessionView.swift; sourceTree = "<group>"; };
 		B63EBEF52F15E73700D8C22D /* ExerciseDetailView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseDetailView.swift; sourceTree = "<group>"; };
 		B63EBEF62F15E73700D8C22D /* ExerciseFormView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseFormView.swift; sourceTree = "<group>"; };
 		D3E5F7A9B1C3D5E7F9A1B3C5 /* SetGroupFormView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetGroupFormView.swift; sourceTree = "<group>"; };
@@ -195,7 +195,6 @@
 		EXINST001FILE001 /* ExerciseInstance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseInstance.swift; sourceTree = "<group>"; };
 		RESOLV001FILE001 /* ResolvedExercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolvedExercise.swift; sourceTree = "<group>"; };
 		EXRSLV001FILE001 /* ExerciseResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseResolver.swift; sourceTree = "<group>"; };
-		EXMIGR001FILE001 /* ExerciseMigrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseMigrationManager.swift; sourceTree = "<group>"; };
 		HAPTIC001FILE001 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
 		ANIMCO001FILE001 /* AnimatedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedComponents.swift; sourceTree = "<group>"; };
 		HOMESC001FILE001 /* HomeScheduleSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScheduleSheets.swift; sourceTree = "<group>"; };
@@ -217,6 +216,7 @@
 		LOGGER01FILE001 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		DBGSYN01FILE001 /* DebugSyncLogsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSyncLogsView.swift; sourceTree = "<group>"; };
 		DELTRC01FILE001 /* DeletionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionTracker.swift; sourceTree = "<group>"; };
+		E3A1B2C3D4E5F60000000001 /* ExerciseMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseMetrics.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -330,7 +330,6 @@
 			children = (
 				A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */,
 				B63EBEEB2F15E73700D8C22D /* Enums.swift */,
-				B63EBEEC2F15E73700D8C22D /* Exercise.swift */,
 				EXINST001FILE001 /* ExerciseInstance.swift */,
 				B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */,
 				B63EBEED2F15E73700D8C22D /* Module.swift */,
@@ -343,6 +342,7 @@
 				SYNCQU001FILE001 /* SyncQueue.swift */,
 				USRPFL001FILE001 /* UserProfile.swift */,
 				B63EBEF02F15E73700D8C22D /* Workout.swift */,
+				E3A1B2C3D4E5F60000000003 /* Protocols */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -352,6 +352,7 @@
 			children = (
 				B63EBEF22F15E73700D8C22D /* HistoryView.swift */,
 				B63EBEF32F15E73700D8C22D /* SessionDetailView.swift */,
+				E042C6DBCCF889BD355F6AC1 /* EditSessionView.swift */,
 			);
 			path = History;
 			sourceTree = "<group>";
@@ -441,7 +442,6 @@
 				B63EBF062F15E73700D8C22D /* CoreDataEntities.swift */,
 				B63EBF072F15E73700D8C22D /* PersistenceController.swift */,
 				B12D1154F7E74A3385D7FF2E /* DataSeeder.swift */,
-				EXMIGR001FILE001 /* ExerciseMigrationManager.swift */,
 			);
 			path = CoreData;
 			sourceTree = "<group>";
@@ -539,6 +539,14 @@
 				MOREV001FILE001 /* MoreView.swift */,
 			);
 			path = More;
+			sourceTree = "<group>";
+		};
+		E3A1B2C3D4E5F60000000003 /* Protocols */ = {
+			isa = PBXGroup;
+			children = (
+				E3A1B2C3D4E5F60000000001 /* ExerciseMetrics.swift */,
+			);
+			path = Protocols;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -694,11 +702,11 @@
 				B63EBF232F15E73700D8C22D /* WorkoutFormView.swift in Sources */,
 				B63EBF262F15E73700D8C22D /* MainTabView.swift in Sources */,
 				B63EBF0F2F15E73700D8C22D /* AppState.swift in Sources */,
-				B63EBF142F15E73700D8C22D /* Exercise.swift in Sources */,
 				B63EBF302F15E73700D8C22D /* ExerciseLibrary.swift in Sources */,
 				A0B1C2D3E4F5067890123457 /* CustomExerciseLibrary.swift in Sources */,
 				B658B09E2F16903C00B2F84E /* AppTheme.swift in Sources */,
 				B63EBF1A2F15E73700D8C22D /* SessionDetailView.swift in Sources */,
+				AC0ED3886796C115F34301E5 /* EditSessionView.swift in Sources */,
 				B63EBF192F15E73700D8C22D /* HistoryView.swift in Sources */,
 				B63EBF152F15E73700D8C22D /* Module.swift in Sources */,
 				B63EBF1C2F15E73700D8C22D /* ExerciseFormView.swift in Sources */,
@@ -740,7 +748,6 @@
 				EXINST002BUILD002 /* ExerciseInstance.swift in Sources */,
 				RESOLV002BUILD002 /* ResolvedExercise.swift in Sources */,
 				EXRSLV002BUILD002 /* ExerciseResolver.swift in Sources */,
-				EXMIGR002BUILD002 /* ExerciseMigrationManager.swift in Sources */,
 				HAPTIC002BUILD002 /* HapticManager.swift in Sources */,
 				ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */,
 				HOMESC002BUILD002 /* HomeScheduleSheets.swift in Sources */,
@@ -765,6 +772,7 @@
 				SCHMAV02BUILD002 /* SchemaVersions.swift in Sources */,
 				APPCFG02BUILD002 /* AppConfig.swift in Sources */,
 				LOGGER02BUILD002 /* Logger.swift in Sources */,
+				E3A1B2C3D4E5F60000000002 /* ExerciseMetrics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

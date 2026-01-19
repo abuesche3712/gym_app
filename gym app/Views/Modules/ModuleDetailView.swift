@@ -72,7 +72,7 @@ struct ModuleDetailView: View {
                         description: Text("Add exercises to this module")
                     )
                 } else {
-                    ForEach(currentModule.groupedExercisesUnified, id: \.first?.id) { exerciseGroup in
+                    ForEach(currentModule.resolvedExercisesGrouped(), id: \.first?.id) { exerciseGroup in
                         if exerciseGroup.count > 1 {
                             // Superset group
                             SupersetGroupRow(
@@ -86,22 +86,22 @@ struct ModuleDetailView: View {
                                     }
                                 }
                             )
-                        } else if let exercise = exerciseGroup.first {
+                        } else if let resolved = exerciseGroup.first {
                             // Single exercise
                             if isSelectingForSuperset {
                                 Button {
-                                    toggleSelection(exercise.id)
+                                    toggleSelection(resolved.id)
                                 } label: {
                                     HStack {
-                                        Image(systemName: selectedExerciseIds.contains(exercise.id) ? "checkmark.circle.fill" : "circle")
-                                            .foregroundColor(selectedExerciseIds.contains(exercise.id) ? .blue : .gray)
-                                        ExerciseRow(exercise: exercise)
+                                        Image(systemName: selectedExerciseIds.contains(resolved.id) ? "checkmark.circle.fill" : "circle")
+                                            .foregroundColor(selectedExerciseIds.contains(resolved.id) ? .blue : .gray)
+                                        ExerciseRow(exercise: resolved)
                                     }
                                 }
                                 .buttonStyle(.plain)
                             } else {
-                                NavigationLink(destination: ExerciseFormView(exercise: exercise, moduleId: currentModule.id)) {
-                                    ExerciseRow(exercise: exercise)
+                                NavigationLink(destination: ExerciseFormView(instance: resolved.instance, moduleId: currentModule.id)) {
+                                    ExerciseRow(exercise: resolved)
                                 }
                             }
                         }
@@ -181,7 +181,7 @@ struct ModuleDetailView: View {
         }
         .sheet(isPresented: $showingAddExercise) {
             NavigationStack {
-                ExerciseFormView(exercise: nil, moduleId: currentModule.id)
+                ExerciseFormView(instance: nil, moduleId: currentModule.id)
             }
         }
         .confirmationDialog(
@@ -222,13 +222,13 @@ struct ModuleDetailView: View {
 
     private func createSuperset() {
         var updatedModule = currentModule
-        updatedModule.createSupersetUnified(exerciseIds: Array(selectedExerciseIds))
+        updatedModule.createSuperset(exerciseIds: Array(selectedExerciseIds))
         moduleViewModel.saveModule(updatedModule)
     }
 
     private func breakSupersetGroup(_ supersetGroupId: UUID) {
         var updatedModule = currentModule
-        updatedModule.breakSupersetGroupUnified(supersetGroupId: supersetGroupId)
+        updatedModule.breakSupersetGroup(supersetGroupId: supersetGroupId)
         moduleViewModel.saveModule(updatedModule)
     }
 }
@@ -236,7 +236,7 @@ struct ModuleDetailView: View {
 // MARK: - Exercise Row
 
 struct ExerciseRow: View {
-    let exercise: Exercise
+    let exercise: ResolvedExercise
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -272,7 +272,7 @@ struct ExerciseRow: View {
 // MARK: - Superset Group Row
 
 struct SupersetGroupRow: View {
-    let exercises: [Exercise]
+    let exercises: [ResolvedExercise]
     let moduleId: UUID
     let isSelecting: Bool
     @Binding var selectedIds: Set<UUID>
@@ -303,7 +303,7 @@ struct SupersetGroupRow: View {
 
             // Exercises in superset
             VStack(spacing: 0) {
-                ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
+                ForEach(Array(exercises.enumerated()), id: \.element.id) { index, resolved in
                     HStack(spacing: 12) {
                         // Connector line
                         VStack(spacing: 0) {
@@ -321,18 +321,18 @@ struct SupersetGroupRow: View {
 
                         if isSelecting {
                             Button {
-                                toggleSelection(exercise.id)
+                                toggleSelection(resolved.id)
                             } label: {
                                 HStack {
-                                    Image(systemName: selectedIds.contains(exercise.id) ? "checkmark.circle.fill" : "circle")
-                                        .foregroundColor(selectedIds.contains(exercise.id) ? .blue : .gray)
-                                    CompactExerciseRow(exercise: exercise)
+                                    Image(systemName: selectedIds.contains(resolved.id) ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(selectedIds.contains(resolved.id) ? .blue : .gray)
+                                    CompactExerciseRow(exercise: resolved)
                                 }
                             }
                             .buttonStyle(.plain)
                         } else {
-                            NavigationLink(destination: ExerciseFormView(exercise: exercise, moduleId: moduleId)) {
-                                CompactExerciseRow(exercise: exercise)
+                            NavigationLink(destination: ExerciseFormView(instance: resolved.instance, moduleId: moduleId)) {
+                                CompactExerciseRow(exercise: resolved)
                             }
                         }
                     }
@@ -360,7 +360,7 @@ struct SupersetGroupRow: View {
 // MARK: - Compact Exercise Row (for supersets)
 
 struct CompactExerciseRow: View {
-    let exercise: Exercise
+    let exercise: ResolvedExercise
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {

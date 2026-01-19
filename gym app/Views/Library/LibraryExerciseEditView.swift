@@ -2,7 +2,7 @@
 //  LibraryExerciseEditView.swift
 //  gym app
 //
-//  Edit view for library exercises (muscle groups and equipment)
+//  Edit view for library exercises (name, category, type)
 //
 
 import SwiftUI
@@ -18,8 +18,6 @@ struct LibraryExerciseEditView: View {
     @State private var name: String = ""
     @State private var category: ExerciseCategory = .fullBody
     @State private var exerciseType: ExerciseType = .strength
-    @State private var muscleGroupIds: Set<UUID> = []
-    @State private var implementIds: Set<UUID> = []
 
     init(template: ExerciseTemplate, isCustomExercise: Bool, onSave: ((ExerciseTemplate) -> Void)? = nil) {
         self.template = template
@@ -53,42 +51,37 @@ struct LibraryExerciseEditView: View {
                     }
                 }
 
-                // Muscles & Equipment (always editable)
-                Section("Muscles & Equipment") {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        HStack {
-                            Text("Muscles Worked")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            if !muscleGroupIds.isEmpty {
-                                Text("\(muscleGroupIds.count) selected")
-                                    .font(.caption)
-                                    .foregroundColor(.blue)
+                // Muscles (display only)
+                Section("Muscles") {
+                    if !template.primaryMuscles.isEmpty || !template.secondaryMuscles.isEmpty {
+                        if !template.primaryMuscles.isEmpty {
+                            HStack {
+                                Text("Primary")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Text(template.primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
+                                    .font(.subheadline)
                             }
                         }
-                        MuscleGroupGridCompact(selectedIds: $muscleGroupIds)
-                    }
-                    .padding(.vertical, 4)
-
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        HStack {
-                            Text("Equipment")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            if !implementIds.isEmpty {
-                                Text("\(implementIds.count) selected")
-                                    .font(.caption)
-                                    .foregroundColor(.teal)
+                        if !template.secondaryMuscles.isEmpty {
+                            HStack {
+                                Text("Secondary")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Text(template.secondaryMuscles.map { $0.rawValue }.joined(separator: ", "))
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
                             }
                         }
-                        ImplementGridCompact(selectedIds: $implementIds)
+                    } else {
+                        Text("No muscles specified")
+                            .foregroundColor(.secondary)
                     }
-                    .padding(.vertical, 4)
                 }
             }
-            .navigationTitle("Edit Exercise")
+            .navigationTitle("Exercise Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -97,9 +90,11 @@ struct LibraryExerciseEditView: View {
                     }
                 }
 
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        saveExercise()
+                if isCustomExercise {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            saveExercise()
+                        }
                     }
                 }
             }
@@ -113,38 +108,17 @@ struct LibraryExerciseEditView: View {
         name = template.name
         category = template.category
         exerciseType = template.exerciseType
-        muscleGroupIds = template.muscleGroupIds
-        implementIds = template.implementIds
     }
 
     private func saveExercise() {
-        if isCustomExercise {
-            // Update existing custom exercise
-            var updatedTemplate = template
-            updatedTemplate.muscleGroupIds = muscleGroupIds
-            updatedTemplate.implementIds = implementIds
-            customLibrary.updateExercise(updatedTemplate)
-            onSave?(updatedTemplate)
-        } else {
-            // For built-in exercises, create a custom copy with the modifications
-            let customTemplate = ExerciseTemplate(
-                id: template.id, // Keep same ID for tracking
-                name: template.name,
-                category: template.category,
-                exerciseType: template.exerciseType,
-                primary: template.primaryMuscles,
-                secondary: template.secondaryMuscles,
-                muscleGroupIds: muscleGroupIds,
-                implementIds: implementIds
-            )
-            // Check if already exists in custom library
-            if customLibrary.exercises.contains(where: { $0.id == template.id }) {
-                customLibrary.updateExercise(customTemplate)
-            } else {
-                customLibrary.addExercise(customTemplate)
-            }
-            onSave?(customTemplate)
-        }
+        guard isCustomExercise else { return }
+
+        var updatedTemplate = template
+        updatedTemplate.name = name.trimmingCharacters(in: .whitespaces)
+        updatedTemplate.category = category
+        updatedTemplate.exerciseType = exerciseType
+        customLibrary.updateExercise(updatedTemplate)
+        onSave?(updatedTemplate)
         dismiss()
     }
 }

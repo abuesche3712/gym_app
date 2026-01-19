@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct ResolvedExercise: Identifiable, Hashable {
+struct ResolvedExercise: Identifiable, Hashable, ExerciseMetrics {
     let instance: ExerciseInstance
     let template: ExerciseTemplate?
 
@@ -17,40 +17,33 @@ struct ResolvedExercise: Identifiable, Hashable {
     var id: UUID { instance.id }
     var templateId: UUID { instance.templateId }
 
-    // MARK: - Resolved Properties (instance override ?? template ?? default)
+    // MARK: - Resolved Properties
 
+    /// Name: uses instance override if set, otherwise template name
     var name: String {
         instance.nameOverride ?? template?.name ?? "Unknown Exercise"
     }
 
-    var exerciseType: ExerciseType {
-        instance.exerciseTypeOverride ?? template?.exerciseType ?? .strength
-    }
+    // MARK: - Template Properties (pass-through with defaults)
 
-    // MARK: - Template Properties (pass-through)
+    var exerciseType: ExerciseType {
+        template?.exerciseType ?? .strength
+    }
 
     var category: ExerciseCategory {
         template?.category ?? .fullBody
     }
 
     var cardioMetric: CardioMetric {
-        instance.cardioMetricOverride ?? template?.cardioMetric ?? .timeOnly
+        template?.cardioMetric ?? .timeOnly
     }
 
     var mobilityTracking: MobilityTracking {
-        instance.mobilityTrackingOverride ?? template?.mobilityTracking ?? .repsOnly
+        template?.mobilityTracking ?? .repsOnly
     }
 
     var distanceUnit: DistanceUnit {
-        instance.distanceUnitOverride ?? template?.distanceUnit ?? .meters
-    }
-
-    var muscleGroupIds: Set<UUID> {
-        template?.muscleGroupIds ?? []
-    }
-
-    var implementIds: Set<UUID> {
-        template?.implementIds ?? []
+        template?.distanceUnit ?? .meters
     }
 
     var isBodyweight: Bool {
@@ -91,9 +84,6 @@ struct ResolvedExercise: Identifiable, Hashable {
     /// Whether the template is archived
     var isTemplateArchived: Bool { template?.isArchived ?? false }
 
-    /// Whether this instance is part of a superset
-    var isInSuperset: Bool { instance.isInSuperset }
-
     /// Total number of sets across all set groups
     var totalSets: Int { instance.totalSets }
 
@@ -102,38 +92,13 @@ struct ResolvedExercise: Identifiable, Hashable {
         ResolvedExercise.defaultMetrics(for: exerciseType)
     }
 
-    /// Whether this cardio exercise should log time
-    var tracksTime: Bool {
-        exerciseType == .cardio && cardioMetric.tracksTime
-    }
-
-    /// Whether this cardio exercise should log distance
-    var tracksDistance: Bool {
-        exerciseType == .cardio && cardioMetric.tracksDistance
-    }
-
-    /// Legacy: Whether this is primarily distance-based (for target display)
-    var isDistanceBased: Bool {
-        exerciseType == .cardio && cardioMetric == .distanceOnly
-    }
-
-    /// Whether this mobility exercise should log reps
-    var mobilityTracksReps: Bool {
-        exerciseType == .mobility && mobilityTracking.tracksReps
-    }
-
-    /// Whether this mobility exercise should log duration
-    var mobilityTracksDuration: Bool {
-        exerciseType == .mobility && mobilityTracking.tracksDuration
-    }
-
     /// Human-readable set scheme (e.g., "3x8 + 3x10")
     var formattedSetScheme: String {
         setGroups.map { group in
             if let reps = group.targetReps {
                 return "\(group.sets)x\(reps)"
             } else if let distance = group.targetDistance, isDistanceBased {
-                return "\(group.sets)x\(formatDistance(distance))"
+                return "\(group.sets)x\(formatDistance(distance, unit: distanceUnit))"
             } else if let duration = group.targetDuration {
                 return "\(group.sets)x\(formatDurationVerbose(duration))"
             } else if let holdTime = group.targetHoldTime {
@@ -161,15 +126,6 @@ struct ResolvedExercise: Identifiable, Hashable {
             return [.duration]
         }
     }
-
-    // MARK: - Private Helpers
-
-    private func formatDistance(_ distance: Double) -> String {
-        if distance == floor(distance) {
-            return "\(Int(distance))\(distanceUnit.abbreviation)"
-        }
-        return String(format: "%.1f%@", distance, distanceUnit.abbreviation)
-    }
 }
 
 // MARK: - Convenience Initializers
@@ -178,34 +134,6 @@ extension ResolvedExercise {
     /// Creates a placeholder for an orphaned instance
     static func orphan(from instance: ExerciseInstance) -> ResolvedExercise {
         ResolvedExercise(instance: instance, template: nil)
-    }
-}
-
-// MARK: - Legacy Bridge
-
-extension ResolvedExercise {
-    /// Converts this ResolvedExercise to a legacy Exercise for backward compatibility.
-    /// Used during the migration period while SessionViewModel still expects Exercise objects.
-    func toLegacyExercise() -> Exercise {
-        Exercise(
-            id: instance.id,
-            name: name,
-            templateId: templateId,
-            exerciseType: exerciseType,
-            cardioMetric: cardioMetric,
-            mobilityTracking: mobilityTracking,
-            distanceUnit: distanceUnit,
-            setGroups: setGroups,
-            trackingMetrics: trackingMetrics,
-            supersetGroupId: supersetGroupId,
-            notes: notes,
-            createdAt: createdAt,
-            updatedAt: updatedAt,
-            muscleGroupIds: muscleGroupIds,
-            implementIds: implementIds,
-            isBodyweight: isBodyweight,
-            recoveryActivityType: recoveryActivityType
-        )
     }
 }
 

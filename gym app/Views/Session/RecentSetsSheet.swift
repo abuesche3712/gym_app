@@ -262,6 +262,6 @@ struct EditRecentSetSheet: View {
         inputRPE = set.rpe ?? 0
         inputDuration = set.duration ?? 0
         inputHoldTime = set.holdTime ?? 0
-        inputDistance = set.distance.map { formatDistance($0) } ?? ""
+        inputDistance = set.distance.map { formatDistanceValue($0) } ?? ""
     }
 }

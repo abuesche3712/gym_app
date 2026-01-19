@@ -2,8 +2,13 @@
 //  ExerciseResolver.swift
 //  gym app
 //
+//  **SINGLE SOURCE OF TRUTH FOR EXERCISE LOOKUPS**
+//
 //  Service for resolving ExerciseInstances to ResolvedExercises by fetching templates.
-//  Provides caching and batch resolution for efficient UI rendering.
+//  Provides caching, search, and batch resolution for efficient UI rendering.
+//
+//  Use ExerciseResolver.shared for all exercise lookups instead of
+//  ExerciseLibrary or CustomExerciseLibrary directly.
 //
 
 import Foundation
@@ -57,9 +62,26 @@ class ExerciseResolver: ObservableObject {
         templateCache[id]
     }
 
-    /// Gets all cached templates
-    var allTemplates: [ExerciseTemplate] {
+    // MARK: - All Exercises Access
+
+    /// All exercises combined (built-in + custom)
+    var allExercises: [ExerciseTemplate] {
         Array(templateCache.values)
+    }
+
+    /// Legacy alias for allExercises
+    var allTemplates: [ExerciseTemplate] {
+        allExercises
+    }
+
+    /// Built-in exercises only
+    var builtInExercises: [ExerciseTemplate] {
+        allExercises.filter { !$0.isCustom }
+    }
+
+    /// Custom/user-created exercises only
+    var customExercises: [ExerciseTemplate] {
+        allExercises.filter { $0.isCustom }
     }
 
     // MARK: - Single Resolution
@@ -110,7 +132,7 @@ class ExerciseResolver: ObservableObject {
             id: instance.templateId,
             name: instance.nameOverride ?? "Deleted Exercise",
             category: .fullBody,
-            exerciseType: instance.exerciseTypeOverride ?? .strength,
+            exerciseType: .strength,  // Default for orphaned exercises
             isArchived: true,
             isCustom: true
         )
@@ -131,6 +153,32 @@ class ExerciseResolver: ObservableObject {
         instances.filter { templateCache[$0.templateId] == nil }
     }
 
+    // MARK: - Search & Filtering
+
+    /// Primary search - searches all exercises by name (case-insensitive)
+    func search(_ query: String) -> [ExerciseTemplate] {
+        guard !query.trimmingCharacters(in: .whitespaces).isEmpty else {
+            return allExercises.sorted { $0.name < $1.name }
+        }
+        return allExercises
+            .filter { $0.name.localizedCaseInsensitiveContains(query) }
+            .sorted { $0.name < $1.name }
+    }
+
+    /// Finds exercises by category
+    func exercises(for category: ExerciseCategory) -> [ExerciseTemplate] {
+        allExercises
+            .filter { $0.category == category }
+            .sorted { $0.name < $1.name }
+    }
+
+    /// Finds exercises by exercise type
+    func exercises(for type: ExerciseType) -> [ExerciseTemplate] {
+        allExercises
+            .filter { $0.exerciseType == type }
+            .sorted { $0.name < $1.name }
+    }
+
     // MARK: - Template Lookup Helpers
 
     /// Finds a template by name (case-insensitive)
@@ -138,21 +186,18 @@ class ExerciseResolver: ObservableObject {
         templateCache.values.first { $0.name.lowercased() == name.lowercased() }
     }
 
-    /// Finds templates matching a search query
+    /// Legacy alias for search()
     func searchTemplates(_ query: String) -> [ExerciseTemplate] {
-        guard !query.isEmpty else { return allTemplates }
-        return templateCache.values.filter {
-            $0.name.localizedCaseInsensitiveContains(query)
-        }
+        search(query)
     }
 
-    /// Finds templates by category
+    /// Legacy alias for exercises(for category:)
     func templates(for category: ExerciseCategory) -> [ExerciseTemplate] {
-        templateCache.values.filter { $0.category == category }
+        exercises(for: category)
     }
 
-    /// Finds templates by exercise type
+    /// Legacy alias for exercises(for type:)
     func templates(for exerciseType: ExerciseType) -> [ExerciseTemplate] {
-        templateCache.values.filter { $0.exerciseType == exerciseType }
+        exercises(for: exerciseType)
     }
 }
