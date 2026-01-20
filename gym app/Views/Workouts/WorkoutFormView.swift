@@ -26,105 +26,137 @@ struct WorkoutFormView: View {
     private var isEditing: Bool { workout != nil }
 
     var body: some View {
-        Form {
-            Section("Workout Info") {
-                TextField("Name (e.g., Monday - Lower A)", text: $name)
+        ScrollView {
+            VStack(spacing: AppSpacing.xl) {
+                // Workout Info Section
+                FormSection(title: "Workout Info", icon: "figure.strengthtraining.traditional", iconColor: AppColors.accentBlue) {
+                    FormTextField(label: "Name", text: $name, icon: "textformat", placeholder: "e.g., Monday - Lower A")
+                    FormDivider()
+                    FormTextField(label: "Duration", text: $estimatedDuration, icon: "clock", placeholder: "minutes", keyboardType: .numberPad)
+                }
 
-                TextField("Estimated Duration (minutes)", text: $estimatedDuration)
-                    .keyboardType(.numberPad)
-            }
-
-            Section {
-                if selectedModuleIds.isEmpty {
-                    Text("No modules added")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(selectedModuleIds, id: \.self) { moduleId in
-                        if let module = moduleViewModel.getModule(id: moduleId) {
-                            NavigationLink(destination: ModuleDetailView(module: module)) {
-                                HStack {
-                                    Image(systemName: module.type.icon)
-                                        .foregroundStyle(module.type.color)
-
-                                    VStack(alignment: .leading) {
-                                        Text(module.name)
-                                            .font(.subheadline)
-                                        Text("\(module.exercises.count) exercises")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                // Modules Section
+                FormSection(title: "Modules", icon: "square.stack.3d.up", iconColor: AppColors.accentTeal) {
+                    if selectedModuleIds.isEmpty {
+                        HStack {
+                            Image(systemName: "square.stack.3d.up")
+                                .font(.system(size: 16))
+                                .foregroundColor(AppColors.textTertiary)
+                                .frame(width: 24)
+                            Text("No modules added")
+                                .foregroundColor(AppColors.textTertiary)
+                            Spacer()
+                        }
+                        .padding(.horizontal, AppSpacing.cardPadding)
+                        .padding(.vertical, AppSpacing.md)
+                        .background(AppColors.cardBackground)
+                    } else {
+                        ForEach(Array(selectedModuleIds.enumerated()), id: \.element) { index, moduleId in
+                            if let module = moduleViewModel.getModule(id: moduleId) {
+                                VStack(spacing: 0) {
+                                    if index > 0 {
+                                        FormDivider()
                                     }
+                                    moduleRow(module: module, index: index)
                                 }
                             }
                         }
                     }
-                    .onDelete(perform: removeModule)
-                    .onMove(perform: moveModule)
-                }
 
-                Button {
-                    showingModulePicker = true
-                } label: {
-                    Label("Add Module", systemImage: "plus.circle")
-                }
-            } header: {
-                HStack {
-                    Text("Modules")
-                    Spacer()
-                    if !selectedModuleIds.isEmpty {
-                        EditButton()
-                            .font(.caption)
-                    }
-                }
-            }
+                    FormDivider()
 
-            // Standalone Exercises Section
-            Section {
-                if standaloneExercises.isEmpty {
-                    Text("No exercises added")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(Array(standaloneExercises.enumerated()), id: \.element.id) { index, instance in
-                        let resolved = ExerciseResolver.shared.resolve(instance)
+                    // Add Module Button
+                    Button {
+                        showingModulePicker = true
+                    } label: {
                         HStack {
-                            Image(systemName: resolved.exerciseType.icon)
-                                .foregroundStyle(AppColors.accentBlue)
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(AppColors.accentTeal)
+                                .frame(width: 24)
+                            Text("Add Module")
+                                .foregroundColor(AppColors.accentTeal)
+                            Spacer()
+                        }
+                        .padding(.horizontal, AppSpacing.cardPadding)
+                        .padding(.vertical, AppSpacing.md)
+                        .background(AppColors.cardBackground)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
 
-                            VStack(alignment: .leading) {
-                                Text(resolved.name)
-                                    .font(.subheadline)
-                                Text(resolved.formattedSetScheme.isEmpty ? "No sets" : resolved.formattedSetScheme)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                // Standalone Exercises Section
+                FormSection(title: "Standalone Exercises", icon: "dumbbell", iconColor: AppColors.accentBlue) {
+                    if standaloneExercises.isEmpty {
+                        HStack {
+                            Image(systemName: "dumbbell")
+                                .font(.system(size: 16))
+                                .foregroundColor(AppColors.textTertiary)
+                                .frame(width: 24)
+                            Text("No exercises added")
+                                .foregroundColor(AppColors.textTertiary)
+                            Spacer()
+                        }
+                        .padding(.horizontal, AppSpacing.cardPadding)
+                        .padding(.vertical, AppSpacing.md)
+                        .background(AppColors.cardBackground)
+                    } else {
+                        ForEach(Array(standaloneExercises.enumerated()), id: \.element.id) { index, instance in
+                            let resolved = ExerciseResolver.shared.resolve(instance)
+                            VStack(spacing: 0) {
+                                if index > 0 {
+                                    FormDivider()
+                                }
+                                exerciseRow(resolved: resolved)
                             }
                         }
                     }
-                    .onDelete(perform: removeExercise)
-                    .onMove(perform: moveExercise)
-                }
 
-                Button {
-                    showingExercisePicker = true
-                } label: {
-                    Label("Add Exercise", systemImage: "plus.circle")
-                }
-            } header: {
-                HStack {
-                    Text("Standalone Exercises")
-                    Spacer()
-                    if !standaloneExercises.isEmpty {
-                        EditButton()
-                            .font(.caption)
+                    FormDivider()
+
+                    // Add Exercise Button
+                    Button {
+                        showingExercisePicker = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(AppColors.accentBlue)
+                                .frame(width: 24)
+                            Text("Add Exercise")
+                                .foregroundColor(AppColors.accentBlue)
+                            Spacer()
+                        }
+                        .padding(.horizontal, AppSpacing.cardPadding)
+                        .padding(.vertical, AppSpacing.md)
+                        .background(AppColors.cardBackground)
+                        .contentShape(Rectangle())
                     }
-                }
-            } footer: {
-                Text("Add exercises directly without creating a module")
-            }
+                    .buttonStyle(.plain)
 
-            Section("Notes") {
-                TextEditor(text: $notes)
-                    .frame(minHeight: 60)
+                    // Footer
+                    Text("Add exercises directly without creating a module")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                        .padding(.horizontal, AppSpacing.cardPadding)
+                        .padding(.vertical, AppSpacing.sm)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(AppColors.cardBackground)
+                }
+
+                // Notes Section
+                FormSection(title: "Notes", icon: "note.text", iconColor: AppColors.textTertiary) {
+                    TextEditor(text: $notes)
+                        .frame(minHeight: 80)
+                        .padding(AppSpacing.md)
+                        .background(AppColors.cardBackground)
+                        .scrollContentBackground(.hidden)
+                }
             }
+            .padding(AppSpacing.screenPadding)
         }
+        .background(AppColors.background.ignoresSafeArea())
         .navigationTitle(isEditing ? "Edit Workout" : "New Workout")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -132,12 +164,15 @@ struct WorkoutFormView: View {
                 Button("Cancel") {
                     dismiss()
                 }
+                .foregroundColor(AppColors.textSecondary)
             }
 
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
                     saveWorkout()
                 }
+                .fontWeight(.semibold)
+                .foregroundColor(name.trimmingCharacters(in: .whitespaces).isEmpty ? AppColors.textTertiary : AppColors.accentBlue)
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
@@ -164,6 +199,63 @@ struct WorkoutFormView: View {
                     .map(\.exercise)
             }
         }
+    }
+
+    // MARK: - Row Views
+
+    private func moduleRow(module: Module, index: Int) -> some View {
+        HStack(spacing: AppSpacing.md) {
+            Image(systemName: module.type.icon)
+                .font(.system(size: 16))
+                .foregroundColor(AppColors.moduleColor(module.type))
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(module.name)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(AppColors.textPrimary)
+                Text("\(module.exercises.count) exercises")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+
+            Spacer()
+
+            Button {
+                selectedModuleIds.remove(at: index)
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.vertical, AppSpacing.md)
+        .background(AppColors.cardBackground)
+    }
+
+    private func exerciseRow(resolved: ResolvedExercise) -> some View {
+        HStack(spacing: AppSpacing.md) {
+            Image(systemName: resolved.exerciseType.icon)
+                .font(.system(size: 16))
+                .foregroundColor(AppColors.accentBlue)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(resolved.name)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(AppColors.textPrimary)
+                Text(resolved.formattedSetScheme.isEmpty ? "No sets" : resolved.formattedSetScheme)
+                    .font(.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.vertical, AppSpacing.md)
+        .background(AppColors.cardBackground)
     }
 
     private func removeModule(at offsets: IndexSet) {

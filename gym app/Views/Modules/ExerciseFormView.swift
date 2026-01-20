@@ -75,12 +75,16 @@ struct ExerciseFormView: View {
     }
 
     var body: some View {
-        Form {
-            exerciseSection
-            musclesAndEquipmentSection
-            setsSection
-            notesSection
+        ScrollView {
+            VStack(spacing: AppSpacing.xl) {
+                exerciseSection
+                musclesAndEquipmentSection
+                setsSection
+                notesSection
+            }
+            .padding(AppSpacing.screenPadding)
         }
+        .background(AppColors.background.ignoresSafeArea())
         .navigationTitle(isEditing ? "Edit Exercise" : "New Exercise")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -88,12 +92,15 @@ struct ExerciseFormView: View {
                 Button("Cancel") {
                     dismiss()
                 }
+                .foregroundColor(AppColors.textSecondary)
             }
 
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
                     saveExercise()
                 }
+                .fontWeight(.semibold)
+                .foregroundColor(name.trimmingCharacters(in: .whitespaces).isEmpty ? AppColors.textTertiary : AppColors.accentBlue)
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
@@ -152,36 +159,51 @@ struct ExerciseFormView: View {
     // MARK: - Exercise Section
 
     private var exerciseSection: some View {
-        Section("Exercise") {
+        FormSection(title: "Exercise", icon: "dumbbell", iconColor: AppColors.accentBlue) {
             // Exercise selection button
-            Button {
+            FormButtonRow(
+                label: "Exercise",
+                icon: "magnifyingglass",
+                value: name.isEmpty ? "Select or type..." : name,
+                valueColor: name.isEmpty ? AppColors.textTertiary : AppColors.textPrimary
+            ) {
                 showingExercisePicker = true
-            } label: {
-                HStack {
-                    Text("Exercise")
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Text(name.isEmpty ? "Select or type..." : name)
-                        .foregroundColor(name.isEmpty ? .secondary : .primary)
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
             }
 
-            Picker("Type", selection: $exerciseType) {
-                ForEach(ExerciseType.allCases) { type in
-                    Text(type.displayName).tag(type)
+            FormDivider()
+
+            // Type picker row
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: "tag")
+                    .font(.system(size: 16))
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(width: 24)
+
+                Text("Type")
+                    .foregroundColor(AppColors.textPrimary)
+
+                Spacer()
+
+                Picker("", selection: $exerciseType) {
+                    ForEach(ExerciseType.allCases) { type in
+                        Text(type.displayName).tag(type)
+                    }
                 }
+                .tint(AppColors.accentBlue)
             }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.sm)
+            .background(AppColors.cardBackground)
 
             // Cardio-specific options
             if exerciseType == .cardio {
+                FormDivider()
                 cardioOptionsSection
             }
 
             // Mobility-specific options
             if exerciseType == .mobility {
+                FormDivider()
                 mobilityOptionsSection
             }
         }
@@ -189,57 +211,114 @@ struct ExerciseFormView: View {
 
     @ViewBuilder
     private var cardioOptionsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Track During Workout")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.caption.weight(.medium))
+                .foregroundColor(AppColors.textSecondary)
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.top, AppSpacing.sm)
 
-            Toggle("Time", isOn: $trackTime)
-            Toggle("Distance", isOn: $trackDistance)
-                .onChange(of: trackDistance) { _, newValue in
-                    if !newValue && !trackTime {
-                        trackTime = true
-                    }
-                }
-                .onChange(of: trackTime) { _, newValue in
-                    if !newValue && !trackDistance {
-                        trackDistance = true
-                    }
-                }
-        }
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: "clock")
+                    .font(.system(size: 16))
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(width: 24)
+                Toggle("Time", isOn: $trackTime)
+                    .tint(AppColors.accentBlue)
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.xs)
 
-        if trackDistance {
-            Picker("Distance Unit", selection: $distanceUnit) {
-                ForEach(DistanceUnit.allCases) { unit in
-                    Text(unit.displayName).tag(unit)
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: "arrow.left.and.right")
+                    .font(.system(size: 16))
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(width: 24)
+                Toggle("Distance", isOn: $trackDistance)
+                    .tint(AppColors.accentBlue)
+                    .onChange(of: trackDistance) { _, newValue in
+                        if !newValue && !trackTime {
+                            trackTime = true
+                        }
+                    }
+                    .onChange(of: trackTime) { _, newValue in
+                        if !newValue && !trackDistance {
+                            trackDistance = true
+                        }
+                    }
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.xs)
+
+            if trackDistance {
+                FormDivider()
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "ruler")
+                        .font(.system(size: 16))
+                        .foregroundColor(AppColors.textTertiary)
+                        .frame(width: 24)
+                    Text("Distance Unit")
+                        .foregroundColor(AppColors.textPrimary)
+                    Spacer()
+                    Picker("", selection: $distanceUnit) {
+                        ForEach(DistanceUnit.allCases) { unit in
+                            Text(unit.displayName).tag(unit)
+                        }
+                    }
+                    .tint(AppColors.accentBlue)
                 }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, AppSpacing.sm)
             }
         }
+        .background(AppColors.cardBackground)
     }
 
     @ViewBuilder
     private var mobilityOptionsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Track During Workout")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.caption.weight(.medium))
+                .foregroundColor(AppColors.textSecondary)
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.top, AppSpacing.sm)
 
-            Toggle("Reps", isOn: $trackReps)
-                .onChange(of: trackReps) { _, newValue in
-                    if !newValue && !trackDuration {
-                        trackDuration = true
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: "number")
+                    .font(.system(size: 16))
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(width: 24)
+                Toggle("Reps", isOn: $trackReps)
+                    .tint(AppColors.accentTeal)
+                    .onChange(of: trackReps) { _, newValue in
+                        if !newValue && !trackDuration {
+                            trackDuration = true
+                        }
                     }
-                }
-            Toggle("Duration", isOn: $trackDuration)
-                .onChange(of: trackDuration) { _, newValue in
-                    if !newValue && !trackReps {
-                        trackReps = true
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.xs)
+
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: "clock")
+                    .font(.system(size: 16))
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(width: 24)
+                Toggle("Duration", isOn: $trackDuration)
+                    .tint(AppColors.accentTeal)
+                    .onChange(of: trackDuration) { _, newValue in
+                        if !newValue && !trackReps {
+                            trackReps = true
+                        }
                     }
-                }
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.xs)
         }
+        .background(AppColors.cardBackground)
     }
 
-    // MARK: - Muscles Section
+    // MARK: - Muscles & Equipment Section
 
     private func equipmentNames(for ids: Set<UUID>) -> [String] {
         ids.compactMap { id in
@@ -247,41 +326,58 @@ struct ExerciseFormView: View {
         }.sorted()
     }
 
-    private var musclesAndEquipmentSection: some View {
+    private var muscleValueText: some View {
         Group {
-            Section("Muscles") {
-                Button {
-                    showingMusclePicker = true
-                } label: {
-                    HStack {
-                        Text("Select Muscles")
-                            .foregroundColor(AppColors.textPrimary)
-                        Spacer()
-                        if primaryMuscles.isEmpty && secondaryMuscles.isEmpty {
-                            Text("None")
-                                .foregroundColor(.secondary)
-                        } else {
-                            VStack(alignment: .trailing, spacing: 2) {
-                                if !primaryMuscles.isEmpty {
-                                    Text(primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
-                                        .font(.subheadline)
-                                        .foregroundColor(AppColors.accentBlue)
-                                        .lineLimit(1)
-                                }
-                                if !secondaryMuscles.isEmpty {
-                                    Text(secondaryMuscles.map { $0.rawValue }.joined(separator: ", "))
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                        .lineLimit(1)
-                                }
-                            }
-                        }
-                        Image(systemName: "chevron.right")
+            if primaryMuscles.isEmpty && secondaryMuscles.isEmpty {
+                Text("None")
+                    .foregroundColor(AppColors.textTertiary)
+            } else {
+                VStack(alignment: .trailing, spacing: 2) {
+                    if !primaryMuscles.isEmpty {
+                        Text(primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
+                            .font(.subheadline)
+                            .foregroundColor(AppColors.accentBlue)
+                            .lineLimit(1)
+                    }
+                    if !secondaryMuscles.isEmpty {
+                        Text(secondaryMuscles.map { $0.rawValue }.joined(separator: ", "))
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppColors.textSecondary)
+                            .lineLimit(1)
                     }
                 }
             }
+        }
+    }
+
+    private var musclesAndEquipmentSection: some View {
+        FormSection(title: "Muscles & Equipment", icon: "figure.strengthtraining.traditional", iconColor: AppColors.accentTeal) {
+            // Muscles row
+            Button {
+                showingMusclePicker = true
+            } label: {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "figure.arms.open")
+                        .font(.system(size: 16))
+                        .foregroundColor(AppColors.textTertiary)
+                        .frame(width: 24)
+
+                    Text("Muscles")
+                        .foregroundColor(AppColors.textPrimary)
+
+                    Spacer()
+
+                    muscleValueText
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, AppSpacing.md)
+                .background(AppColors.cardBackground)
+            }
+            .buttonStyle(.plain)
             .sheet(isPresented: $showingMusclePicker) {
                 NavigationStack {
                     MuscleGroupEnumPickerView(
@@ -295,40 +391,56 @@ struct ExerciseFormView: View {
                             Button("Done") {
                                 showingMusclePicker = false
                             }
+                            .foregroundColor(AppColors.accentBlue)
                         }
                     }
                 }
                 .presentationDetents([.medium, .large])
             }
 
-            Section("Equipment") {
-                Button {
-                    showingEquipmentPicker = true
-                } label: {
-                    HStack {
-                        Text("Select Equipment")
-                            .foregroundColor(AppColors.textPrimary)
-                        Spacer()
-                        if selectedImplementIds.isEmpty {
-                            Text("None")
-                                .foregroundColor(.secondary)
-                        } else {
-                            Text(equipmentNames(for: selectedImplementIds).joined(separator: ", "))
-                                .foregroundColor(AppColors.accentTeal)
-                                .lineLimit(1)
-                        }
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+            FormDivider()
+
+            // Equipment row
+            Button {
+                showingEquipmentPicker = true
+            } label: {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "dumbbell")
+                        .font(.system(size: 16))
+                        .foregroundColor(AppColors.textTertiary)
+                        .frame(width: 24)
+
+                    Text("Equipment")
+                        .foregroundColor(AppColors.textPrimary)
+
+                    Spacer()
+
+                    if selectedImplementIds.isEmpty {
+                        Text("None")
+                            .foregroundColor(AppColors.textTertiary)
+                    } else {
+                        Text(equipmentNames(for: selectedImplementIds).joined(separator: ", "))
+                            .font(.subheadline)
+                            .foregroundColor(AppColors.accentTeal)
+                            .lineLimit(1)
                     }
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(AppColors.textTertiary)
                 }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, AppSpacing.md)
+                .background(AppColors.cardBackground)
             }
+            .buttonStyle(.plain)
             .sheet(isPresented: $showingEquipmentPicker) {
                 NavigationStack {
                     ScrollView {
                         ImplementPickerView(selectedIds: $selectedImplementIds)
                             .padding()
                     }
+                    .background(AppColors.background.ignoresSafeArea())
                     .navigationTitle("Equipment")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
@@ -336,6 +448,7 @@ struct ExerciseFormView: View {
                             Button("Done") {
                                 showingEquipmentPicker = false
                             }
+                            .foregroundColor(AppColors.accentBlue)
                         }
                     }
                 }
@@ -347,35 +460,58 @@ struct ExerciseFormView: View {
     // MARK: - Sets Section
 
     private var setsSection: some View {
-        Section {
-            if setGroups.isEmpty {
-                Text("No sets defined - tap + to add")
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(Array(setGroups.enumerated()), id: \.element.id) { index, setGroup in
-                    Button {
-                        editingSetGroup = EditingIndex(id: index)
-                    } label: {
-                        SetGroupEditRow(setGroup: binding(for: index), index: index + 1)
+        FormSection(title: "Sets", icon: "list.number", iconColor: AppColors.accentCyan) {
+            VStack(spacing: 0) {
+                if setGroups.isEmpty {
+                    HStack {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 16))
+                            .foregroundColor(AppColors.textTertiary)
+                        Text("No sets defined yet")
+                            .foregroundColor(AppColors.textSecondary)
+                        Spacer()
                     }
-                    .buttonStyle(.plain)
-                }
-                .onDelete(perform: deleteSetGroup)
-                .onMove(perform: moveSetGroup)
-            }
+                    .padding(.horizontal, AppSpacing.cardPadding)
+                    .padding(.vertical, AppSpacing.md)
+                    .background(AppColors.cardBackground)
+                } else {
+                    ForEach(Array(setGroups.enumerated()), id: \.element.id) { index, setGroup in
+                        Button {
+                            editingSetGroup = EditingIndex(id: index)
+                        } label: {
+                            SetGroupEditRow(setGroup: binding(for: index), index: index + 1)
+                        }
+                        .buttonStyle(.plain)
 
-            Button {
-                showingAddSetGroup = true
-            } label: {
-                Label("Add Set Group", systemImage: "plus.circle")
-            }
-        } header: {
-            HStack {
-                Text("Sets")
-                Spacer()
-                Text("Tap to edit")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                        if index < setGroups.count - 1 {
+                            FormDivider()
+                        }
+                    }
+                }
+
+                FormDivider()
+
+                // Add set group button
+                Button {
+                    showingAddSetGroup = true
+                } label: {
+                    HStack(spacing: AppSpacing.md) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(AppColors.accentCyan)
+                            .frame(width: 24)
+
+                        Text("Add Set Group")
+                            .foregroundColor(AppColors.accentCyan)
+                            .fontWeight(.medium)
+
+                        Spacer()
+                    }
+                    .padding(.horizontal, AppSpacing.cardPadding)
+                    .padding(.vertical, AppSpacing.md)
+                    .background(AppColors.cardBackground)
+                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -383,9 +519,12 @@ struct ExerciseFormView: View {
     // MARK: - Notes Section
 
     private var notesSection: some View {
-        Section("Notes") {
+        FormSection(title: "Notes", icon: "note.text", iconColor: AppColors.textTertiary) {
             TextEditor(text: $notes)
-                .frame(minHeight: 60)
+                .frame(minHeight: 80)
+                .padding(AppSpacing.md)
+                .background(AppColors.cardBackground)
+                .scrollContentBackground(.hidden)
         }
     }
 
@@ -483,31 +622,48 @@ struct SetGroupEditRow: View {
     let index: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Group \(index)")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+        HStack(spacing: AppSpacing.md) {
+            // Group number indicator
+            ZStack {
+                Circle()
+                    .fill(AppColors.accentCyan.opacity(0.15))
+                    .frame(width: 32, height: 32)
+                Text("\(index)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(AppColors.accentCyan)
+            }
 
-                Spacer()
+            // Set info
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text(setGroup.formattedTarget)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(AppColors.textPrimary)
 
-                if let notes = setGroup.notes, !notes.isEmpty {
-                    Text(notes)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                HStack(spacing: AppSpacing.sm) {
+                    if let rest = setGroup.formattedRest {
+                        Label(rest, systemImage: "timer")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+
+                    if let notes = setGroup.notes, !notes.isEmpty {
+                        Text("• \(notes)")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                            .lineLimit(1)
+                    }
                 }
             }
 
-            Text(setGroup.formattedTarget)
-                .font(.headline)
+            Spacer()
 
-            if let rest = setGroup.formattedRest {
-                Text(rest)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(AppColors.textTertiary)
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.vertical, AppSpacing.md)
+        .background(AppColors.cardBackground)
     }
 }
 

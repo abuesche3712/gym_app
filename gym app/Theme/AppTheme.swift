@@ -377,6 +377,180 @@ extension View {
     func glowShadow(_ color: Color = AppColors.accentBlue) -> some View {
         shadow(color: color.opacity(0.3), radius: 10, x: 0, y: 0)
     }
+
+    func formFieldStyle() -> some View {
+        modifier(FormFieldModifier())
+    }
+}
+
+// MARK: - Form Field Modifier
+
+struct FormFieldModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(AppSpacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .fill(AppColors.surfaceLight)
+            )
+    }
+}
+
+// MARK: - Styled Form Section
+
+struct FormSection<Content: View>: View {
+    let title: String
+    var icon: String? = nil
+    var iconColor: Color = AppColors.accentBlue
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            // Header
+            HStack(spacing: AppSpacing.sm) {
+                if let icon = icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(iconColor)
+                }
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(AppColors.textSecondary)
+                    .textCase(.uppercase)
+                    .tracking(0.5)
+            }
+            .padding(.horizontal, AppSpacing.xs)
+
+            // Content
+            VStack(spacing: 1) {
+                content()
+            }
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppColors.cardBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .stroke(AppColors.border.opacity(0.5), lineWidth: 0.5)
+            )
+        }
+    }
+}
+
+// MARK: - Form Row
+
+struct FormRow<Content: View>: View {
+    let label: String
+    var icon: String? = nil
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        HStack(spacing: AppSpacing.md) {
+            if let icon = icon {
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(width: 24)
+            }
+
+            Text(label)
+                .foregroundColor(AppColors.textPrimary)
+
+            Spacer()
+
+            content()
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.vertical, AppSpacing.md)
+        .background(AppColors.cardBackground)
+    }
+}
+
+// MARK: - Form Text Field
+
+struct FormTextField: View {
+    let label: String
+    @Binding var text: String
+    var icon: String? = nil
+    var placeholder: String = ""
+    var keyboardType: UIKeyboardType = .default
+
+    var body: some View {
+        HStack(spacing: AppSpacing.md) {
+            if let icon = icon {
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(width: 24)
+            }
+
+            Text(label)
+                .foregroundColor(AppColors.textPrimary)
+
+            Spacer()
+
+            TextField(placeholder, text: $text)
+                .multilineTextAlignment(.trailing)
+                .foregroundColor(AppColors.textPrimary)
+                .keyboardType(keyboardType)
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.vertical, AppSpacing.md)
+        .background(AppColors.cardBackground)
+    }
+}
+
+// MARK: - Form Button Row
+
+struct FormButtonRow: View {
+    let label: String
+    var icon: String? = nil
+    var value: String = ""
+    var valueColor: Color = AppColors.textSecondary
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: AppSpacing.md) {
+                if let icon = icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 16))
+                        .foregroundColor(AppColors.textTertiary)
+                        .frame(width: 24)
+                }
+
+                Text(label)
+                    .foregroundColor(AppColors.textPrimary)
+
+                Spacer()
+
+                if !value.isEmpty {
+                    Text(value)
+                        .foregroundColor(valueColor)
+                }
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.md)
+            .background(AppColors.cardBackground)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Form Divider
+
+struct FormDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(AppColors.border.opacity(0.3))
+            .frame(height: 0.5)
+            .padding(.leading, AppSpacing.cardPadding + 24 + AppSpacing.md)
+    }
 }
 
 // MARK: - Animated Progress Bar
