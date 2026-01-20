@@ -8,6 +8,7 @@
 
 import Foundation
 import CoreData
+import FirebaseCrashlytics
 
 @preconcurrency @MainActor
 class SyncLogger {
@@ -45,8 +46,12 @@ class SyncLogger {
         }
         log(message, context: context, severity: .error)
 
-        // TODO: In production builds, consider also sending critical errors to Firebase Crashlytics
-        // Example: Crashlytics.crashlytics().record(error: error)
+        // Record to Crashlytics for production error tracking
+        Crashlytics.crashlytics().setCustomValue(context, forKey: "sync_context")
+        if let additionalInfo = additionalInfo {
+            Crashlytics.crashlytics().setCustomValue(additionalInfo, forKey: "additional_info")
+        }
+        Crashlytics.crashlytics().record(error: error)
     }
 
     /// Core logging method

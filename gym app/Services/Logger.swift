@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FirebaseCrashlytics
 
 /// Centralized logging utility that respects debug/release configuration
 enum Logger {
@@ -63,8 +64,18 @@ enum Logger {
         let filename = file.split(separator: "/").last.map(String.init) ?? file
         print("[ERROR] [\(filename):\(line)] \(message)")
 
-        // In release builds, consider sending to crash reporting
-        // TODO: Integrate with Firebase Crashlytics for production error tracking
+        // Record to Crashlytics for production error tracking
+        let error = NSError(
+            domain: "com.gymapp.error",
+            code: 0,
+            userInfo: [
+                NSLocalizedDescriptionKey: message,
+                "file": filename,
+                "line": line,
+                "function": function
+            ]
+        )
+        Crashlytics.crashlytics().record(error: error)
     }
 
     /// Log an Error object. Always logs.
@@ -76,6 +87,12 @@ enum Logger {
     ) {
         let filename = file.split(separator: "/").last.map(String.init) ?? file
         print("[ERROR] [\(filename):\(line)] \(context): \(error.localizedDescription)")
+
+        // Record to Crashlytics with context
+        Crashlytics.crashlytics().setCustomValue(context, forKey: "error_context")
+        Crashlytics.crashlytics().setCustomValue(filename, forKey: "file")
+        Crashlytics.crashlytics().setCustomValue(line, forKey: "line")
+        Crashlytics.crashlytics().record(error: error)
     }
 
     // MARK: - Sync-Specific Logging
