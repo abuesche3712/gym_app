@@ -31,6 +31,16 @@ class SessionViewModel: ObservableObject {
     private var restTimerStartTime: Date?
     private var restTimerDuration: Int = 0
 
+    // Exercise timer state (for timing individual sets - persists when view is dismissed)
+    @Published var exerciseTimerSeconds = 0
+    @Published var exerciseTimerTotal = 0
+    @Published var isExerciseTimerRunning = false
+    @Published var exerciseTimerIsStopwatch = false  // true = counting up, false = countdown
+    @Published var exerciseTimerSetId: String?  // Which set this timer is for (e.g., "0-0")
+    private var exerciseTimerStartTime: Date?
+    private var exerciseTimerDuration: Int = 0
+    private var exerciseTimerCancellable: AnyCancellable?
+
     // History
     @Published var sessions: [Session] = []
 
@@ -618,7 +628,107 @@ class SessionViewModel: ObservableObject {
             .sink { [weak self] _ in
                 self?.updateRestTimer()
                 self?.updateElapsedTime()
+                self?.updateExerciseTimer()
             }
+    }
+
+    // MARK: - Exercise Timer (for timing individual sets)
+
+    /// Start a countdown timer for a set (e.g., isometric hold)
+    func startExerciseTimer(seconds: Int, setId: String) {
+        exerciseTimerDuration = seconds
+        exerciseTimerTotal = seconds
+        exerciseTimerStartTime = Date()
+        exerciseTimerSetId = setId
+        exerciseTimerIsStopwatch = false
+        isExerciseTimerRunning = true
+        updateExerciseTimer()
+
+        exerciseTimerCancellable = Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.updateExerciseTimer()
+            }
+
+        setupForegroundObserver()
+        HapticManager.shared.impact()
+    }
+
+    /// Start a stopwatch timer for a set (e.g., cardio distance run)
+    func startExerciseStopwatch(setId: String) {
+        exerciseTimerStartTime = Date()
+        exerciseTimerSetId = setId
+        exerciseTimerIsStopwatch = true
+        exerciseTimerSeconds = 0
+        isExerciseTimerRunning = true
+
+        exerciseTimerCancellable = Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.updateExerciseTimer()
+            }
+
+        setupForegroundObserver()
+        HapticManager.shared.impact()
+    }
+
+    private func updateExerciseTimer() {
+        guard let startTime = exerciseTimerStartTime else { return }
+        let elapsed = Int(Date().timeIntervalSince(startTime))
+
+        if exerciseTimerIsStopwatch {
+            // Stopwatch mode - counting up
+            exerciseTimerSeconds = elapsed
+        } else {
+            // Countdown mode
+            let remaining = exerciseTimerDuration - elapsed
+            if remaining > 0 {
+                // Haptic for last 3 seconds countdown
+                if remaining <= 3 && exerciseTimerSeconds > 3 {
+                    HapticManager.shared.tap()
+                }
+                exerciseTimerSeconds = remaining
+            } else {
+                exerciseTimerSeconds = 0
+                stopExerciseTimer(completed: true)
+            }
+        }
+    }
+
+    /// Stop the exercise timer and return the elapsed time
+    func stopExerciseTimer(completed: Bool = false) -> Int {
+        exerciseTimerCancellable?.cancel()
+        exerciseTimerCancellable = nil
+
+        let result: Int
+        if exerciseTimerIsStopwatch {
+            result = exerciseTimerSeconds
+        } else {
+            // For countdown, return elapsed time (total - remaining)
+            result = completed ? exerciseTimerTotal : (exerciseTimerTotal - exerciseTimerSeconds)
+        }
+
+        if completed {
+            HapticManager.shared.timerComplete()
+        }
+
+        isExerciseTimerRunning = false
+        exerciseTimerSetId = nil
+        exerciseTimerStartTime = nil
+        exerciseTimerDuration = 0
+
+        // Only cancel foreground observer if no other timers are running
+        if timerCancellable == nil && sessionTimerCancellable == nil {
+            foregroundCancellable?.cancel()
+            foregroundCancellable = nil
+        }
+
+        return result
+    }
+
+    /// Get the current exercise timer display value
+    var exerciseTimerDisplaySeconds: Int {
+        exerciseTimerSeconds
     }
 
     // MARK: - History

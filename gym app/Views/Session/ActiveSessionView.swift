@@ -26,7 +26,6 @@ struct ActiveSessionView: View {
     @State private var checkScale: CGFloat = 0
     @State private var ringScale: CGFloat = 0.8
     @State private var statsOpacity: Double = 0
-    @State private var showRecentSets = false
     @State private var showWorkoutOverview = false
     @State private var showEditExercise = false
     @State private var showIntervalTimer = false
@@ -184,14 +183,6 @@ struct ActiveSessionView: View {
                     dismiss()
                 }
             }
-            .sheet(isPresented: $showRecentSets) {
-                RecentSetsSheet(
-                    recentSets: getRecentSets(limit: 5),
-                    onUpdate: { recentSet, weight, reps, rpe, duration, holdTime, distance in
-                        updateRecentSet(recentSet, weight: weight, reps: reps, rpe: rpe, duration: duration, holdTime: holdTime, distance: distance)
-                    }
-                )
-            }
             .sheet(isPresented: $showEditExercise) {
                 if let exercise = sessionViewModel.currentExercise {
                     EditExerciseSheet(
@@ -289,20 +280,30 @@ struct ActiveSessionView: View {
                 showWorkoutOverview = true
                 HapticManager.shared.soft()
             } label: {
-                HStack {
-                    // Timer - subtle
-                    HStack(spacing: 4) {
-                        Image(systemName: "clock")
-                            .font(.system(size: 12))
-                            .foregroundColor(AppColors.textTertiary)
-                        Text(formatTime(sessionViewModel.sessionElapsedSeconds))
-                            .font(.system(size: 14, weight: .medium, design: .monospaced))
-                            .foregroundColor(AppColors.textSecondary)
+                ZStack {
+                    // Left and right content in an HStack
+                    HStack {
+                        // Timer - subtle
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock")
+                                .font(.system(size: 12))
+                                .foregroundColor(AppColors.textTertiary)
+                            Text(formatTime(sessionViewModel.sessionElapsedSeconds))
+                                .font(.system(size: 14, weight: .medium, design: .monospaced))
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+
+                        Spacer()
+
+                        // Module progress - subtle
+                        if let session = sessionViewModel.currentSession {
+                            Text("\(sessionViewModel.currentModuleIndex + 1)/\(session.completedModules.count)")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(AppColors.textTertiary)
+                        }
                     }
 
-                    Spacer()
-
-                    // Overview hint
+                    // Centered overview hint
                     HStack(spacing: 4) {
                         Image(systemName: "list.bullet")
                             .font(.system(size: 10))
@@ -316,15 +317,6 @@ struct ActiveSessionView: View {
                         Capsule()
                             .fill(AppColors.surfaceLight)
                     )
-
-                    Spacer()
-
-                    // Module progress - subtle
-                    if let session = sessionViewModel.currentSession {
-                        Text("\(sessionViewModel.currentModuleIndex + 1)/\(session.completedModules.count)")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(AppColors.textTertiary)
-                    }
                 }
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.vertical, AppSpacing.sm)
@@ -455,7 +447,7 @@ struct ActiveSessionView: View {
 
                     // Back button (always reserve space)
                     Button {
-                        goToPreviousExercise()
+                        goToPreviousExerciseSuperset()
                     } label: {
                         Image(systemName: "backward.fill")
                             .font(.system(size: 14))
@@ -468,9 +460,9 @@ struct ActiveSessionView: View {
                     }
                     .disabled(!canGoBack)
 
-                    // Skip button
+                    // Skip button (superset-aware)
                     Button {
-                        sessionViewModel.skipExercise()
+                        skipToNextExerciseSuperset()
                     } label: {
                         Image(systemName: "forward.fill")
                             .font(.system(size: 14))
@@ -509,36 +501,6 @@ struct ActiveSessionView: View {
     private var allSetsSection: some View {
         VStack(spacing: AppSpacing.md) {
             if let exercise = sessionViewModel.currentExercise {
-                // Recent sets button (if any completed sets exist)
-                if hasRecentSets {
-                    HStack {
-                        Spacer()
-                        Button {
-                            showRecentSets = true
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "clock.arrow.counterclockwise")
-                                    .font(.system(size: 12))
-                                Text("Recent")
-                                    .font(.caption.weight(.medium))
-                            }
-                            .foregroundColor(AppColors.textTertiary)
-                            .padding(.horizontal, AppSpacing.sm)
-                            .padding(.vertical, 4)
-                            .background(
-                                Capsule()
-                                    .fill(AppColors.surfaceLight)
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-
-                // MARK: Smart Suggestions Placeholder (TODO: Implement progression logic)
-                // This is where smart suggestions like "Try 140 lbs next?" would appear
-                // once we have progression tracking logic implemented.
-                // smartSuggestionsBanner(for: exercise)
-
                 // Check for interval set groups
                 ForEach(Array(exercise.completedSetGroups.enumerated()), id: \.element.id) { groupIndex, setGroup in
                     if setGroup.isInterval {
@@ -632,7 +594,8 @@ struct ActiveSessionView: View {
             }
         }
         .padding(AppSpacing.cardPadding)
-        .frame(maxWidth: .infinity)
+        .frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+        .fixedSize(horizontal: false, vertical: true)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.large)
                 .fill(AppColors.cardBackground)
@@ -861,6 +824,56 @@ struct ActiveSessionView: View {
         sessionViewModel.goToPreviousExercise()
     }
 
+    /// Superset-aware navigation to previous exercise
+    /// If in superset, goes to previous exercise in superset first
+    private func goToPreviousExerciseSuperset() {
+        guard let session = sessionViewModel.currentSession else { return }
+        let module = session.completedModules[sessionViewModel.currentModuleIndex]
+
+        // Check if in superset
+        if let exercise = sessionViewModel.currentExercise,
+           let supersetId = exercise.supersetGroupId {
+            let supersetIndices = module.completedExercises.enumerated()
+                .filter { $0.element.supersetGroupId == supersetId }
+                .map { $0.offset }
+
+            if let currentPos = supersetIndices.firstIndex(of: sessionViewModel.currentExerciseIndex),
+               currentPos > 0 {
+                // Move to previous exercise in superset
+                sessionViewModel.moveToExercise(supersetIndices[currentPos - 1])
+                return
+            }
+        }
+
+        // Normal back navigation
+        sessionViewModel.goToPreviousExercise()
+    }
+
+    /// Superset-aware skip to next exercise
+    /// If in superset, goes to next exercise in superset first
+    private func skipToNextExerciseSuperset() {
+        guard let session = sessionViewModel.currentSession else { return }
+        let module = session.completedModules[sessionViewModel.currentModuleIndex]
+
+        // Check if in superset
+        if let exercise = sessionViewModel.currentExercise,
+           let supersetId = exercise.supersetGroupId {
+            let supersetIndices = module.completedExercises.enumerated()
+                .filter { $0.element.supersetGroupId == supersetId }
+                .map { $0.offset }
+
+            if let currentPos = supersetIndices.firstIndex(of: sessionViewModel.currentExerciseIndex),
+               currentPos < supersetIndices.count - 1 {
+                // Move to next exercise in superset
+                sessionViewModel.moveToExercise(supersetIndices[currentPos + 1])
+                return
+            }
+        }
+
+        // Normal skip (exits superset or moves to next non-superset exercise)
+        sessionViewModel.skipExercise()
+    }
+
     // MARK: - Add Set
 
     private func addSetToCurrentExercise() {
@@ -1034,57 +1047,6 @@ struct ActiveSessionView: View {
             }
             sessionViewModel.setPosition(exerciseIndex: newExerciseIndex)
         }
-    }
-
-    // MARK: - Recent Sets
-
-    private var hasRecentSets: Bool {
-        !getRecentSets(limit: 1).isEmpty
-    }
-
-    private func getRecentSets(limit: Int = 5) -> [RecentSet] {
-        guard let session = sessionViewModel.currentSession else { return [] }
-        var recentSets: [RecentSet] = []
-
-        // Iterate through all completed sets in reverse order (most recent first)
-        for (moduleIndex, module) in session.completedModules.enumerated().reversed() {
-            for (exerciseIndex, exercise) in module.completedExercises.enumerated().reversed() {
-                for (setGroupIndex, setGroup) in exercise.completedSetGroups.enumerated().reversed() {
-                    for (setIndex, setData) in setGroup.sets.enumerated().reversed() {
-                        if setData.completed {
-                            recentSets.append(RecentSet(
-                                moduleIndex: moduleIndex,
-                                exerciseIndex: exerciseIndex,
-                                setGroupIndex: setGroupIndex,
-                                setIndex: setIndex,
-                                exerciseName: exercise.exerciseName,
-                                exerciseType: exercise.exerciseType,
-                                setData: setData
-                            ))
-                            if recentSets.count >= limit {
-                                return recentSets
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return recentSets
-    }
-
-    private func updateRecentSet(_ recentSet: RecentSet, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?) {
-        updateSetAt(
-            moduleIndex: recentSet.moduleIndex,
-            exerciseIndex: recentSet.exerciseIndex,
-            setGroupIndex: recentSet.setGroupIndex,
-            setIndex: recentSet.setIndex,
-            weight: weight,
-            reps: reps,
-            rpe: rpe,
-            duration: duration,
-            holdTime: holdTime,
-            distance: distance
-        )
     }
 
     private func updateSetAt(moduleIndex: Int, exerciseIndex: Int, setGroupIndex: Int, setIndex: Int, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?, completed: Bool? = nil) {
@@ -1455,24 +1417,19 @@ struct ActiveSessionView: View {
 
                 Spacer()
 
-                // Browse X button (for long rests 3+ min)
+                // X button (for long rests 3+ min)
                 if isLongRest {
                     Button {
                         openTwitter()
                     } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "arrow.up.right.square")
-                                .font(.system(size: 12, weight: .medium))
-                            Text("Browse X")
-                                .font(.subheadline.weight(.medium))
-                        }
-                        .foregroundColor(AppColors.textSecondary)
-                        .padding(.horizontal, AppSpacing.sm)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(
-                            Capsule()
-                                .fill(AppColors.surfaceLight)
-                        )
+                        Text("𝕏")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(AppColors.textSecondary)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(AppColors.surfaceLight)
+                            )
                     }
                     .buttonStyle(.plain)
                 }

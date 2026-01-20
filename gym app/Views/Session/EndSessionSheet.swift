@@ -34,7 +34,12 @@ struct EndSessionSheet: View {
                 }
                 .padding(AppSpacing.screenPadding)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(AppColors.background.ignoresSafeArea())
+            .onTapGesture {
+                // Dismiss keyboard when tapping outside input fields
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
             .navigationTitle("Finish Workout")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -45,6 +50,8 @@ struct EndSessionSheet: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
+                        // Dismiss keyboard before saving
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                         onSave(feeling, notes.isEmpty ? nil : notes)
                     }
                     .fontWeight(.semibold)
@@ -598,6 +605,8 @@ struct SetEditSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
+                        // Dismiss keyboard before saving
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                         saveChanges()
                         dismiss()
                     }

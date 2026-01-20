@@ -153,57 +153,65 @@ struct ModuleListCard: View {
     let module: Module
     var showExercises: Bool = false
 
+    private var moduleColor: Color {
+        AppColors.moduleColor(module.type)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header row
             HStack(spacing: AppSpacing.md) {
-                // Icon
+                // Icon with gradient background (matches BuilderCard style)
                 ZStack {
-                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(AppColors.moduleColor(module.type).opacity(0.15))
-                        .frame(width: 48, height: 48)
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(
+                            LinearGradient(
+                                colors: [moduleColor.opacity(0.25), moduleColor.opacity(0.1)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 56, height: 56)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(moduleColor.opacity(0.3), lineWidth: 0.5)
+                        )
 
                     Image(systemName: module.type.icon)
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(AppColors.moduleColor(module.type))
+                        .font(.system(size: 24))
+                        .foregroundColor(moduleColor)
+                        .shadow(color: moduleColor.opacity(0.3), radius: 4, x: 0, y: 0)
                 }
 
                 // Content
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text(module.name)
-                        .font(.headline)
-                        .foregroundColor(AppColors.textPrimary)
+                    HStack {
+                        Text(module.name)
+                            .font(.headline)
+                            .foregroundColor(AppColors.textPrimary)
 
-                    HStack(spacing: AppSpacing.sm) {
                         // Type badge
                         Text(module.type.displayName)
-                            .font(.caption.weight(.medium))
-                            .foregroundColor(AppColors.moduleColor(module.type))
-                            .padding(.horizontal, AppSpacing.sm)
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundColor(moduleColor)
+                            .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(
                                 Capsule()
-                                    .fill(AppColors.moduleColor(module.type).opacity(0.15))
+                                    .fill(moduleColor.opacity(0.15))
                             )
+                    }
 
-                        // Exercise count
-                        HStack(spacing: 4) {
-                            Image(systemName: "list.bullet")
-                                .font(.system(size: 10))
-                            Text("\(module.exercises.count)")
-                        }
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
-
-                        // Duration
-                        if let duration = module.estimatedDuration {
-                            HStack(spacing: 4) {
-                                Image(systemName: "clock")
-                                    .font(.system(size: 10))
-                                Text("\(duration)m")
-                            }
-                            .font(.caption)
+                    HStack(spacing: AppSpacing.md) {
+                        Label("\(module.exercises.count) exercises", systemImage: "list.bullet")
+                            .font(.subheadline)
                             .foregroundColor(AppColors.textSecondary)
+
+                        if let duration = module.estimatedDuration {
+                            Label("\(duration)m", systemImage: "clock")
+                                .font(.subheadline)
+                                .foregroundColor(AppColors.textSecondary)
                         }
                     }
                 }
@@ -211,7 +219,7 @@ struct ModuleListCard: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.subheadline)
                     .foregroundColor(AppColors.textTertiary)
             }
             .padding(AppSpacing.cardPadding)
@@ -219,7 +227,7 @@ struct ModuleListCard: View {
             // Exercise list (only when filtered to specific type)
             if showExercises && !module.exercises.isEmpty {
                 Divider()
-                    .background(AppColors.border.opacity(0.5))
+                    .background(AppColors.border.opacity(0.3))
                     .padding(.horizontal, AppSpacing.cardPadding)
 
                 let resolvedExercises = module.resolvedExercises()
@@ -228,8 +236,8 @@ struct ModuleListCard: View {
                         HStack(spacing: AppSpacing.sm) {
                             Image(systemName: exercise.exerciseType.icon)
                                 .font(.system(size: 12))
-                                .foregroundColor(AppColors.textTertiary)
-                                .frame(width: 16)
+                                .foregroundColor(moduleColor)
+                                .frame(width: 20)
 
                             Text(exercise.name)
                                 .font(.subheadline)
@@ -249,7 +257,7 @@ struct ModuleListCard: View {
                     if module.exercises.count > 5 {
                         Text("+\(module.exercises.count - 5) more")
                             .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
+                            .foregroundColor(moduleColor)
                     }
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
@@ -257,14 +265,7 @@ struct ModuleListCard: View {
                 .padding(.top, AppSpacing.sm)
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.moduleColor(module.type).opacity(0.2), lineWidth: 1)
-                )
-        )
+        .gradientCard(accent: moduleColor, padding: 0)
     }
 }
 

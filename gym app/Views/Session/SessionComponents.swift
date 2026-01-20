@@ -55,6 +55,8 @@ struct SetIndicator: View {
 // MARK: - Set Row View (Inline Inputs)
 
 struct SetRowView: View {
+    @EnvironmentObject var sessionViewModel: SessionViewModel
+
     let flatSet: FlatSet
     let exercise: SessionExercise
     var isHighlighted: Bool = false  // Highlight when rest timer ends
@@ -85,19 +87,27 @@ struct SetRowView: View {
         case weight, reps, distance, height, rpe, temperature, bandColor
     }
 
-    // Inline timer state (countdown for time targets, stopwatch for distance targets)
-    @State private var timerRunning: Bool = false
-    @State private var timerSecondsRemaining: Int = 0  // For countdown timer
-    @State private var stopwatchSeconds: Int = 0  // For stopwatch (counts up)
-    @State private var timer: Timer?
-    @State private var timerStartTime: Date?
-    @State private var isStopwatchMode: Bool = false  // true = counting up, false = counting down
+    // Timer state now managed by SessionViewModel for background persistence
+    // Local state only for UI that doesn't need to persist
     @State private var showRPEPicker: Bool = false
     @State private var showTimePicker: Bool = false  // For manual time entry on cardio/mobility
     @State private var showHoldTimePicker: Bool = false  // For manual hold time entry on isometric
     @State private var showDistanceUnitPicker: Bool = false  // For changing distance unit
     @State private var durationManuallySet: Bool = false  // Track if user manually set duration via picker
     @State private var justCompleted: Bool = false  // For completion glow animation
+
+    // Computed properties for timer state from ViewModel
+    private var timerRunning: Bool {
+        sessionViewModel.isExerciseTimerRunning && sessionViewModel.exerciseTimerSetId == flatSet.id
+    }
+
+    private var timerSecondsRemaining: Int {
+        timerRunning && !sessionViewModel.exerciseTimerIsStopwatch ? sessionViewModel.exerciseTimerSeconds : 0
+    }
+
+    private var stopwatchSeconds: Int {
+        timerRunning && sessionViewModel.exerciseTimerIsStopwatch ? sessionViewModel.exerciseTimerSeconds : 0
+    }
 
     private var hasTimedTarget: Bool {
         (exercise.exerciseType == .cardio && exercise.tracksTime && flatSet.targetDuration != nil) ||
@@ -117,8 +127,9 @@ struct SetRowView: View {
             setNumberBadge
 
             if flatSet.setData.completed {
-                // Completed state - show summary
+                // Completed state - show summary (fills remaining space)
                 completedView
+                    .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 // Input fields based on exercise type - fills available space
                 inputFieldsView
@@ -138,6 +149,7 @@ struct SetRowView: View {
                 logButton
             }
         }
+        .frame(maxWidth: .infinity)  // Ensure row always fills container width
         .padding(.horizontal, AppSpacing.md)
         .padding(.vertical, AppSpacing.sm)
         .background(
@@ -154,7 +166,20 @@ struct SetRowView: View {
         .animation(.easeInOut(duration: 0.2), value: timerRunning)
         .animation(.easeInOut(duration: 0.2), value: flatSet.setData.completed)
         .onAppear { loadDefaults() }
-        .onDisappear { stopTimer() }
+        .onChange(of: sessionViewModel.isExerciseTimerRunning) { wasRunning, isRunning in
+            // When exercise timer stops (countdown complete), update input fields
+            if wasRunning && !isRunning && sessionViewModel.exerciseTimerSetId == nil {
+                // Timer completed or was stopped - sync the elapsed time
+                // Note: The ViewModel already calculated the result when stopping
+                // We just need to check if this was our timer by checking if values changed
+                if exercise.exerciseType == .isometric && sessionViewModel.exerciseTimerTotal > 0 {
+                    inputHoldTime = sessionViewModel.exerciseTimerTotal
+                } else if sessionViewModel.exerciseTimerTotal > 0 {
+                    inputDuration = sessionViewModel.exerciseTimerTotal
+                    durationManuallySet = true
+                }
+            }
+        }
         .onChange(of: flatSet.setData.completed) { wasCompleted, isCompleted in
             // Trigger completion glow when a set is newly completed
             if !wasCompleted && isCompleted {
@@ -861,7 +886,9 @@ struct SetRowView: View {
 
     private var logButton: some View {
         Button {
+            // Dismiss keyboard explicitly (focusedField = nil doesn't always work for number pads)
             focusedField = nil
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             // Trigger haptic feedback for set completion
             HapticManager.shared.setCompleted()
 
@@ -1012,12 +1039,11 @@ struct SetRowView: View {
         }
     }
 
-    // MARK: - Timer Functions
+    // MARK: - Timer Functions (now using SessionViewModel for background persistence)
 
     private func toggleTimer() {
         if timerRunning {
-            stopTimer()
-            let elapsed = targetTimerSeconds - timerSecondsRemaining
+            let elapsed = sessionViewModel.stopExerciseTimer()
             if exercise.exerciseType == .isometric {
                 inputHoldTime = elapsed
             } else {
@@ -1025,66 +1051,7 @@ struct SetRowView: View {
                 durationManuallySet = true
             }
         } else {
-            startTimer()
-        }
-    }
-
-    private func startTimer() {
-        timerStartTime = Date()
-        timerSecondsRemaining = targetTimerSeconds
-        timerRunning = true
-
-        HapticManager.shared.impact()
-
-        updateTimerFromStartTime()
-
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [self] _ in
-            updateTimerFromStartTime()
-        }
-
-        // Listen for foreground to update timer
-        NotificationCenter.default.addObserver(
-            forName: UIApplication.willEnterForegroundNotification,
-            object: nil,
-            queue: .main
-        ) { [self] _ in
-            updateTimerFromStartTime()
-        }
-    }
-
-    private func updateTimerFromStartTime() {
-        guard let startTime = timerStartTime else { return }
-        let elapsed = Int(Date().timeIntervalSince(startTime))
-        let remaining = targetTimerSeconds - elapsed
-
-        if remaining > 0 {
-            // Haptic for last 3 seconds countdown
-            if remaining <= 3 && timerSecondsRemaining > 3 {
-                HapticManager.shared.tap()
-            }
-            timerSecondsRemaining = remaining
-        } else {
-            timerComplete()
-        }
-    }
-
-    private func stopTimer() {
-        timer?.invalidate()
-        timer = nil
-        timerRunning = false
-        timerStartTime = nil
-        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
-    }
-
-    private func timerComplete() {
-        stopTimer()
-        HapticManager.shared.timerComplete()
-
-        if exercise.exerciseType == .isometric {
-            inputHoldTime = targetTimerSeconds
-        } else {
-            inputDuration = targetTimerSeconds
-            durationManuallySet = true
+            sessionViewModel.startExerciseTimer(seconds: targetTimerSeconds, setId: flatSet.id)
         }
     }
 
@@ -1092,49 +1059,12 @@ struct SetRowView: View {
 
     private func toggleStopwatch() {
         if timerRunning {
-            stopStopwatch()
+            let elapsed = sessionViewModel.stopExerciseTimer()
+            inputDuration = elapsed
+            durationManuallySet = true
         } else {
-            startStopwatch()
+            sessionViewModel.startExerciseStopwatch(setId: flatSet.id)
         }
-    }
-
-    private func startStopwatch() {
-        timerStartTime = Date()
-        stopwatchSeconds = 0
-        timerRunning = true
-        isStopwatchMode = true
-
-        HapticManager.shared.impact()
-
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            updateStopwatch()
-        }
-
-        NotificationCenter.default.addObserver(
-            forName: UIApplication.willEnterForegroundNotification,
-            object: nil,
-            queue: .main
-        ) { _ in
-            updateStopwatch()
-        }
-    }
-
-    private func updateStopwatch() {
-        guard let startTime = timerStartTime else { return }
-        stopwatchSeconds = Int(Date().timeIntervalSince(startTime))
-    }
-
-    private func stopStopwatch() {
-        timer?.invalidate()
-        timer = nil
-        timerRunning = false
-        isStopwatchMode = false
-        inputDuration = stopwatchSeconds
-        durationManuallySet = true
-        timerStartTime = nil
-        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
-
-        HapticManager.shared.timerComplete()
     }
 
     // MARK: - Helpers

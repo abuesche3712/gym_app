@@ -126,95 +126,62 @@ struct WorkoutListCard: View {
     var onStart: (() -> Void)? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            // Header
-            HStack {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text(workout.name)
-                        .font(.title3.bold())
-                        .foregroundColor(AppColors.textPrimary)
+        HStack(spacing: AppSpacing.md) {
+            // Content
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text(workout.name)
+                    .font(.headline)
+                    .foregroundColor(AppColors.textPrimary)
 
-                    HStack(spacing: AppSpacing.md) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "square.stack.3d.up")
-                                .font(.system(size: 12))
-                            Text("\(modules.count) modules")
-                        }
-                        .font(.caption)
+                HStack(spacing: AppSpacing.md) {
+                    Label("\(modules.count) modules", systemImage: "square.stack.3d.up")
+                        .font(.subheadline)
                         .foregroundColor(AppColors.textSecondary)
 
-                        if let duration = workout.estimatedDuration {
-                            HStack(spacing: 4) {
-                                Image(systemName: "clock")
-                                    .font(.system(size: 12))
-                                Text("\(duration) min")
-                            }
-                            .font(.caption)
+                    if let duration = workout.estimatedDuration {
+                        Label("\(duration) min", systemImage: "clock")
+                            .font(.subheadline)
                             .foregroundColor(AppColors.textSecondary)
+                    }
+                }
+
+                // Module preview chips
+                if !modules.isEmpty {
+                    HStack(spacing: AppSpacing.xs) {
+                        ForEach(modules.prefix(3)) { module in
+                            HStack(spacing: 4) {
+                                Circle()
+                                    .fill(AppColors.moduleColor(module.type))
+                                    .frame(width: 6, height: 6)
+                                Text(module.name)
+                                    .font(.caption)
+                                    .lineLimit(1)
+                            }
+                            .foregroundColor(AppColors.textTertiary)
                         }
-                    }
-                }
-
-                Spacer()
-
-                Button(action: { onStart?() }) {
-                    ZStack {
-                        Circle()
-                            .fill(AppColors.accentBlue)
-                            .frame(width: 44, height: 44)
-
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 16))
-                            .foregroundColor(.white)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-
-            // Module list
-            if !modules.isEmpty {
-                VStack(spacing: AppSpacing.sm) {
-                    ForEach(Array(modules.enumerated()), id: \.element.id) { index, module in
-                        HStack(spacing: AppSpacing.md) {
-                            // Order number
-                            Text("\(index + 1)")
-                                .font(.caption.weight(.semibold))
-                                .foregroundColor(AppColors.textTertiary)
-                                .frame(width: 20)
-
-                            // Module icon
-                            Image(systemName: module.type.icon)
-                                .font(.system(size: 14))
-                                .foregroundColor(AppColors.moduleColor(module.type))
-                                .frame(width: 24)
-
-                            // Module name
-                            Text(module.name)
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.textPrimary)
-
-                            Spacer()
-
-                            // Exercise count
-                            Text("\(module.exercises.count)")
+                        if modules.count > 3 {
+                            Text("+\(modules.count - 3)")
                                 .font(.caption)
                                 .foregroundColor(AppColors.textTertiary)
                         }
-                        .padding(.vertical, AppSpacing.xs)
-
-                        if index < modules.count - 1 {
-                            Divider()
-                                .background(AppColors.border.opacity(0.5))
-                                .padding(.leading, 44)
-                        }
                     }
                 }
-                .padding(AppSpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(AppColors.surfaceLight.opacity(0.5))
-                )
             }
+
+            Spacer()
+
+            // Play button
+            Button(action: { onStart?() }) {
+                Image(systemName: "play.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 40, height: 40)
+                    .background(
+                        Circle()
+                            .fill(AppColors.accentBlue)
+                    )
+            }
+            .buttonStyle(.plain)
         }
         .padding(AppSpacing.cardPadding)
         .background(
@@ -222,7 +189,7 @@ struct WorkoutListCard: View {
                 .fill(AppColors.cardBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
+                        .stroke(AppColors.border.opacity(0.5), lineWidth: 0.5)
                 )
         )
         .contentShape(Rectangle())
