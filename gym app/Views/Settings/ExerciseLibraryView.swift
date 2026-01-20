@@ -121,6 +121,7 @@ struct ExerciseLibraryView: View {
                             },
                             onDelete: exercise.isCustom ? {
                                 customLibrary.deleteExercise(exercise)
+                                resolver.refreshCache()
                             } : nil
                         )
                     }
@@ -277,6 +278,15 @@ private struct ExerciseLibraryRow: View {
                                 .foregroundColor(AppColors.textTertiary)
                                 .lineLimit(1)
                         }
+
+                        if !equipmentNames.isEmpty {
+                            Text("•")
+                                .foregroundColor(AppColors.textTertiary)
+                            Text(equipmentNames)
+                                .font(.caption)
+                                .foregroundColor(AppColors.accentCyan)
+                                .lineLimit(1)
+                        }
                     }
                 }
 
@@ -311,6 +321,13 @@ private struct ExerciseLibraryRow: View {
         exercise.primaryMuscles.map { $0.rawValue }.joined(separator: ", ")
     }
 
+    private var equipmentNames: String {
+        let library = LibraryService.shared
+        return exercise.implementIds.compactMap { id in
+            library.getImplement(id: id)?.name
+        }.joined(separator: ", ")
+    }
+
     private var typeColor: Color {
         switch exercise.exerciseType {
         case .strength: return .blue
@@ -339,9 +356,18 @@ private struct ExerciseLibraryRow: View {
 private struct AddExerciseSheet: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var customLibrary = CustomExerciseLibrary.shared
+    @StateObject private var libraryService = LibraryService.shared
 
     @State private var name = ""
     @State private var exerciseType: ExerciseType = .strength
+    @State private var primaryMuscles: Set<MuscleGroup> = []
+    @State private var secondaryMuscles: Set<MuscleGroup> = []
+    @State private var selectedImplementIds: Set<UUID> = []
+
+    private let columns = [
+        GridItem(.flexible()),
+        GridItem(.flexible())
+    ]
 
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
@@ -349,19 +375,78 @@ private struct AddExerciseSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Name") {
-                    TextField("Exercise name", text: $name)
-                }
+            ScrollView {
+                VStack(spacing: AppSpacing.lg) {
+                    // Name Section
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("Name")
+                            .font(.headline)
+                            .foregroundColor(AppColors.textPrimary)
 
-                Section("Type") {
-                    Picker("Type", selection: $exerciseType) {
-                        ForEach(ExerciseType.allCases) { type in
-                            Text(type.displayName).tag(type)
+                        TextField("Exercise name", text: $name)
+                            .padding(AppSpacing.md)
+                            .background(
+                                RoundedRectangle(cornerRadius: AppCorners.medium)
+                                    .fill(AppColors.cardBackground)
+                            )
+                    }
+
+                    // Type Section
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("Exercise Type")
+                            .font(.headline)
+                            .foregroundColor(AppColors.textPrimary)
+
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.sm) {
+                            ForEach(ExerciseType.allCases) { type in
+                                Button {
+                                    exerciseType = type
+                                } label: {
+                                    VStack(spacing: 6) {
+                                        Image(systemName: type.icon)
+                                            .font(.system(size: 20))
+
+                                        Text(type.displayName)
+                                            .font(.caption)
+                                            .lineLimit(1)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, AppSpacing.sm)
+                                    .foregroundColor(exerciseType == type ? .white : AppColors.textPrimary)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: AppCorners.medium)
+                                            .fill(exerciseType == type ? AppColors.accentBlue : AppColors.cardBackground)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
+
+                    // Primary Muscles
+                    muscleSection(
+                        title: "Primary Muscles",
+                        subtitle: "Main muscles worked",
+                        selected: $primaryMuscles,
+                        excluded: secondaryMuscles,
+                        accentColor: AppColors.accentBlue
+                    )
+
+                    // Secondary Muscles
+                    muscleSection(
+                        title: "Secondary Muscles",
+                        subtitle: "Supporting muscles",
+                        selected: $secondaryMuscles,
+                        excluded: primaryMuscles,
+                        accentColor: AppColors.accentTeal
+                    )
+
+                    // Equipment
+                    equipmentSection
                 }
+                .padding(AppSpacing.screenPadding)
             }
+            .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Add Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -372,11 +457,102 @@ private struct AddExerciseSheet: View {
                     Button("Save") {
                         customLibrary.addExercise(
                             name: name.trimmingCharacters(in: .whitespaces),
-                            exerciseType: exerciseType
+                            exerciseType: exerciseType,
+                            primary: Array(primaryMuscles),
+                            secondary: Array(secondaryMuscles),
+                            implementIds: selectedImplementIds
                         )
+                        ExerciseResolver.shared.refreshCache()
                         dismiss()
                     }
                     .disabled(!canSave)
+                }
+            }
+        }
+    }
+
+    private func muscleSection(
+        title: String,
+        subtitle: String,
+        selected: Binding<Set<MuscleGroup>>,
+        excluded: Set<MuscleGroup>,
+        accentColor: Color
+    ) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(title)
+                        .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
+
+                    Spacer()
+
+                    if !selected.wrappedValue.isEmpty {
+                        Text("\(selected.wrappedValue.count) selected")
+                            .font(.caption)
+                            .foregroundColor(accentColor)
+                    }
+                }
+
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+
+            LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
+                ForEach(MuscleGroup.allCases, id: \.self) { muscle in
+                    if !excluded.contains(muscle) {
+                        MuscleChip(
+                            muscle: muscle,
+                            isSelected: selected.wrappedValue.contains(muscle),
+                            accentColor: accentColor
+                        ) {
+                            if selected.wrappedValue.contains(muscle) {
+                                selected.wrappedValue.remove(muscle)
+                            } else {
+                                selected.wrappedValue.insert(muscle)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var equipmentSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text("Equipment")
+                        .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
+
+                    Spacer()
+
+                    if !selectedImplementIds.isEmpty {
+                        Text("\(selectedImplementIds.count) selected")
+                            .font(.caption)
+                            .foregroundColor(AppColors.accentCyan)
+                    }
+                }
+
+                Text("What equipment does this exercise use?")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+
+            LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
+                ForEach(libraryService.implements, id: \.id) { implement in
+                    EquipmentChip(
+                        name: implement.name,
+                        isSelected: selectedImplementIds.contains(implement.id)
+                    ) {
+                        if selectedImplementIds.contains(implement.id) {
+                            selectedImplementIds.remove(implement.id)
+                        } else {
+                            selectedImplementIds.insert(implement.id)
+                        }
+                    }
                 }
             }
         }
@@ -410,8 +586,7 @@ private struct ExerciseEditSheet: View {
         _exerciseType = State(initialValue: exercise.exerciseType)
         _primaryMuscles = State(initialValue: Set(exercise.primaryMuscles))
         _secondaryMuscles = State(initialValue: Set(exercise.secondaryMuscles))
-        // TODO: Load implement IDs from exercise if stored
-        _selectedImplementIds = State(initialValue: [])
+        _selectedImplementIds = State(initialValue: exercise.implementIds)
     }
 
     private var canSave: Bool {
@@ -423,7 +598,7 @@ private struct ExerciseEditSheet: View {
         exerciseType != exercise.exerciseType ||
         Set(exercise.primaryMuscles) != primaryMuscles ||
         Set(exercise.secondaryMuscles) != secondaryMuscles ||
-        !selectedImplementIds.isEmpty
+        exercise.implementIds != selectedImplementIds
     }
 
     var body: some View {
@@ -667,12 +842,14 @@ private struct ExerciseEditSheet: View {
         updated.exerciseType = exerciseType
         updated.primaryMuscles = Array(primaryMuscles)
         updated.secondaryMuscles = Array(secondaryMuscles)
+        updated.implementIds = selectedImplementIds
 
         if exercise.isCustom {
             customLibrary.updateExercise(updated)
         } else {
             customLibrary.addExercise(updated)
         }
+        ExerciseResolver.shared.refreshCache()
         dismiss()
     }
 

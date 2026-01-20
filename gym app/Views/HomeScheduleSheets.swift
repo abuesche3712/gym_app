@@ -10,14 +10,9 @@ import SwiftUI
 // MARK: - Rest Day Jabs
 
 private let restDayJabs = [
-    "Muscles grow when you rest... allegedly 😴",
-    "Fine, take a break. The weights will miss you.",
-    "Rest day? More like best day... said no one ever 💪",
-    "Even superheroes need a day off. You're basically Superman.",
-    "The gym will be there tomorrow. So will leg day. Always leg day.",
-    "Recovery mode: activated 🔋",
-    "Netflix and no-chill (because you're resting)",
-    "Plot twist: rest days are just stealth gains",
+    "Go look at yourself in the mirror real quick",
+    "Fine, take a break...",
+    "The gym will be there tomorrow. But you might not",
 ]
 
 // MARK: - Week Day Cell
@@ -274,7 +269,7 @@ struct ScheduleWorkoutSheet: View {
                 }
                 .padding(AppSpacing.screenPadding)
             }
-            .background(AppColors.background.ignoresSafeArea())
+            .sheetBackground()
             .navigationTitle(formattedDate)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -294,6 +289,7 @@ struct ScheduleWorkoutSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .presentationBackground(.ultraThinMaterial)
     }
 }
 
@@ -427,7 +423,7 @@ struct ScheduledWorkoutDetailRow: View {
     var body: some View {
         VStack(spacing: 0) {
             // Main content - tappable to view workout details
-            NavigationLink(destination: WorkoutFormView(workout: workout)) {
+            NavigationLink(destination: WorkoutDetailView(workout: workout)) {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "calendar.badge.clock")
                         .foregroundColor(AppColors.accentBlue)
@@ -550,7 +546,7 @@ struct WorkoutPreviewSheet: View {
                 }
                 .padding(AppSpacing.screenPadding)
             }
-            .background(AppColors.background.ignoresSafeArea())
+            .sheetBackground()
             .navigationTitle(workout.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -568,6 +564,7 @@ struct WorkoutPreviewSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .presentationBackground(.ultraThinMaterial)
     }
 }
 
@@ -716,7 +713,7 @@ struct QuickScheduleTodaySheet: View {
                 }
                 .padding(AppSpacing.screenPadding)
             }
-            .background(AppColors.background.ignoresSafeArea())
+            .sheetBackground()
             .navigationTitle("Schedule Today")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -736,6 +733,7 @@ struct QuickScheduleTodaySheet: View {
         }
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
+        .presentationBackground(.ultraThinMaterial)
     }
 }
 

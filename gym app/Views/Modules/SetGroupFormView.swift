@@ -15,6 +15,8 @@ struct SetGroupFormView: View {
     let cardioMetric: CardioMetric
     let mobilityTracking: MobilityTracking
     let distanceUnit: DistanceUnit
+    let implementIds: Set<UUID>
+    let isBodyweight: Bool
     let existingSetGroup: SetGroup?
     let onSave: (SetGroup) -> Void
 
@@ -28,6 +30,9 @@ struct SetGroupFormView: View {
     @State private var restPeriod: Int = 90
     @State private var notes: String = ""
 
+    // Implement measurable inputs
+    @State private var implementMeasurableStringValue: String = ""
+
     // Interval mode
     @State private var isInterval: Bool = false
     @State private var workDuration: Int = 30
@@ -35,9 +40,31 @@ struct SetGroupFormView: View {
 
     private var isEditing: Bool { existingSetGroup != nil }
 
-    /// Always show weight field for strength exercises
-    private var showWeightField: Bool {
-        true
+    /// Returns the primary implement's string-based measurable info (like band color)
+    private var implementStringMeasurable: ImplementMeasurableInfo? {
+        for id in implementIds {
+            guard let implement = libraryService.getImplement(id: id) else { continue }
+            if let stringMeasurable = implement.measurableArray.first(where: { $0.isStringBased }) {
+                return ImplementMeasurableInfo(
+                    implementName: implement.name,
+                    measurableName: stringMeasurable.name,
+                    unit: stringMeasurable.unit,
+                    isStringBased: true
+                )
+            }
+        }
+        return nil
+    }
+
+    /// Returns true if this exercise uses box (for height input)
+    private var usesBox: Bool {
+        for id in implementIds {
+            guard let implement = libraryService.getImplement(id: id) else { continue }
+            if implement.name.lowercased().contains("box") {
+                return true
+            }
+        }
+        return false
     }
 
     var body: some View {
@@ -139,8 +166,27 @@ struct SetGroupFormView: View {
         case .strength:
             Stepper("Reps: \(targetReps)", value: $targetReps, in: 0...100)
 
-            TextField("Target Weight (lbs)", text: $targetWeight)
-                .keyboardType(.decimalPad)
+            // Show different input based on equipment
+            if let stringMeasurable = implementStringMeasurable {
+                // String-based input (e.g., band color)
+                TextField("Target \(stringMeasurable.measurableName)", text: $implementMeasurableStringValue)
+            } else if isBodyweight {
+                // Bodyweight with optional added weight
+                HStack {
+                    Text("BW +")
+                        .foregroundColor(.secondary)
+                    TextField("Added Weight (lbs)", text: $targetWeight)
+                        .keyboardType(.decimalPad)
+                }
+            } else if usesBox {
+                // Box height
+                TextField("Target Height (in)", text: $targetWeight)
+                    .keyboardType(.decimalPad)
+            } else {
+                // Standard weight input
+                TextField("Target Weight (lbs)", text: $targetWeight)
+                    .keyboardType(.decimalPad)
+            }
 
             Picker("RPE", selection: $targetRPE) {
                 Text("None").tag(0)
@@ -211,11 +257,16 @@ struct SetGroupFormView: View {
     // MARK: - Actions
 
     private func saveSetGroup() {
+        // Determine implement measurable info for storage
+        let measurableLabel = implementStringMeasurable?.measurableName
+        let measurableUnit = implementStringMeasurable?.unit
+        let measurableStringValue = !implementMeasurableStringValue.isEmpty ? implementMeasurableStringValue : nil
+
         let setGroup = SetGroup(
             id: existingSetGroup?.id ?? UUID(),
             sets: sets,
             targetReps: !isInterval && (exerciseType == .strength || (exerciseType == .mobility && mobilityTracking.tracksReps) || exerciseType == .explosive) ? (targetReps > 0 ? targetReps : nil) : nil,
-            targetWeight: !isInterval ? Double(targetWeight) : nil,
+            targetWeight: !isInterval && implementStringMeasurable == nil ? Double(targetWeight) : nil,
             targetRPE: !isInterval && targetRPE > 0 ? targetRPE : nil,
             targetDuration: !isInterval && ((exerciseType == .cardio && cardioMetric.tracksTime) || (exerciseType == .mobility && mobilityTracking.tracksDuration) || exerciseType == .recovery) && targetDuration > 0 ? targetDuration : nil,
             targetDistance: !isInterval && cardioMetric.tracksDistance ? Double(targetDistance) : nil,
@@ -225,7 +276,10 @@ struct SetGroupFormView: View {
             notes: notes.isEmpty ? nil : notes,
             isInterval: isInterval,
             workDuration: isInterval ? workDuration : nil,
-            intervalRestDuration: isInterval ? intervalRestDuration : nil
+            intervalRestDuration: isInterval ? intervalRestDuration : nil,
+            implementMeasurableLabel: measurableLabel,
+            implementMeasurableUnit: measurableUnit,
+            implementMeasurableStringValue: measurableStringValue
         )
         onSave(setGroup)
         dismiss()
@@ -246,6 +300,8 @@ struct SetGroupFormView: View {
             isInterval = existing.isInterval
             workDuration = existing.workDuration ?? 30
             intervalRestDuration = existing.intervalRestDuration ?? 30
+            // Implement measurable fields
+            implementMeasurableStringValue = existing.implementMeasurableStringValue ?? ""
         }
     }
 

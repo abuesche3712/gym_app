@@ -29,6 +29,7 @@ struct ResolvedExercise: Identifiable, Hashable, ExerciseMetrics {
     var recoveryActivityType: RecoveryActivityType? { instance.recoveryActivityType }
     var primaryMuscles: [MuscleGroup] { instance.primaryMuscles }
     var secondaryMuscles: [MuscleGroup] { instance.secondaryMuscles }
+    var implementIds: Set<UUID> { instance.implementIds }
 
     // Category is only on template (not critical for display)
     var category: ExerciseCategory {

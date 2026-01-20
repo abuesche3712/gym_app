@@ -506,6 +506,7 @@ struct QuickExerciseFormView: View {
             recoveryActivityType: selectedTemplate?.recoveryActivityType,
             primaryMuscles: selectedTemplate?.primaryMuscles ?? [],
             secondaryMuscles: selectedTemplate?.secondaryMuscles ?? [],
+            implementIds: selectedTemplate?.implementIds ?? [],
             setGroups: [setGroup]
         )
 

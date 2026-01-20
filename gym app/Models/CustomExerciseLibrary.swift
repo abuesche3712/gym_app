@@ -43,6 +43,7 @@ class CustomExerciseLibrary: ObservableObject {
                     exerciseType: entity.exerciseType,
                     primary: entity.primaryMuscles,
                     secondary: entity.secondaryMuscles,
+                    implementIds: entity.implementIds,
                     isCustom: true
                 )
             }
@@ -59,7 +60,8 @@ class CustomExerciseLibrary: ObservableObject {
         name: String,
         exerciseType: ExerciseType,
         primary: [MuscleGroup] = [],
-        secondary: [MuscleGroup] = []
+        secondary: [MuscleGroup] = [],
+        implementIds: Set<UUID> = []
     ) -> Bool {
         // Validate name is not empty
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -81,6 +83,7 @@ class CustomExerciseLibrary: ObservableObject {
         entity.exerciseType = exerciseType
         entity.primaryMuscles = primary
         entity.secondaryMuscles = secondary
+        entity.implementIds = implementIds
         entity.createdAt = Date()
         entity.updatedAt = Date()
 
@@ -101,7 +104,8 @@ class CustomExerciseLibrary: ObservableObject {
             name: template.name,
             exerciseType: template.exerciseType,
             primary: template.primaryMuscles,
-            secondary: template.secondaryMuscles
+            secondary: template.secondaryMuscles,
+            implementIds: template.implementIds
         )
     }
 
@@ -117,6 +121,7 @@ class CustomExerciseLibrary: ObservableObject {
                 entity.exerciseType = template.exerciseType
                 entity.primaryMuscles = template.primaryMuscles
                 entity.secondaryMuscles = template.secondaryMuscles
+                entity.implementIds = template.implementIds
                 entity.updatedAt = Date()
                 save()
                 loadExercises()

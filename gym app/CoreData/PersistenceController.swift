@@ -518,6 +518,7 @@ struct PersistenceController {
             createAttribute("recoveryActivityTypeRaw", type: .stringAttributeType, optional: true),
             createAttribute("primaryMusclesData", type: .binaryDataAttributeType, optional: true),
             createAttribute("secondaryMusclesData", type: .binaryDataAttributeType, optional: true),
+            createAttribute("implementIdsRaw", type: .stringAttributeType, optional: true),
             // Legacy override fields (kept for migration)
             createAttribute("nameOverride", type: .stringAttributeType, optional: true),
             createAttribute("exerciseTypeOverrideRaw", type: .stringAttributeType, optional: true),

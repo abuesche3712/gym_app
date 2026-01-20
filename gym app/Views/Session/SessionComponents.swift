@@ -58,7 +58,7 @@ struct SetRowView: View {
     let flatSet: FlatSet
     let exercise: SessionExercise
     var isHighlighted: Bool = false  // Highlight when rest timer ends
-    let onLog: (Double?, Int?, Int?, Int?, Int?, Double?, Double?, Int?, Int?, Int?) -> Void  // weight, reps, rpe, duration, holdTime, distance, height, quality, intensity, temperature
+    let onLog: (Double?, Int?, Int?, Int?, Int?, Double?, Double?, Int?, Int?, Int?, String?) -> Void  // weight, reps, rpe, duration, holdTime, distance, height, quality, intensity, temperature, bandColor
     var onDelete: (() -> Void)? = nil  // Optional delete callback
     var onDistanceUnitChange: ((DistanceUnit) -> Void)? = nil  // Callback to change distance unit
     var onUncheck: (() -> Void)? = nil  // Callback to uncheck/edit a completed set
@@ -78,10 +78,11 @@ struct SetRowView: View {
     @State private var inputQuality: Int = 0  // 1-5 for explosive exercises
     @State private var inputIntensity: Int = 0  // 1-10 for isometric exercises
     @State private var inputTemperature: String = ""  // For recovery activities (sauna/cold plunge)
+    @State private var inputBandColor: String = ""  // For band exercises (e.g., "Red", "Blue")
     @FocusState private var focusedField: Field?
 
     enum Field: Hashable {
-        case weight, reps, distance, height, rpe, temperature
+        case weight, reps, distance, height, rpe, temperature, bandColor
     }
 
     // Inline timer state (countdown for time targets, stopwatch for distance targets)
@@ -261,18 +262,71 @@ struct SetRowView: View {
 
     private var strengthInputs: some View {
         HStack(spacing: AppSpacing.md) {
-            // Primary inputs: weight × reps
+            // Primary inputs: implement measurable × reps OR weight × reps
             HStack(spacing: AppSpacing.sm) {
-                // Weight input box (with BW prefix for bodyweight exercises)
-                HStack(spacing: 4) {
-                    if exercise.isBodyweight {
+                if let stringMeasurable = exercise.implementStringMeasurable {
+                    // String-based implement input (e.g., band color)
+                    VStack(spacing: 4) {
+                        TextField(stringMeasurable.measurableName, text: $inputBandColor)
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundColor(AppColors.textPrimary)
+                            .multilineTextAlignment(.center)
+                            .frame(minWidth: 70)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 8)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                            .focused($focusedField, equals: .bandColor)
+
+                        Text(stringMeasurable.implementName.lowercased())
+                            .font(.caption2.weight(.medium))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                } else if exercise.usesBox {
+                    // Box height input
+                    VStack(spacing: 4) {
+                        TextField("0", text: $inputHeight)
+                            .keyboardType(.decimalPad)
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundColor(AppColors.textPrimary)
+                            .multilineTextAlignment(.center)
+                            .frame(minWidth: 44)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 8)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                            .focused($focusedField, equals: .height)
+
+                        Text("in")
+                            .font(.caption2.weight(.medium))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                } else if exercise.isBodyweight {
+                    // Bodyweight with optional added weight
+                    HStack(spacing: 4) {
                         Text("BW +")
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundColor(AppColors.accentBlue)
-                    }
 
+                        VStack(spacing: 4) {
+                            TextField("0", text: $inputWeight)
+                                .keyboardType(.decimalPad)
+                                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                .foregroundColor(AppColors.textPrimary)
+                                .multilineTextAlignment(.center)
+                                .frame(minWidth: 44)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 8)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                                .focused($focusedField, equals: .weight)
+
+                            Text("lbs")
+                                .font(.caption2.weight(.medium))
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                    }
+                } else {
+                    // Standard weight input
                     VStack(spacing: 4) {
-                        TextField(exercise.isBodyweight ? "0" : "0", text: $inputWeight)
+                        TextField("0", text: $inputWeight)
                             .keyboardType(.decimalPad)
                             .font(.system(size: 18, weight: .semibold, design: .rounded))
                             .foregroundColor(AppColors.textPrimary)
@@ -786,6 +840,9 @@ struct SetRowView: View {
             if let distance = prevSet.distance {
                 inputDistance = formatDistanceValue(distance)
             }
+            if let band = prevSet.bandColor {
+                inputBandColor = band
+            }
             // Light haptic to confirm action
             HapticManager.shared.soft()
         } label: {
@@ -820,8 +877,13 @@ struct SetRowView: View {
                 durationToSave = inputDuration > 0 ? inputDuration : nil
             }
 
+            // For string-based implement measurables (e.g., band color), pass nil weight
+            let hasStringMeasurable = exercise.implementStringMeasurable != nil
+            let weightToSave = hasStringMeasurable ? nil : Double(inputWeight)
+            let bandColorToSave = hasStringMeasurable && !inputBandColor.isEmpty ? inputBandColor : nil
+
             onLog(
-                Double(inputWeight),
+                weightToSave,
                 Int(inputReps),
                 validRPE,
                 durationToSave,
@@ -830,7 +892,8 @@ struct SetRowView: View {
                 Double(inputHeight),
                 inputQuality > 0 ? inputQuality : nil,
                 inputIntensity > 0 ? inputIntensity : nil,
-                Int(inputTemperature)
+                Int(inputTemperature),
+                bandColorToSave
             )
         } label: {
             Image(systemName: "checkmark")
@@ -851,6 +914,36 @@ struct SetRowView: View {
         let set = flatSet.setData
         switch exercise.exerciseType {
         case .strength:
+            // String-based implement measurables (e.g., band color) show that instead of weight
+            if let stringMeasurable = exercise.implementStringMeasurable {
+                if let reps = set.reps {
+                    if let band = set.bandColor, !band.isEmpty {
+                        var result = "\(band) \(stringMeasurable.implementName.lowercased()) × \(reps)"
+                        if let rpe = set.rpe { result += " @ RPE \(rpe)" }
+                        return result
+                    } else {
+                        var result = "\(reps) reps"
+                        if let rpe = set.rpe { result += " @ RPE \(rpe)" }
+                        return result
+                    }
+                }
+                return "Completed"
+            }
+            if exercise.usesBox {
+                // Box format: "24in × 10" for box jumps
+                if let reps = set.reps {
+                    if let height = set.height, height > 0 {
+                        var result = "\(Int(height))in × \(reps)"
+                        if let rpe = set.rpe { result += " @ RPE \(rpe)" }
+                        return result
+                    } else {
+                        var result = "\(reps) reps"
+                        if let rpe = set.rpe { result += " @ RPE \(rpe)" }
+                        return result
+                    }
+                }
+                return "Completed"
+            }
             if exercise.isBodyweight {
                 // Bodyweight format: "BW + 25 × 10" or "BW × 10" if no added weight
                 if let reps = set.reps {
@@ -1097,6 +1190,7 @@ struct SetRowView: View {
         inputQuality = setData.quality ?? 0
         inputIntensity = setData.intensity ?? 0
         inputTemperature = setData.temperature.map { "\($0)" } ?? ""
+        inputBandColor = setData.bandColor ?? ""
     }
 }
 

@@ -174,6 +174,9 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
     var isBodyweight: Bool // True for bodyweight exercises (pull-ups, dips) - shows "BW + X" format
     var recoveryActivityType: RecoveryActivityType? // For recovery exercises
 
+    // Equipment - determines input fields (e.g., band shows color instead of weight)
+    var implementIds: Set<UUID>
+
     // Muscle groups (editable during session)
     var primaryMuscles: [MuscleGroup]
     var secondaryMuscles: [MuscleGroup]
@@ -199,6 +202,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         notes: String? = nil,
         isBodyweight: Bool = false,
         recoveryActivityType: RecoveryActivityType? = nil,
+        implementIds: Set<UUID> = [],
         primaryMuscles: [MuscleGroup] = [],
         secondaryMuscles: [MuscleGroup] = [],
         isSubstitution: Bool = false,
@@ -218,6 +222,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         self.notes = notes
         self.isBodyweight = isBodyweight
         self.recoveryActivityType = recoveryActivityType
+        self.implementIds = implementIds
         self.primaryMuscles = primaryMuscles
         self.secondaryMuscles = secondaryMuscles
         self.isSubstitution = isSubstitution
@@ -241,6 +246,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         distanceUnit = try container.decodeIfPresent(DistanceUnit.self, forKey: .distanceUnit) ?? .meters
         completedSetGroups = try container.decodeIfPresent([CompletedSetGroup].self, forKey: .completedSetGroups) ?? []
         isBodyweight = try container.decodeIfPresent(Bool.self, forKey: .isBodyweight) ?? false
+        implementIds = try container.decodeIfPresent(Set<UUID>.self, forKey: .implementIds) ?? []
         primaryMuscles = try container.decodeIfPresent([MuscleGroup].self, forKey: .primaryMuscles) ?? []
         secondaryMuscles = try container.decodeIfPresent([MuscleGroup].self, forKey: .secondaryMuscles) ?? []
         isSubstitution = try container.decodeIfPresent(Bool.self, forKey: .isSubstitution) ?? false
@@ -256,7 +262,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
 
     private enum CodingKeys: String, CodingKey {
         case id, exerciseId, exerciseName, exerciseType, cardioMetric, mobilityTracking, distanceUnit
-        case supersetGroupId, completedSetGroups, notes, isBodyweight, recoveryActivityType
+        case supersetGroupId, completedSetGroups, notes, isBodyweight, recoveryActivityType, implementIds
         case primaryMuscles, secondaryMuscles
         case isSubstitution, originalExerciseName, isAdHoc, progressionRecommendation
     }
@@ -274,6 +280,62 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
             .flatMap { $0.sets }
             .max { ($0.weight ?? 0) < ($1.weight ?? 0) }
     }
+
+    /// Returns true if this exercise uses a resistance band (check by implement name)
+    var usesBand: Bool {
+        guard !implementIds.isEmpty else { return false }
+        let library = LibraryService.shared
+        return implementIds.contains { id in
+            guard let implement = library.getImplement(id: id) else { return false }
+            let name = implement.name.lowercased()
+            return name.contains("band") || name.contains("resistance")
+        }
+    }
+
+    /// Returns the primary implement's measurable info if it has a string-based measurable (like band color)
+    var implementStringMeasurable: ImplementMeasurableInfo? {
+        guard !implementIds.isEmpty else { return nil }
+        let library = LibraryService.shared
+        for id in implementIds {
+            guard let implement = library.getImplement(id: id) else { continue }
+            // Find string-based measurable
+            if let stringMeasurable = implement.measurableArray.first(where: { $0.isStringBased }) {
+                return ImplementMeasurableInfo(
+                    implementName: implement.name,
+                    measurableName: stringMeasurable.name,
+                    unit: stringMeasurable.unit,
+                    isStringBased: true
+                )
+            }
+        }
+        return nil
+    }
+
+    /// Returns true if this exercise uses a box (for height input)
+    var usesBox: Bool {
+        guard !implementIds.isEmpty else { return false }
+        let library = LibraryService.shared
+        return implementIds.contains { id in
+            guard let implement = library.getImplement(id: id) else { return false }
+            return implement.name.lowercased().contains("box")
+        }
+    }
+
+    /// Returns all implements' names for display
+    var implementNames: [String] {
+        let library = LibraryService.shared
+        return implementIds.compactMap { id in
+            library.getImplement(id: id)?.name
+        }.sorted()
+    }
+}
+
+/// Info about an implement's measurable for UI display
+struct ImplementMeasurableInfo {
+    let implementName: String
+    let measurableName: String
+    let unit: String
+    let isStringBased: Bool
 }
 
 // MARK: - Completed Set Group
@@ -345,6 +407,7 @@ struct SetData: Identifiable, Codable, Hashable {
     var reps: Int?
     var rpe: Int?
     var completed: Bool
+    var bandColor: String? // For band exercises (e.g., "Red", "Blue")
 
     // Cardio metrics
     var duration: Int? // seconds
@@ -373,6 +436,7 @@ struct SetData: Identifiable, Codable, Hashable {
         reps: Int? = nil,
         rpe: Int? = nil,
         completed: Bool = true,
+        bandColor: String? = nil,
         duration: Int? = nil,
         distance: Double? = nil,
         pace: Double? = nil,
@@ -390,6 +454,7 @@ struct SetData: Identifiable, Codable, Hashable {
         self.reps = reps
         self.rpe = rpe
         self.completed = completed
+        self.bandColor = bandColor
         self.duration = duration
         self.distance = distance
         self.pace = pace
@@ -416,6 +481,7 @@ struct SetData: Identifiable, Codable, Hashable {
         weight = try container.decodeIfPresent(Double.self, forKey: .weight)
         reps = try container.decodeIfPresent(Int.self, forKey: .reps)
         rpe = try container.decodeIfPresent(Int.self, forKey: .rpe)
+        bandColor = try container.decodeIfPresent(String.self, forKey: .bandColor)
         duration = try container.decodeIfPresent(Int.self, forKey: .duration)
         distance = try container.decodeIfPresent(Double.self, forKey: .distance)
         pace = try container.decodeIfPresent(Double.self, forKey: .pace)
@@ -429,13 +495,29 @@ struct SetData: Identifiable, Codable, Hashable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, setNumber, weight, reps, rpe, completed, duration, distance, pace, avgHeartRate
+        case id, setNumber, weight, reps, rpe, completed, bandColor, duration, distance, pace, avgHeartRate
         case holdTime, intensity, height, quality, temperature, restAfter
     }
 
     var formattedStrength: String? {
-        guard let weight = weight, let reps = reps else { return nil }
-        var result = "\(formatWeight(weight)) x \(reps)"
+        guard let reps = reps else { return nil }
+        var result: String
+        if let band = bandColor, !band.isEmpty {
+            result = "\(band) x \(reps)"
+        } else if let weight = weight {
+            result = "\(formatWeight(weight)) x \(reps)"
+        } else {
+            result = "\(reps) reps"
+        }
+        if let rpe = rpe {
+            result += " @ RPE \(rpe)"
+        }
+        return result
+    }
+
+    var formattedBand: String? {
+        guard let band = bandColor, !band.isEmpty, let reps = reps else { return nil }
+        var result = "\(band) band x \(reps)"
         if let rpe = rpe {
             result += " @ RPE \(rpe)"
         }

@@ -58,6 +58,28 @@ struct AppGradients {
         endPoint: .bottomTrailing
     )
 
+    // Enhanced card gradient with subtle highlight
+    static let cardGradientElevated = LinearGradient(
+        colors: [
+            Color(hex: "222222"),
+            AppColors.cardBackground,
+            Color(hex: "151515")
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    // Subtle shine effect for cards
+    static let cardShine = LinearGradient(
+        colors: [
+            Color.white.opacity(0.08),
+            Color.white.opacity(0.02),
+            Color.clear
+        ],
+        startPoint: .topLeading,
+        endPoint: .center
+    )
+
     static let accentGradient = LinearGradient(
         colors: [AppColors.accentBlue, AppColors.accentCyan],
         startPoint: .topLeading,
@@ -70,16 +92,48 @@ struct AppGradients {
         endPoint: .bottomTrailing
     )
 
+    static let successGradient = LinearGradient(
+        colors: [AppColors.success, AppColors.accentMint],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    static let warmGradient = LinearGradient(
+        colors: [Color(hex: "FF8C42"), Color(hex: "FFB347")],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
     static let subtleGradient = LinearGradient(
         colors: [AppColors.cardBackgroundLight, AppColors.cardBackground],
         startPoint: .top,
         endPoint: .bottom
     )
 
+    // Progress bar gradient
+    static let progressGradient = LinearGradient(
+        colors: [AppColors.accentBlue, AppColors.accentCyan, AppColors.accentTeal],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+
     static func moduleGradient(_ type: ModuleType) -> LinearGradient {
         let color = AppColors.moduleColor(type)
         return LinearGradient(
             colors: [color.opacity(0.3), color.opacity(0.1)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    // Accent-tinted card background
+    static func accentCardGradient(_ color: Color) -> LinearGradient {
+        LinearGradient(
+            colors: [
+                color.opacity(0.15),
+                color.opacity(0.05),
+                AppColors.cardBackground
+            ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
@@ -169,14 +223,20 @@ struct CardStyle: ViewModifier {
         content
             .padding(padding)
             .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.cardBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppCorners.large)
-                            .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
-                    )
+                ZStack {
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .fill(AppGradients.cardGradientElevated)
+
+                    // Subtle shine overlay
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .fill(AppGradients.cardShine)
+
+                    // Border
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .stroke(AppColors.border.opacity(0.4), lineWidth: 0.5)
+                }
             )
-            .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 4)
+            .shadow(color: .black.opacity(0.4), radius: 12, x: 0, y: 6)
     }
 }
 
@@ -191,8 +251,64 @@ struct GlassCardStyle: ViewModifier {
                     .fill(.ultraThinMaterial)
                     .overlay(
                         RoundedRectangle(cornerRadius: AppCorners.large)
-                            .stroke(AppColors.border.opacity(0.3), lineWidth: 1)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
                     )
+            )
+    }
+}
+
+struct GradientCardStyle: ViewModifier {
+    var accentColor: Color = AppColors.accentBlue
+    var padding: CGFloat = AppSpacing.cardPadding
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .fill(AppGradients.accentCardGradient(accentColor))
+
+                    // Subtle shine overlay
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .fill(AppGradients.cardShine)
+
+                    // Border with accent tint
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .stroke(
+                            LinearGradient(
+                                colors: [accentColor.opacity(0.3), AppColors.border.opacity(0.2)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.5
+                        )
+                }
+            )
+            .shadow(color: accentColor.opacity(0.15), radius: 12, x: 0, y: 6)
+    }
+}
+
+struct SheetBackgroundModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(
+                ZStack {
+                    // Base blur
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+
+                    // Subtle gradient overlay
+                    LinearGradient(
+                        colors: [
+                            AppColors.cardBackground.opacity(0.8),
+                            AppColors.background.opacity(0.9)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
+                .ignoresSafeArea()
             )
     }
 }
@@ -246,11 +362,169 @@ extension View {
         modifier(GlassCardStyle(padding: padding))
     }
 
+    func gradientCard(accent: Color = AppColors.accentBlue, padding: CGFloat = AppSpacing.cardPadding) -> some View {
+        modifier(GradientCardStyle(accentColor: accent, padding: padding))
+    }
+
+    func sheetBackground() -> some View {
+        modifier(SheetBackgroundModifier())
+    }
+
     func softShadow() -> some View {
         shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 4)
     }
 
     func glowShadow(_ color: Color = AppColors.accentBlue) -> some View {
         shadow(color: color.opacity(0.3), radius: 10, x: 0, y: 0)
+    }
+}
+
+// MARK: - Animated Progress Bar
+
+struct AnimatedProgressBar: View {
+    let progress: Double
+    var gradient: LinearGradient = AppGradients.progressGradient
+    var height: CGFloat = 8
+    var showGlow: Bool = true
+
+    @State private var animatedProgress: Double = 0
+    @State private var shimmerOffset: CGFloat = -1
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                // Background track
+                RoundedRectangle(cornerRadius: height / 2)
+                    .fill(AppColors.surfaceLight)
+
+                // Progress fill with gradient
+                RoundedRectangle(cornerRadius: height / 2)
+                    .fill(gradient)
+                    .frame(width: max(0, geometry.size.width * animatedProgress))
+                    .overlay(
+                        // Shimmer effect
+                        RoundedRectangle(cornerRadius: height / 2)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0),
+                                        Color.white.opacity(0.3),
+                                        Color.white.opacity(0)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .offset(x: shimmerOffset * geometry.size.width * animatedProgress)
+                            .mask(
+                                RoundedRectangle(cornerRadius: height / 2)
+                                    .frame(width: max(0, geometry.size.width * animatedProgress))
+                            )
+                    )
+                    .shadow(color: showGlow ? AppColors.accentBlue.opacity(0.4) : .clear, radius: 4, x: 0, y: 0)
+            }
+        }
+        .frame(height: height)
+        .onAppear {
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.7)) {
+                animatedProgress = min(max(progress, 0), 1)
+            }
+            // Start shimmer animation
+            withAnimation(.linear(duration: 2).repeatForever(autoreverses: false)) {
+                shimmerOffset = 2
+            }
+        }
+        .onChange(of: progress) { _, newValue in
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                animatedProgress = min(max(newValue, 0), 1)
+            }
+        }
+    }
+}
+
+// MARK: - Circular Progress Indicator
+
+struct AnimatedCircularProgress: View {
+    let progress: Double
+    var lineWidth: CGFloat = 8
+    var size: CGFloat = 60
+    var gradient: LinearGradient = AppGradients.progressGradient
+    var showLabel: Bool = true
+
+    @State private var animatedProgress: Double = 0
+    @State private var rotation: Double = 0
+
+    var body: some View {
+        ZStack {
+            // Background circle
+            Circle()
+                .stroke(AppColors.surfaceLight, lineWidth: lineWidth)
+
+            // Progress arc
+            Circle()
+                .trim(from: 0, to: animatedProgress)
+                .stroke(
+                    gradient,
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .shadow(color: AppColors.accentBlue.opacity(0.4), radius: 4, x: 0, y: 0)
+
+            // Percentage label
+            if showLabel {
+                Text("\(Int(animatedProgress * 100))%")
+                    .font(.system(size: size * 0.25, weight: .bold, design: .rounded))
+                    .foregroundColor(AppColors.textPrimary)
+            }
+        }
+        .frame(width: size, height: size)
+        .onAppear {
+            withAnimation(.spring(response: 1.0, dampingFraction: 0.7)) {
+                animatedProgress = min(max(progress, 0), 1)
+            }
+        }
+        .onChange(of: progress) { _, newValue in
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+                animatedProgress = min(max(newValue, 0), 1)
+            }
+        }
+    }
+}
+
+// MARK: - Skeleton Loading View
+
+struct SkeletonView: View {
+    var height: CGFloat = 20
+    var cornerRadius: CGFloat = AppCorners.small
+
+    @State private var shimmerOffset: CGFloat = -1
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius)
+            .fill(AppColors.surfaceLight)
+            .frame(height: height)
+            .overlay(
+                GeometryReader { geometry in
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.clear,
+                                    Color.white.opacity(0.1),
+                                    Color.clear
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .offset(x: shimmerOffset * geometry.size.width)
+                }
+            )
+            .clipped()
+            .onAppear {
+                withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                    shimmerOffset = 2
+                }
+            }
     }
 }

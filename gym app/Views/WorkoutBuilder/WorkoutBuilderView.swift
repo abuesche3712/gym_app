@@ -26,13 +26,10 @@ struct WorkoutBuilderView: View {
                         modulesCard
                     }
                     .padding(.horizontal)
-
-                    // Quick Stats
-                    quickStatsSection
                 }
                 .padding(.vertical)
             }
-            .navigationTitle("Workout Builder")
+            .navigationTitle("Workout")
             .background(Color(.systemGroupedBackground))
         }
     }
@@ -41,7 +38,7 @@ struct WorkoutBuilderView: View {
 
     private var headerSection: some View {
         VStack(spacing: 8) {
-            Image(systemName: "hammer.fill")
+            Image(systemName: "dumbbell.fill")
                 .font(.system(size: 40))
                 .foregroundColor(.accentColor)
 
@@ -110,43 +107,6 @@ struct WorkoutBuilderView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Quick Stats
-
-    private var activeWorkoutsCount: Int {
-        workoutViewModel.workouts.reduce(0) { $0 + ($1.archived ? 0 : 1) }
-    }
-
-    private var quickStatsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Overview")
-                .font(.headline)
-                .padding(.horizontal)
-
-            HStack(spacing: 12) {
-                StatCard(
-                    title: "Programs",
-                    value: "\(programViewModel.programs.count)",
-                    icon: "calendar",
-                    color: .green
-                )
-
-                StatCard(
-                    title: "Workouts",
-                    value: "\(activeWorkoutsCount)",
-                    icon: "dumbbell",
-                    color: .blue
-                )
-
-                StatCard(
-                    title: "Modules",
-                    value: "\(moduleViewModel.modules.count)",
-                    icon: "square.stack.3d.up",
-                    color: .purple
-                )
-            }
-            .padding(.horizontal)
-        }
-    }
 }
 
 // MARK: - Builder Card
@@ -162,15 +122,26 @@ struct BuilderCard: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            // Icon
+            // Icon with gradient background
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(iconColor.opacity(0.15))
+                    .fill(
+                        LinearGradient(
+                            colors: [iconColor.opacity(0.25), iconColor.opacity(0.1)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                     .frame(width: 56, height: 56)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(iconColor.opacity(0.3), lineWidth: 0.5)
+                    )
 
                 Image(systemName: icon)
                     .font(.system(size: 24))
                     .foregroundColor(iconColor)
+                    .shadow(color: iconColor.opacity(0.3), radius: 4, x: 0, y: 0)
             }
 
             // Content
@@ -178,7 +149,7 @@ struct BuilderCard: View {
                 HStack {
                     Text(title)
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.textPrimary)
 
                     if let active = activeIndicator {
                         Text(active)
@@ -187,29 +158,33 @@ struct BuilderCard: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.green)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color.green, Color.green.opacity(0.8)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                             .cornerRadius(4)
                     }
                 }
 
                 Text(subtitle)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
 
                 Text("\(count) \(countLabel)")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textTertiary)
             }
 
             Spacer()
 
             Image(systemName: "chevron.right")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(AppColors.textTertiary)
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(16)
+        .gradientCard(accent: iconColor)
     }
 }
 

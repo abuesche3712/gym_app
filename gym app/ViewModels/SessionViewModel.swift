@@ -268,8 +268,22 @@ class SessionViewModel: ObservableObject {
     }
 
     /// Converts a ResolvedExercise to a SessionExercise for use in an active session
+    /// Re-syncs equipment from current template to pick up any library changes
     private func convertResolvedExerciseToSession(_ resolved: ResolvedExercise) -> SessionExercise {
-        SessionExercise(
+        // Re-sync implementIds from current template if available (picks up library changes)
+        let currentImplementIds: Set<UUID>
+        let currentIsBodyweight: Bool
+        if let templateId = resolved.templateId,
+           let currentTemplate = ExerciseResolver.shared.getTemplate(id: templateId) {
+            currentImplementIds = currentTemplate.implementIds
+            currentIsBodyweight = currentTemplate.isBodyweight
+        } else {
+            // Fall back to instance data if template not found
+            currentImplementIds = resolved.implementIds
+            currentIsBodyweight = resolved.isBodyweight
+        }
+
+        return SessionExercise(
             exerciseId: resolved.id,
             exerciseName: resolved.name,
             exerciseType: resolved.exerciseType,
@@ -297,8 +311,9 @@ class SessionViewModel: ObservableObject {
                     intervalRestDuration: setGroup.intervalRestDuration
                 )
             },
-            isBodyweight: resolved.isBodyweight,
+            isBodyweight: currentIsBodyweight,
             recoveryActivityType: resolved.recoveryActivityType,
+            implementIds: currentImplementIds,
             primaryMuscles: resolved.primaryMuscles,
             secondaryMuscles: resolved.secondaryMuscles
         )

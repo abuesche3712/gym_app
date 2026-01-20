@@ -182,9 +182,11 @@ struct ProgramDetailView: View {
                     .foregroundColor(.secondary)
             }
 
-            ProgressView(value: progress)
-                .progressViewStyle(.linear)
-                .tint(.green)
+            AnimatedProgressBar(
+                progress: progress,
+                gradient: AppGradients.successGradient,
+                height: 8
+            )
 
             HStack {
                 Text("Started \(startDate.formatted(date: .abbreviated, time: .omitted))")
@@ -200,9 +202,7 @@ struct ProgramDetailView: View {
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .gradientCard(accent: AppColors.success)
     }
 
     private func programProgress(startDate: Date) -> Double {

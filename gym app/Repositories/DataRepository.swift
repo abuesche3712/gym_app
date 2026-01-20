@@ -974,6 +974,7 @@ class DataRepository: ObservableObject {
             let template = instanceEntity.templateId.flatMap { ExerciseResolver.shared.getTemplate(id: $0) }
             let primaryMuscles = instanceEntity.primaryMuscles.isEmpty ? (template?.primaryMuscles ?? []) : instanceEntity.primaryMuscles
             let secondaryMuscles = instanceEntity.secondaryMuscles.isEmpty ? (template?.secondaryMuscles ?? []) : instanceEntity.secondaryMuscles
+            let implementIds = instanceEntity.implementIds.isEmpty ? (template?.implementIds ?? []) : instanceEntity.implementIds
 
             return ExerciseInstance(
                 id: instanceEntity.id,
@@ -987,6 +988,7 @@ class DataRepository: ObservableObject {
                 recoveryActivityType: instanceEntity.recoveryActivityType ?? template?.recoveryActivityType,
                 primaryMuscles: primaryMuscles,
                 secondaryMuscles: secondaryMuscles,
+                implementIds: implementIds,
                 setGroups: setGroups,
                 supersetGroupId: instanceEntity.supersetGroupId,
                 order: Int(instanceEntity.orderIndex),
@@ -1022,6 +1024,7 @@ class DataRepository: ObservableObject {
             instanceEntity.recoveryActivityType = instance.recoveryActivityType
             instanceEntity.primaryMuscles = instance.primaryMuscles
             instanceEntity.secondaryMuscles = instance.secondaryMuscles
+            instanceEntity.implementIds = instance.implementIds
 
             instanceEntity.module = moduleEntity
 

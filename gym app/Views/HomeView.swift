@@ -13,7 +13,6 @@ struct HomeView: View {
     @EnvironmentObject var sessionViewModel: SessionViewModel
     @EnvironmentObject var moduleViewModel: ModuleViewModel
 
-    @State private var showingActiveSession = false
     @State private var selectedCalendarDate: Date = Date()
     @State private var dayToSchedule: IdentifiableDate?
     @State private var showingTodayWorkoutDetail = false
@@ -28,11 +27,6 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.xl) {
-                    // Active Session Banner
-                    if sessionViewModel.isSessionActive {
-                        activeSessionBanner
-                    }
-
                     // Today's Workout Bar
                     todayWorkoutBar
 
@@ -49,11 +43,6 @@ struct HomeView: View {
             }
             .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Gym App")
-            .fullScreenCover(isPresented: $showingActiveSession) {
-                if sessionViewModel.isSessionActive {
-                    ActiveSessionView()
-                }
-            }
             .sheet(item: $dayToSchedule) { identifiableDate in
                 let date = identifiableDate.date
                 ScheduleWorkoutSheet(
@@ -115,7 +104,7 @@ struct HomeView: View {
                 Button("Resume") {
                     if let session = recoverableSession {
                         sessionViewModel.resumeSession(session)
-                        showingActiveSession = true
+                        // MainTabView will auto-show full session when isSessionActive becomes true
                     }
                 }
                 Button("Discard", role: .destructive) {
@@ -518,56 +507,6 @@ struct HomeView: View {
         sessionViewModel.sessions.filter { Calendar.current.isDate($0.date, inSameDayAs: date) }
     }
 
-    // MARK: - Active Session Banner
-
-    private var activeSessionBanner: some View {
-        Button {
-            showingActiveSession = true
-        } label: {
-            HStack(spacing: AppSpacing.md) {
-                // Pulsing indicator
-                Circle()
-                    .fill(AppColors.success)
-                    .frame(width: 12, height: 12)
-                    .overlay(
-                        Circle()
-                            .stroke(AppColors.success.opacity(0.5), lineWidth: 2)
-                            .scaleEffect(1.5)
-                    )
-
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("Session in Progress")
-                        .font(.headline)
-                        .foregroundColor(AppColors.textPrimary)
-                    if let session = sessionViewModel.currentSession {
-                        Text(session.workoutName)
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-                }
-
-                Spacer()
-
-                Text(formatTime(sessionViewModel.sessionElapsedSeconds))
-                    .font(.title2.monospacedDigit().bold())
-                    .foregroundColor(AppColors.success)
-
-                Image(systemName: "chevron.right")
-                    .foregroundColor(AppColors.textTertiary)
-            }
-            .padding(AppSpacing.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.success.opacity(0.1))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppCorners.large)
-                            .stroke(AppColors.success.opacity(0.3), lineWidth: 1)
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
     // MARK: - Week in Review Section
 
     private var weekInReviewSection: some View {
@@ -801,7 +740,7 @@ struct HomeView: View {
             .compactMap { ref in moduleViewModel.getModule(id: ref.moduleId) }
 
         sessionViewModel.startSession(workout: workout, modules: modules)
-        showingActiveSession = true
+        // MainTabView will auto-show full session when isSessionActive becomes true
     }
 }
 

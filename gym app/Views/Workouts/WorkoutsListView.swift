@@ -15,7 +15,6 @@ struct WorkoutsListView: View {
     @State private var showingAddWorkout = false
     @State private var searchText = ""
     @State private var editingWorkout: Workout?
-    @State private var showingActiveSession = false
 
     var filteredWorkouts: [Workout] {
         if searchText.isEmpty {
@@ -102,11 +101,6 @@ struct WorkoutsListView: View {
                     WorkoutFormView(workout: workout)
                 }
             }
-            .fullScreenCover(isPresented: $showingActiveSession) {
-                if sessionViewModel.isSessionActive {
-                    ActiveSessionView()
-                }
-            }
             .refreshable {
                 workoutViewModel.loadWorkouts()
             }
@@ -119,7 +113,7 @@ struct WorkoutsListView: View {
             .compactMap { ref in moduleViewModel.getModule(id: ref.moduleId) }
 
         sessionViewModel.startSession(workout: workout, modules: modules)
-        showingActiveSession = true
+        // MainTabView will auto-show full session when isSessionActive becomes true
     }
 }
 

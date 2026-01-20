@@ -13,6 +13,9 @@ struct ActiveSessionView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) private var dismiss
 
+    /// Callback to minimize the session (show mini bar instead)
+    var onMinimize: (() -> Void)?
+
     @State private var showingEndConfirmation = false
     @State private var showingCancelConfirmation = false
     @State private var hideToolbarButtons = false
@@ -87,6 +90,19 @@ struct ActiveSessionView: View {
             .navigationTitle(sessionViewModel.currentSession?.workoutName ?? "Workout")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // Minimize button (leading)
+                if onMinimize != nil {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button {
+                            onMinimize?()
+                        } label: {
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+                    }
+                }
+
                 // Show Cancel/Finish buttons for first 30 seconds, then collapse to menu
                 if !hideToolbarButtons {
                     ToolbarItem(placement: .cancellationAction) {
@@ -105,6 +121,14 @@ struct ActiveSessionView: View {
                 } else {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
+                            if onMinimize != nil {
+                                Button {
+                                    onMinimize?()
+                                } label: {
+                                    Label("Minimize", systemImage: "chevron.down")
+                                }
+                            }
+
                             Button {
                                 showWorkoutOverview = true
                             } label: {
@@ -530,8 +554,8 @@ struct ActiveSessionView: View {
                                 flatSet: flatSet,
                                 exercise: exercise,
                                 isHighlighted: highlightNextSet && isFirstIncomplete,
-                                onLog: { weight, reps, rpe, duration, holdTime, distance, height, quality, intensity, temperature in
-                                    logSetAt(flatSet: flatSet, weight: weight, reps: reps, rpe: rpe, duration: duration, holdTime: holdTime, distance: distance, height: height, quality: quality, intensity: intensity, temperature: temperature)
+                                onLog: { weight, reps, rpe, duration, holdTime, distance, height, quality, intensity, temperature, bandColor in
+                                    logSetAt(flatSet: flatSet, weight: weight, reps: reps, rpe: rpe, duration: duration, holdTime: holdTime, distance: distance, height: height, quality: quality, intensity: intensity, temperature: temperature, bandColor: bandColor)
                                     // Clear highlight when logging
                                     highlightNextSet = false
                                     // Start rest timer (skip for recovery activities)
@@ -1093,7 +1117,7 @@ struct ActiveSessionView: View {
         sessionViewModel.currentSession = session
     }
 
-    private func logSetAt(flatSet: FlatSet, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?, height: Double? = nil, quality: Int? = nil, intensity: Int? = nil, temperature: Int? = nil) {
+    private func logSetAt(flatSet: FlatSet, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?, height: Double? = nil, quality: Int? = nil, intensity: Int? = nil, temperature: Int? = nil, bandColor: String? = nil) {
         guard var session = sessionViewModel.currentSession else { return }
         guard sessionViewModel.currentModuleIndex < session.completedModules.count else { return }
 
@@ -1115,6 +1139,7 @@ struct ActiveSessionView: View {
         setData.quality = quality
         setData.intensity = intensity
         setData.temperature = temperature
+        setData.bandColor = bandColor ?? setData.bandColor
         setData.completed = true
 
         setGroup.sets[flatSet.setIndex] = setData

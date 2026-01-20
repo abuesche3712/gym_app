@@ -51,6 +51,7 @@ struct EditExerciseSheet: View {
         var restPeriod: Int
         var completedSetsCount: Int  // Number of already completed sets
         var completedSets: [SetData]  // The actual completed sets to preserve
+        var allSets: [SetData]  // All sets (completed and incomplete) for history editing
     }
 
     private var cardioMetric: CardioTracking {
@@ -349,7 +350,8 @@ struct EditExerciseSheet: View {
                 targetDistance: firstSet?.distance,
                 restPeriod: group.restPeriod ?? 90,
                 completedSetsCount: completedSets.count,
-                completedSets: completedSets
+                completedSets: completedSets,
+                allSets: group.sets  // Store all sets for history editing
             )
         }
 
@@ -372,7 +374,8 @@ struct EditExerciseSheet: View {
             targetDistance: exerciseType == .cardio && trackDistance ? 0 : nil,
             restPeriod: 90,
             completedSetsCount: 0,
-            completedSets: []
+            completedSets: [],
+            allSets: []
         )
         setGroups.append(newGroup)
     }
@@ -404,22 +407,28 @@ struct EditExerciseSheet: View {
         for editableGroup in setGroups {
             var sets: [SetData] = []
 
-            // First, add any completed sets (preserve them exactly)
-            sets.append(contentsOf: editableGroup.completedSets)
+            // If we have allSets (from history editing), use those directly
+            if !editableGroup.allSets.isEmpty {
+                sets = editableGroup.allSets
+            } else {
+                // Otherwise, build from completed sets + new incomplete sets
+                // First, add any completed sets (preserve them exactly)
+                sets.append(contentsOf: editableGroup.completedSets)
 
-            // Then add remaining incomplete sets with targets
-            let remainingSets = editableGroup.sets - editableGroup.completedSetsCount
-            for i in 0..<remainingSets {
-                let setNumber = editableGroup.completedSetsCount + i + 1
-                sets.append(SetData(
-                    setNumber: setNumber,
-                    weight: editableGroup.targetWeight,
-                    reps: editableGroup.targetReps,
-                    completed: false,
-                    duration: editableGroup.targetDuration,
-                    distance: editableGroup.targetDistance,
-                    holdTime: editableGroup.targetHoldTime
-                ))
+                // Then add remaining incomplete sets with targets
+                let remainingSets = editableGroup.sets - editableGroup.completedSetsCount
+                for i in 0..<remainingSets {
+                    let setNumber = editableGroup.completedSetsCount + i + 1
+                    sets.append(SetData(
+                        setNumber: setNumber,
+                        weight: editableGroup.targetWeight,
+                        reps: editableGroup.targetReps,
+                        completed: false,
+                        duration: editableGroup.targetDuration,
+                        distance: editableGroup.targetDistance,
+                        holdTime: editableGroup.targetHoldTime
+                    ))
+                }
             }
 
             if !sets.isEmpty {
@@ -457,6 +466,12 @@ struct EditSetGroupSheet: View {
     @State private var targetDistance: String = ""
     @State private var restPeriod: Int = 90
     @State private var showTimePicker = false
+    @State private var editableSets: [SetData] = []
+    @State private var editingSetIndex: Int? = nil
+
+    private var hasIndividualSets: Bool {
+        !setGroup.allSets.isEmpty
+    }
 
     var body: some View {
         NavigationStack {
@@ -471,6 +486,20 @@ struct EditSetGroupSheet: View {
                             Text("\(setGroup.completedSetsCount) sets already completed")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                        }
+                    }
+                }
+
+                // Show individual sets if available (history editing)
+                if hasIndividualSets {
+                    Section("Individual Sets") {
+                        ForEach(Array(editableSets.enumerated()), id: \.element.id) { index, set in
+                            Button {
+                                editingSetIndex = index
+                            } label: {
+                                individualSetRow(set, index: index)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -509,8 +538,74 @@ struct EditSetGroupSheet: View {
             .sheet(isPresented: $showTimePicker) {
                 TimePickerSheet(totalSeconds: $targetDuration, title: "Target Time")
             }
+            .sheet(item: Binding(
+                get: { editingSetIndex.map { EditingIndex(id: $0) } },
+                set: { editingSetIndex = $0?.id }
+            )) { editing in
+                EditIndividualSetSheet(
+                    set: $editableSets[editing.index],
+                    exerciseType: exerciseType,
+                    cardioMetric: cardioMetric,
+                    mobilityTracking: mobilityTracking,
+                    distanceUnit: distanceUnit
+                )
+            }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([hasIndividualSets ? .large : .medium])
+    }
+
+    @ViewBuilder
+    private func individualSetRow(_ set: SetData, index: Int) -> some View {
+        HStack {
+            // Set number and completion status
+            HStack(spacing: 8) {
+                Image(systemName: set.completed ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(set.completed ? AppColors.success : .secondary)
+
+                Text("Set \(index + 1)")
+                    .font(.subheadline.weight(.medium))
+            }
+
+            Spacer()
+
+            // Set data preview
+            Text(setDataPreview(set))
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func setDataPreview(_ set: SetData) -> String {
+        switch exerciseType {
+        case .strength:
+            if let weight = set.weight, let reps = set.reps {
+                return "\(formatWeight(weight)) × \(reps)"
+            } else if let reps = set.reps {
+                return "\(reps) reps"
+            }
+        case .cardio:
+            var parts: [String] = []
+            if let duration = set.duration, duration > 0 { parts.append(formatDuration(duration)) }
+            if let distance = set.distance, distance > 0 { parts.append("\(formatDistanceValue(distance)) \(distanceUnit.abbreviation)") }
+            return parts.joined(separator: " - ")
+        case .isometric:
+            if let holdTime = set.holdTime { return "\(holdTime)s hold" }
+        case .mobility:
+            var parts: [String] = []
+            if let reps = set.reps { parts.append("\(reps) reps") }
+            if let duration = set.duration, duration > 0 { parts.append(formatDuration(duration)) }
+            return parts.joined(separator: " - ")
+        case .explosive:
+            if let reps = set.reps { return "\(reps) reps" }
+        case .recovery:
+            if let duration = set.duration { return formatDuration(duration) }
+        }
+        return set.completed ? "Completed" : "Incomplete"
     }
 
     @ViewBuilder
@@ -603,6 +698,7 @@ struct EditSetGroupSheet: View {
         targetHoldTime = setGroup.targetHoldTime ?? 30
         targetDistance = setGroup.targetDistance.map { formatDistanceValue($0) } ?? ""
         restPeriod = setGroup.restPeriod
+        editableSets = setGroup.allSets
     }
 
     private func saveChanges() {
@@ -613,6 +709,12 @@ struct EditSetGroupSheet: View {
         setGroup.targetHoldTime = targetHoldTime
         setGroup.targetDistance = Double(targetDistance)
         setGroup.restPeriod = restPeriod
+        // Update allSets if we were editing individual sets
+        if !editableSets.isEmpty {
+            setGroup.allSets = editableSets
+            setGroup.completedSets = editableSets.filter { $0.completed }
+            setGroup.completedSetsCount = setGroup.completedSets.count
+        }
         dismiss()
     }
 }
@@ -740,6 +842,178 @@ struct AddExerciseToModuleSheet: View {
             .foregroundColor(AppColors.accentBlue)
             .disabled(exerciseName.isEmpty)
         }
+    }
+}
+
+// MARK: - Edit Individual Set Sheet
+
+struct EditIndividualSetSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var set: SetData
+
+    let exerciseType: ExerciseType
+    let cardioMetric: CardioTracking
+    let mobilityTracking: MobilityTracking
+    let distanceUnit: DistanceUnit
+
+    @State private var isCompleted: Bool = false
+    @State private var weight: String = ""
+    @State private var reps: Int = 0
+    @State private var duration: Int = 0
+    @State private var distance: String = ""
+    @State private var holdTime: Int = 0
+    @State private var rpe: Int? = nil
+    @State private var showTimePicker = false
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Status") {
+                    Toggle("Completed", isOn: $isCompleted)
+                        .tint(AppColors.success)
+                }
+
+                Section("Set Data") {
+                    setFieldsForExerciseType
+                }
+
+                if exerciseType == .strength {
+                    Section("RPE (Optional)") {
+                        Picker("RPE", selection: Binding(
+                            get: { rpe ?? 0 },
+                            set: { rpe = $0 == 0 ? nil : $0 }
+                        )) {
+                            Text("Not set").tag(0)
+                            ForEach(5...10, id: \.self) { value in
+                                Text("\(value)").tag(value)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
+            }
+            .navigationTitle("Edit Set \(set.setNumber)")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { saveChanges() }
+                        .fontWeight(.semibold)
+                        .foregroundColor(AppColors.accentBlue)
+                }
+            }
+            .onAppear { loadValues() }
+            .sheet(isPresented: $showTimePicker) {
+                TimePickerSheet(totalSeconds: $duration, title: "Duration")
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    @ViewBuilder
+    private var setFieldsForExerciseType: some View {
+        switch exerciseType {
+        case .strength:
+            HStack {
+                Text("Weight")
+                Spacer()
+                TextField("0", text: $weight)
+                    .keyboardType(.decimalPad)
+                    .frame(width: 80)
+                    .multilineTextAlignment(.trailing)
+                Text("lbs")
+                    .foregroundColor(.secondary)
+            }
+            Stepper("Reps: \(reps)", value: $reps, in: 0...100)
+
+        case .cardio:
+            if cardioMetric.tracksTime {
+                Button {
+                    showTimePicker = true
+                } label: {
+                    HStack {
+                        Text("Duration")
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Text(duration > 0 ? formatDuration(duration) : "Not set")
+                            .foregroundColor(duration > 0 ? .primary : .secondary)
+                    }
+                }
+            }
+            if cardioMetric.tracksDistance {
+                HStack {
+                    Text("Distance")
+                    Spacer()
+                    TextField("0", text: $distance)
+                        .keyboardType(.decimalPad)
+                        .frame(width: 80)
+                        .multilineTextAlignment(.trailing)
+                    Text(distanceUnit.abbreviation)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+        case .isometric:
+            Stepper("Hold Time: \(holdTime)s", value: $holdTime, in: 0...600, step: 5)
+
+        case .mobility:
+            if mobilityTracking.tracksReps {
+                Stepper("Reps: \(reps)", value: $reps, in: 0...100)
+            }
+            if mobilityTracking.tracksDuration {
+                Button {
+                    showTimePicker = true
+                } label: {
+                    HStack {
+                        Text("Duration")
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Text(duration > 0 ? formatDuration(duration) : "Not set")
+                            .foregroundColor(duration > 0 ? .primary : .secondary)
+                    }
+                }
+            }
+
+        case .explosive:
+            Stepper("Reps: \(reps)", value: $reps, in: 0...50)
+
+        case .recovery:
+            Button {
+                showTimePicker = true
+            } label: {
+                HStack {
+                    Text("Duration")
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Text(duration > 0 ? formatDuration(duration) : "Not set")
+                        .foregroundColor(duration > 0 ? .primary : .secondary)
+                }
+            }
+        }
+    }
+
+    private func loadValues() {
+        isCompleted = set.completed
+        weight = set.weight.map { formatWeight($0) } ?? ""
+        reps = set.reps ?? 0
+        duration = set.duration ?? 0
+        distance = set.distance.map { formatDistanceValue($0) } ?? ""
+        holdTime = set.holdTime ?? 0
+        rpe = set.rpe
+    }
+
+    private func saveChanges() {
+        set.completed = isCompleted
+        set.weight = Double(weight)
+        set.reps = reps > 0 ? reps : nil
+        set.duration = duration > 0 ? duration : nil
+        set.distance = Double(distance)
+        set.holdTime = holdTime > 0 ? holdTime : nil
+        set.rpe = rpe
+        dismiss()
     }
 }
 

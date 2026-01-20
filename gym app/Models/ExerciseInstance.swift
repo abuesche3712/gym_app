@@ -27,6 +27,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
     var recoveryActivityType: RecoveryActivityType?
     var primaryMuscles: [MuscleGroup]
     var secondaryMuscles: [MuscleGroup]
+    var implementIds: Set<UUID>
 
     // Set configuration
     var setGroups: [SetGroup]
@@ -49,6 +50,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         recoveryActivityType: RecoveryActivityType? = nil,
         primaryMuscles: [MuscleGroup] = [],
         secondaryMuscles: [MuscleGroup] = [],
+        implementIds: Set<UUID> = [],
         setGroups: [SetGroup] = [],
         supersetGroupId: UUID? = nil,
         order: Int = 0,
@@ -67,6 +69,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         self.recoveryActivityType = recoveryActivityType
         self.primaryMuscles = primaryMuscles
         self.secondaryMuscles = secondaryMuscles
+        self.implementIds = implementIds
         self.setGroups = setGroups
         self.supersetGroupId = supersetGroupId
         self.order = order
@@ -135,6 +138,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         recoveryActivityType = try container.decodeIfPresent(RecoveryActivityType.self, forKey: .recoveryActivityType)
         primaryMuscles = try container.decodeIfPresent([MuscleGroup].self, forKey: .primaryMuscles) ?? []
         secondaryMuscles = try container.decodeIfPresent([MuscleGroup].self, forKey: .secondaryMuscles) ?? []
+        implementIds = try container.decodeIfPresent(Set<UUID>.self, forKey: .implementIds) ?? []
 
         // Optional with defaults
         setGroups = try container.decodeIfPresent([SetGroup].self, forKey: .setGroups) ?? []
@@ -162,7 +166,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
     enum CodingKeys: String, CodingKey {
         case schemaVersion
         case id, templateId, name, exerciseType, cardioMetric, distanceUnit, mobilityTracking
-        case isBodyweight, recoveryActivityType, primaryMuscles, secondaryMuscles
+        case isBodyweight, recoveryActivityType, primaryMuscles, secondaryMuscles, implementIds
         case setGroups, supersetGroupId, order, notes
         case createdAt, updatedAt
         // Legacy keys for migration
@@ -185,6 +189,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         try container.encodeIfPresent(recoveryActivityType, forKey: .recoveryActivityType)
         try container.encode(primaryMuscles, forKey: .primaryMuscles)
         try container.encode(secondaryMuscles, forKey: .secondaryMuscles)
+        try container.encode(implementIds, forKey: .implementIds)
         try container.encode(setGroups, forKey: .setGroups)
         try container.encodeIfPresent(supersetGroupId, forKey: .supersetGroupId)
         try container.encode(order, forKey: .order)
@@ -224,6 +229,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
             recoveryActivityType: template.recoveryActivityType,
             primaryMuscles: template.primaryMuscles,
             secondaryMuscles: template.secondaryMuscles,
+            implementIds: template.implementIds,
             setGroups: template.defaultSetGroups,
             order: max(0, order)  // Clamp to non-negative
         )

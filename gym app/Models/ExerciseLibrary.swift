@@ -24,6 +24,9 @@ struct ExerciseTemplate: Identifiable, Codable, Hashable, ExerciseMetrics {
     var isBodyweight: Bool
     var recoveryActivityType: RecoveryActivityType?
 
+    // Equipment
+    var implementIds: Set<UUID>
+
     // Defaults for new instances
     var defaultSetGroups: [SetGroup]
     var defaultNotes: String?
@@ -46,6 +49,7 @@ struct ExerciseTemplate: Identifiable, Codable, Hashable, ExerciseMetrics {
         secondary: [MuscleGroup] = [],
         isBodyweight: Bool = false,
         recoveryActivityType: RecoveryActivityType? = nil,
+        implementIds: Set<UUID> = [],
         defaultSetGroups: [SetGroup] = [],
         defaultNotes: String? = nil,
         isArchived: Bool = false,
@@ -64,6 +68,7 @@ struct ExerciseTemplate: Identifiable, Codable, Hashable, ExerciseMetrics {
         self.secondaryMuscles = secondary
         self.isBodyweight = isBodyweight
         self.recoveryActivityType = recoveryActivityType
+        self.implementIds = implementIds
         self.defaultSetGroups = defaultSetGroups
         self.defaultNotes = defaultNotes
         self.isArchived = isArchived

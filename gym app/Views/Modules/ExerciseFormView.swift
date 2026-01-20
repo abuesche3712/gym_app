@@ -16,6 +16,7 @@ struct EditingIndex: Identifiable {
 struct ExerciseFormView: View {
     @EnvironmentObject var moduleViewModel: ModuleViewModel
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var libraryService = LibraryService.shared
 
     let instance: ExerciseInstance?
     let moduleId: UUID
@@ -34,6 +35,11 @@ struct ExerciseFormView: View {
     // Muscle groups from template
     @State private var primaryMuscles: [MuscleGroup] = []
     @State private var secondaryMuscles: [MuscleGroup] = []
+
+    // Equipment
+    @State private var selectedImplementIds: Set<UUID> = []
+    @State private var showingEquipmentPicker = false
+    @State private var showingMusclePicker = false
 
     @State private var showingAddSetGroup = false
     @State private var editingSetGroup: EditingIndex?
@@ -98,6 +104,8 @@ struct ExerciseFormView: View {
                     cardioMetric: cardioMetric,
                     mobilityTracking: mobilityTracking,
                     distanceUnit: distanceUnit,
+                    implementIds: selectedImplementIds,
+                    isBodyweight: selectedTemplate?.isBodyweight ?? false,
                     existingSetGroup: nil
                 ) { newSetGroup in
                     setGroups.append(newSetGroup)
@@ -111,6 +119,8 @@ struct ExerciseFormView: View {
                     cardioMetric: cardioMetric,
                     mobilityTracking: mobilityTracking,
                     distanceUnit: distanceUnit,
+                    implementIds: selectedImplementIds,
+                    isBodyweight: selectedTemplate?.isBodyweight ?? false,
                     existingSetGroup: setGroups[editing.index]
                 ) { updatedSetGroup in
                     setGroups[editing.index] = updatedSetGroup
@@ -126,9 +136,10 @@ struct ExerciseFormView: View {
                         name = template.name
                         exerciseType = template.exerciseType
                         selectedTemplate = template
-                        // Copy muscle groups from template
+                        // Copy muscle groups and equipment from template
                         primaryMuscles = template.primaryMuscles
                         secondaryMuscles = template.secondaryMuscles
+                        selectedImplementIds = template.implementIds
                     }
                 }
             )
@@ -230,35 +241,105 @@ struct ExerciseFormView: View {
 
     // MARK: - Muscles Section
 
+    private func equipmentNames(for ids: Set<UUID>) -> [String] {
+        ids.compactMap { id in
+            libraryService.getImplement(id: id)?.name
+        }.sorted()
+    }
+
     private var musclesAndEquipmentSection: some View {
-        Section("Muscles") {
-            if !primaryMuscles.isEmpty || !secondaryMuscles.isEmpty {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    if !primaryMuscles.isEmpty {
-                        HStack {
-                            Text("Primary")
-                                .font(.caption)
+        Group {
+            Section("Muscles") {
+                Button {
+                    showingMusclePicker = true
+                } label: {
+                    HStack {
+                        Text("Select Muscles")
+                            .foregroundColor(AppColors.textPrimary)
+                        Spacer()
+                        if primaryMuscles.isEmpty && secondaryMuscles.isEmpty {
+                            Text("None")
                                 .foregroundColor(.secondary)
-                            Spacer()
-                            Text(primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
-                                .font(.subheadline)
+                        } else {
+                            VStack(alignment: .trailing, spacing: 2) {
+                                if !primaryMuscles.isEmpty {
+                                    Text(primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
+                                        .font(.subheadline)
+                                        .foregroundColor(AppColors.accentBlue)
+                                        .lineLimit(1)
+                                }
+                                if !secondaryMuscles.isEmpty {
+                                    Text(secondaryMuscles.map { $0.rawValue }.joined(separator: ", "))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(1)
+                                }
+                            }
                         }
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
-                    if !secondaryMuscles.isEmpty {
-                        HStack {
-                            Text("Secondary")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            Text(secondaryMuscles.map { $0.rawValue }.joined(separator: ", "))
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+                }
+            }
+            .sheet(isPresented: $showingMusclePicker) {
+                NavigationStack {
+                    MuscleGroupEnumPickerView(
+                        primaryMuscles: $primaryMuscles,
+                        secondaryMuscles: $secondaryMuscles
+                    )
+                    .navigationTitle("Muscles")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") {
+                                showingMusclePicker = false
+                            }
                         }
                     }
                 }
-            } else {
-                Text("No muscles specified")
-                    .foregroundColor(.secondary)
+                .presentationDetents([.medium, .large])
+            }
+
+            Section("Equipment") {
+                Button {
+                    showingEquipmentPicker = true
+                } label: {
+                    HStack {
+                        Text("Select Equipment")
+                            .foregroundColor(AppColors.textPrimary)
+                        Spacer()
+                        if selectedImplementIds.isEmpty {
+                            Text("None")
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text(equipmentNames(for: selectedImplementIds).joined(separator: ", "))
+                                .foregroundColor(AppColors.accentTeal)
+                                .lineLimit(1)
+                        }
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .sheet(isPresented: $showingEquipmentPicker) {
+                NavigationStack {
+                    ScrollView {
+                        ImplementPickerView(selectedIds: $selectedImplementIds)
+                            .padding()
+                    }
+                    .navigationTitle("Equipment")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") {
+                                showingEquipmentPicker = false
+                            }
+                        }
+                    }
+                }
+                .presentationDetents([.medium, .large])
             }
         }
     }
@@ -339,6 +420,7 @@ struct ExerciseFormView: View {
             setGroups = instance.setGroups
             primaryMuscles = instance.primaryMuscles
             secondaryMuscles = instance.secondaryMuscles
+            selectedImplementIds = instance.implementIds
             // Template lookup is optional now
             if let templateId = instance.templateId {
                 selectedTemplate = ExerciseLibrary.shared.template(id: templateId)
@@ -361,13 +443,15 @@ struct ExerciseFormView: View {
             existingInstance.mobilityTracking = mobilityTracking
             existingInstance.primaryMuscles = primaryMuscles
             existingInstance.secondaryMuscles = secondaryMuscles
+            existingInstance.implementIds = selectedImplementIds
             existingInstance.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
             existingInstance.setGroups = setGroups
             existingInstance.updatedAt = Date()
 
             module.updateExercise(existingInstance)
         } else {
-            // Create new instance - copy all data from template if selected
+            // Create new instance - use selected equipment (or from template)
+            let equipmentIds = selectedImplementIds.isEmpty ? (selectedTemplate?.implementIds ?? []) : selectedImplementIds
             let newInstance = ExerciseInstance(
                 templateId: selectedTemplate?.id,
                 name: trimmedName,
@@ -379,6 +463,7 @@ struct ExerciseFormView: View {
                 recoveryActivityType: selectedTemplate?.recoveryActivityType,
                 primaryMuscles: primaryMuscles,
                 secondaryMuscles: secondaryMuscles,
+                implementIds: equipmentIds,
                 setGroups: setGroups,
                 order: module.exercises.count,
                 notes: trimmedNotes.isEmpty ? nil : trimmedNotes
@@ -423,6 +508,134 @@ struct SetGroupEditRow: View {
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Muscle Group Enum Picker
+
+struct MuscleGroupEnumPickerView: View {
+    @Binding var primaryMuscles: [MuscleGroup]
+    @Binding var secondaryMuscles: [MuscleGroup]
+
+    private let columns = [
+        GridItem(.flexible()),
+        GridItem(.flexible())
+    ]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                // Primary muscles section
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("Primary Muscles")
+                        .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text("Main muscles worked by this exercise")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
+                        ForEach(MuscleGroup.allCases) { muscle in
+                            MuscleEnumChip(
+                                muscle: muscle,
+                                isSelected: primaryMuscles.contains(muscle),
+                                isPrimary: true
+                            ) {
+                                togglePrimary(muscle)
+                            }
+                        }
+                    }
+                }
+
+                Divider()
+
+                // Secondary muscles section
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("Secondary Muscles")
+                        .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
+                    Text("Supporting muscles engaged during the movement")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
+                        ForEach(MuscleGroup.allCases) { muscle in
+                            MuscleEnumChip(
+                                muscle: muscle,
+                                isSelected: secondaryMuscles.contains(muscle),
+                                isPrimary: false
+                            ) {
+                                toggleSecondary(muscle)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding()
+        }
+    }
+
+    private func togglePrimary(_ muscle: MuscleGroup) {
+        if primaryMuscles.contains(muscle) {
+            primaryMuscles.removeAll { $0 == muscle }
+        } else {
+            primaryMuscles.append(muscle)
+            // Remove from secondary if adding to primary
+            secondaryMuscles.removeAll { $0 == muscle }
+        }
+    }
+
+    private func toggleSecondary(_ muscle: MuscleGroup) {
+        if secondaryMuscles.contains(muscle) {
+            secondaryMuscles.removeAll { $0 == muscle }
+        } else {
+            secondaryMuscles.append(muscle)
+            // Remove from primary if adding to secondary
+            primaryMuscles.removeAll { $0 == muscle }
+        }
+    }
+}
+
+struct MuscleEnumChip: View {
+    let muscle: MuscleGroup
+    let isSelected: Bool
+    let isPrimary: Bool
+    let action: () -> Void
+
+    private var selectedColor: Color {
+        isPrimary ? AppColors.accentBlue : AppColors.accentTeal
+    }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: muscle.icon)
+                    .font(.system(size: 14))
+
+                Text(muscle.rawValue)
+                    .font(.subheadline)
+                    .lineLimit(1)
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16))
+                }
+            }
+            .foregroundColor(isSelected ? .white : AppColors.textPrimary)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .fill(isSelected ? selectedColor : AppColors.surfaceLight)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .stroke(isSelected ? selectedColor : AppColors.border, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 

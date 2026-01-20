@@ -16,7 +16,6 @@ struct WorkoutDetailView: View {
     let workout: Workout
 
     @State private var showingEditWorkout = false
-    @State private var showingActiveSession = false
     @State private var showingDeleteConfirmation = false
 
     private var currentWorkout: Workout {
@@ -143,9 +142,6 @@ struct WorkoutDetailView: View {
                 WorkoutFormView(workout: currentWorkout)
             }
         }
-        .fullScreenCover(isPresented: $showingActiveSession) {
-            ActiveSessionView()
-        }
         .confirmationDialog(
             "Delete Workout",
             isPresented: $showingDeleteConfirmation,
@@ -167,7 +163,7 @@ struct WorkoutDetailView: View {
 
     private func startWorkout() {
         sessionViewModel.startSession(workout: currentWorkout, modules: modules)
-        showingActiveSession = true
+        // MainTabView will auto-show full session when isSessionActive becomes true
     }
 }
 

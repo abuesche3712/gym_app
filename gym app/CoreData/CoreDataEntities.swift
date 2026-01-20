@@ -213,6 +213,7 @@ public class ExerciseInstanceEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var recoveryActivityTypeRaw: String?
     @NSManaged public var primaryMusclesData: Data?
     @NSManaged public var secondaryMusclesData: Data?
+    @NSManaged public var implementIdsRaw: String?
 
     // Legacy override fields (kept for migration)
     @NSManaged public var nameOverride: String?
@@ -305,6 +306,16 @@ public class ExerciseInstanceEntity: NSManagedObject, SyncableEntity {
         }
         set {
             secondaryMusclesData = try? JSONEncoder().encode(newValue)
+        }
+    }
+
+    var implementIds: Set<UUID> {
+        get {
+            guard let raw = implementIdsRaw else { return [] }
+            return Set(raw.split(separator: ",").compactMap { UUID(uuidString: String($0)) })
+        }
+        set {
+            implementIdsRaw = newValue.isEmpty ? nil : newValue.map { $0.uuidString }.joined(separator: ",")
         }
     }
 

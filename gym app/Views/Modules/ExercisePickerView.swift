@@ -11,6 +11,7 @@ struct ExercisePickerView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var resolver = ExerciseResolver.shared
     @StateObject private var customLibrary = CustomExerciseLibrary.shared
+    @StateObject private var libraryService = LibraryService.shared
     @Binding var selectedTemplate: ExerciseTemplate?
     @Binding var customName: String
     let onSelect: (ExerciseTemplate?) -> Void
@@ -210,6 +211,12 @@ struct ExercisePickerView: View {
 
     // MARK: - Exercise Row
 
+    private func equipmentNames(for template: ExerciseTemplate) -> [String] {
+        template.implementIds.compactMap { id in
+            libraryService.getImplement(id: id)?.name
+        }.sorted()
+    }
+
     private func exerciseRow(template: ExerciseTemplate, isCustom: Bool) -> some View {
         Button {
             selectExercise(template)
@@ -220,8 +227,8 @@ struct ExercisePickerView: View {
                         Text(template.name)
                             .foregroundColor(.primary)
 
-                        // Show indicator if exercise has muscles set
-                        if !template.primaryMuscles.isEmpty {
+                        // Show indicator if exercise has muscles or equipment set
+                        if !template.primaryMuscles.isEmpty || !template.implementIds.isEmpty {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.caption2)
                                 .foregroundColor(.green)
@@ -238,6 +245,14 @@ struct ExercisePickerView: View {
                             Text("\(template.primaryMuscles.count) muscles")
                                 .font(.caption2)
                                 .foregroundColor(.blue)
+                        }
+
+                        // Show equipment if set
+                        let equipment = equipmentNames(for: template)
+                        if !equipment.isEmpty {
+                            Text(equipment.joined(separator: ", "))
+                                .font(.caption2)
+                                .foregroundColor(AppColors.accentTeal)
                         }
                     }
                 }

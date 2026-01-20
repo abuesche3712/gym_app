@@ -52,7 +52,11 @@ struct ProgramsListView: View {
             ProgramsManagementSheet()
         }
         .sheet(item: $selectedDate) { date in
-            DayDetailSheet(date: date, scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date))
+            DayDetailSheet(
+                date: date,
+                scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date),
+                workouts: workoutViewModel.workouts
+            )
         }
     }
 
@@ -106,14 +110,14 @@ struct ProgramsListView: View {
                                     .foregroundColor(.secondary)
                             }
 
-                            ProgressView(value: progress)
-                                .progressViewStyle(.linear)
-                                .tint(.green)
+                            AnimatedProgressBar(
+                                progress: progress,
+                                gradient: AppGradients.successGradient,
+                                height: 6
+                            )
                         }
                     }
-                    .padding()
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .cornerRadius(12)
+                    .gradientCard(accent: AppColors.success)
                 }
                 .buttonStyle(.plain)
             } else {
@@ -485,6 +489,7 @@ struct DayDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     let date: Date
     let scheduledWorkouts: [ScheduledWorkout]
+    let workouts: [Workout]
 
     var body: some View {
         NavigationStack {
@@ -517,7 +522,26 @@ struct DayDetailSheet: View {
                                     Text("Rest Day")
                                         .foregroundColor(.secondary)
                                 }
+                            } else if let workout = workouts.first(where: { $0.id == scheduled.workoutId }) {
+                                NavigationLink(destination: WorkoutDetailView(workout: workout)) {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(scheduled.workoutName)
+                                            .font(.headline)
+
+                                        if scheduled.isFromProgram {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "calendar.badge.clock")
+                                                    .font(.caption)
+                                                Text("From Program")
+                                                    .font(.caption)
+                                            }
+                                            .foregroundColor(.green)
+                                        }
+                                    }
+                                    .padding(.vertical, 4)
+                                }
                             } else {
+                                // Workout not found - show name only
                                 HStack {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(scheduled.workoutName)
@@ -535,10 +559,6 @@ struct DayDetailSheet: View {
                                     }
 
                                     Spacer()
-
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
                                 }
                                 .padding(.vertical, 4)
                             }
