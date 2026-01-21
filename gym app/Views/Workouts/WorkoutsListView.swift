@@ -11,6 +11,7 @@ struct WorkoutsListView: View {
     @EnvironmentObject var workoutViewModel: WorkoutViewModel
     @EnvironmentObject var moduleViewModel: ModuleViewModel
     @EnvironmentObject var sessionViewModel: SessionViewModel
+    @Environment(\.dismiss) private var dismiss
 
     @State private var showingAddWorkout = false
     @State private var searchText = ""
@@ -125,14 +126,74 @@ struct WorkoutsListView: View {
     // MARK: - Header
 
     private var workoutsHeader: some View {
-        ScreenHeader(
-            label: "Your Workouts",
-            title: "Workouts",
-            subtitle: workoutSubtitle,
-            trailingText: "\(workoutViewModel.workouts.count) total",
-            trailingIcon: "list.bullet",
-            accentColor: AppColors.accentBlue
-        )
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            // Navigation row with back and plus
+            HStack {
+                Button {
+                    dismiss()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Back")
+                            .font(.body)
+                    }
+                    .foregroundColor(AppColors.accentBlue)
+                }
+
+                Spacer()
+
+                Button {
+                    showingAddWorkout = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(AppColors.accentBlue)
+                }
+            }
+
+            // Title section
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("WORKOUTS")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(AppColors.accentBlue)
+                        .tracking(1.5)
+
+                    Text("Your Workouts")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(AppColors.textPrimary)
+
+                    if let subtitle = workoutSubtitle {
+                        Text(subtitle)
+                            .font(.subheadline)
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                }
+
+                Spacer()
+
+                // Count badge
+                HStack(spacing: 4) {
+                    Image(systemName: "list.bullet")
+                        .font(.system(size: 12, weight: .medium))
+                    Text("\(workoutViewModel.workouts.count) total")
+                        .font(.subheadline.weight(.medium))
+                }
+                .foregroundColor(AppColors.textSecondary)
+            }
+
+            // Accent line
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [AppColors.accentBlue.opacity(0.6), AppColors.accentBlue.opacity(0.1), Color.clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: 2)
+        }
     }
 
     private var workoutSubtitle: String? {

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ModulesListView: View {
     @EnvironmentObject var moduleViewModel: ModuleViewModel
+    @Environment(\.dismiss) private var dismiss
     @State private var showingAddModule = false
     @State private var searchText = ""
     @State private var selectedType: ModuleType?
@@ -135,13 +136,68 @@ struct ModulesListView: View {
     // MARK: - Header
 
     private var modulesHeader: some View {
-        ScreenHeader(
-            label: "Your Modules",
-            title: "Modules",
-            trailingText: "\(moduleViewModel.modules.count) total",
-            trailingIcon: "square.stack.3d.up",
-            accentColor: AppColors.accentTeal
-        )
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            // Navigation row with back and plus
+            HStack {
+                Button {
+                    dismiss()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Back")
+                            .font(.body)
+                    }
+                    .foregroundColor(AppColors.accentTeal)
+                }
+
+                Spacer()
+
+                Button {
+                    showingAddModule = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(AppColors.accentTeal)
+                }
+            }
+
+            // Title section
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("MODULES")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(AppColors.accentTeal)
+                        .tracking(1.5)
+
+                    Text("Your Modules")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundColor(AppColors.textPrimary)
+                }
+
+                Spacer()
+
+                // Count badge
+                HStack(spacing: 4) {
+                    Image(systemName: "square.stack.3d.up")
+                        .font(.system(size: 12, weight: .medium))
+                    Text("\(moduleViewModel.modules.count) total")
+                        .font(.subheadline.weight(.medium))
+                }
+                .foregroundColor(AppColors.textSecondary)
+            }
+
+            // Accent line
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [AppColors.accentTeal.opacity(0.6), AppColors.accentTeal.opacity(0.1), Color.clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: 2)
+        }
     }
 }
 
