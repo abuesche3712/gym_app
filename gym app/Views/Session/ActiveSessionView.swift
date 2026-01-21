@@ -430,49 +430,55 @@ struct ActiveSessionView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Fixed-width button group to prevent layout shift
-                HStack(spacing: AppSpacing.sm) {
+                HStack(spacing: AppSpacing.xs) {
                     // Edit button
                     Button {
                         showEditExercise = true
                     } label: {
                         Image(systemName: "pencil")
-                            .font(.system(size: 14))
+                            .font(.system(size: 16))
                             .foregroundColor(AppColors.textTertiary)
-                            .frame(width: 36, height: 36)
+                            .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                             .background(
                                 Circle()
                                     .fill(AppColors.surfaceLight)
                             )
                     }
+                    .buttonStyle(.bouncy)
+                    .accessibilityLabel("Edit exercise")
 
                     // Back button (always reserve space)
                     Button {
                         goToPreviousExerciseSuperset()
                     } label: {
                         Image(systemName: "backward.fill")
-                            .font(.system(size: 14))
+                            .font(.system(size: 16))
                             .foregroundColor(canGoBack ? AppColors.textTertiary : AppColors.textTertiary.opacity(0.3))
-                            .frame(width: 36, height: 36)
+                            .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                             .background(
                                 Circle()
                                     .fill(AppColors.surfaceLight)
                             )
                     }
+                    .buttonStyle(.bouncy)
                     .disabled(!canGoBack)
+                    .accessibilityLabel("Previous exercise")
 
                     // Skip button (superset-aware)
                     Button {
                         skipToNextExerciseSuperset()
                     } label: {
                         Image(systemName: "forward.fill")
-                            .font(.system(size: 14))
+                            .font(.system(size: 16))
                             .foregroundColor(AppColors.textTertiary)
-                            .frame(width: 36, height: 36)
+                            .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                             .background(
                                 Circle()
                                     .fill(AppColors.surfaceLight)
                             )
                     }
+                    .buttonStyle(.bouncy)
+                    .accessibilityLabel("Next exercise")
                 }
                 .fixedSize()
             }
@@ -480,9 +486,16 @@ struct ActiveSessionView: View {
         .padding(AppSpacing.cardPadding)
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.cardBackground)
+            ZStack {
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppGradients.cardGradientElevated)
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppGradients.cardShine)
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .stroke(AppColors.border.opacity(0.4), lineWidth: 0.5)
+            }
         )
+        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
         .onLongPressGesture {
             showEditExercise = true
         }
@@ -1425,13 +1438,14 @@ struct ActiveSessionView: View {
                         Text("𝕏")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(AppColors.textSecondary)
-                            .frame(width: 36, height: 36)
+                            .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                             .background(
                                 Circle()
                                     .fill(AppColors.surfaceLight)
                             )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.bouncy)
+                    .accessibilityLabel("Browse X during rest")
                 }
 
                 // Skip button
@@ -1440,16 +1454,17 @@ struct ActiveSessionView: View {
                     highlightNextSet = true
                 } label: {
                     Text("Skip")
-                        .font(.subheadline.weight(.medium))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundColor(AppColors.accentBlue)
-                        .padding(.horizontal, AppSpacing.md)
-                        .padding(.vertical, AppSpacing.sm)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .frame(height: AppSpacing.minTouchTarget)
                         .background(
                             Capsule()
                                 .fill(AppColors.accentBlue.opacity(0.1))
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.bouncy)
+                .accessibilityLabel("Skip rest timer")
             }
 
         }

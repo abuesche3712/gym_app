@@ -162,9 +162,9 @@ struct SetRowView: View {
                 .stroke(isHighlighted ? AppColors.accentBlue.opacity(0.5) : .clear, lineWidth: 2)
         )
         .shadow(color: isHighlighted ? AppColors.accentBlue.opacity(0.3) : .clear, radius: isHighlighted ? 4 : 0)
-        .animation(.easeInOut(duration: 0.2), value: isHighlighted)
-        .animation(.easeInOut(duration: 0.2), value: timerRunning)
-        .animation(.easeInOut(duration: 0.2), value: flatSet.setData.completed)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHighlighted)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: timerRunning)
+        .animation(.spring(response: 0.35, dampingFraction: 0.7), value: flatSet.setData.completed)
         .onAppear { loadDefaults() }
         .onChange(of: sessionViewModel.isExerciseTimerRunning) { wasRunning, isRunning in
             // When exercise timer stops (countdown complete), update input fields
@@ -235,15 +235,27 @@ struct SetRowView: View {
         }
     }
 
-    private var backgroundColor: Color {
+    private var backgroundColor: some ShapeStyle {
         if flatSet.setData.completed {
-            return AppColors.success.opacity(0.05)
+            return AnyShapeStyle(LinearGradient(
+                colors: [AppColors.success.opacity(0.08), AppColors.success.opacity(0.03)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ))
         } else if timerRunning {
-            return AppColors.accentBlue.opacity(0.15)
+            return AnyShapeStyle(LinearGradient(
+                colors: [AppColors.accentBlue.opacity(0.15), AppColors.accentBlue.opacity(0.08)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ))
         } else if isHighlighted {
-            return AppColors.accentBlue.opacity(0.08)
+            return AnyShapeStyle(LinearGradient(
+                colors: [AppColors.accentBlue.opacity(0.1), AppColors.accentBlue.opacity(0.04)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ))
         }
-        return AppColors.surfaceLight
+        return AnyShapeStyle(AppColors.surfaceLight)
     }
 
     @ViewBuilder
@@ -257,12 +269,15 @@ struct SetRowView: View {
                     .foregroundColor(AppColors.textPrimary)
                 Spacer()
                 Image(systemName: "pencil")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundColor(AppColors.textTertiary)
+                    .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Edit completed set: \(completedSummary)")
+        .accessibilityHint("Tap to modify this set")
     }
 
     @ViewBuilder
@@ -452,12 +467,13 @@ struct SetRowView: View {
                                 toggleTimer()
                             } label: {
                                 Image(systemName: timerRunning ? "stop.fill" : "play.fill")
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(.system(size: 16, weight: .semibold))
                                     .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentBlue)
-                                    .frame(width: 36, height: 36)
+                                    .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                                     .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentBlue.opacity(0.15)))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.bouncy)
+                            .accessibilityLabel(timerRunning ? "Stop timer" : "Start timer")
                         } else {
                             // No time target (distance-based) - show stopwatch to time the run
                             // Always tappable for manual entry
@@ -475,17 +491,19 @@ struct SetRowView: View {
                                     .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("Time: \(formatDuration(inputDuration))")
 
                             Button {
                                 toggleStopwatch()
                             } label: {
                                 Image(systemName: timerRunning ? "stop.fill" : "stopwatch")
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(.system(size: 16, weight: .semibold))
                                     .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentTeal)
-                                    .frame(width: 36, height: 36)
+                                    .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                                     .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentTeal.opacity(0.15)))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.bouncy)
+                            .accessibilityLabel(timerRunning ? "Stop stopwatch" : "Start stopwatch")
                         }
                     }
 
@@ -570,12 +588,13 @@ struct SetRowView: View {
                             toggleTimer()
                         } label: {
                             Image(systemName: timerRunning ? "stop.fill" : "play.fill")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentBlue)
-                                .frame(width: 36, height: 36)
+                                .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                                 .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentBlue.opacity(0.15)))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.bouncy)
+                        .accessibilityLabel(timerRunning ? "Stop hold timer" : "Start hold timer")
                     }
 
                     Text("hold")
@@ -753,7 +772,7 @@ struct SetRowView: View {
                     HStack(spacing: 4) {
                         Image(systemName: activityType.icon)
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(Color.teal)
+                            .foregroundColor(AppColors.accentTeal)
                         Text(activityType.displayName)
                             .font(.caption.weight(.medium))
                             .foregroundColor(AppColors.textSecondary)
@@ -784,12 +803,13 @@ struct SetRowView: View {
                             toggleStopwatch()
                         } label: {
                             Image(systemName: timerRunning ? "stop.fill" : "stopwatch")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(timerRunning ? AppColors.warning : AppColors.accentTeal)
-                                .frame(width: 36, height: 36)
+                                .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                                 .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accentTeal.opacity(0.15)))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.bouncy)
+                        .accessibilityLabel(timerRunning ? "Stop stopwatch" : "Start stopwatch")
                     }
 
                     Text("time")
@@ -831,15 +851,16 @@ struct SetRowView: View {
             action()
         } label: {
             Image(systemName: "trash")
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundColor(AppColors.error)
-                .frame(width: 32, height: 32)
+                .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 .background(
                     Circle()
                         .fill(AppColors.error.opacity(0.1))
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.bouncy)
+        .accessibilityLabel("Delete set")
     }
 
     // MARK: - Log Button
@@ -872,16 +893,17 @@ struct SetRowView: View {
             HapticManager.shared.soft()
         } label: {
             Image(systemName: "arrow.uturn.backward")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(AppColors.accentBlue)
-                .frame(width: 32, height: 32)
+                .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 .background(
                     Circle()
                         .fill(AppColors.accentBlue.opacity(0.1))
                 )
         }
-        .buttonStyle(.plain)
-        .help("Same as last set")
+        .buttonStyle(.bouncy)
+        .accessibilityLabel("Copy previous set")
+        .accessibilityHint("Fills in values from the last completed set")
     }
 
     private var logButton: some View {
@@ -924,15 +946,18 @@ struct SetRowView: View {
             )
         } label: {
             Image(systemName: "checkmark")
-                .font(.system(size: 14, weight: .bold))
+                .font(.system(size: 16, weight: .bold))
                 .foregroundColor(.white)
-                .frame(width: 36, height: 36)
+                .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 .background(
                     Circle()
                         .fill(AppGradients.accentGradient)
                 )
+                .shadow(color: AppColors.accentBlue.opacity(0.4), radius: 6, x: 0, y: 2)
         }
         .buttonStyle(.bouncy)
+        .accessibilityLabel("Log set")
+        .accessibilityHint("Mark this set as completed")
     }
 
     // MARK: - Completed Summary

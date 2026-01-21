@@ -40,7 +40,7 @@ struct WorkoutsListView: View {
                     .padding(.top, AppSpacing.xxl)
                 } else {
                     LazyVStack(spacing: AppSpacing.md) {
-                        ForEach(filteredWorkouts) { workout in
+                        ForEach(Array(filteredWorkouts.enumerated()), id: \.element.id) { index, workout in
                             WorkoutListCard(
                                 workout: workout,
                                 modules: workoutViewModel.getModulesForWorkout(workout, allModules: moduleViewModel.modules),
@@ -50,6 +50,14 @@ struct WorkoutsListView: View {
                                 onStart: {
                                     startWorkout(workout)
                                 }
+                            )
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .move(edge: .trailing)),
+                                removal: .opacity
+                            ))
+                            .animation(
+                                .spring(response: 0.4, dampingFraction: 0.8).delay(Double(index) * 0.05),
+                                value: filteredWorkouts.count
                             )
                             .contextMenu {
                                 Button {
@@ -75,6 +83,7 @@ struct WorkoutsListView: View {
                         }
                     }
                     .padding(AppSpacing.screenPadding)
+                    .animation(.easeInOut(duration: 0.3), value: filteredWorkouts.count)
                 }
             }
             .background(AppColors.background.ignoresSafeArea())

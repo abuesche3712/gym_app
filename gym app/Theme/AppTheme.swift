@@ -17,10 +17,10 @@ struct AppColors {
     static let surfaceLight = Color(hex: "2A2A2A")
     static let border = Color(hex: "333333")
 
-    // Text colors
+    // Text colors (improved contrast for accessibility)
     static let textPrimary = Color(hex: "FFFFFF")
-    static let textSecondary = Color(hex: "A0A0A0")
-    static let textTertiary = Color(hex: "666666")
+    static let textSecondary = Color(hex: "B3B3B3")  // Improved from A0A0A0 for better contrast
+    static let textTertiary = Color(hex: "737373")   // Improved from 666666 for better contrast
 
     // Cool accent colors
     static let accentBlue = Color(hex: "00A3FF")
@@ -28,6 +28,8 @@ struct AppColors {
     static let accentTeal = Color(hex: "00C9A7")
     static let accentMint = Color(hex: "4FFFB0")
     static let accentSteel = Color(hex: "6B8CAE")
+    static let accentPurple = Color(hex: "A78BFA")
+    static let accentOrange = Color(hex: "FF8C42")
 
     // Semantic colors
     static let success = Color(hex: "00C9A7")
@@ -44,7 +46,7 @@ struct AppColors {
         case .strength: return Color(hex: "FF4757")
         case .cardioLong: return accentBlue
         case .cardioSpeed: return Color(hex: "A855F7")
-        case .recovery: return Color.teal
+        case .recovery: return accentTeal
         }
     }
 }
@@ -153,6 +155,9 @@ struct AppSpacing {
     static let cardPadding: CGFloat = 16
     static let screenPadding: CGFloat = 16
     static let stackSpacing: CGFloat = 12
+
+    // Minimum touch target size per Apple HIG (44x44 points)
+    static let minTouchTarget: CGFloat = 44
 }
 
 struct AppCorners {
@@ -662,6 +667,58 @@ struct AnimatedCircularProgress: View {
                 animatedProgress = min(max(newValue, 0), 1)
             }
         }
+    }
+}
+
+// MARK: - Icon Button Style (Minimum Touch Target)
+
+struct IconButtonStyle: ButtonStyle {
+    var size: CGFloat = AppSpacing.minTouchTarget
+    var iconSize: CGFloat = 16
+    var foregroundColor: Color = AppColors.textPrimary
+    var backgroundColor: Color = AppColors.surfaceLight
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: iconSize, weight: .semibold))
+            .foregroundColor(foregroundColor)
+            .frame(width: size, height: size)
+            .background(
+                Circle()
+                    .fill(backgroundColor)
+            )
+            .scaleEffect(configuration.isPressed ? 0.92 : 1)
+            .animation(AppAnimation.quick, value: configuration.isPressed)
+    }
+}
+
+// MARK: - Dynamic Type Support
+
+extension View {
+    /// Applies scaled font that respects Dynamic Type settings
+    func scaledFont(_ style: Font.TextStyle, weight: Font.Weight = .regular, design: Font.Design = .default) -> some View {
+        self.font(.system(style, design: design, weight: weight))
+    }
+
+    /// Ensures minimum touch target size (44x44 per Apple HIG)
+    func minTouchTarget() -> some View {
+        self.frame(minWidth: AppSpacing.minTouchTarget, minHeight: AppSpacing.minTouchTarget)
+    }
+}
+
+// MARK: - List Animation Modifier
+
+extension View {
+    /// Applies staggered entrance animation to list items
+    func listItemAnimation(index: Int, total: Int) -> some View {
+        self
+            .opacity(1)
+            .offset(y: 0)
+            .animation(
+                .spring(response: 0.4, dampingFraction: 0.8)
+                .delay(Double(index) * 0.03),
+                value: total
+            )
     }
 }
 

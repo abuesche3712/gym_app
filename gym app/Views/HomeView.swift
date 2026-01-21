@@ -208,14 +208,20 @@ struct HomeView: View {
 
                     Spacer()
 
-                    // Rating badge
+                    // Rating badge (number + icon for accessibility)
                     if let feeling = session.overallFeeling {
-                        Text("\(feeling)")
-                            .font(.title3.bold())
-                            .foregroundColor(.white)
-                            .frame(width: 40, height: 40)
-                            .background(feelingColor(feeling))
-                            .clipShape(Circle())
+                        HStack(spacing: 4) {
+                            Text("\(feeling)")
+                                .font(.headline.bold())
+                                .foregroundColor(.white)
+                            Image(systemName: feelingIcon(feeling))
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                        .frame(width: 52, height: 36)
+                        .background(feelingColor(feeling))
+                        .clipShape(Capsule())
+                        .accessibilityLabel("Workout rating: \(feeling) out of 10, \(feelingDescription(feeling))")
                     }
 
                     Image(systemName: "chevron.right")
@@ -243,6 +249,26 @@ struct HomeView: View {
         case 6...7: return AppColors.accentBlue
         case 8...10: return AppColors.success
         default: return AppColors.textTertiary
+        }
+    }
+
+    private func feelingIcon(_ rating: Int) -> String {
+        switch rating {
+        case 1...3: return "arrow.down"
+        case 4...5: return "minus"
+        case 6...7: return "arrow.up"
+        case 8...10: return "star.fill"
+        default: return "circle"
+        }
+    }
+
+    private func feelingDescription(_ rating: Int) -> String {
+        switch rating {
+        case 1...3: return "tough workout"
+        case 4...5: return "okay workout"
+        case 6...7: return "good workout"
+        case 8...10: return "great workout"
+        default: return ""
         }
     }
 
@@ -442,10 +468,12 @@ struct HomeView: View {
                     }
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(AppColors.accentBlue)
-                        .frame(width: 32, height: 32)
+                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 }
+                .buttonStyle(.bouncy)
+                .accessibilityLabel("Previous week")
 
                 Spacer()
 
@@ -461,10 +489,12 @@ struct HomeView: View {
                     }
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(AppColors.accentBlue)
-                        .frame(width: 32, height: 32)
+                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 }
+                .buttonStyle(.bouncy)
+                .accessibilityLabel("Next week")
             }
 
             // Week days
@@ -533,7 +563,7 @@ struct HomeView: View {
                 .background(
                     RoundedRectangle(cornerRadius: AppCorners.medium)
                         .fill(LinearGradient(
-                            colors: [Color.orange.opacity(0.15), Color.red.opacity(0.1)],
+                            colors: [AppColors.accentOrange.opacity(0.15), AppColors.warning.opacity(0.1)],
                             startPoint: .leading,
                             endPoint: .trailing
                         ))
@@ -544,75 +574,92 @@ struct HomeView: View {
                 // Completed stat
                 VStack(spacing: AppSpacing.xs) {
                     Text("\(sessionsThisWeek)")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
                         .foregroundColor(AppColors.success)
+                        .minimumScaleFactor(0.7)
 
                     Text("completed")
-                        .font(.caption.weight(.medium))
+                        .font(.caption2.weight(.semibold))
                         .foregroundColor(AppColors.textSecondary)
                         .textCase(.uppercase)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(sessionsThisWeek) workouts completed this week")
 
                 // Divider
                 Rectangle()
                     .fill(AppColors.border)
-                    .frame(width: 1, height: 50)
+                    .frame(width: 1, height: 44)
 
                 // Scheduled stat
                 VStack(spacing: AppSpacing.xs) {
                     Text("\(scheduledThisWeek)")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
                         .foregroundColor(AppColors.accentBlue)
+                        .minimumScaleFactor(0.7)
 
                     Text("scheduled")
-                        .font(.caption.weight(.medium))
+                        .font(.caption2.weight(.semibold))
                         .foregroundColor(AppColors.textSecondary)
                         .textCase(.uppercase)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(scheduledThisWeek) workouts scheduled this week")
 
                 // Divider
                 Rectangle()
                     .fill(AppColors.border)
-                    .frame(width: 1, height: 50)
+                    .frame(width: 1, height: 44)
 
                 // Volume stat
                 VStack(spacing: AppSpacing.xs) {
                     Text(formatVolume(volumeThisWeek))
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundColor(Color(hex: "A78BFA"))  // Purple
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundColor(AppColors.accentPurple)
+                        .minimumScaleFactor(0.7)
 
                     Text("volume")
-                        .font(.caption.weight(.medium))
+                        .font(.caption2.weight(.semibold))
                         .foregroundColor(AppColors.textSecondary)
                         .textCase(.uppercase)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(formatVolume(volumeThisWeek)) pounds total volume this week")
 
                 // Divider
                 Rectangle()
                     .fill(AppColors.border)
-                    .frame(width: 1, height: 50)
+                    .frame(width: 1, height: 44)
 
                 // Cardio stat
                 VStack(spacing: AppSpacing.xs) {
                     Text("\(cardioMinutesThisWeek)")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
                         .foregroundColor(AppColors.warning)
+                        .minimumScaleFactor(0.7)
 
                     Text("cardio min")
-                        .font(.caption.weight(.medium))
+                        .font(.caption2.weight(.semibold))
                         .foregroundColor(AppColors.textSecondary)
                         .textCase(.uppercase)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(cardioMinutesThisWeek) minutes of cardio this week")
             }
             .padding(.vertical, AppSpacing.lg)
             .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.cardBackground)
+                ZStack {
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .fill(AppColors.cardBackground)
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .stroke(AppColors.border.opacity(0.3), lineWidth: 0.5)
+                }
             )
+            .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
         }
     }
 
