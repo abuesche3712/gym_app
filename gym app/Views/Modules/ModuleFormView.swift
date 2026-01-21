@@ -774,7 +774,7 @@ struct ExercisePickerSheet: View {
 
 // MARK: - Filter Chip
 
-struct FilterChip: View {
+private struct FilterChip: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
