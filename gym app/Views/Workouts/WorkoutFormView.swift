@@ -396,7 +396,7 @@ struct WorkoutFormView: View {
 
             Button {
                 withAnimation {
-                    selectedModuleIds.remove(at: index)
+                    _ = selectedModuleIds.remove(at: index)
                 }
             } label: {
                 Image(systemName: "xmark.circle.fill")
@@ -616,7 +616,7 @@ struct WorkoutFormView: View {
 
             Button {
                 withAnimation {
-                    standaloneExercises.remove(at: index)
+                    _ = standaloneExercises.remove(at: index)
                 }
             } label: {
                 Image(systemName: "xmark.circle.fill")
