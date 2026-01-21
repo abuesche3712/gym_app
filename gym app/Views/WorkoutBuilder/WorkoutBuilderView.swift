@@ -26,6 +26,11 @@ struct WorkoutBuilderView: View {
                         workoutsCard
                         modulesCard
                     }
+
+                    // Program Calendar (if active program exists)
+                    if let activeProgram = programViewModel.activeProgram {
+                        activeProgramCalendar(program: activeProgram)
+                    }
                 }
                 .padding(AppSpacing.screenPadding)
             }
@@ -38,7 +43,7 @@ struct WorkoutBuilderView: View {
     // MARK: - Header
 
     private var builderHeader: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
             // Top label row
             HStack(alignment: .center) {
                 Text("TRAINING HUB")
@@ -48,153 +53,166 @@ struct WorkoutBuilderView: View {
 
                 Spacer()
 
-                // Animated pulse indicator
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(AppColors.success)
-                        .frame(width: 6, height: 6)
-                        .overlay(
-                            Circle()
-                                .stroke(AppColors.success.opacity(0.4), lineWidth: 2)
-                                .scaleEffect(1.5)
-                        )
-                    Text("\(totalItems) items")
-                        .font(.caption.weight(.medium))
-                        .foregroundColor(AppColors.textSecondary)
-                }
-            }
-
-            // Visual stat blocks
-            HStack(spacing: AppSpacing.sm) {
-                statBlock(
-                    value: programViewModel.programs.count,
-                    label: "Programs",
-                    icon: "calendar.badge.plus",
-                    color: AppColors.success,
-                    hasActive: programViewModel.activeProgram != nil
-                )
-
-                statBlock(
-                    value: workoutViewModel.workouts.filter { !$0.archived }.count,
-                    label: "Workouts",
-                    icon: "figure.strengthtraining.traditional",
-                    color: AppColors.accentBlue,
-                    hasActive: false
-                )
-
-                statBlock(
-                    value: moduleViewModel.modules.count,
-                    label: "Modules",
-                    icon: "square.stack.3d.up.fill",
-                    color: AppColors.accentPurple,
-                    hasActive: false
-                )
-            }
-
-            // Contextual tip/message
-            contextualMessage
-        }
-    }
-
-    private func statBlock(value: Int, label: String, icon: String, color: Color, hasActive: Bool) -> some View {
-        VStack(spacing: AppSpacing.xs) {
-            ZStack {
-                RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(color.opacity(0.1))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppCorners.medium)
-                            .stroke(color.opacity(0.2), lineWidth: 0.5)
-                    )
-
-                VStack(spacing: 4) {
-                    Image(systemName: icon)
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(color)
-
-                    Text("\(value)")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.textPrimary)
-                }
-                .padding(.vertical, AppSpacing.md)
-
-                if hasActive {
-                    VStack {
-                        HStack {
-                            Spacer()
-                            Circle()
-                                .fill(AppColors.success)
-                                .frame(width: 8, height: 8)
-                                .overlay(
-                                    Circle()
-                                        .stroke(AppColors.cardBackground, lineWidth: 2)
-                                )
-                                .offset(x: -8, y: 8)
-                        }
-                        Spacer()
+                // Show active program indicator if exists
+                if programViewModel.activeProgram != nil {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(AppColors.success)
+                            .frame(width: 6, height: 6)
+                        Text("Program active")
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(AppColors.success)
                     }
                 }
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 80)
-
-            Text(label)
-                .font(.caption2.weight(.medium))
-                .foregroundColor(AppColors.textTertiary)
-                .textCase(.uppercase)
-                .tracking(0.5)
         }
     }
 
-    private var contextualMessage: some View {
-        let message = getContextualMessage()
-        return HStack(spacing: AppSpacing.sm) {
-            Image(systemName: message.icon)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(message.color)
+    // MARK: - Active Program Calendar
 
-            Text(message.text)
-                .font(.subheadline)
-                .foregroundColor(AppColors.textSecondary)
+    private func activeProgramCalendar(program: Program) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            // Section header
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("ACTIVE PROGRAM")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundColor(AppColors.success)
+                        .tracking(1.2)
 
-            Spacer()
+                    Text(program.name)
+                        .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
+                }
 
-            if let action = message.actionIcon {
-                Image(systemName: action)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppColors.textTertiary)
+                Spacer()
+
+                // Week progress
+                if let startDate = program.startDate {
+                    let currentWeek = getCurrentWeek(startDate: startDate, durationWeeks: program.durationWeeks)
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("Week \(currentWeek)")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(AppColors.accentBlue)
+
+                        Text("of \(program.durationWeeks)")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
             }
+
+            // Weekly calendar grid
+            programWeekGrid(program: program)
         }
         .padding(AppSpacing.md)
         .background(
-            RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(message.color.opacity(0.08))
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .fill(AppColors.cardBackground)
                 .overlay(
-                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .stroke(message.color.opacity(0.15), lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .stroke(AppColors.success.opacity(0.3), lineWidth: 1)
                 )
         )
     }
 
-    private func getContextualMessage() -> (text: String, icon: String, color: Color, actionIcon: String?) {
-        let moduleCount = moduleViewModel.modules.count
-        let workoutCount = workoutViewModel.workouts.filter { !$0.archived }.count
-        let programCount = programViewModel.programs.count
+    private func programWeekGrid(program: Program) -> some View {
+        let dayNames = ["S", "M", "T", "W", "T", "F", "S"]
+        let today = Calendar.current.component(.weekday, from: Date()) - 1 // 0-indexed
 
-        if moduleCount == 0 {
-            return ("Start by creating your first module", "lightbulb.fill", AppColors.warning, "arrow.right")
-        } else if workoutCount == 0 {
-            return ("Combine modules into a workout", "sparkles", AppColors.accentBlue, "arrow.right")
-        } else if programCount == 0 && workoutCount >= 3 {
-            return ("Ready to build a training program?", "flame.fill", AppColors.accentOrange, "arrow.right")
-        } else if programViewModel.activeProgram != nil {
-            return ("Program active • Stay consistent", "checkmark.seal.fill", AppColors.success, nil)
-        } else {
-            return ("Your training library", "books.vertical.fill", AppColors.accentPurple, nil)
+        return VStack(spacing: AppSpacing.sm) {
+            // Day headers
+            HStack(spacing: 4) {
+                ForEach(0..<7, id: \.self) { day in
+                    Text(dayNames[day])
+                        .font(.caption2.weight(.semibold))
+                        .foregroundColor(day == today ? AppColors.accentBlue : AppColors.textTertiary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+
+            // Day cells with workouts
+            HStack(alignment: .top, spacing: 4) {
+                ForEach(0..<7, id: \.self) { day in
+                    let slots = program.allSlotsForDay(day)
+                    programDayCell(day: day, slots: slots, isToday: day == today)
+                }
+            }
         }
     }
 
-    private var totalItems: Int {
-        programViewModel.programs.count + workoutViewModel.workouts.count + moduleViewModel.modules.count
+    private func programDayCell(day: Int, slots: [ProgramSlot], isToday: Bool) -> some View {
+        VStack(spacing: 3) {
+            if slots.isEmpty {
+                // Rest day
+                Text("Rest")
+                    .font(.system(size: 8))
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(maxHeight: .infinity)
+            } else {
+                // Show slot indicators
+                ForEach(slots.prefix(3)) { slot in
+                    slotIndicator(slot: slot)
+                }
+                if slots.count > 3 {
+                    Text("+\(slots.count - 3)")
+                        .font(.system(size: 7, weight: .medium))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: 50)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.small)
+                .fill(isToday ? AppColors.accentBlue.opacity(0.1) : AppColors.surfaceLight)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppCorners.small)
+                        .stroke(isToday ? AppColors.accentBlue.opacity(0.4) : Color.clear, lineWidth: 1)
+                )
+        )
+    }
+
+    private func slotIndicator(slot: ProgramSlot) -> some View {
+        let color: Color = {
+            if let moduleType = slot.content.moduleType {
+                return AppColors.moduleColor(moduleType)
+            }
+            // Hash-based color for workouts
+            let hash = slot.displayName.hashValue
+            let hue = Double(abs(hash) % 360) / 360.0
+            return Color(hue: hue, saturation: 0.5, brightness: 0.7)
+        }()
+
+        return HStack(spacing: 2) {
+            Circle()
+                .fill(color)
+                .frame(width: 4, height: 4)
+
+            Text(abbreviatedSlotName(slot.displayName))
+                .font(.system(size: 8, weight: .medium))
+                .foregroundColor(AppColors.textSecondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 4)
+    }
+
+    private func abbreviatedSlotName(_ name: String) -> String {
+        let words = name.split(separator: " ")
+        if words.count >= 2 {
+            return words.prefix(2).map { String($0.prefix(1)) }.joined()
+        } else if name.count > 4 {
+            return String(name.prefix(4))
+        }
+        return name
+    }
+
+    private func getCurrentWeek(startDate: Date, durationWeeks: Int) -> Int {
+        let calendar = Calendar.current
+        let weeks = calendar.dateComponents([.weekOfYear], from: startDate, to: Date()).weekOfYear ?? 0
+        return min(max(weeks + 1, 1), durationWeeks)
     }
 
     // MARK: - Builder Cards
