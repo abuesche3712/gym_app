@@ -151,24 +151,33 @@ struct HomeView: View {
     // MARK: - Home Header
 
     private var homeHeader: some View {
-        ScreenHeaderWithBadge(
-            label: "Dashboard",
-            title: timeBasedGreeting,
-            badgeText: currentStreak >= 2 ? "\(currentStreak) day streak" : nil,
-            badgeIcon: currentStreak >= 2 ? "🔥" : nil,
-            badgeColor: AppColors.warning,
-            trailingText: formattedDate,
-            accentColor: AppColors.accentBlue
-        )
-    }
+        HStack {
+            Text(formattedDate.uppercased())
+                .font(.caption.weight(.semibold))
+                .foregroundColor(AppColors.accentBlue)
+                .tracking(1.5)
 
-    private var timeBasedGreeting: String {
-        let hour = Calendar.current.component(.hour, from: Date())
-        switch hour {
-        case 5..<12: return "Good morning"
-        case 12..<17: return "Good afternoon"
-        case 17..<22: return "Good evening"
-        default: return "Good night"
+            Spacer()
+
+            if currentStreak >= 2 {
+                HStack(spacing: 4) {
+                    Text("🔥")
+                        .font(.system(size: 12))
+                    Text("\(currentStreak) day streak")
+                        .font(.caption.weight(.bold))
+                        .foregroundColor(AppColors.warning)
+                }
+                .padding(.horizontal, AppSpacing.sm)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .fill(AppColors.warning.opacity(0.15))
+                        .overlay(
+                            Capsule()
+                                .stroke(AppColors.warning.opacity(0.3), lineWidth: 0.5)
+                        )
+                )
+            }
         }
     }
 
