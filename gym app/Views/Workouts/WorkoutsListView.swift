@@ -127,18 +127,23 @@ struct WorkoutsListView: View {
 
     private var workoutsHeader: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            // Navigation row with back and plus
+            // Navigation row with circular back and plus buttons
             HStack {
                 Button {
                     dismiss()
                 } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text("Back")
-                            .font(.body)
-                    }
-                    .foregroundColor(AppColors.accentBlue)
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(AppColors.accentBlue)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            Circle()
+                                .fill(AppColors.accentBlue.opacity(0.1))
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(AppColors.accentBlue.opacity(0.2), lineWidth: 1)
+                        )
                 }
 
                 Spacer()
@@ -147,8 +152,17 @@ struct WorkoutsListView: View {
                     showingAddWorkout = true
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(AppColors.accentBlue)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            Circle()
+                                .fill(AppColors.accentBlue.opacity(0.1))
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(AppColors.accentBlue.opacity(0.2), lineWidth: 1)
+                        )
                 }
             }
 
