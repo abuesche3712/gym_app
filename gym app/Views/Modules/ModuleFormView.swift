@@ -81,8 +81,10 @@ struct ModuleFormView: View {
         }
         .sheet(isPresented: $showingExercisePicker) {
             NavigationStack {
-                ExercisePickerSheet(onSelect: { template in
-                    addExerciseFromTemplate(template)
+                ExercisePickerSheet(onSelect: { templates in
+                    for template in templates {
+                        addExerciseFromTemplate(template)
+                    }
                 })
             }
         }
@@ -692,10 +694,11 @@ struct ExercisePickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var resolver = ExerciseResolver.shared
 
-    let onSelect: (ExerciseTemplate) -> Void
+    let onSelect: ([ExerciseTemplate]) -> Void
 
     @State private var searchText = ""
     @State private var selectedType: ExerciseType?
+    @State private var selectedTemplates: [ExerciseTemplate] = []
 
     private var filteredExercises: [ExerciseTemplate] {
         var exercises = resolver.builtInExercises + resolver.customExercises
@@ -709,6 +712,18 @@ struct ExercisePickerSheet: View {
         }
 
         return exercises.sorted { $0.name < $1.name }
+    }
+
+    private func isSelected(_ template: ExerciseTemplate) -> Bool {
+        selectedTemplates.contains { $0.id == template.id }
+    }
+
+    private func toggleSelection(_ template: ExerciseTemplate) {
+        if let index = selectedTemplates.firstIndex(where: { $0.id == template.id }) {
+            selectedTemplates.remove(at: index)
+        } else {
+            selectedTemplates.append(template)
+        }
     }
 
     var body: some View {
@@ -735,8 +750,7 @@ struct ExercisePickerSheet: View {
             List {
                 ForEach(filteredExercises) { template in
                     Button {
-                        onSelect(template)
-                        dismiss()
+                        toggleSelection(template)
                     } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
@@ -750,13 +764,41 @@ struct ExercisePickerSheet: View {
 
                             Spacer()
 
-                            Image(systemName: "plus.circle")
-                                .foregroundColor(AppColors.accentBlue)
+                            if isSelected(template) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(AppColors.success)
+                                    .font(.system(size: 22))
+                            } else {
+                                Image(systemName: "circle")
+                                    .foregroundColor(AppColors.textTertiary)
+                                    .font(.system(size: 22))
+                            }
                         }
                     }
                 }
             }
             .listStyle(.plain)
+
+            // Add button when exercises are selected
+            if !selectedTemplates.isEmpty {
+                Button {
+                    onSelect(selectedTemplates)
+                    dismiss()
+                } label: {
+                    HStack {
+                        Image(systemName: "plus.circle.fill")
+                        Text("Add \(selectedTemplates.count) Exercise\(selectedTemplates.count == 1 ? "" : "s")")
+                            .fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppSpacing.md)
+                    .background(AppColors.accentBlue)
+                    .foregroundColor(.white)
+                    .cornerRadius(AppCorners.medium)
+                }
+                .padding(AppSpacing.screenPadding)
+                .background(AppColors.background)
+            }
         }
         .background(AppColors.background.ignoresSafeArea())
         .navigationTitle("Exercise Library")
