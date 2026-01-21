@@ -46,12 +46,12 @@ struct WorkoutBuilderView: View {
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingNewModule) {
                 NavigationStack {
-                    ModuleFormView()
+                    ModuleFormView(module: nil)
                 }
             }
             .sheet(isPresented: $showingNewWorkout) {
                 NavigationStack {
-                    WorkoutFormView()
+                    WorkoutFormView(workout: nil)
                 }
             }
             .sheet(isPresented: $showingNewProgram) {
