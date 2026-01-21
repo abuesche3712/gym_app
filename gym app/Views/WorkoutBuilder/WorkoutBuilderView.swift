@@ -13,6 +13,10 @@ struct WorkoutBuilderView: View {
     @EnvironmentObject private var workoutViewModel: WorkoutViewModel
     @EnvironmentObject private var moduleViewModel: ModuleViewModel
 
+    @State private var showingNewModule = false
+    @State private var showingNewWorkout = false
+    @State private var showingNewProgram = false
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -31,12 +35,30 @@ struct WorkoutBuilderView: View {
                     if let activeProgram = programViewModel.activeProgram {
                         activeProgramCalendar(program: activeProgram)
                     }
+
+                    // Quick Actions
+                    quickActionsSection
                 }
                 .padding(AppSpacing.screenPadding)
             }
             .background(AppColors.background.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
+            .sheet(isPresented: $showingNewModule) {
+                NavigationStack {
+                    ModuleFormView()
+                }
+            }
+            .sheet(isPresented: $showingNewWorkout) {
+                NavigationStack {
+                    WorkoutFormView()
+                }
+            }
+            .sheet(isPresented: $showingNewProgram) {
+                NavigationStack {
+                    ProgramFormView()
+                }
+            }
         }
     }
 
@@ -213,6 +235,74 @@ struct WorkoutBuilderView: View {
         let calendar = Calendar.current
         let weeks = calendar.dateComponents([.weekOfYear], from: startDate, to: Date()).weekOfYear ?? 0
         return min(max(weeks + 1, 1), durationWeeks)
+    }
+
+    // MARK: - Quick Actions
+
+    private var quickActionsSection: some View {
+        VStack(spacing: AppSpacing.sm) {
+            Text("QUICK CREATE")
+                .font(.caption2.weight(.semibold))
+                .foregroundColor(AppColors.textTertiary)
+                .tracking(1.2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: 0) {
+                quickActionButton(
+                    icon: "square.stack.3d.up.fill",
+                    label: "Module",
+                    color: AppColors.accentPurple
+                ) {
+                    showingNewModule = true
+                }
+
+                Spacer()
+
+                quickActionButton(
+                    icon: "figure.strengthtraining.traditional",
+                    label: "Workout",
+                    color: AppColors.accentBlue
+                ) {
+                    showingNewWorkout = true
+                }
+
+                Spacer()
+
+                quickActionButton(
+                    icon: "calendar.badge.plus",
+                    label: "Program",
+                    color: AppColors.success
+                ) {
+                    showingNewProgram = true
+                }
+            }
+            .padding(.horizontal, AppSpacing.lg)
+        }
+    }
+
+    private func quickActionButton(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: AppSpacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.15))
+                        .frame(width: 64, height: 64)
+
+                    Circle()
+                        .stroke(color.opacity(0.3), lineWidth: 1)
+                        .frame(width: 64, height: 64)
+
+                    Image(systemName: icon)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundColor(color)
+                }
+
+                Text(label)
+                    .font(.caption.weight(.medium))
+                    .foregroundColor(AppColors.textSecondary)
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Builder Cards
