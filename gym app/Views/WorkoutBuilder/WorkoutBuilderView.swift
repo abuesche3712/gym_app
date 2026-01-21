@@ -55,9 +55,7 @@ struct WorkoutBuilderView: View {
                 }
             }
             .sheet(isPresented: $showingNewProgram) {
-                NavigationStack {
-                    ProgramFormView()
-                }
+                CreateProgramSheet()
             }
         }
     }
