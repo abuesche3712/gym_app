@@ -217,7 +217,7 @@ struct ModuleFormView: View {
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: template.exerciseType.icon)
                             .font(.system(size: 14))
-                            .foregroundColor(template.exerciseType.color)
+                            .foregroundColor(AppColors.accentBlue)
                             .frame(width: 24)
 
                         Text(template.name)
@@ -305,7 +305,7 @@ struct ModuleFormView: View {
                     if !exercise.setGroups.isEmpty {
                         Text("•")
                             .foregroundColor(AppColors.textTertiary)
-                        Text(exercise.formattedSetScheme)
+                        Text(formatSetScheme(exercise.setGroups))
                             .font(.caption)
                             .foregroundColor(AppColors.textTertiary)
                     }
@@ -417,11 +417,12 @@ struct ModuleFormView: View {
         if let template = resolver.findTemplate(named: trimmedName) {
             addExerciseFromTemplate(template)
         } else {
-            // Create custom exercise
+            // Create custom exercise - use cardio type if module is cardio-focused
+            let exerciseType: ExerciseType = (type == .cardioLong || type == .cardioSpeed) ? .cardio : .strength
             let instance = ExerciseInstance(
                 templateId: nil,
                 name: trimmedName,
-                exerciseType: type == .cardio ? .cardio : .strength,
+                exerciseType: exerciseType,
                 order: exercises.count
             )
             withAnimation {
@@ -434,6 +435,17 @@ struct ModuleFormView: View {
         for i in exercises.indices {
             exercises[i].order = i
         }
+    }
+
+    private func formatSetScheme(_ setGroups: [SetGroup]) -> String {
+        setGroups.map { group in
+            if let reps = group.targetReps {
+                return "\(group.sets)×\(reps)"
+            } else if let duration = group.targetDuration {
+                return "\(group.sets)×\(duration)s"
+            }
+            return "\(group.sets) sets"
+        }.joined(separator: " + ")
     }
 
     private func saveModule() {
