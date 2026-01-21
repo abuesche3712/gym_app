@@ -27,6 +27,9 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.xl) {
+                    // Custom header
+                    homeHeader
+
                     // Today's Workout Bar
                     todayWorkoutBar
 
@@ -42,7 +45,8 @@ struct HomeView: View {
                 .padding(AppSpacing.screenPadding)
             }
             .background(AppColors.background.ignoresSafeArea())
-            .navigationTitle("Gym App")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(item: $dayToSchedule) { identifiableDate in
                 let date = identifiableDate.date
                 ScheduleWorkoutSheet(
@@ -142,6 +146,36 @@ struct HomeView: View {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .full
         return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    // MARK: - Home Header
+
+    private var homeHeader: some View {
+        ScreenHeaderWithBadge(
+            label: "Dashboard",
+            title: timeBasedGreeting,
+            badgeText: currentStreak >= 2 ? "\(currentStreak) day streak" : nil,
+            badgeIcon: currentStreak >= 2 ? "🔥" : nil,
+            badgeColor: AppColors.warning,
+            trailingText: formattedDate,
+            accentColor: AppColors.accentBlue
+        )
+    }
+
+    private var timeBasedGreeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<12: return "Good morning"
+        case 12..<17: return "Good afternoon"
+        case 17..<22: return "Good evening"
+        default: return "Good night"
+        }
+    }
+
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, MMM d"
+        return formatter.string(from: Date())
     }
 
     // MARK: - Today's Workout Bar
@@ -542,33 +576,6 @@ struct HomeView: View {
     private var weekInReviewSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             SectionHeader(title: "Week in Review")
-
-            // Streak banner (only show if streak >= 2)
-            if currentStreak >= 2 {
-                HStack(spacing: AppSpacing.sm) {
-                    Text("🔥")
-                        .font(.title2)
-
-                    Text("\(currentStreak) day streak!")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(AppColors.textPrimary)
-
-                    Spacer()
-
-                    Text("Keep it going")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
-                }
-                .padding(AppSpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(LinearGradient(
-                            colors: [AppColors.accentOrange.opacity(0.15), AppColors.warning.opacity(0.1)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        ))
-                )
-            }
 
             HStack(spacing: 0) {
                 // Completed stat

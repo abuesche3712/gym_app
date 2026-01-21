@@ -1,3 +1,4 @@
+
 //
 //  WorkoutBuilderView.swift
 //  gym app
@@ -15,43 +16,88 @@ struct WorkoutBuilderView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
-                    // Header
-                    headerSection
+                VStack(spacing: AppSpacing.xl) {
+                    // Custom Header
+                    builderHeader
 
                     // Builder Cards
-                    VStack(spacing: 16) {
+                    VStack(spacing: AppSpacing.md) {
                         programsCard
                         workoutsCard
                         modulesCard
                     }
-                    .padding(.horizontal)
                 }
-                .padding(.vertical)
+                .padding(AppSpacing.screenPadding)
             }
-            .navigationTitle("Workout")
-            .background(Color(.systemGroupedBackground))
+            .background(AppColors.background.ignoresSafeArea())
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 
-    // MARK: - Header Section
+    // MARK: - Header
 
-    private var headerSection: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "dumbbell.fill")
-                .font(.system(size: 40))
-                .foregroundColor(.accentColor)
+    private var builderHeader: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            // Top row
+            HStack(alignment: .center) {
+                Text("TRAINING HUB")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(AppColors.accentBlue)
+                    .tracking(1.5)
 
-            Text("Build Your Training")
-                .font(.title2)
-                .fontWeight(.bold)
+                Spacer()
 
-            Text("Create programs, workouts, and modules")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                // Total items badge
+                HStack(spacing: 4) {
+                    Image(systemName: "square.stack.3d.up.fill")
+                        .font(.system(size: 10))
+                    Text("\(totalItems) items")
+                        .font(.caption.weight(.medium))
+                }
+                .foregroundColor(AppColors.textSecondary)
+            }
+
+            // Title
+            Text("Workout Builder")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(AppColors.textPrimary)
+                .tracking(-0.5)
+
+            // Subtitle with quick stats
+            HStack(spacing: AppSpacing.md) {
+                quickStat(value: programViewModel.programs.count, label: "programs", color: AppColors.success)
+                quickStat(value: workoutViewModel.workouts.count, label: "workouts", color: AppColors.accentBlue)
+                quickStat(value: moduleViewModel.modules.count, label: "modules", color: AppColors.accentPurple)
+            }
+
+            // Accent line
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [AppColors.accentBlue.opacity(0.6), AppColors.accentPurple.opacity(0.3), Color.clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: 2)
+                .padding(.top, AppSpacing.xs)
         }
-        .padding(.top, 8)
-        .padding(.bottom, 4)
+    }
+
+    private var totalItems: Int {
+        programViewModel.programs.count + workoutViewModel.workouts.count + moduleViewModel.modules.count
+    }
+
+    private func quickStat(value: Int, label: String, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Text("\(value)")
+                .font(.subheadline.weight(.bold))
+                .foregroundColor(color)
+            Text(label)
+                .font(.caption)
+                .foregroundColor(AppColors.textTertiary)
+        }
     }
 
     // MARK: - Builder Cards

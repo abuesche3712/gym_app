@@ -28,66 +28,72 @@ struct WorkoutsListView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                if filteredWorkouts.isEmpty {
-                    EmptyStateView(
-                        icon: "figure.strengthtraining.traditional",
-                        title: "No Workouts",
-                        message: "Create a workout by combining modules into a routine",
-                        buttonTitle: "Create Workout"
-                    ) {
-                        showingAddWorkout = true
-                    }
-                    .padding(.top, AppSpacing.xxl)
-                } else {
-                    LazyVStack(spacing: AppSpacing.md) {
-                        ForEach(Array(filteredWorkouts.enumerated()), id: \.element.id) { index, workout in
-                            WorkoutListCard(
-                                workout: workout,
-                                modules: workoutViewModel.getModulesForWorkout(workout, allModules: moduleViewModel.modules),
-                                onTap: {
-                                    editingWorkout = workout
-                                },
-                                onStart: {
-                                    startWorkout(workout)
-                                }
-                            )
-                            .transition(.asymmetric(
-                                insertion: .opacity.combined(with: .move(edge: .trailing)),
-                                removal: .opacity
-                            ))
-                            .animation(
-                                .spring(response: 0.4, dampingFraction: 0.8).delay(Double(index) * 0.05),
-                                value: filteredWorkouts.count
-                            )
-                            .contextMenu {
-                                Button {
-                                    editingWorkout = workout
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
-                                }
+                VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                    // Custom header
+                    workoutsHeader
 
-                                Button {
-                                    startWorkout(workout)
-                                } label: {
-                                    Label("Start Workout", systemImage: "play.fill")
-                                }
+                    if filteredWorkouts.isEmpty {
+                        EmptyStateView(
+                            icon: "figure.strengthtraining.traditional",
+                            title: "No Workouts",
+                            message: "Create a workout by combining modules into a routine",
+                            buttonTitle: "Create Workout"
+                        ) {
+                            showingAddWorkout = true
+                        }
+                        .padding(.top, AppSpacing.xl)
+                    } else {
+                        LazyVStack(spacing: AppSpacing.md) {
+                            ForEach(Array(filteredWorkouts.enumerated()), id: \.element.id) { index, workout in
+                                WorkoutListCard(
+                                    workout: workout,
+                                    modules: workoutViewModel.getModulesForWorkout(workout, allModules: moduleViewModel.modules),
+                                    onTap: {
+                                        editingWorkout = workout
+                                    },
+                                    onStart: {
+                                        startWorkout(workout)
+                                    }
+                                )
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .move(edge: .trailing)),
+                                    removal: .opacity
+                                ))
+                                .animation(
+                                    .spring(response: 0.4, dampingFraction: 0.8).delay(Double(index) * 0.05),
+                                    value: filteredWorkouts.count
+                                )
+                                .contextMenu {
+                                    Button {
+                                        editingWorkout = workout
+                                    } label: {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
 
-                                Divider()
+                                    Button {
+                                        startWorkout(workout)
+                                    } label: {
+                                        Label("Start Workout", systemImage: "play.fill")
+                                    }
 
-                                Button(role: .destructive) {
-                                    workoutViewModel.deleteWorkout(workout)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
+                                    Divider()
+
+                                    Button(role: .destructive) {
+                                        workoutViewModel.deleteWorkout(workout)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
                                 }
                             }
                         }
+                        .animation(.easeInOut(duration: 0.3), value: filteredWorkouts.count)
                     }
-                    .padding(AppSpacing.screenPadding)
-                    .animation(.easeInOut(duration: 0.3), value: filteredWorkouts.count)
                 }
+                .padding(AppSpacing.screenPadding)
             }
             .background(AppColors.background.ignoresSafeArea())
-            .navigationTitle("Workouts")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
             .searchable(text: $searchText, prompt: "Search workouts")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -115,6 +121,28 @@ struct WorkoutsListView: View {
             }
         }
     }
+
+    // MARK: - Header
+
+    private var workoutsHeader: some View {
+        ScreenHeader(
+            label: "Your Workouts",
+            title: "Workouts",
+            subtitle: workoutSubtitle,
+            trailingText: "\(workoutViewModel.workouts.count) total",
+            trailingIcon: "list.bullet",
+            accentColor: AppColors.accentBlue
+        )
+    }
+
+    private var workoutSubtitle: String? {
+        guard let lastSession = sessionViewModel.sessions.first else { return nil }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return "Last workout \(formatter.localizedString(for: lastSession.date, relativeTo: Date()))"
+    }
+
+    // MARK: - Actions
 
     private func startWorkout(_ workout: Workout) {
         let modules = workout.moduleReferences

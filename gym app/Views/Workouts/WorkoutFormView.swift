@@ -28,6 +28,9 @@ struct WorkoutFormView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: AppSpacing.xl) {
+                // Custom Header
+                builderHeader
+
                 // Workout Info Section
                 FormSection(title: "Workout Info", icon: "figure.strengthtraining.traditional", iconColor: AppColors.accentBlue) {
                     FormTextField(label: "Name", text: $name, icon: "textformat", placeholder: "e.g., Monday - Lower A")
@@ -157,8 +160,9 @@ struct WorkoutFormView: View {
             .padding(AppSpacing.screenPadding)
         }
         .background(AppColors.background.ignoresSafeArea())
-        .navigationTitle(isEditing ? "Edit Workout" : "New Workout")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(AppColors.background, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
@@ -199,6 +203,137 @@ struct WorkoutFormView: View {
                     .map(\.exercise)
             }
         }
+    }
+
+    // MARK: - Header
+
+    private var builderHeader: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            // Title row
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(isEditing ? "EDITING" : "BUILDING")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(isEditing ? AppColors.warning : AppColors.accentBlue)
+                        .tracking(1.5)
+
+                    Text(name.isEmpty ? "New Workout" : name)
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(AppColors.textPrimary)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                // Completion indicator
+                completionRing
+            }
+
+            // Stats row
+            HStack(spacing: AppSpacing.lg) {
+                statBadge(
+                    value: "\(selectedModuleIds.count)",
+                    label: "modules",
+                    icon: "square.stack.3d.up",
+                    color: AppColors.accentTeal
+                )
+
+                statBadge(
+                    value: "\(totalExerciseCount)",
+                    label: "exercises",
+                    icon: "dumbbell",
+                    color: AppColors.accentBlue
+                )
+
+                if let duration = Int(estimatedDuration), duration > 0 {
+                    statBadge(
+                        value: "\(duration)",
+                        label: "min",
+                        icon: "clock",
+                        color: AppColors.accentPurple
+                    )
+                }
+
+                Spacer()
+            }
+            .padding(.top, AppSpacing.xs)
+
+            // Accent line
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            (isEditing ? AppColors.warning : AppColors.accentBlue).opacity(0.6),
+                            (isEditing ? AppColors.warning : AppColors.accentBlue).opacity(0.1),
+                            Color.clear
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: 2)
+                .padding(.top, AppSpacing.sm)
+        }
+    }
+
+    private var completionRing: some View {
+        let progress = completionProgress
+        return ZStack {
+            Circle()
+                .stroke(AppColors.surfaceLight, lineWidth: 4)
+
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(
+                    progress >= 1.0 ? AppColors.success : AppColors.accentBlue,
+                    style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+
+            Image(systemName: progress >= 1.0 ? "checkmark" : "hammer.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(progress >= 1.0 ? AppColors.success : AppColors.accentBlue)
+        }
+        .frame(width: 44, height: 44)
+    }
+
+    private var completionProgress: Double {
+        var filled = 0.0
+        let total = 3.0
+
+        if !name.trimmingCharacters(in: .whitespaces).isEmpty { filled += 1 }
+        if !selectedModuleIds.isEmpty || !standaloneExercises.isEmpty { filled += 1 }
+        if Int(estimatedDuration) ?? 0 > 0 { filled += 1 }
+
+        return filled / total
+    }
+
+    private var totalExerciseCount: Int {
+        let moduleExercises = selectedModuleIds.compactMap { moduleViewModel.getModule(id: $0) }
+            .reduce(0) { $0 + $1.exercises.count }
+        return moduleExercises + standaloneExercises.count
+    }
+
+    private func statBadge(value: String, label: String, icon: String, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(color)
+
+            Text(value)
+                .font(.subheadline.weight(.bold))
+                .foregroundColor(AppColors.textPrimary)
+
+            Text(label)
+                .font(.caption)
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .padding(.horizontal, AppSpacing.sm)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(color.opacity(0.1))
+        )
     }
 
     // MARK: - Row Views

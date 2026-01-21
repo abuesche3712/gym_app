@@ -784,3 +784,146 @@ struct SkeletonView: View {
             }
     }
 }
+
+// MARK: - Screen Header
+
+struct ScreenHeader: View {
+    let label: String
+    let title: String
+    var subtitle: String? = nil
+    var trailingText: String? = nil
+    var trailingIcon: String? = nil
+    var accentColor: Color = AppColors.accentBlue
+    var showAccentLine: Bool = true
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            // Top row: Label + Trailing content
+            HStack(alignment: .center) {
+                Text(label)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(accentColor)
+                    .textCase(.uppercase)
+                    .tracking(1.5)
+
+                Spacer()
+
+                if let trailingText = trailingText {
+                    HStack(spacing: AppSpacing.xs) {
+                        if let icon = trailingIcon {
+                            Image(systemName: icon)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(accentColor)
+                        }
+                        Text(trailingText)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                }
+            }
+
+            // Main title
+            Text(title)
+                .font(.system(size: 28, weight: .bold, design: .default))
+                .foregroundColor(AppColors.textPrimary)
+                .tracking(-0.5)
+
+            // Optional subtitle
+            if let subtitle = subtitle {
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+
+            // Accent line
+            if showAccentLine {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [accentColor.opacity(0.6), accentColor.opacity(0.1), Color.clear],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(height: 2)
+                    .padding(.top, AppSpacing.xs)
+            }
+        }
+        .padding(.bottom, AppSpacing.sm)
+    }
+}
+
+// MARK: - Screen Header with Badge
+
+struct ScreenHeaderWithBadge: View {
+    let label: String
+    let title: String
+    var badgeText: String? = nil
+    var badgeIcon: String? = nil
+    var badgeColor: Color = AppColors.warning
+    var trailingText: String? = nil
+    var accentColor: Color = AppColors.accentBlue
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            // Top row: Label + Badge + Trailing
+            HStack(alignment: .center) {
+                Text(label)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(accentColor)
+                    .textCase(.uppercase)
+                    .tracking(1.5)
+
+                Spacer()
+
+                // Badge on the right
+                if let badgeText = badgeText {
+                    HStack(spacing: 4) {
+                        if let icon = badgeIcon {
+                            Text(icon)
+                                .font(.system(size: 12))
+                        }
+                        Text(badgeText)
+                            .font(.caption.weight(.bold))
+                            .foregroundColor(badgeColor)
+                    }
+                    .padding(.horizontal, AppSpacing.sm)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(badgeColor.opacity(0.15))
+                            .overlay(
+                                Capsule()
+                                    .stroke(badgeColor.opacity(0.3), lineWidth: 0.5)
+                            )
+                    )
+                }
+
+                if let trailingText = trailingText {
+                    Text(trailingText)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundColor(AppColors.textSecondary)
+                }
+            }
+
+            // Title row
+            Text(title)
+                .font(.system(size: 28, weight: .bold, design: .default))
+                .foregroundColor(AppColors.textPrimary)
+                .tracking(-0.5)
+
+            // Accent line
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [accentColor.opacity(0.6), accentColor.opacity(0.1), Color.clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .frame(height: 2)
+                .padding(.top, AppSpacing.xs)
+        }
+        .padding(.bottom, AppSpacing.sm)
+    }
+}

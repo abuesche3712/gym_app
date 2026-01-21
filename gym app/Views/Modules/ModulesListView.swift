@@ -32,6 +32,10 @@ struct ModulesListView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
+                    // Custom header
+                    modulesHeader
+                        .padding(.horizontal, AppSpacing.screenPadding)
+
                     // Type filter pills
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: AppSpacing.sm) {
@@ -98,7 +102,8 @@ struct ModulesListView: View {
                 .padding(.vertical, AppSpacing.md)
             }
             .background(AppColors.background.ignoresSafeArea())
-            .navigationTitle("Modules")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
             .searchable(text: $searchText, prompt: "Search modules")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -125,6 +130,18 @@ struct ModulesListView: View {
                 moduleViewModel.loadModules()
             }
         }
+    }
+
+    // MARK: - Header
+
+    private var modulesHeader: some View {
+        ScreenHeader(
+            label: "Your Modules",
+            title: "Modules",
+            trailingText: "\(moduleViewModel.modules.count) total",
+            trailingIcon: "square.stack.3d.up",
+            accentColor: AppColors.accentTeal
+        )
     }
 }
 
