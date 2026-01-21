@@ -582,6 +582,7 @@ struct HomeView: View {
                         .font(.caption2.weight(.semibold))
                         .foregroundColor(AppColors.textSecondary)
                         .textCase(.uppercase)
+                        .tracking(1.2)
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .combine)
@@ -603,6 +604,7 @@ struct HomeView: View {
                         .font(.caption2.weight(.semibold))
                         .foregroundColor(AppColors.textSecondary)
                         .textCase(.uppercase)
+                        .tracking(1.2)
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .combine)
@@ -624,6 +626,7 @@ struct HomeView: View {
                         .font(.caption2.weight(.semibold))
                         .foregroundColor(AppColors.textSecondary)
                         .textCase(.uppercase)
+                        .tracking(1.2)
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .combine)
@@ -645,6 +648,7 @@ struct HomeView: View {
                         .font(.caption2.weight(.semibold))
                         .foregroundColor(AppColors.textSecondary)
                         .textCase(.uppercase)
+                        .tracking(1.2)
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .combine)

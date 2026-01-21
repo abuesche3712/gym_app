@@ -10,42 +10,42 @@ import SwiftUI
 // MARK: - Colors
 
 struct AppColors {
-    // Base greyscale palette
-    static let background = Color(hex: "0D0D0D")
-    static let cardBackground = Color(hex: "1A1A1A")
-    static let cardBackgroundLight = Color(hex: "242424")
-    static let surfaceLight = Color(hex: "2A2A2A")
-    static let border = Color(hex: "333333")
+    // Base greyscale palette (warm-tinted blacks for premium feel)
+    static let background = Color(hex: "0C0C0B")      // Slightly warm black
+    static let cardBackground = Color(hex: "161615")  // Warm dark gray
+    static let cardBackgroundLight = Color(hex: "1E1E1C")
+    static let surfaceLight = Color(hex: "262624")
+    static let border = Color(hex: "2E2E2B")
 
-    // Text colors (improved contrast for accessibility)
-    static let textPrimary = Color(hex: "FFFFFF")
-    static let textSecondary = Color(hex: "B3B3B3")  // Improved from A0A0A0 for better contrast
-    static let textTertiary = Color(hex: "737373")   // Improved from 666666 for better contrast
+    // Text colors (refined contrast)
+    static let textPrimary = Color(hex: "F5F5F4")     // Soft white, not harsh
+    static let textSecondary = Color(hex: "A8A8A4")   // Warm gray
+    static let textTertiary = Color(hex: "6B6B67")    // Muted warm gray
 
-    // Cool accent colors
-    static let accentBlue = Color(hex: "00A3FF")
-    static let accentCyan = Color(hex: "00D4E5")
-    static let accentTeal = Color(hex: "00C9A7")
-    static let accentMint = Color(hex: "4FFFB0")
-    static let accentSteel = Color(hex: "6B8CAE")
-    static let accentPurple = Color(hex: "A78BFA")
-    static let accentOrange = Color(hex: "FF8C42")
+    // Refined accent colors (muted, sophisticated)
+    static let accentBlue = Color(hex: "5B9BD5")      // Muted slate blue
+    static let accentCyan = Color(hex: "6DBFBF")      // Soft teal-cyan
+    static let accentTeal = Color(hex: "5AAF9E")      // Muted sage teal
+    static let accentMint = Color(hex: "8ED4B8")      // Soft mint
+    static let accentSteel = Color(hex: "7A9BB8")     // Refined steel blue
+    static let accentPurple = Color(hex: "9B8ABF")    // Soft lavender
+    static let accentOrange = Color(hex: "D4956A")    // Warm terracotta
 
-    // Semantic colors
-    static let success = Color(hex: "00C9A7")
-    static let warning = Color(hex: "FFB800")
-    static let error = Color(hex: "FF4757")
-    static let rest = Color(hex: "00A3FF")
+    // Semantic colors (refined)
+    static let success = Color(hex: "5AAF9E")         // Matches muted teal
+    static let warning = Color(hex: "D4A754")         // Warm amber
+    static let error = Color(hex: "C75B5B")           // Muted coral red
+    static let rest = Color(hex: "5B9BD5")            // Matches muted blue
 
-    // Module type colors
+    // Module type colors (refined, sophisticated palette)
     static func moduleColor(_ type: ModuleType) -> Color {
         switch type {
-        case .warmup: return Color(hex: "FF8C42")
+        case .warmup: return Color(hex: "D4956A")     // Warm terracotta
         case .prehab: return accentTeal
-        case .explosive: return Color(hex: "FFD93D")
-        case .strength: return Color(hex: "FF4757")
+        case .explosive: return Color(hex: "D4B754")  // Warm gold
+        case .strength: return Color(hex: "C75B5B")   // Muted coral
         case .cardioLong: return accentBlue
-        case .cardioSpeed: return Color(hex: "A855F7")
+        case .cardioSpeed: return Color(hex: "9B8ABF") // Soft lavender
         case .recovery: return accentTeal
         }
     }
@@ -55,27 +55,27 @@ struct AppColors {
 
 struct AppGradients {
     static let cardGradient = LinearGradient(
-        colors: [AppColors.cardBackground, AppColors.cardBackground.opacity(0.8)],
+        colors: [AppColors.cardBackground, AppColors.cardBackground.opacity(0.85)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    // Enhanced card gradient with subtle highlight
+    // Enhanced card gradient with subtle warmth
     static let cardGradientElevated = LinearGradient(
         colors: [
-            Color(hex: "222222"),
+            Color(hex: "1C1C1A"),
             AppColors.cardBackground,
-            Color(hex: "151515")
+            Color(hex: "121211")
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    // Subtle shine effect for cards
+    // Refined shine effect - more subtle
     static let cardShine = LinearGradient(
         colors: [
-            Color.white.opacity(0.08),
-            Color.white.opacity(0.02),
+            Color.white.opacity(0.05),
+            Color.white.opacity(0.015),
             Color.clear
         ],
         startPoint: .topLeading,
@@ -145,16 +145,17 @@ struct AppGradients {
 // MARK: - Spacing & Layout
 
 struct AppSpacing {
-    static let xs: CGFloat = 4
-    static let sm: CGFloat = 8
-    static let md: CGFloat = 12
-    static let lg: CGFloat = 16
-    static let xl: CGFloat = 24
-    static let xxl: CGFloat = 32
+    // Refined spacing scale - more generous for premium feel
+    static let xs: CGFloat = 6
+    static let sm: CGFloat = 10
+    static let md: CGFloat = 14
+    static let lg: CGFloat = 20
+    static let xl: CGFloat = 28
+    static let xxl: CGFloat = 40
 
-    static let cardPadding: CGFloat = 16
-    static let screenPadding: CGFloat = 16
-    static let stackSpacing: CGFloat = 12
+    static let cardPadding: CGFloat = 20      // More breathing room
+    static let screenPadding: CGFloat = 20    // Generous edge margins
+    static let stackSpacing: CGFloat = 14
 
     // Minimum touch target size per Apple HIG (44x44 points)
     static let minTouchTarget: CGFloat = 44
@@ -185,10 +186,16 @@ struct ShadowStyle {
 // MARK: - Animation
 
 struct AppAnimation {
-    static let quick = Animation.easeOut(duration: 0.2)
-    static let standard = Animation.spring(response: 0.3, dampingFraction: 0.7)
-    static let smooth = Animation.easeInOut(duration: 0.3)
-    static let bounce = Animation.spring(response: 0.4, dampingFraction: 0.6)
+    // Refined, luxurious timing - slower and more deliberate
+    static let quick = Animation.easeOut(duration: 0.25)
+    static let standard = Animation.spring(response: 0.45, dampingFraction: 0.8)
+    static let smooth = Animation.easeInOut(duration: 0.4)
+    static let bounce = Animation.spring(response: 0.55, dampingFraction: 0.7)
+
+    // Premium feel animations
+    static let gentle = Animation.easeInOut(duration: 0.5)
+    static let luxurious = Animation.spring(response: 0.6, dampingFraction: 0.85)
+    static let entrance = Animation.spring(response: 0.7, dampingFraction: 0.8)
 }
 
 // MARK: - Color Extension
@@ -419,10 +426,10 @@ struct FormSection<Content: View>: View {
                         .foregroundColor(iconColor)
                 }
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundColor(AppColors.textSecondary)
                     .textCase(.uppercase)
-                    .tracking(0.5)
+                    .tracking(1.5)
             }
             .padding(.horizontal, AppSpacing.xs)
 
@@ -704,19 +711,37 @@ extension View {
     func minTouchTarget() -> some View {
         self.frame(minWidth: AppSpacing.minTouchTarget, minHeight: AppSpacing.minTouchTarget)
     }
+
+    /// Elegant uppercase label styling with refined letter-spacing
+    func elegantLabel() -> some View {
+        self
+            .font(.caption.weight(.semibold))
+            .textCase(.uppercase)
+            .tracking(1.5)
+            .foregroundColor(AppColors.textSecondary)
+    }
+
+    /// Stat label style for numeric displays
+    func statLabel() -> some View {
+        self
+            .font(.caption2.weight(.medium))
+            .textCase(.uppercase)
+            .tracking(1.2)
+            .foregroundColor(AppColors.textTertiary)
+    }
 }
 
 // MARK: - List Animation Modifier
 
 extension View {
-    /// Applies staggered entrance animation to list items
+    /// Applies staggered entrance animation to list items - slower, more elegant
     func listItemAnimation(index: Int, total: Int) -> some View {
         self
             .opacity(1)
             .offset(y: 0)
             .animation(
-                .spring(response: 0.4, dampingFraction: 0.8)
-                .delay(Double(index) * 0.03),
+                .spring(response: 0.55, dampingFraction: 0.85)
+                .delay(Double(index) * 0.05),
                 value: total
             )
     }
