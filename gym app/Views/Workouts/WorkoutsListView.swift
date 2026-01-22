@@ -220,6 +220,9 @@ struct WorkoutsListView: View {
     // MARK: - Actions
 
     private func startWorkout(_ workout: Workout) {
+        // Refresh modules to ensure we have the latest data (picks up any recently added exercises)
+        moduleViewModel.loadModules()
+
         let modules = workout.moduleReferences
             .sorted { $0.order < $1.order }
             .compactMap { ref in moduleViewModel.getModule(id: ref.moduleId) }

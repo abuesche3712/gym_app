@@ -9,6 +9,18 @@ import Foundation
 import FirebaseFirestore
 import FirebaseAuth
 
+/// Represents a document that failed to decode during fetch
+struct DecodeFailure: Identifiable {
+    let id: String  // Document ID
+    let collection: String
+    let error: Error
+    let timestamp: Date
+
+    var description: String {
+        "\(collection)/\(id): \(error.localizedDescription)"
+    }
+}
+
 @preconcurrency @MainActor
 class FirestoreService: ObservableObject {
     static let shared = FirestoreService()
@@ -18,6 +30,26 @@ class FirestoreService: ObservableObject {
 
     @Published var isSyncing = false
     @Published var lastError: Error?
+    @Published private(set) var decodeFailures: [DecodeFailure] = []
+
+    /// Returns true if there are unresolved decode failures
+    var hasDecodeFailures: Bool { !decodeFailures.isEmpty }
+
+    /// Clears tracked decode failures (e.g., after user acknowledges them)
+    func clearDecodeFailures() {
+        decodeFailures.removeAll()
+    }
+
+    private func trackDecodeFailure(documentId: String, collection: String, error: Error) {
+        let failure = DecodeFailure(
+            id: documentId,
+            collection: collection,
+            error: error,
+            timestamp: Date()
+        )
+        decodeFailures.append(failure)
+        Logger.error(error, context: "Failed to decode \(collection)/\(documentId) - data may be lost or corrupted")
+    }
 
     private var userId: String? {
         authService.uid
@@ -65,7 +97,7 @@ class FirestoreService: ObservableObject {
             do {
                 return try decodeModule(from: doc.data())
             } catch {
-                Logger.error(error, context: "Failed to decode module \(doc.documentID)")
+                trackDecodeFailure(documentId: doc.documentID, collection: "modules", error: error)
                 return nil
             }
         }
@@ -89,7 +121,7 @@ class FirestoreService: ObservableObject {
             do {
                 return try decodeWorkout(from: doc.data())
             } catch {
-                Logger.error(error, context: "Failed to decode workout \(doc.documentID)")
+                trackDecodeFailure(documentId: doc.documentID, collection: "workouts", error: error)
                 return nil
             }
         }
@@ -113,7 +145,7 @@ class FirestoreService: ObservableObject {
             do {
                 return try decodeSession(from: doc.data())
             } catch {
-                Logger.error(error, context: "Failed to decode session \(doc.documentID)")
+                trackDecodeFailure(documentId: doc.documentID, collection: "sessions", error: error)
                 return nil
             }
         }

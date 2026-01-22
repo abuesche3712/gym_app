@@ -715,29 +715,30 @@ struct HomeView: View {
 
     // MARK: - Computed Properties
 
+    private var startOfCurrentWeek: Date {
+        Calendar.current.date(from: Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())) ?? Date()
+    }
+
     private var sessionsThisWeek: Int {
-        let startOfWeek = Calendar.current.date(from: Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date()))!
-        return sessionViewModel.sessions.filter { $0.date >= startOfWeek }.count
+        sessionViewModel.sessions.filter { $0.date >= startOfCurrentWeek }.count
     }
 
     private var setsThisWeek: Int {
-        let startOfWeek = Calendar.current.date(from: Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date()))!
-        return sessionViewModel.sessions
-            .filter { $0.date >= startOfWeek }
+        sessionViewModel.sessions
+            .filter { $0.date >= startOfCurrentWeek }
             .reduce(0) { $0 + $1.totalSetsCompleted }
     }
 
     private var volumeThisWeek: Double {
-        let startOfWeek = Calendar.current.date(from: Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date()))!
-        return sessionViewModel.sessions
-            .filter { $0.date >= startOfWeek }
+        sessionViewModel.sessions
+            .filter { $0.date >= startOfCurrentWeek }
             .flatMap { $0.completedModules }
             .flatMap { $0.completedExercises }
             .reduce(0) { $0 + $1.totalVolume }
     }
 
     private var cardioMinutesThisWeek: Int {
-        let startOfWeek = Calendar.current.date(from: Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date()))!
+        let startOfWeek = startOfCurrentWeek
         let weekSessions = sessionViewModel.sessions.filter { $0.date >= startOfWeek }
 
         var totalSeconds = 0
@@ -782,7 +783,7 @@ struct HomeView: View {
 
         // If no workout today, check if there was one yesterday (streak still counts)
         if !workoutDates.contains(today) {
-            let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else { return 0 }
             if !workoutDates.contains(yesterday) {
                 return 0  // No workout today or yesterday = no active streak
             }
@@ -802,6 +803,9 @@ struct HomeView: View {
     // MARK: - Helper Functions
 
     private func startWorkout(_ workout: Workout) {
+        // Refresh modules to ensure we have the latest data (picks up any recently added exercises)
+        moduleViewModel.loadModules()
+
         let modules = workout.moduleReferences
             .sorted { $0.order < $1.order }
             .compactMap { ref in moduleViewModel.getModule(id: ref.moduleId) }

@@ -47,6 +47,7 @@ struct ActiveSessionView: View {
                        let currentExercise = sessionViewModel.currentExercise {
 
                         GeometryReader { geometry in
+                            let contentWidth = geometry.size.width - (AppSpacing.screenPadding * 2)
                             ScrollView {
                                 VStack(spacing: AppSpacing.lg) {
                                     // Module indicator
@@ -55,8 +56,8 @@ struct ActiveSessionView: View {
                                     // Exercise Card header
                                     exerciseCard(currentExercise)
 
-                                    // All Sets (expandable rows)
-                                    allSetsSection
+                                    // All Sets (expandable rows) - pass fixed width to prevent layout shifts
+                                    allSetsSection(width: contentWidth)
 
                                     // Rest Timer (inline)
                                     if sessionViewModel.isRestTimerRunning {
@@ -246,6 +247,9 @@ struct ActiveSessionView: View {
                     },
                     onReorderExercise: { moduleIndex, fromIndex, toIndex in
                         reorderExercise(in: moduleIndex, from: fromIndex, to: toIndex)
+                    },
+                    onDeleteExercise: { moduleIndex, exerciseIndex in
+                        sessionViewModel.deleteExercise(moduleIndex: moduleIndex, exerciseIndex: exerciseIndex)
                     }
                 )
             }
@@ -511,7 +515,8 @@ struct ActiveSessionView: View {
 
     // MARK: - All Sets Section
 
-    private var allSetsSection: some View {
+    @ViewBuilder
+    private func allSetsSection(width: CGFloat) -> some View {
         VStack(spacing: AppSpacing.md) {
             if let exercise = sessionViewModel.currentExercise {
                 // Check for interval set groups
@@ -561,6 +566,17 @@ struct ActiveSessionView: View {
                                 lastSessionExercise: lastSessionExercise,
                                 previousCompletedSet: previousSet
                             )
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                if canDeleteSet(exercise: exercise) {
+                                    Button(role: .destructive) {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            deleteSetAt(flatSet: flatSet)
+                                        }
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -607,8 +623,7 @@ struct ActiveSessionView: View {
             }
         }
         .padding(AppSpacing.cardPadding)
-        .frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(width: width)  // Lock width to prevent layout shifts
         .background(
             RoundedRectangle(cornerRadius: AppCorners.large)
                 .fill(AppColors.cardBackground)
@@ -617,6 +632,7 @@ struct ActiveSessionView: View {
                         .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
                 )
         )
+        .clipped()
     }
 
     // MARK: - Interval Set Group Row
@@ -1273,8 +1289,13 @@ struct ActiveSessionView: View {
 
                     VStack(spacing: AppSpacing.sm) {
                         ForEach(lastData.completedSetGroups) { setGroup in
-                            ForEach(setGroup.sets) { set in
-                                previousSetRow(set: set, exercise: lastData)
+                            if setGroup.isInterval {
+                                // Show intervals as summary: "x rounds (y on/z off)"
+                                previousIntervalRow(setGroup: setGroup, exercise: lastData)
+                            } else {
+                                ForEach(setGroup.sets) { set in
+                                    previousSetRow(set: set, exercise: lastData)
+                                }
                             }
                         }
                     }
@@ -1302,7 +1323,15 @@ struct ActiveSessionView: View {
             HStack(spacing: AppSpacing.sm) {
                 switch exercise.exerciseType {
                 case .strength:
-                    if exercise.isBodyweight {
+                    // Check for string-based implement measurable (e.g., band color)
+                    if let stringMeasurable = exercise.implementStringMeasurable {
+                        if let bandColor = set.bandColor, !bandColor.isEmpty {
+                            metricPill(value: bandColor, label: stringMeasurable.implementName.lowercased(), color: AppColors.accentPurple)
+                        }
+                        if let reps = set.reps {
+                            metricPill(value: "\(reps)", label: "reps", color: AppColors.accentTeal)
+                        }
+                    } else if exercise.isBodyweight {
                         if let reps = set.reps {
                             if let weight = set.weight, weight > 0 {
                                 metricPill(value: "BW+\(formatWeight(weight))", label: nil, color: AppColors.accentBlue)
@@ -1366,6 +1395,33 @@ struct ActiveSessionView: View {
                         metricPill(value: "\(temp)°F", label: nil, color: AppColors.warning)
                     }
                 }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func previousIntervalRow(setGroup: CompletedSetGroup, exercise: SessionExercise) -> some View {
+        HStack(spacing: AppSpacing.sm) {
+            // Interval icon
+            Image(systemName: "timer")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(.orange)
+                .frame(width: 20, height: 20)
+                .background(Circle().fill(AppColors.surfaceLight))
+
+            // Interval summary: "x rounds (y on / z off)"
+            HStack(spacing: AppSpacing.sm) {
+                metricPill(
+                    value: "\(setGroup.rounds)",
+                    label: "rounds",
+                    color: .orange
+                )
+
+                Text("(\(formatDuration(setGroup.workDuration ?? 0)) on / \(formatDuration(setGroup.intervalRestDuration ?? 0)) off)")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -1621,8 +1677,8 @@ struct ActiveSessionView: View {
 
     private func openTwitter() {
         // Try to open X/Twitter app first, fall back to web
-        let twitterAppURL = URL(string: "twitter://")!
-        let twitterWebURL = URL(string: "https://x.com")!
+        guard let twitterAppURL = URL(string: "twitter://"),
+              let twitterWebURL = URL(string: "https://x.com") else { return }
 
         if UIApplication.shared.canOpenURL(twitterAppURL) {
             UIApplication.shared.open(twitterAppURL)

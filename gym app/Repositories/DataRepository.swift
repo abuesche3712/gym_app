@@ -24,9 +24,16 @@ class DataRepository: ObservableObject {
 
     @Published var modules: [Module] = []
     @Published var workouts: [Workout] = []
-    @Published var sessions: [Session] = []
+    @Published var sessions: [Session] = []  // Only recent sessions loaded initially
     @Published var programs: [Program] = []
     @Published var isSyncing = false
+
+    // Session pagination state
+    @Published private(set) var isLoadingMoreSessions = false
+    @Published private(set) var hasMoreSessions = true
+    private var oldestLoadedSessionDate: Date?
+    private let initialSessionLoadDays = 90  // Load last 90 days initially
+    private let sessionPageSize = 30  // Load 30 more sessions at a time
 
     init() {
         loadAllData()
@@ -728,14 +735,100 @@ class DataRepository: ObservableObject {
     // MARK: - Session Operations
 
     func loadSessions() {
+        // Load only recent sessions initially to reduce memory usage
+        let cutoffDate = Calendar.current.date(byAdding: .day, value: -initialSessionLoadDays, to: Date()) ?? Date()
+
+        let request = NSFetchRequest<SessionEntity>(entityName: "SessionEntity")
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \SessionEntity.date, ascending: false)]
+        request.predicate = NSPredicate(format: "date >= %@", cutoffDate as NSDate)
+
+        do {
+            let entities = try viewContext.fetch(request)
+            sessions = entities.map { convertToSession($0) }
+
+            // Track oldest loaded date and check if there are more
+            oldestLoadedSessionDate = sessions.last?.date
+            hasMoreSessions = checkForOlderSessions(before: cutoffDate)
+
+            Logger.debug("Loaded \(sessions.count) recent sessions (last \(initialSessionLoadDays) days)")
+        } catch {
+            Logger.error(error, context: "loadSessions")
+        }
+    }
+
+    /// Load more historical sessions on demand
+    func loadMoreSessions() {
+        guard !isLoadingMoreSessions, hasMoreSessions else { return }
+
+        isLoadingMoreSessions = true
+
+        let request = NSFetchRequest<SessionEntity>(entityName: "SessionEntity")
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \SessionEntity.date, ascending: false)]
+        request.fetchLimit = sessionPageSize
+
+        // Fetch sessions older than what we have
+        if let oldestDate = oldestLoadedSessionDate {
+            request.predicate = NSPredicate(format: "date < %@", oldestDate as NSDate)
+        }
+
+        do {
+            let entities = try viewContext.fetch(request)
+            let olderSessions = entities.map { convertToSession($0) }
+
+            if olderSessions.isEmpty {
+                hasMoreSessions = false
+            } else {
+                sessions.append(contentsOf: olderSessions)
+                oldestLoadedSessionDate = olderSessions.last?.date
+                hasMoreSessions = olderSessions.count == sessionPageSize  // Might be more if we got a full page
+            }
+
+            Logger.debug("Loaded \(olderSessions.count) more sessions, total: \(sessions.count)")
+        } catch {
+            Logger.error(error, context: "loadMoreSessions")
+        }
+
+        isLoadingMoreSessions = false
+    }
+
+    /// Load all sessions (use sparingly - for export, full history analysis, etc.)
+    func loadAllSessions() {
         let request = NSFetchRequest<SessionEntity>(entityName: "SessionEntity")
         request.sortDescriptors = [NSSortDescriptor(keyPath: \SessionEntity.date, ascending: false)]
 
         do {
             let entities = try viewContext.fetch(request)
             sessions = entities.map { convertToSession($0) }
+            oldestLoadedSessionDate = sessions.last?.date
+            hasMoreSessions = false
+            Logger.debug("Loaded all \(sessions.count) sessions")
         } catch {
-            Logger.error(error, context: "loadSessions")
+            Logger.error(error, context: "loadAllSessions")
+        }
+    }
+
+    /// Check if there are sessions older than the given date
+    private func checkForOlderSessions(before date: Date) -> Bool {
+        let request = NSFetchRequest<SessionEntity>(entityName: "SessionEntity")
+        request.predicate = NSPredicate(format: "date < %@", date as NSDate)
+        request.fetchLimit = 1
+
+        do {
+            let count = try viewContext.count(for: request)
+            return count > 0
+        } catch {
+            return false
+        }
+    }
+
+    /// Get total session count (without loading all into memory)
+    func getTotalSessionCount() -> Int {
+        let request = NSFetchRequest<SessionEntity>(entityName: "SessionEntity")
+        do {
+            return try viewContext.count(for: request)
+        } catch {
+            Logger.error(error, context: "getTotalSessionCount")
+            return sessions.count
         }
     }
 
@@ -787,17 +880,47 @@ class DataRepository: ObservableObject {
         Array(sessions.prefix(limit))
     }
 
-    func getExerciseHistory(exerciseName: String) -> [SessionExercise] {
-        sessions.flatMap { session in
-            session.completedModules.flatMap { module in
-                module.completedExercises.filter { $0.exerciseName == exerciseName }
+    /// Get exercise history - queries CoreData directly for full history
+    /// Note: This fetches from all sessions, not just loaded ones
+    func getExerciseHistory(exerciseName: String, limit: Int? = nil) -> [SessionExercise] {
+        // Query CoreData directly to get full history without loading all sessions into memory
+        let request = NSFetchRequest<SessionEntity>(entityName: "SessionEntity")
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \SessionEntity.date, ascending: false)]
+        if let limit = limit {
+            request.fetchLimit = limit * 5  // Fetch more sessions since not all will have the exercise
+        }
+
+        do {
+            let entities = try viewContext.fetch(request)
+            var results: [SessionExercise] = []
+
+            for entity in entities {
+                let session = convertToSession(entity)
+                for module in session.completedModules {
+                    for exercise in module.completedExercises where exercise.exerciseName == exerciseName {
+                        results.append(exercise)
+                        if let limit = limit, results.count >= limit {
+                            return results
+                        }
+                    }
+                }
+            }
+            return results
+        } catch {
+            Logger.error(error, context: "getExerciseHistory")
+            // Fallback to in-memory sessions
+            return sessions.flatMap { session in
+                session.completedModules.flatMap { module in
+                    module.completedExercises.filter { $0.exerciseName == exerciseName }
+                }
             }
         }
     }
 
     /// Get the most recent progression recommendation for an exercise
+    /// Queries CoreData directly to search full history
     func getLastProgressionRecommendation(exerciseName: String) -> (recommendation: ProgressionRecommendation, date: Date)? {
-        // Sessions are already sorted by date descending
+        // First check loaded sessions (most likely to have recent data)
         for session in sessions {
             for module in session.completedModules {
                 if let exercise = module.completedExercises.first(where: { $0.exerciseName == exerciseName }),
@@ -806,6 +929,31 @@ class DataRepository: ObservableObject {
                 }
             }
         }
+
+        // If not found in loaded sessions and there are more, search CoreData
+        guard hasMoreSessions else { return nil }
+
+        let request = NSFetchRequest<SessionEntity>(entityName: "SessionEntity")
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \SessionEntity.date, ascending: false)]
+        if let oldestDate = oldestLoadedSessionDate {
+            request.predicate = NSPredicate(format: "date < %@", oldestDate as NSDate)
+        }
+
+        do {
+            let entities = try viewContext.fetch(request)
+            for entity in entities {
+                let session = convertToSession(entity)
+                for module in session.completedModules {
+                    if let exercise = module.completedExercises.first(where: { $0.exerciseName == exerciseName }),
+                       let recommendation = exercise.progressionRecommendation {
+                        return (recommendation, session.date)
+                    }
+                }
+            }
+        } catch {
+            Logger.error(error, context: "getLastProgressionRecommendation")
+        }
+
         return nil
     }
 

@@ -293,13 +293,18 @@ class SessionViewModel: ObservableObject {
             currentIsBodyweight = resolved.isBodyweight
         }
 
+        // Use the distance unit from the first set group if specified, otherwise fall back to exercise default
+        let effectiveDistanceUnit: DistanceUnit = resolved.setGroups
+            .compactMap { $0.targetDistanceUnit }
+            .first ?? resolved.distanceUnit
+
         return SessionExercise(
             exerciseId: resolved.id,
             exerciseName: resolved.name,
             exerciseType: resolved.exerciseType,
             cardioMetric: resolved.cardioMetric,
             mobilityTracking: resolved.mobilityTracking,
-            distanceUnit: resolved.distanceUnit,
+            distanceUnit: effectiveDistanceUnit,
             supersetGroupId: resolved.supersetGroupId,
             completedSetGroups: resolved.setGroups.map { setGroup in
                 CompletedSetGroup(
@@ -502,6 +507,43 @@ class SessionViewModel: ObservableObject {
 
         session.completedModules[moduleIndex].completedExercises[exerciseIndex].distanceUnit = unit
         currentSession = session
+
+        // Auto-save for crash recovery
+        autoSaveInProgressSession()
+    }
+
+    /// Delete an exercise from a module during the active session
+    func deleteExercise(moduleIndex: Int, exerciseIndex: Int) {
+        guard var session = currentSession,
+              moduleIndex < session.completedModules.count,
+              exerciseIndex < session.completedModules[moduleIndex].completedExercises.count,
+              session.completedModules[moduleIndex].completedExercises.count > 1 else { return }
+
+        // Calculate the new exercise index before deletion
+        var newExerciseIndex = currentExerciseIndex
+        if moduleIndex == currentModuleIndex {
+            if exerciseIndex == currentExerciseIndex {
+                // Deleting current exercise - stay at same index or move back if at end
+                let newCount = session.completedModules[moduleIndex].completedExercises.count - 1
+                newExerciseIndex = min(exerciseIndex, newCount - 1)
+                newExerciseIndex = max(0, newExerciseIndex)
+            } else if exerciseIndex < currentExerciseIndex {
+                // Deleting exercise before current - adjust index
+                newExerciseIndex = currentExerciseIndex - 1
+            }
+        }
+
+        session.completedModules[moduleIndex].completedExercises.remove(at: exerciseIndex)
+        currentSession = session
+
+        // Recreate navigator with updated modules and adjusted position
+        navigator = SessionNavigator(
+            modules: session.completedModules,
+            moduleIndex: currentModuleIndex,
+            exerciseIndex: newExerciseIndex,
+            setGroupIndex: currentSetGroupIndex,
+            setIndex: currentSetIndex
+        )
     }
 
     /// Refreshes the navigator with the current session's modules while preserving position.
@@ -758,8 +800,27 @@ class SessionViewModel: ObservableObject {
         loadSessions()
     }
 
-    // Get last session data for an exercise (for showing previous performance)
-    func getLastSessionData(for exerciseName: String) -> SessionExercise? {
+    // Get last session data for an exercise within the same workout (for showing previous performance)
+    // This ensures exercises show their last values from THIS workout, not just any occurrence
+    func getLastSessionData(for exerciseName: String, workoutId: UUID? = nil) -> SessionExercise? {
+        // If we have a current session, try to filter by its workout first
+        let targetWorkoutId = workoutId ?? currentSession?.workoutId
+
+        // First pass: look for exercise in sessions of the same workout
+        if let targetId = targetWorkoutId {
+            for session in sessions {
+                if session.workoutId == targetId {
+                    for module in session.completedModules {
+                        if let exercise = module.completedExercises.first(where: { $0.exerciseName == exerciseName }) {
+                            return exercise
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: if no match in same workout, return any previous instance
+        // (useful for ad-hoc exercises or first time doing this workout)
         for session in sessions {
             for module in session.completedModules {
                 if let exercise = module.completedExercises.first(where: { $0.exerciseName == exerciseName }) {

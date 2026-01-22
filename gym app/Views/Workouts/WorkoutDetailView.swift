@@ -162,7 +162,12 @@ struct WorkoutDetailView: View {
     }
 
     private func startWorkout() {
-        sessionViewModel.startSession(workout: currentWorkout, modules: modules)
+        // Refresh modules to ensure we have the latest data (picks up any recently added exercises)
+        moduleViewModel.loadModules()
+
+        // Re-fetch modules after refresh
+        let freshModules = workoutViewModel.getModulesForWorkout(currentWorkout, allModules: moduleViewModel.modules)
+        sessionViewModel.startSession(workout: currentWorkout, modules: freshModules)
         // MainTabView will auto-show full session when isSessionActive becomes true
     }
 }
