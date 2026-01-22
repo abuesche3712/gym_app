@@ -4,6 +4,9 @@
 > **Last updated:** 2025-01-22
 
 ## Last Session Summary
+- Added `ProgramFormView` - unified create/edit form for programs (replaces separate sheets)
+- Added exercise deletion in `WorkoutOverviewSheet` (swipe-to-delete during session)
+- Changed program navigation from NavigationLink to sheet-based editing
 - Fixed SetRowView layout issues using `.fixedSize()` to prevent text compression
 - Changed auto-suggest priority: last session values > target values > empty
 - Fixed force unwrapping in HomeView (Calendar.date) and ActiveSessionView (URL)
@@ -28,6 +31,7 @@ iOS gym/workout tracking app built with SwiftUI. Offline-first with CoreData, Fi
   - Add sets to current exercise
   - Substitute exercises with alternatives
   - Add new exercises to modules on-the-fly
+  - Delete exercises from workout overview (swipe-to-delete)
 - Dark theme UI
 - Time wheel pickers for duration inputs
 - Recent sets quick-edit during session
@@ -164,8 +168,12 @@ Views/Session/
 ├── SessionComponents.swift       (SetIndicator, SetRowView, ~1200 lines)
 ├── EndSessionSheet.swift
 ├── RecentSetsSheet.swift
-├── WorkoutOverviewSheet.swift
+├── WorkoutOverviewSheet.swift    (now supports exercise deletion)
 └── ExerciseModificationSheets.swift
+
+Views/Programs/
+├── ProgramsListView.swift        (sheet-based program editing)
+└── ProgramFormView.swift         (unified create/edit, ~1050 lines)
 ```
 
 ## Owner's Priorities

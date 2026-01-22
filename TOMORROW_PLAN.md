@@ -73,11 +73,19 @@
 - [x] Auto-suggest from last session (weight, reps, duration, distance, band color, height)
 - [x] Compact input sections for all exercise types
 - [x] Session pagination - only load last 90 days initially
+- [x] Unified ProgramFormView for create/edit programs (replaces separate sheets)
+- [x] Sheet-based program editing (cleaner navigation)
+- [x] Exercise deletion in WorkoutOverviewSheet (swipe-to-delete during session)
 
 ### Performance
 - [x] Session pagination in DataRepository (reduces memory usage)
 - [x] `loadMoreSessions()` for on-demand historical loading
 - [x] `getExerciseHistory()` queries CoreData directly for full history
+
+---
+
+### Refactoring
+- [x] Created `ProgramFormView.swift` (~1050 lines) - unified program create/edit
 
 ---
 
