@@ -1,14 +1,17 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2025-01-19
+> **Last updated:** 2025-01-22
 
 ## Last Session Summary
-- Simplified Codable implementations (removed empty migration switches, organized by required/optional)
-- Made ExerciseResolver single source of truth for exercise lookups
-- Deleted ExerciseMigrationManager (no backward compatibility needed)
-- Cleaned up SchemaVersions.swift (removed unused migration stubs)
-- Reset local data for clean slate
+- Fixed SetRowView layout issues using `.fixedSize()` to prevent text compression
+- Changed auto-suggest priority: last session values > target values > empty
+- Fixed force unwrapping in HomeView (Calendar.date) and ActiveSessionView (URL)
+- Added decode failure tracking to FirebaseService (no more silent data loss)
+- Implemented session pagination in DataRepository (load last 90 days initially)
+- Added `loadMoreSessions()` for on-demand historical session loading
+- Updated `getExerciseHistory()` to query CoreData directly for full history
+- Compacted all input sections (cardio, isometric, mobility, explosive, recovery)
 
 ## Project Overview
 
@@ -18,7 +21,7 @@ iOS gym/workout tracking app built with SwiftUI. Offline-first with CoreData, Fi
 
 ### Core Features Implemented
 - Workout → Module → Exercise hierarchy
-- Exercise types: strength, cardio, isometric, mobility, explosive
+- Exercise types: strength, cardio, isometric, mobility, explosive, recovery
 - Live session tracking with sets, reps, weight, RPE, duration, distance
 - Superset support (exercises linked by `supersetGroupId`)
 - Live workout modifications:
@@ -29,6 +32,8 @@ iOS gym/workout tracking app built with SwiftUI. Offline-first with CoreData, Fi
 - Time wheel pickers for duration inputs
 - Recent sets quick-edit during session
 - Workout overview with jump-to-exercise
+- Smart auto-fill from last session (weight, reps, duration, distance, band color)
+- Session pagination for memory efficiency
 
 ### Architecture
 ```
@@ -37,10 +42,51 @@ Views/ViewModels → DataRepository → FirebaseService (swappable)
 ```
 
 Key files:
-- `DataRepository.swift` - data abstraction layer
-- `FirebaseService.swift` - Firebase-specific calls (thin wrapper)
+- `DataRepository.swift` - data abstraction layer, session pagination
+- `FirebaseService.swift` - Firebase-specific calls, decode failure tracking
 - `SyncManager.swift` - sync orchestration
 - `PersistenceController.swift` - CoreData stack
+
+### Session Pagination (Jan 2025)
+
+Sessions are now paginated to reduce memory usage:
+
+```swift
+// DataRepository pagination state
+@Published private(set) var isLoadingMoreSessions = false
+@Published private(set) var hasMoreSessions = true
+private let initialSessionLoadDays = 90  // Load last 90 days initially
+private let sessionPageSize = 30  // Load 30 more at a time
+
+// Methods
+func loadSessions()        // Loads recent sessions (last 90 days)
+func loadMoreSessions()    // Loads 30 older sessions on demand
+func loadAllSessions()     // Loads everything (for export)
+func getTotalSessionCount() -> Int  // Count without loading all
+```
+
+**Key behavior:**
+- `getExerciseHistory()` queries CoreData directly (full history)
+- `getLastProgressionRecommendation()` checks loaded sessions first, then queries older
+- Views can call `loadMoreSessions()` when user scrolls to bottom
+
+### Firebase Decode Failure Tracking (Jan 2025)
+
+Decode failures are now tracked instead of silently dropped:
+
+```swift
+struct DecodeFailure: Identifiable {
+    let id: String  // Document ID
+    let collection: String
+    let error: Error
+    let timestamp: Date
+}
+
+// FirestoreService properties
+@Published private(set) var decodeFailures: [DecodeFailure] = []
+var hasDecodeFailures: Bool { !decodeFailures.isEmpty }
+func clearDecodeFailures()
+```
 
 ### Exercise Data Model (Jan 2025)
 
@@ -113,9 +159,9 @@ The exercise system uses a normalized architecture with four distinct types:
 Modularized `ActiveSessionView.swift` from ~2600 lines into:
 ```
 Views/Session/
-├── ActiveSessionView.swift       (main view, ~1125 lines)
+├── ActiveSessionView.swift       (main view, ~1700 lines)
 ├── SessionModels.swift           (FlatSet, RecentSet, SetLocation)
-├── SessionComponents.swift       (SetIndicator, SetRowView)
+├── SessionComponents.swift       (SetIndicator, SetRowView, ~1200 lines)
 ├── EndSessionSheet.swift
 ├── RecentSetsSheet.swift
 ├── WorkoutOverviewSheet.swift
@@ -150,6 +196,7 @@ Recommended order:
 - Free tier is sufficient for now
 - **Migration-friendly**: keep `FirebaseService` as thin wrapper
 - Future options: Supabase, custom backend + Postgres
+- **Decode failures tracked** - no more silent data loss
 
 ### Migration Prep
 Keep this pattern for easy backend swap:
@@ -286,12 +333,20 @@ Logger.redactEmail(email)  // "ab***@example.com"
 - Use `Logger.verbose()` for detailed tracing (off by default)
 - SyncLogger persists logs to CoreData for debugging sync issues
 
-### Pending Items from Plan File
-Located at: `~/.claude/plans/structured-churning-stream.md`
-- Remove 3x10 default set groups
-- Make set groups editable after creation
-- (Time pickers already done)
-- Superset capability (foundation in place)
+### SetRowView Layout Fix (Jan 2025)
+
+Input sections in `SessionComponents.swift` use `.fixedSize(horizontal: true, vertical: false)` on VStacks containing labels. This prevents SwiftUI from compressing them and causing text to wrap vertically.
+
+```swift
+VStack(spacing: 4) {
+    // Input field
+    TextField(...)
+    // Label
+    Text("distance")
+        .font(.caption2)
+}
+.fixedSize(horizontal: true, vertical: false)  // Prevents compression
+```
 
 ## Code Style Notes
 - Uses `AppColors`, `AppSpacing`, `AppCorners`, `AppAnimation` from Theme
