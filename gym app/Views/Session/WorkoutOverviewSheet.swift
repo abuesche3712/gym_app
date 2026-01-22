@@ -18,6 +18,7 @@ struct WorkoutOverviewSheet: View {
     let onUpdateSet: (Int, Int, Int, Int, Double?, Int?, Int?, Int?, Int?, Double?) -> Void
     let onAddExercise: (Int, String, ExerciseType, CardioMetric, DistanceUnit) -> Void
     let onReorderExercise: ((Int, Int, Int) -> Void)?  // moduleIndex, fromIndex, toIndex
+    let onDeleteExercise: ((Int, Int) -> Void)?  // moduleIndex, exerciseIndex
 
     @State private var expandedModules: Set<Int> = []
     @State private var expandedExercises: Set<String> = []
@@ -136,9 +137,26 @@ struct WorkoutOverviewSheet: View {
                     setsGrid(exercise: exercise, moduleIndex: moduleIndex, exerciseIndex: exerciseIndex)
                 }
             }
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                if module.completedExercises.count > 1 {  // Don't allow deleting last exercise
+                    Button(role: .destructive) {
+                        onDeleteExercise?(moduleIndex, exerciseIndex)
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
+            }
         }
         .onMove { source, destination in
             moveExercise(in: moduleIndex, from: source, to: destination)
+        }
+        .onDelete { indexSet in
+            // Only allow if more than 1 exercise
+            if module.completedExercises.count > 1 {
+                for index in indexSet {
+                    onDeleteExercise?(moduleIndex, index)
+                }
+            }
         }
     }
 

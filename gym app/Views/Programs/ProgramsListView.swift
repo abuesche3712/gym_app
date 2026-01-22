@@ -20,6 +20,7 @@ struct ProgramsListView: View {
     @State private var showingProgramsSheet = false
     @State private var selectedMonth: Date = Date()
     @State private var selectedDate: Date?
+    @State private var editingProgram: Program?
 
     var body: some View {
         ScrollView {
@@ -46,7 +47,9 @@ struct ProgramsListView: View {
             }
         }
         .sheet(isPresented: $showingCreateSheet) {
-            CreateProgramSheet()
+            NavigationStack {
+                ProgramFormView(program: nil)
+            }
         }
         .sheet(isPresented: $showingProgramsSheet) {
             ProgramsManagementSheet()
@@ -58,6 +61,11 @@ struct ProgramsListView: View {
                 workouts: workoutViewModel.workouts
             )
         }
+        .sheet(item: $editingProgram) { program in
+            NavigationStack {
+                ProgramFormView(program: program)
+            }
+        }
     }
 
     // MARK: - Active Program Header
@@ -65,8 +73,8 @@ struct ProgramsListView: View {
     private var activeProgramHeader: some View {
         Group {
             if let activeProgram = programViewModel.activeProgram {
-                NavigationLink {
-                    ProgramDetailView(program: activeProgram)
+                Button {
+                    editingProgram = activeProgram
                 } label: {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
@@ -253,8 +261,8 @@ struct ProgramsListView: View {
                     .padding()
             } else {
                 ForEach(programViewModel.programs) { program in
-                    NavigationLink {
-                        ProgramDetailView(program: program)
+                    Button {
+                        editingProgram = program
                     } label: {
                         ProgramCompactRow(program: program, isActive: program.isActive)
                     }
@@ -393,13 +401,14 @@ struct ProgramCompactRow: View {
 struct ProgramsManagementSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var programViewModel: ProgramViewModel
+    @State private var editingProgram: Program?
 
     var body: some View {
         NavigationStack {
             List {
                 ForEach(programViewModel.programs) { program in
-                    NavigationLink {
-                        ProgramDetailView(program: program)
+                    Button {
+                        editingProgram = program
                     } label: {
                         ProgramRow(program: program, isActive: program.isActive)
                     }
@@ -413,6 +422,11 @@ struct ProgramsManagementSheet: View {
                     Button("Done") {
                         dismiss()
                     }
+                }
+            }
+            .sheet(item: $editingProgram) { program in
+                NavigationStack {
+                    ProgramFormView(program: program)
                 }
             }
         }

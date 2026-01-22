@@ -92,6 +92,7 @@
 		PRGADD002BUILD002 /* AddWorkoutSlotSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGADD001FILE001 /* AddWorkoutSlotSheet.swift */; };
 		PRGCRE002BUILD002 /* CreateProgramSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGCRE001FILE001 /* CreateProgramSheet.swift */; };
 		PRGDET002BUILD002 /* ProgramDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGDET001FILE001 /* ProgramDetailView.swift */; };
+		PRGFRM002BUILD002 /* ProgramFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGFRM001FILE001 /* ProgramFormView.swift */; };
 		PRGLST002BUILD002 /* ProgramsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGLST001FILE001 /* ProgramsListView.swift */; };
 		PRGWKL002BUILD002 /* ProgramWeeklyGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGWKL001FILE001 /* ProgramWeeklyGridView.swift */; };
 		PROGAM002BUILD002 /* Program.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROGAM001FILE001 /* Program.swift */; };
@@ -210,6 +211,7 @@
 		PRGADD001FILE001 /* AddWorkoutSlotSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddWorkoutSlotSheet.swift; sourceTree = "<group>"; };
 		PRGCRE001FILE001 /* CreateProgramSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateProgramSheet.swift; sourceTree = "<group>"; };
 		PRGDET001FILE001 /* ProgramDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramDetailView.swift; sourceTree = "<group>"; };
+		PRGFRM001FILE001 /* ProgramFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramFormView.swift; sourceTree = "<group>"; };
 		PRGLST001FILE001 /* ProgramsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramsListView.swift; sourceTree = "<group>"; };
 		PRGWKL001FILE001 /* ProgramWeeklyGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramWeeklyGridView.swift; sourceTree = "<group>"; };
 		PROGAM001FILE001 /* Program.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Program.swift; sourceTree = "<group>"; };
@@ -542,6 +544,7 @@
 				PRGLST001FILE001 /* ProgramsListView.swift */,
 				PRGCRE001FILE001 /* CreateProgramSheet.swift */,
 				PRGDET001FILE001 /* ProgramDetailView.swift */,
+				PRGFRM001FILE001 /* ProgramFormView.swift */,
 				PRGWKL001FILE001 /* ProgramWeeklyGridView.swift */,
 				PRGADD001FILE001 /* AddWorkoutSlotSheet.swift */,
 				PRGACT001FILE001 /* ActivateProgramSheet.swift */,
@@ -787,6 +790,7 @@
 				PRGLST002BUILD002 /* ProgramsListView.swift in Sources */,
 				PRGCRE002BUILD002 /* CreateProgramSheet.swift in Sources */,
 				PRGDET002BUILD002 /* ProgramDetailView.swift in Sources */,
+				PRGFRM002BUILD002 /* ProgramFormView.swift in Sources */,
 				PRGWKL002BUILD002 /* ProgramWeeklyGridView.swift in Sources */,
 				PRGADD002BUILD002 /* AddWorkoutSlotSheet.swift in Sources */,
 				PRGACT002BUILD002 /* ActivateProgramSheet.swift in Sources */,
@@ -981,7 +985,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "UI.gym-app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1011,7 +1015,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "UI.gym-app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
