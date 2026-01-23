@@ -517,8 +517,10 @@ class SyncManager: ObservableObject {
         queueSyncItem(entityType: .scheduledWorkout, entityId: scheduled.id, action: action, payload: payload)
 
         // Try immediate sync if online (especially important for deletions)
+        // Use slight delay to avoid interfering with SwiftUI view updates
         if isOnline {
             Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second delay
                 await processQueue()
             }
         }
