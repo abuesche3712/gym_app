@@ -378,7 +378,19 @@ class SyncManager: ObservableObject {
             logger.info("Successfully synced \(item.entityType.rawValue) \(item.entityId)", context: "SyncManager.processQueueItem")
 
         } catch {
-            // Failed - increment retry count
+            // Decoding failures will never succeed - remove immediately
+            if case SyncError.decodingFailed = error {
+                logger.warning("Removing undecodable \(item.entityType.rawValue) \(item.entityId) from queue", context: "SyncManager.processQueueItem")
+                viewContext.delete(item)
+                do {
+                    try viewContext.save()
+                } catch let saveError {
+                    logger.logError(saveError, context: "SyncManager.processQueueItem", additionalInfo: "Failed to remove undecodable item")
+                }
+                return
+            }
+
+            // Other failures - increment retry count
             item.retryCount += 1
             item.lastAttemptAt = Date()
             item.lastError = error.localizedDescription
@@ -570,6 +582,23 @@ class SyncManager: ObservableObject {
             logger.info("Cleared \(failedItems.count) failed sync items", context: "SyncManager.clearFailedSyncs")
         } catch {
             logger.logError(error, context: "SyncManager.clearFailedSyncs", additionalInfo: "Failed to clear failed syncs")
+        }
+    }
+
+    /// Clear ALL items from sync queue (use for recovery from corrupted state)
+    func clearAllSyncQueue() {
+        let request = NSFetchRequest<SyncQueueEntity>(entityName: "SyncQueueEntity")
+
+        do {
+            let allItems = try viewContext.fetch(request)
+            for item in allItems {
+                viewContext.delete(item)
+            }
+            try viewContext.save()
+            updatePendingCounts()
+            logger.info("Cleared all \(allItems.count) sync queue items", context: "SyncManager.clearAllSyncQueue")
+        } catch {
+            logger.logError(error, context: "SyncManager.clearAllSyncQueue", additionalInfo: "Failed to clear sync queue")
         }
     }
 
