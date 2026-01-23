@@ -54,6 +54,12 @@ class DataRepository: ObservableObject {
         let timer = PerformanceTimer("syncFromCloud", threshold: AppConfig.slowSyncThreshold)
 
         do {
+            // 0. One-time migration from legacy exerciseLibrary to customExercises
+            let migratedCount = try await firestoreService.migrateExerciseLibraryToCustomExercises()
+            if migratedCount > 0 {
+                logger.info("Migrated \(migratedCount) exercises from legacy exerciseLibrary", context: "syncFromCloud")
+            }
+
             // 1. Fetch and apply cloud deletions first
             await syncDeletionsFromCloud()
 

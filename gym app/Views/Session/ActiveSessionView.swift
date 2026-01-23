@@ -162,6 +162,12 @@ struct ActiveSessionView: View {
                     }
                 }
             }
+            .onChange(of: sessionViewModel.isRestTimerRunning) { wasRunning, isRunning in
+                // Highlight next set when rest timer ends (moved to body level for reliability)
+                if wasRunning && !isRunning {
+                    highlightNextSet = true
+                }
+            }
             .confirmationDialog("Cancel Workout", isPresented: $showingCancelConfirmation) {
                 Button("Cancel Workout", role: .destructive) {
                     sessionViewModel.cancelSession()
@@ -228,7 +234,7 @@ struct ActiveSessionView: View {
                         )
                         showWorkoutOverview = false
                     },
-                    onUpdateSet: { moduleIndex, exerciseIndex, setGroupIndex, setIndex, weight, reps, rpe, duration, holdTime, distance in
+                    onUpdateSet: { moduleIndex, exerciseIndex, setGroupIndex, setIndex, weight, reps, rpe, duration, holdTime, distance, completed in
                         updateSetAt(
                             moduleIndex: moduleIndex,
                             exerciseIndex: exerciseIndex,
@@ -239,7 +245,8 @@ struct ActiveSessionView: View {
                             rpe: rpe,
                             duration: duration,
                             holdTime: holdTime,
-                            distance: distance
+                            distance: distance,
+                            completed: completed
                         )
                     },
                     onAddExercise: { moduleIndex, name, type, cardioMetric, distanceUnit in
@@ -603,6 +610,7 @@ struct ActiveSessionView: View {
 
                 // Next Exercise button
                 Button {
+                    highlightNextSet = true
                     advanceToNextExercise()
                 } label: {
                     HStack(spacing: AppSpacing.sm) {
@@ -1535,12 +1543,6 @@ struct ActiveSessionView: View {
         )
         .transition(.opacity.combined(with: .move(edge: .top)))
         .animation(.easeInOut(duration: 0.3), value: sessionViewModel.isRestTimerRunning)
-        .onChange(of: sessionViewModel.isRestTimerRunning) { wasRunning, isRunning in
-            // Highlight next set when rest timer naturally ends
-            if wasRunning && !isRunning {
-                highlightNextSet = true
-            }
-        }
     }
 
     // MARK: - Module Transition Overlay

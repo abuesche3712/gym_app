@@ -30,6 +30,9 @@ struct WorkoutFormView: View {
     @State private var moduleSearchText = ""
     @State private var exerciseSearchText = ""
     @State private var editingExercise: ExerciseInstance?
+    @State private var selectedForSuperset: Set<UUID> = []
+    @State private var isSelectingForSuperset = false
+    @State private var showingCreateExercise = false
 
     private var isEditing: Bool { workout != nil }
 
@@ -125,6 +128,11 @@ struct WorkoutFormView: View {
                     }
                 )
             }
+        }
+        .sheet(isPresented: $showingCreateExercise) {
+            AddExerciseSheet(onExerciseCreated: { newTemplate in
+                addExerciseFromTemplate(newTemplate)
+            })
         }
         .onAppear {
             loadWorkout()
@@ -448,6 +456,11 @@ struct WorkoutFormView: View {
 
                 FormDivider()
 
+                // Superset toolbar (when we have 2+ exercises)
+                if standaloneExercises.count >= 2 {
+                    supersetToolbar
+                }
+
                 // Exercise list
                 if standaloneExercises.isEmpty {
                     emptyExercisesView
@@ -566,6 +579,15 @@ struct WorkoutFormView: View {
         VStack(spacing: 0) {
             ForEach(Array(standaloneExercises.enumerated()), id: \.element.id) { index, exercise in
                 exerciseRow(exercise: exercise, index: index)
+                    .onDrag {
+                        draggedExercise = exercise
+                        return NSItemProvider(object: exercise.id.uuidString as NSString)
+                    }
+                    .onDrop(of: [.text], delegate: ExerciseDropDelegate(
+                        item: exercise,
+                        items: $standaloneExercises,
+                        draggedItem: $draggedExercise
+                    ))
 
                 if index < standaloneExercises.count - 1 {
                     FormDivider()
@@ -574,15 +596,127 @@ struct WorkoutFormView: View {
         }
     }
 
+    @State private var draggedExercise: ExerciseInstance?
+
+    private var supersetToolbar: some View {
+        HStack(spacing: AppSpacing.md) {
+            if isSelectingForSuperset {
+                Button {
+                    withAnimation {
+                        isSelectingForSuperset = false
+                        selectedForSuperset.removeAll()
+                    }
+                } label: {
+                    Text("Cancel")
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+
+                Spacer()
+
+                if selectedForSuperset.count >= 2 {
+                    Button {
+                        createSupersetFromSelection()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "link")
+                            Text("Link \(selectedForSuperset.count) as Superset")
+                        }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundColor(AppColors.accentBlue)
+                    }
+                } else {
+                    Text("Select 2+ exercises")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            } else {
+                Spacer()
+                Button {
+                    withAnimation {
+                        isSelectingForSuperset = true
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "link.badge.plus")
+                        Text("Create Superset")
+                    }
+                    .font(.subheadline)
+                    .foregroundColor(AppColors.accentBlue)
+                }
+            }
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.vertical, AppSpacing.sm)
+        .background(AppColors.cardBackground)
+    }
+
+    private func createSupersetFromSelection() {
+        let supersetId = UUID()
+        for i in standaloneExercises.indices {
+            if selectedForSuperset.contains(standaloneExercises[i].id) {
+                standaloneExercises[i].supersetGroupId = supersetId
+            }
+        }
+        withAnimation {
+            isSelectingForSuperset = false
+            selectedForSuperset.removeAll()
+        }
+    }
+
+    private func getSupersetIndex(for supersetId: UUID) -> Int {
+        let uniqueSupersetIds = Array(Set(standaloneExercises.compactMap { $0.supersetGroupId }))
+            .sorted { id1, id2 in
+                let index1 = standaloneExercises.firstIndex { $0.supersetGroupId == id1 } ?? 0
+                let index2 = standaloneExercises.firstIndex { $0.supersetGroupId == id2 } ?? 0
+                return index1 < index2
+            }
+        return (uniqueSupersetIds.firstIndex(of: supersetId) ?? 0) + 1
+    }
+
     private func exerciseRow(exercise: ExerciseInstance, index: Int) -> some View {
         HStack(spacing: AppSpacing.md) {
-            ZStack {
-                Circle()
-                    .fill(AppColors.accentBlue.opacity(0.15))
-                    .frame(width: 28, height: 28)
-                Text("\(index + 1)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.accentBlue)
+            // Selection checkbox when in superset selection mode
+            if isSelectingForSuperset {
+                Button {
+                    if selectedForSuperset.contains(exercise.id) {
+                        selectedForSuperset.remove(exercise.id)
+                    } else {
+                        selectedForSuperset.insert(exercise.id)
+                    }
+                } label: {
+                    Image(systemName: selectedForSuperset.contains(exercise.id) ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 22))
+                        .foregroundColor(selectedForSuperset.contains(exercise.id) ? AppColors.accentBlue : AppColors.textTertiary)
+                }
+            } else {
+                // Drag handle
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(width: 20)
+            }
+
+            // Superset indicator
+            if let supersetId = exercise.supersetGroupId {
+                let supersetIndex = getSupersetIndex(for: supersetId)
+                ZStack {
+                    Circle()
+                        .fill(AppColors.accentTeal.opacity(0.15))
+                        .frame(width: 28, height: 28)
+                    Text("S\(supersetIndex)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(AppColors.accentTeal)
+                }
+            } else {
+                ZStack {
+                    Circle()
+                        .fill(AppColors.accentBlue.opacity(0.15))
+                        .frame(width: 28, height: 28)
+                    Text("\(index + 1)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(AppColors.accentBlue)
+                }
             }
 
             VStack(alignment: .leading, spacing: 2) {
@@ -630,27 +764,53 @@ struct WorkoutFormView: View {
     }
 
     private var browseExercisesButton: some View {
-        Button {
-            showingExercisePicker = true
-        } label: {
-            HStack(spacing: AppSpacing.md) {
-                Image(systemName: "books.vertical")
-                    .font(.system(size: 16))
-                    .foregroundColor(AppColors.accentBlue)
-                    .frame(width: 24)
-                Text("Browse Exercise Library")
-                    .foregroundColor(AppColors.accentBlue)
-                    .fontWeight(.medium)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(AppColors.textTertiary)
+        VStack(spacing: 0) {
+            Button {
+                showingExercisePicker = true
+            } label: {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "books.vertical")
+                        .font(.system(size: 16))
+                        .foregroundColor(AppColors.accentBlue)
+                        .frame(width: 24)
+                    Text("Browse Exercise Library")
+                        .foregroundColor(AppColors.accentBlue)
+                        .fontWeight(.medium)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, AppSpacing.md)
+                .background(AppColors.cardBackground)
             }
-            .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.vertical, AppSpacing.md)
-            .background(AppColors.cardBackground)
+            .buttonStyle(.plain)
+
+            FormDivider()
+
+            Button {
+                showingCreateExercise = true
+            } label: {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "plus.circle")
+                        .font(.system(size: 16))
+                        .foregroundColor(AppColors.accentTeal)
+                        .frame(width: 24)
+                    Text("Create New Exercise")
+                        .foregroundColor(AppColors.accentTeal)
+                        .fontWeight(.medium)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, AppSpacing.md)
+                .background(AppColors.cardBackground)
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Notes Section
@@ -1057,6 +1217,36 @@ private struct ModuleFilterChip: View {
                         .stroke(isSelected ? Color.clear : AppColors.border, lineWidth: 1)
                 )
         }
+    }
+}
+
+// MARK: - Exercise Drop Delegate
+
+struct ExerciseDropDelegate: DropDelegate {
+    let item: ExerciseInstance
+    @Binding var items: [ExerciseInstance]
+    @Binding var draggedItem: ExerciseInstance?
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggedItem = nil
+        return true
+    }
+
+    func dropEntered(info: DropInfo) {
+        guard let draggedItem = draggedItem,
+              draggedItem.id != item.id,
+              let fromIndex = items.firstIndex(where: { $0.id == draggedItem.id }),
+              let toIndex = items.firstIndex(where: { $0.id == item.id }) else {
+            return
+        }
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            items.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
+        }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
     }
 }
 

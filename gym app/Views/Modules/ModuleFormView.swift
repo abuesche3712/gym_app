@@ -502,6 +502,7 @@ struct InlineExerciseEditor: View {
     @State private var setGroups: [SetGroup] = []
     @State private var notes: String = ""
     @State private var showingAddSetGroup = false
+    @State private var editingSetGroupIndex: Int? = nil
 
     var body: some View {
         ScrollView {
@@ -629,6 +630,26 @@ struct InlineExerciseEditor: View {
                 }
             }
         }
+        .sheet(isPresented: Binding(
+            get: { editingSetGroupIndex != nil },
+            set: { if !$0 { editingSetGroupIndex = nil } }
+        )) {
+            if let index = editingSetGroupIndex, index < setGroups.count {
+                NavigationStack {
+                    SetGroupFormView(
+                        exerciseType: exerciseType,
+                        cardioMetric: exercise.cardioMetric,
+                        mobilityTracking: exercise.mobilityTracking,
+                        distanceUnit: exercise.distanceUnit,
+                        implementIds: exercise.implementIds,
+                        isBodyweight: exercise.isBodyweight,
+                        existingSetGroup: setGroups[index]
+                    ) { updatedSetGroup in
+                        setGroups[index] = updatedSetGroup
+                    }
+                }
+            }
+        }
         .onAppear {
             loadExercise()
         }
@@ -658,6 +679,14 @@ struct InlineExerciseEditor: View {
             }
 
             Spacer()
+
+            Button {
+                editingSetGroupIndex = index
+            } label: {
+                Image(systemName: "pencil.circle.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(AppColors.textTertiary.opacity(0.6))
+            }
 
             Button {
                 setGroups.remove(at: index)

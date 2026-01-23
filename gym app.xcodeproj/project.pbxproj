@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -63,6 +63,9 @@
 		B63EBF2B2F15E73700D8C22D /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */; };
 		B63EBF2C2F15E73700D8C22D /* SyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF0D2F15E73700D8C22D /* SyncManager.swift */; };
 		B63EBF302F15E73700D8C22D /* ExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */; };
+		B63FFF3B2F22DF2300090EA5 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B6FFC4A12F22DC220007E03E /* WidgetKit.framework */; };
+		B63FFF3C2F22DF2300090EA5 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B6FFC4A32F22DC220007E03E /* SwiftUI.framework */; };
+		B63FFF492F22DF2500090EA5 /* TodayWorkoutWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B63FFF3A2F22DF2300090EA5 /* TodayWorkoutWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B658B09E2F16903C00B2F84E /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B658B09B2F16903C00B2F84E /* AppTheme.swift */; };
 		B658B09F2F16903C00B2F84E /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = B658B09C2F16903C00B2F84E /* Components.swift */; };
 		B693104C2F15E12A0021CB0F /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = B693104B2F15E12A0021CB0F /* GoogleService-Info.plist */; };
@@ -108,6 +111,7 @@
 		SYNCQU002BUILD002 /* SyncQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = SYNCQU001FILE001 /* SyncQueue.swift */; };
 		USRPFL002BUILD002 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = USRPFL001FILE001 /* UserProfile.swift */; };
 		WKBLD002BUILD002 /* WorkoutBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WKBLD001FILE001 /* WorkoutBuilderView.swift */; };
+		WDGSVC02BUILD002 /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = WDGSVC01FILE001 /* WidgetData.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -125,7 +129,28 @@
 			remoteGlobalIDString = B610ABFE2F15B4DD008B2C15;
 			remoteInfo = "gym app";
 		};
+		B63FFF472F22DF2500090EA5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B610ABF72F15B4DD008B2C15 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B63FFF392F22DF2300090EA5;
+			remoteInfo = TodayWorkoutWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B6FFC4BA2F22DC240007E03E /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B63FFF492F22DF2500090EA5 /* TodayWorkoutWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		05D2B6AD67E44647BABA141E /* gym app/Views/Library/LibraryExerciseEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Views/Library/LibraryExerciseEditView.swift"; sourceTree = SOURCE_ROOT; };
@@ -183,10 +208,14 @@
 		B63EBF0B2F15E73700D8C22D /* FirebaseService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FirebaseService.swift; sourceTree = "<group>"; };
 		B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		B63EBF0D2F15E73700D8C22D /* SyncManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncManager.swift; sourceTree = "<group>"; };
+		B63FFF3A2F22DF2300090EA5 /* TodayWorkoutWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TodayWorkoutWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B63FFF502F22DFB200090EA5 /* TodayWorkoutWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TodayWorkoutWidgetExtension.entitlements; sourceTree = "<group>"; };
 		B658B09B2F16903C00B2F84E /* AppTheme.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		B658B09C2F16903C00B2F84E /* Components.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		B693104B2F15E12A0021CB0F /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		B6EXERC012F15E73700D8C22D /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
+		B6FFC4A12F22DC220007E03E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		B6FFC4A32F22DC220007E03E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		B6SCHED00DE514440E0A348 /* ScheduledWorkout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduledWorkout.swift; sourceTree = "<group>"; };
 		C36DDB57BAA44FEF866BE090 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		C8C0101650AF44AEA8A6F8A1 /* EndSessionSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EndSessionSheet.swift; sourceTree = "<group>"; };
@@ -227,7 +256,22 @@
 		SYNCQU001FILE001 /* SyncQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncQueue.swift; sourceTree = "<group>"; };
 		USRPFL001FILE001 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		WKBLD001FILE001 /* WorkoutBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutBuilderView.swift; sourceTree = "<group>"; };
+		WDGSVC01FILE001 /* WidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetData.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B63FFF4A2F22DF2500090EA5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = B63FFF392F22DF2300090EA5 /* TodayWorkoutWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		B63FFF3D2F22DF2300090EA5 /* TodayWorkoutWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B63FFF4A2F22DF2500090EA5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = TodayWorkoutWidget; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		B610ABFC2F15B4DD008B2C15 /* Frameworks */ = {
@@ -254,6 +298,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B63FFF372F22DF2300090EA5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B63FFF3C2F22DF2300090EA5 /* SwiftUI.framework in Frameworks */,
+				B63FFF3B2F22DF2300090EA5 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -268,9 +321,12 @@
 		B610ABF62F15B4DD008B2C15 = {
 			isa = PBXGroup;
 			children = (
+				B63FFF502F22DFB200090EA5 /* TodayWorkoutWidgetExtension.entitlements */,
 				B610AC012F15B4DD008B2C15 /* gym app */,
 				B610AC122F15B4DE008B2C15 /* gym appTests */,
 				B610AC1C2F15B4DF008B2C15 /* gym appUITests */,
+				B63FFF3D2F22DF2300090EA5 /* TodayWorkoutWidget */,
+				B6FFC4A02F22DC220007E03E /* Frameworks */,
 				B610AC002F15B4DD008B2C15 /* Products */,
 				B6F5091C2F1EC507007CA28A /* Recovered References */,
 			);
@@ -282,6 +338,7 @@
 				B610ABFF2F15B4DD008B2C15 /* gym app.app */,
 				B610AC0F2F15B4DE008B2C15 /* gym appTests.xctest */,
 				B610AC192F15B4DF008B2C15 /* gym appUITests.xctest */,
+				B63FFF3A2F22DF2300090EA5 /* TodayWorkoutWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -481,6 +538,7 @@
 				DELTRC01FILE001 /* DeletionTracker.swift */,
 				SYNCLOG01FILE001 /* SyncLogger.swift */,
 				B63EBF0D2F15E73700D8C22D /* SyncManager.swift */,
+				WDGSVC01FILE001 /* WidgetData.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -503,6 +561,15 @@
 				05D2B6AD67E44647BABA141E /* gym app/Views/Library/LibraryExerciseEditView.swift */,
 			);
 			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		B6FFC4A02F22DC220007E03E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B6FFC4A12F22DC220007E03E /* WidgetKit.framework */,
+				B6FFC4A32F22DC220007E03E /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		COMPGRP001GROUP001 /* Components */ = {
@@ -588,10 +655,12 @@
 				B610ABFB2F15B4DD008B2C15 /* Sources */,
 				B610ABFC2F15B4DD008B2C15 /* Frameworks */,
 				B610ABFD2F15B4DD008B2C15 /* Resources */,
+				B6FFC4BA2F22DC240007E03E /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				B63FFF482F22DF2500090EA5 /* PBXTargetDependency */,
 			);
 			name = "gym app";
 			packageProductDependencies = (
@@ -639,6 +708,28 @@
 			productReference = B610AC192F15B4DF008B2C15 /* gym appUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		B63FFF392F22DF2300090EA5 /* TodayWorkoutWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B63FFF4B2F22DF2500090EA5 /* Build configuration list for PBXNativeTarget "TodayWorkoutWidgetExtension" */;
+			buildPhases = (
+				B63FFF362F22DF2300090EA5 /* Sources */,
+				B63FFF372F22DF2300090EA5 /* Frameworks */,
+				B63FFF382F22DF2300090EA5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B63FFF3D2F22DF2300090EA5 /* TodayWorkoutWidget */,
+			);
+			name = TodayWorkoutWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = TodayWorkoutWidgetExtension;
+			productReference = B63FFF3A2F22DF2300090EA5 /* TodayWorkoutWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -646,7 +737,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1540;
+				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 1540;
 				TargetAttributes = {
 					B610ABFE2F15B4DD008B2C15 = {
@@ -659,6 +750,9 @@
 					B610AC182F15B4DF008B2C15 = {
 						CreatedOnToolsVersion = 15.4;
 						TestTargetID = B610ABFE2F15B4DD008B2C15;
+					};
+					B63FFF392F22DF2300090EA5 = {
+						CreatedOnToolsVersion = 26.2;
 					};
 				};
 			};
@@ -681,6 +775,7 @@
 				B610ABFE2F15B4DD008B2C15 /* gym app */,
 				B610AC0E2F15B4DE008B2C15 /* gym appTests */,
 				B610AC182F15B4DF008B2C15 /* gym appUITests */,
+				B63FFF392F22DF2300090EA5 /* TodayWorkoutWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -709,6 +804,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				B693104E2F15E12A0021CB0F /* GoogleService-Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B63FFF382F22DF2300090EA5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -807,6 +909,7 @@
 				APPCFG02BUILD002 /* AppConfig.swift in Sources */,
 				LOGGER02BUILD002 /* Logger.swift in Sources */,
 				E3A1B2C3D4E5F60000000002 /* ExerciseMetrics.swift in Sources */,
+				WDGSVC02BUILD002 /* WidgetData.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -829,6 +932,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B63FFF362F22DF2300090EA5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -841,6 +951,11 @@
 			isa = PBXTargetDependency;
 			target = B610ABFE2F15B4DD008B2C15 /* gym app */;
 			targetProxy = B610AC1A2F15B4DF008B2C15 /* PBXContainerItemProxy */;
+		};
+		B63FFF482F22DF2500090EA5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B63FFF392F22DF2300090EA5 /* TodayWorkoutWidgetExtension */;
+			targetProxy = B63FFF472F22DF2500090EA5 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1027,7 +1142,6 @@
 		B610AC272F15B4DF008B2C15 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_ENTITLEMENTS = "gym app/gym_app.entitlements";
 				CODE_SIGN_STYLE = Automatic;
@@ -1047,7 +1161,6 @@
 		B610AC282F15B4DF008B2C15 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_ENTITLEMENTS = "gym app/gym_app.entitlements";
 				CODE_SIGN_STYLE = Automatic;
@@ -1067,7 +1180,6 @@
 		B610AC2A2F15B4DF008B2C15 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_ENTITLEMENTS = "gym app/gym_app.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1085,7 +1197,6 @@
 		B610AC2B2F15B4DF008B2C15 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_ENTITLEMENTS = "gym app/gym_app.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -1097,6 +1208,70 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = "gym app";
+			};
+			name = Release;
+		};
+		B63FFF4C2F22DF2500090EA5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = TodayWorkoutWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 32458MUSUC;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TodayWorkoutWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TodayWorkoutWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "UI.gym-app.TodayWorkoutWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B63FFF4D2F22DF2500090EA5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = TodayWorkoutWidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 32458MUSUC;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = TodayWorkoutWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = TodayWorkoutWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "UI.gym-app.TodayWorkoutWidget";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -1135,6 +1310,15 @@
 			buildConfigurations = (
 				B610AC2A2F15B4DF008B2C15 /* Debug */,
 				B610AC2B2F15B4DF008B2C15 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B63FFF4B2F22DF2500090EA5 /* Build configuration list for PBXNativeTarget "TodayWorkoutWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B63FFF4C2F22DF2500090EA5 /* Debug */,
+				B63FFF4D2F22DF2500090EA5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

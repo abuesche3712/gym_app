@@ -515,6 +515,13 @@ class SyncManager: ObservableObject {
     func queueScheduledWorkout(_ scheduled: ScheduledWorkout, action: SyncAction) {
         guard let payload = try? JSONEncoder().encode(scheduled) else { return }
         queueSyncItem(entityType: .scheduledWorkout, entityId: scheduled.id, action: action, payload: payload)
+
+        // Try immediate sync if online (especially important for deletions)
+        if isOnline {
+            Task { @MainActor in
+                await processQueue()
+            }
+        }
     }
 
     func queueSession(_ session: Session, action: SyncAction) {

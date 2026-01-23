@@ -805,13 +805,23 @@ class SessionViewModel: ObservableObject {
     func getLastSessionData(for exerciseName: String, workoutId: UUID? = nil) -> SessionExercise? {
         // If we have a current session, try to filter by its workout first
         let targetWorkoutId = workoutId ?? currentSession?.workoutId
+        let currentSessionId = currentSession?.id
 
-        // First pass: look for exercise in sessions of the same workout
+        // First pass: look for exercise in sessions of the same workout (excluding current session)
         if let targetId = targetWorkoutId {
             for session in sessions {
+                // Skip the current session - we want PREVIOUS session data
+                if session.id == currentSessionId { continue }
+
                 if session.workoutId == targetId {
                     for module in session.completedModules {
-                        if let exercise = module.completedExercises.first(where: { $0.exerciseName == exerciseName }) {
+                        // Only return if the exercise has completed sets with actual data
+                        if let exercise = module.completedExercises.first(where: {
+                            $0.exerciseName == exerciseName &&
+                            $0.completedSetGroups.contains { setGroup in
+                                setGroup.sets.contains { $0.completed && ($0.weight != nil || $0.reps != nil || $0.duration != nil || $0.distance != nil) }
+                            }
+                        }) {
                             return exercise
                         }
                     }
@@ -822,8 +832,17 @@ class SessionViewModel: ObservableObject {
         // Fallback: if no match in same workout, return any previous instance
         // (useful for ad-hoc exercises or first time doing this workout)
         for session in sessions {
+            // Skip the current session
+            if session.id == currentSessionId { continue }
+
             for module in session.completedModules {
-                if let exercise = module.completedExercises.first(where: { $0.exerciseName == exerciseName }) {
+                // Only return if the exercise has completed sets with actual data
+                if let exercise = module.completedExercises.first(where: {
+                    $0.exerciseName == exerciseName &&
+                    $0.completedSetGroups.contains { setGroup in
+                        setGroup.sets.contains { $0.completed && ($0.weight != nil || $0.reps != nil || $0.duration != nil || $0.distance != nil) }
+                    }
+                }) {
                     return exercise
                 }
             }

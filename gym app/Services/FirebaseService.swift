@@ -204,6 +204,49 @@ class FirestoreService: ObservableObject {
         try await userRef().collection("customExercises").document(exerciseId.uuidString).delete()
     }
 
+    // MARK: - Migration: exerciseLibrary → customExercises
+
+    /// One-time migration from legacy per-user exerciseLibrary to customExercises
+    /// Returns the number of exercises migrated
+    @discardableResult
+    func migrateExerciseLibraryToCustomExercises() async throws -> Int {
+        let userReference = try userRef()
+        let oldCollection = userReference.collection("exerciseLibrary")
+        let newCollection = userReference.collection("customExercises")
+
+        // Fetch from old location
+        let oldSnapshot = try await oldCollection.getDocuments()
+        guard !oldSnapshot.documents.isEmpty else {
+            Logger.debug("No exercises to migrate from exerciseLibrary")
+            return 0
+        }
+
+        // Fetch existing in new location to avoid duplicates
+        let existingSnapshot = try await newCollection.getDocuments()
+        let existingIds = Set(existingSnapshot.documents.map { $0.documentID })
+
+        var migratedCount = 0
+        for doc in oldSnapshot.documents {
+            // Skip if already exists in customExercises
+            if existingIds.contains(doc.documentID) {
+                Logger.debug("Skipping \(doc.documentID) - already in customExercises")
+                continue
+            }
+
+            // Copy to new location
+            try await newCollection.document(doc.documentID).setData(doc.data())
+            migratedCount += 1
+        }
+
+        // Delete old collection after successful migration
+        for doc in oldSnapshot.documents {
+            try await doc.reference.delete()
+        }
+
+        Logger.info("Migrated \(migratedCount) exercises from exerciseLibrary to customExercises")
+        return migratedCount
+    }
+
     // MARK: - Program Operations
 
     func saveProgram(_ program: Program) async throws {

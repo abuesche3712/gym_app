@@ -315,6 +315,7 @@ struct SetRowView: View {
                         .font(.caption2.weight(.medium))
                         .foregroundColor(AppColors.textTertiary)
                 }
+                .fixedSize(horizontal: true, vertical: false)
             } else if exercise.usesBox {
                 // Box height input
                 VStack(spacing: 4) {
@@ -333,6 +334,7 @@ struct SetRowView: View {
                         .font(.caption2.weight(.medium))
                         .foregroundColor(AppColors.textTertiary)
                 }
+                .fixedSize(horizontal: true, vertical: false)
             } else if exercise.isBodyweight {
                 // Bodyweight with optional added weight
                 HStack(spacing: 2) {
@@ -356,6 +358,7 @@ struct SetRowView: View {
                             .font(.caption2.weight(.medium))
                             .foregroundColor(AppColors.textTertiary)
                     }
+                    .fixedSize(horizontal: true, vertical: false)
                 }
             } else {
                 // Standard weight input
@@ -375,6 +378,7 @@ struct SetRowView: View {
                         .font(.caption2.weight(.medium))
                         .foregroundColor(AppColors.textTertiary)
                 }
+                .fixedSize(horizontal: true, vertical: false)
             }
 
             Text("×")
@@ -398,6 +402,7 @@ struct SetRowView: View {
                     .font(.caption2.weight(.medium))
                     .foregroundColor(AppColors.textTertiary)
             }
+            .fixedSize(horizontal: true, vertical: false)
 
             // Secondary input: RPE
             VStack(spacing: 4) {
@@ -422,6 +427,7 @@ struct SetRowView: View {
                     .font(.caption2.weight(.medium))
                     .foregroundColor(AppColors.textTertiary)
             }
+            .fixedSize(horizontal: true, vertical: false)
         }
     }
 

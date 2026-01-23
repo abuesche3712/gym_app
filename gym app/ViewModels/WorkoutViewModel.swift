@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import WidgetKit
 
 @MainActor
 class WorkoutViewModel: ObservableObject {
@@ -176,6 +177,7 @@ class WorkoutViewModel: ObservableObject {
     func loadScheduledWorkouts() {
         guard let data = UserDefaults.standard.data(forKey: scheduledWorkoutsKey) else {
             scheduledWorkouts = []
+            updateTodayWidget()
             return
         }
 
@@ -185,12 +187,14 @@ class WorkoutViewModel: ObservableObject {
             Logger.error(error, context: "loadScheduledWorkouts")
             scheduledWorkouts = []
         }
+        updateTodayWidget()
     }
 
     private func saveScheduledWorkouts() {
         do {
             let data = try JSONEncoder().encode(scheduledWorkouts)
             UserDefaults.standard.set(data, forKey: scheduledWorkoutsKey)
+            updateTodayWidget()
         } catch {
             Logger.error(error, context: "saveScheduledWorkouts")
         }
@@ -347,5 +351,47 @@ class WorkoutViewModel: ObservableObject {
         return (0..<7).compactMap { dayOffset in
             calendar.date(byAdding: .day, value: dayOffset, to: startOfWeek)
         }
+    }
+
+    // MARK: - Widget Updates
+
+    /// Update the Today's Workout widget with current schedule
+    func updateTodayWidget() {
+        let todayScheduled = getScheduledWorkouts(for: Date())
+
+        // Check for rest day first
+        if todayScheduled.contains(where: { $0.isRestDay }) {
+            WidgetDataService.writeTodayWorkout(.restDay)
+            WidgetCenter.shared.reloadTimelines(ofKind: "TodayWorkoutWidget")
+            return
+        }
+
+        // Get first non-completed workout for today
+        guard let scheduled = todayScheduled.first(where: { !$0.isRestDay && $0.completedSessionId == nil }),
+              let workoutId = scheduled.workoutId,
+              let workout = workouts.first(where: { $0.id == workoutId }) else {
+            // No workout scheduled
+            WidgetDataService.writeTodayWorkout(.noWorkout)
+            WidgetCenter.shared.reloadTimelines(ofKind: "TodayWorkoutWidget")
+            return
+        }
+
+        // Get module names from the workout
+        let modules = repository.modules
+        let moduleNames = workout.moduleReferences
+            .sorted { $0.order < $1.order }
+            .compactMap { ref in
+                modules.first { $0.id == ref.moduleId }?.name
+            }
+
+        let widgetData = TodayWorkoutData(
+            workoutName: workout.name,
+            moduleNames: moduleNames,
+            isRestDay: false,
+            lastUpdated: Date()
+        )
+
+        WidgetDataService.writeTodayWorkout(widgetData)
+        WidgetCenter.shared.reloadTimelines(ofKind: "TodayWorkoutWidget")
     }
 }

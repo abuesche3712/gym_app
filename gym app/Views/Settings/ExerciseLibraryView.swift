@@ -353,10 +353,12 @@ private struct ExerciseLibraryRow: View {
 
 // MARK: - Add Exercise Sheet
 
-private struct AddExerciseSheet: View {
+struct AddExerciseSheet: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var customLibrary = CustomExerciseLibrary.shared
     @StateObject private var libraryService = LibraryService.shared
+
+    var onExerciseCreated: ((ExerciseTemplate) -> Void)? = nil
 
     @State private var name = ""
     @State private var exerciseType: ExerciseType = .strength
@@ -455,14 +457,19 @@ private struct AddExerciseSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
+                        let trimmedName = name.trimmingCharacters(in: .whitespaces)
                         customLibrary.addExercise(
-                            name: name.trimmingCharacters(in: .whitespaces),
+                            name: trimmedName,
                             exerciseType: exerciseType,
                             primary: Array(primaryMuscles),
                             secondary: Array(secondaryMuscles),
                             implementIds: selectedImplementIds
                         )
                         ExerciseResolver.shared.refreshCache()
+                        // Find the newly created template to pass to callback
+                        if let createdTemplate = customLibrary.exercises.first(where: { $0.name == trimmedName }) {
+                            onExerciseCreated?(createdTemplate)
+                        }
                         dismiss()
                     }
                     .disabled(!canSave)

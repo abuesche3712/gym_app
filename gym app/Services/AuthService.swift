@@ -199,7 +199,7 @@ class AuthService: NSObject, ObservableObject {
         let userRef = db.collection("users").document(user.uid)
 
         // Delete subcollections
-        let subcollections = ["modules", "workouts", "sessions", "exerciseLibrary", "implements"]
+        let subcollections = ["modules", "workouts", "sessions", "customExercises", "programs", "scheduledWorkouts"]
         for collection in subcollections {
             let snapshot = try await userRef.collection(collection).getDocuments()
             for doc in snapshot.documents {

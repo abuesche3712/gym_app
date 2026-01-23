@@ -15,7 +15,7 @@ struct WorkoutOverviewSheet: View {
     let currentModuleIndex: Int
     let currentExerciseIndex: Int
     let onJumpTo: (Int, Int) -> Void
-    let onUpdateSet: (Int, Int, Int, Int, Double?, Int?, Int?, Int?, Int?, Double?) -> Void
+    let onUpdateSet: (Int, Int, Int, Int, Double?, Int?, Int?, Int?, Int?, Double?, Bool) -> Void
     let onAddExercise: (Int, String, ExerciseType, CardioMetric, DistanceUnit) -> Void
     let onReorderExercise: ((Int, Int, Int) -> Void)?  // moduleIndex, fromIndex, toIndex
     let onDeleteExercise: ((Int, Int) -> Void)?  // moduleIndex, exerciseIndex
@@ -67,7 +67,8 @@ struct WorkoutOverviewSheet: View {
             }
             .sheet(item: $editingSetLocation) { location in
                 EditSetSheet(location: location) { weight, reps, rpe, duration, holdTime, distance in
-                    onUpdateSet(location.moduleIndex, location.exerciseIndex, location.setGroupIndex, location.setIndex, weight, reps, rpe, duration, holdTime, distance)
+                    // Mark as completed when saving values from the edit sheet
+                    onUpdateSet(location.moduleIndex, location.exerciseIndex, location.setGroupIndex, location.setIndex, weight, reps, rpe, duration, holdTime, distance, true)
                 }
             }
             .sheet(isPresented: $showAddExerciseSheet) {
