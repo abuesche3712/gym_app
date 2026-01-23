@@ -17,7 +17,6 @@ import Combine
 actor SyncQueueProcessor {
     private let persistence: PersistenceController
     private let firestoreService: FirestoreService
-    private let logger = SyncLogger.shared
 
     private lazy var backgroundContext: NSManagedObjectContext = {
         let context = persistence.container.newBackgroundContext()
@@ -28,6 +27,25 @@ actor SyncQueueProcessor {
     init(persistence: PersistenceController, firestoreService: FirestoreService) {
         self.persistence = persistence
         self.firestoreService = firestoreService
+    }
+
+    // Non-blocking log helpers to avoid MainActor deadlock
+    private func logInfo(_ message: String, context: String) {
+        Task { @MainActor in
+            SyncLogger.shared.info(message, context: context)
+        }
+    }
+
+    private func logWarning(_ message: String, context: String) {
+        Task { @MainActor in
+            SyncLogger.shared.warning(message, context: context)
+        }
+    }
+
+    private func logError(_ error: Error, context: String, additionalInfo: String?) {
+        Task { @MainActor in
+            SyncLogger.shared.logError(error, context: context, additionalInfo: additionalInfo)
+        }
     }
 
     // MARK: - Queue Item Management
@@ -44,10 +62,10 @@ actor SyncQueueProcessor {
 
         do {
             try backgroundContext.save()
-            logger.info("Queued \(entityType.rawValue) \(entityId) for \(action.rawValue)", context: "SyncQueueProcessor")
+            logInfo("Queued \(entityType.rawValue) \(entityId) for \(action.rawValue)", context: "SyncQueueProcessor")
             return true
         } catch {
-            logger.logError(error, context: "SyncQueueProcessor.queueItem", additionalInfo: "Failed to queue sync item")
+            logError(error, context: "SyncQueueProcessor.queueItem", additionalInfo: "Failed to queue sync item")
             return false
         }
     }
@@ -69,11 +87,15 @@ actor SyncQueueProcessor {
                 await processQueueItem(item)
             }
         } catch {
-            logger.logError(error, context: "SyncQueueProcessor.processQueue", additionalInfo: "Failed to fetch queue items")
+            logError(error, context: "SyncQueueProcessor.processQueue", additionalInfo: "Failed to fetch queue items")
         }
     }
 
     private func processQueueItem(_ item: SyncQueueEntity) async {
+        // Capture values before any operations (in case item gets deleted)
+        let entityTypeStr = item.entityType.rawValue
+        let entityIdStr = item.entityId.uuidString
+
         do {
             switch item.entityType {
             case .setData:
@@ -97,12 +119,12 @@ actor SyncQueueProcessor {
             // Success - remove from queue
             backgroundContext.delete(item)
             try backgroundContext.save()
-            logger.info("Successfully synced \(item.entityType.rawValue) \(item.entityId)", context: "SyncQueueProcessor")
+            logInfo("Successfully synced \(entityTypeStr) \(entityIdStr)", context: "SyncQueueProcessor")
 
         } catch {
             // Decoding failures will never succeed - remove immediately
             if case SyncError.decodingFailed = error {
-                logger.warning("Removing undecodable \(item.entityType.rawValue) \(item.entityId) from queue", context: "SyncQueueProcessor")
+                logWarning("Removing undecodable \(entityTypeStr) \(entityIdStr) from queue", context: "SyncQueueProcessor")
                 backgroundContext.delete(item)
                 try? backgroundContext.save()
                 return
@@ -114,7 +136,7 @@ actor SyncQueueProcessor {
             item.lastError = error.localizedDescription
             try? backgroundContext.save()
 
-            logger.logError(error, context: "SyncQueueProcessor", additionalInfo: "Failed to sync \(item.entityType.rawValue) \(item.entityId), retry \(item.retryCount)")
+            logError(error, context: "SyncQueueProcessor", additionalInfo: "Failed to sync \(entityTypeStr) \(entityIdStr), retry \(item.retryCount)")
         }
     }
 
@@ -220,7 +242,7 @@ actor SyncQueueProcessor {
             let failed = allItems.filter { $0.needsManualIntervention }.count
             return (pending, failed)
         } catch {
-            logger.logError(error, context: "SyncQueueProcessor.getPendingCounts", additionalInfo: "Failed to count items")
+            logError(error, context: "SyncQueueProcessor.getPendingCounts", additionalInfo: "Failed to count items")
             return (0, 0)
         }
     }
@@ -237,9 +259,9 @@ actor SyncQueueProcessor {
                 backgroundContext.delete(item)
             }
             try backgroundContext.save()
-            logger.info("Cleared \(failedItems.count) failed sync items", context: "SyncQueueProcessor")
+            logInfo("Cleared \(failedItems.count) failed sync items", context: "SyncQueueProcessor")
         } catch {
-            logger.logError(error, context: "SyncQueueProcessor.clearFailedItems", additionalInfo: "Failed to clear")
+            logError(error, context: "SyncQueueProcessor.clearFailedItems", additionalInfo: "Failed to clear")
         }
     }
 
@@ -252,9 +274,9 @@ actor SyncQueueProcessor {
                 backgroundContext.delete(item)
             }
             try backgroundContext.save()
-            logger.info("Cleared all \(allItems.count) sync queue items", context: "SyncQueueProcessor")
+            logInfo("Cleared all \(allItems.count) sync queue items", context: "SyncQueueProcessor")
         } catch {
-            logger.logError(error, context: "SyncQueueProcessor.clearAllItems", additionalInfo: "Failed to clear")
+            logError(error, context: "SyncQueueProcessor.clearAllItems", additionalInfo: "Failed to clear")
         }
     }
 }
