@@ -351,6 +351,19 @@ struct CompletedSetGroup: Identifiable, Codable, Hashable {
     var workDuration: Int?  // seconds of work per round
     var intervalRestDuration: Int?  // seconds of rest between rounds
 
+    // AMRAP mode fields
+    var isAMRAP: Bool
+    var amrapTimeLimit: Int?  // optional time limit in seconds
+
+    // Unilateral mode
+    var isUnilateral: Bool  // If true, sets have left/right sides
+
+    // RPE tracking
+    var trackRPE: Bool  // Whether to track RPE for this set group
+
+    // Multi-measurable targets from the workout template
+    var implementMeasurables: [ImplementMeasurableTarget]
+
     init(
         id: UUID = UUID(),
         setGroupId: UUID,
@@ -358,7 +371,12 @@ struct CompletedSetGroup: Identifiable, Codable, Hashable {
         sets: [SetData] = [],
         isInterval: Bool = false,
         workDuration: Int? = nil,
-        intervalRestDuration: Int? = nil
+        intervalRestDuration: Int? = nil,
+        isAMRAP: Bool = false,
+        amrapTimeLimit: Int? = nil,
+        isUnilateral: Bool = false,
+        trackRPE: Bool = true,
+        implementMeasurables: [ImplementMeasurableTarget] = []
     ) {
         self.id = id
         self.setGroupId = setGroupId
@@ -367,6 +385,11 @@ struct CompletedSetGroup: Identifiable, Codable, Hashable {
         self.isInterval = isInterval
         self.workDuration = workDuration
         self.intervalRestDuration = intervalRestDuration
+        self.isAMRAP = isAMRAP
+        self.amrapTimeLimit = amrapTimeLimit
+        self.isUnilateral = isUnilateral
+        self.trackRPE = trackRPE
+        self.implementMeasurables = implementMeasurables
     }
 
     init(from decoder: Decoder) throws {
@@ -379,15 +402,21 @@ struct CompletedSetGroup: Identifiable, Codable, Hashable {
         // Optional with defaults
         sets = try container.decodeIfPresent([SetData].self, forKey: .sets) ?? []
         isInterval = try container.decodeIfPresent(Bool.self, forKey: .isInterval) ?? false
+        isAMRAP = try container.decodeIfPresent(Bool.self, forKey: .isAMRAP) ?? false
+        isUnilateral = try container.decodeIfPresent(Bool.self, forKey: .isUnilateral) ?? false
+        trackRPE = try container.decodeIfPresent(Bool.self, forKey: .trackRPE) ?? true
+        implementMeasurables = try container.decodeIfPresent([ImplementMeasurableTarget].self, forKey: .implementMeasurables) ?? []
 
         // Truly optional
         restPeriod = try container.decodeIfPresent(Int.self, forKey: .restPeriod)
         workDuration = try container.decodeIfPresent(Int.self, forKey: .workDuration)
         intervalRestDuration = try container.decodeIfPresent(Int.self, forKey: .intervalRestDuration)
+        amrapTimeLimit = try container.decodeIfPresent(Int.self, forKey: .amrapTimeLimit)
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, setGroupId, restPeriod, sets, isInterval, workDuration, intervalRestDuration
+        case isAMRAP, amrapTimeLimit, isUnilateral, trackRPE, implementMeasurables
     }
 
     /// Total rounds (for interval mode, equals number of sets)
@@ -429,6 +458,12 @@ struct SetData: Identifiable, Codable, Hashable {
     // Rest tracking
     var restAfter: Int? // seconds, actual rest taken
 
+    // Unilateral tracking
+    var side: Side? // nil = bilateral, .left/.right = unilateral
+
+    // Multi-measurable values (e.g., {"Height": 24.0, "Incline": 5.0})
+    var implementMeasurableValues: [String: MeasurableValue]
+
     init(
         id: UUID = UUID(),
         setNumber: Int,
@@ -446,7 +481,9 @@ struct SetData: Identifiable, Codable, Hashable {
         height: Double? = nil,
         quality: Int? = nil,
         temperature: Int? = nil,
-        restAfter: Int? = nil
+        restAfter: Int? = nil,
+        side: Side? = nil,
+        implementMeasurableValues: [String: MeasurableValue] = [:]
     ) {
         self.id = id
         self.setNumber = setNumber
@@ -465,6 +502,8 @@ struct SetData: Identifiable, Codable, Hashable {
         self.quality = quality
         self.temperature = temperature
         self.restAfter = restAfter
+        self.side = side
+        self.implementMeasurableValues = implementMeasurableValues
     }
 
     init(from decoder: Decoder) throws {
@@ -492,11 +531,31 @@ struct SetData: Identifiable, Codable, Hashable {
         quality = try container.decodeIfPresent(Int.self, forKey: .quality)
         temperature = try container.decodeIfPresent(Int.self, forKey: .temperature)
         restAfter = try container.decodeIfPresent(Int.self, forKey: .restAfter)
+        side = try container.decodeIfPresent(Side.self, forKey: .side)
+
+        // Multi-measurable values with backward compatibility migration
+        if let values = try container.decodeIfPresent([String: MeasurableValue].self, forKey: .implementMeasurableValues) {
+            implementMeasurableValues = values
+        } else {
+            // Migrate legacy fields to new dictionary format
+            implementMeasurableValues = [:]
+
+            // Migrate height (from box jumps)
+            if let legacyHeight = try container.decodeIfPresent(Double.self, forKey: .height) {
+                implementMeasurableValues["Height"] = MeasurableValue(numericValue: legacyHeight)
+            }
+
+            // Migrate bandColor (from resistance bands)
+            if let legacyBandColor = try container.decodeIfPresent(String.self, forKey: .bandColor),
+               !legacyBandColor.isEmpty {
+                implementMeasurableValues["Color"] = MeasurableValue(stringValue: legacyBandColor)
+            }
+        }
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, setNumber, weight, reps, rpe, completed, bandColor, duration, distance, pace, avgHeartRate
-        case holdTime, intensity, height, quality, temperature, restAfter
+        case holdTime, intensity, height, quality, temperature, restAfter, side, implementMeasurableValues
     }
 
     var formattedStrength: String? {
@@ -551,5 +610,19 @@ struct SetData: Identifiable, Codable, Hashable {
             result += " @ \(temp)°F"
         }
         return result
+    }
+}
+
+// MARK: - Measurable Value
+
+/// Represents a logged value for an implement measurable
+/// Supports both numeric (24.0 for height) and string ("Red" for band color) values
+struct MeasurableValue: Codable, Hashable {
+    var numericValue: Double?
+    var stringValue: String?
+
+    init(numericValue: Double? = nil, stringValue: String? = nil) {
+        self.numericValue = numericValue
+        self.stringValue = stringValue
     }
 }

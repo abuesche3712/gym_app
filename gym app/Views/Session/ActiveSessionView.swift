@@ -541,8 +541,8 @@ struct ActiveSessionView: View {
                                 flatSet: flatSet,
                                 exercise: exercise,
                                 isHighlighted: highlightNextSet && isFirstIncomplete,
-                                onLog: { weight, reps, rpe, duration, holdTime, distance, height, quality, intensity, temperature, bandColor in
-                                    logSetAt(flatSet: flatSet, weight: weight, reps: reps, rpe: rpe, duration: duration, holdTime: holdTime, distance: distance, height: height, quality: quality, intensity: intensity, temperature: temperature, bandColor: bandColor)
+                                onLog: { weight, reps, rpe, duration, holdTime, distance, height, quality, intensity, temperature, bandColor, implementMeasurableValues in
+                                    logSetAt(flatSet: flatSet, weight: weight, reps: reps, rpe: rpe, duration: duration, holdTime: holdTime, distance: distance, height: height, quality: quality, intensity: intensity, temperature: temperature, bandColor: bandColor, implementMeasurableValues: implementMeasurableValues)
                                     // Clear highlight when logging
                                     highlightNextSet = false
                                     // Start rest timer (skip for recovery activities)
@@ -571,7 +571,8 @@ struct ActiveSessionView: View {
                                     }
                                 },
                                 lastSessionExercise: lastSessionExercise,
-                                previousCompletedSet: previousSet
+                                previousCompletedSet: previousSet,
+                                contentWidth: width - (AppSpacing.cardPadding * 2)
                             )
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 if canDeleteSet(exercise: exercise) {
@@ -599,7 +600,7 @@ struct ActiveSessionView: View {
                             .font(.subheadline.weight(.medium))
                     }
                     .foregroundColor(AppColors.textSecondary)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: width - (AppSpacing.cardPadding * 2))
                     .padding(.vertical, AppSpacing.sm)
                     .background(
                         RoundedRectangle(cornerRadius: AppCorners.small)
@@ -620,7 +621,7 @@ struct ActiveSessionView: View {
                             .font(.headline)
                     }
                     .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
+                    .frame(width: width - (AppSpacing.cardPadding * 2))
                     .padding(.vertical, AppSpacing.lg)
                     .background(
                         RoundedRectangle(cornerRadius: AppCorners.medium)
@@ -770,9 +771,26 @@ struct ActiveSessionView: View {
                 targetDuration: setData.duration,
                 targetHoldTime: setData.holdTime,
                 targetDistance: setData.distance,
-                restPeriod: setGroup.restPeriod
+                restPeriod: setGroup.restPeriod,
+                isInterval: setGroup.isInterval,
+                workDuration: setGroup.workDuration,
+                intervalRestDuration: setGroup.intervalRestDuration,
+                isAMRAP: setGroup.isAMRAP,
+                amrapTimeLimit: setGroup.amrapTimeLimit,
+                isUnilateral: setGroup.isUnilateral,
+                trackRPE: setGroup.trackRPE,
+                implementMeasurables: setGroup.implementMeasurables
             ))
-            runningSetNumber += 1
+
+            // For unilateral sets, left and right share the same set number
+            // Only increment after completing both sides (right side)
+            if setGroup.isUnilateral {
+                if setData.side == .right {
+                    runningSetNumber += 1
+                }
+            } else {
+                runningSetNumber += 1
+            }
         }
         return result
     }
@@ -794,9 +812,26 @@ struct ActiveSessionView: View {
                     targetDuration: setData.duration,
                     targetHoldTime: setData.holdTime,
                     targetDistance: setData.distance,
-                    restPeriod: setGroup.restPeriod
+                    restPeriod: setGroup.restPeriod,
+                    isInterval: setGroup.isInterval,
+                    workDuration: setGroup.workDuration,
+                    intervalRestDuration: setGroup.intervalRestDuration,
+                    isAMRAP: setGroup.isAMRAP,
+                    amrapTimeLimit: setGroup.amrapTimeLimit,
+                    isUnilateral: setGroup.isUnilateral,
+                    trackRPE: setGroup.trackRPE,
+                    implementMeasurables: setGroup.implementMeasurables
                 ))
-                runningSetNumber += 1
+
+                // For unilateral sets, left and right share the same set number
+                // Only increment after completing both sides (right side)
+                if setGroup.isUnilateral {
+                    if setData.side == .right {
+                        runningSetNumber += 1
+                    }
+                } else {
+                    runningSetNumber += 1
+                }
             }
         }
         return result
@@ -1116,7 +1151,7 @@ struct ActiveSessionView: View {
         sessionViewModel.currentSession = session
     }
 
-    private func logSetAt(flatSet: FlatSet, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?, height: Double? = nil, quality: Int? = nil, intensity: Int? = nil, temperature: Int? = nil, bandColor: String? = nil) {
+    private func logSetAt(flatSet: FlatSet, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?, height: Double? = nil, quality: Int? = nil, intensity: Int? = nil, temperature: Int? = nil, bandColor: String? = nil, implementMeasurableValues: [String: String]? = nil) {
         guard var session = sessionViewModel.currentSession else { return }
         guard sessionViewModel.currentModuleIndex < session.completedModules.count else { return }
 
@@ -1139,6 +1174,23 @@ struct ActiveSessionView: View {
         setData.intensity = intensity
         setData.temperature = temperature
         setData.bandColor = bandColor ?? setData.bandColor
+
+        // Convert string dictionary to MeasurableValue dictionary
+        if let stringValues = implementMeasurableValues, !stringValues.isEmpty {
+            var measurableDict: [String: MeasurableValue] = [:]
+            for (key, stringValue) in stringValues where !stringValue.isEmpty {
+                // Try to parse as number, otherwise store as string
+                if let numericValue = Double(stringValue) {
+                    measurableDict[key] = MeasurableValue(numericValue: numericValue, stringValue: nil)
+                } else {
+                    measurableDict[key] = MeasurableValue(numericValue: nil, stringValue: stringValue)
+                }
+            }
+            if !measurableDict.isEmpty {
+                setData.implementMeasurableValues = measurableDict
+            }
+        }
+
         setData.completed = true
 
         setGroup.sets[flatSet.setIndex] = setData
@@ -1306,6 +1358,26 @@ struct ActiveSessionView: View {
                                 }
                             }
                         }
+                    }
+
+                    // Show notes from last session if present
+                    if let notes = lastData.notes, !notes.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "note.text")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(AppColors.textTertiary)
+                                Text("Notes")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundColor(AppColors.textTertiary)
+                            }
+
+                            Text(notes)
+                                .font(.caption)
+                                .foregroundColor(AppColors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.top, AppSpacing.sm)
                     }
                 }
                 .padding(AppSpacing.cardPadding)

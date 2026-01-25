@@ -105,6 +105,36 @@ enum ExerciseType: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Side (for Unilateral Exercises)
+
+enum Side: String, Codable, CaseIterable, Identifiable {
+    case left
+    case right
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .left: return "Left"
+        case .right: return "Right"
+        }
+    }
+
+    var abbreviation: String {
+        switch self {
+        case .left: return "L"
+        case .right: return "R"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .left: return "l.square"
+        case .right: return "r.square"
+        }
+    }
+}
+
 // MARK: - Recovery Activity Types
 
 enum RecoveryActivityType: String, Codable, CaseIterable, Identifiable {
@@ -405,4 +435,7 @@ extension Notification.Name {
 
     /// Posted when a deletion record is synced from cloud (for scheduled workouts)
     static let deletionRecordSyncedFromCloud = Notification.Name("deletionRecordSyncedFromCloud")
+
+    /// Posted when a workout session is completed
+    static let sessionCompleted = Notification.Name("sessionCompleted")
 }

@@ -28,6 +28,19 @@ struct FlatSet: Identifiable {
     let workDuration: Int?
     let intervalRestDuration: Int?
 
+    // AMRAP mode fields
+    let isAMRAP: Bool
+    let amrapTimeLimit: Int?
+
+    // Unilateral mode
+    let isUnilateral: Bool
+
+    // RPE tracking
+    let trackRPE: Bool
+
+    // Multi-measurable targets (e.g., Height: 24in, Weight: 20lbs for weighted box jumps)
+    let implementMeasurables: [ImplementMeasurableTarget]
+
     init(
         id: String,
         setGroupIndex: Int,
@@ -42,7 +55,12 @@ struct FlatSet: Identifiable {
         restPeriod: Int? = nil,
         isInterval: Bool = false,
         workDuration: Int? = nil,
-        intervalRestDuration: Int? = nil
+        intervalRestDuration: Int? = nil,
+        isAMRAP: Bool = false,
+        amrapTimeLimit: Int? = nil,
+        isUnilateral: Bool = false,
+        trackRPE: Bool = true,
+        implementMeasurables: [ImplementMeasurableTarget] = []
     ) {
         self.id = id
         self.setGroupIndex = setGroupIndex
@@ -58,6 +76,11 @@ struct FlatSet: Identifiable {
         self.isInterval = isInterval
         self.workDuration = workDuration
         self.intervalRestDuration = intervalRestDuration
+        self.isAMRAP = isAMRAP
+        self.amrapTimeLimit = amrapTimeLimit
+        self.isUnilateral = isUnilateral
+        self.trackRPE = trackRPE
+        self.implementMeasurables = implementMeasurables
     }
 }
 

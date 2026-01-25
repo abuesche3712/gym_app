@@ -65,6 +65,16 @@ class WorkoutViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+
+        // Listen for session completion to update widget
+        NotificationCenter.default.publisher(for: .sessionCompleted)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                // Reload scheduled workouts to get updated completion status
+                self?.loadScheduledWorkouts()
+                self?.updateTodayWidget()
+            }
+            .store(in: &cancellables)
     }
 
     private func mergeScheduledWorkoutsFromCloud(_ cloudScheduled: [ScheduledWorkout]) {
@@ -366,6 +376,31 @@ class WorkoutViewModel: ObservableObject {
             return
         }
 
+        // Check if there's a completed workout for today
+        if let completedScheduled = todayScheduled.first(where: { !$0.isRestDay && $0.completedSessionId != nil }),
+           let workoutId = completedScheduled.workoutId,
+           let workout = workouts.first(where: { $0.id == workoutId }) {
+            // Workout completed - show completed status
+            let modules = repository.modules
+            let moduleNames = workout.moduleReferences
+                .sorted { $0.order < $1.order }
+                .compactMap { ref in
+                    modules.first { $0.id == ref.moduleId }?.name
+                }
+
+            let widgetData = TodayWorkoutData(
+                workoutName: workout.name,
+                moduleNames: moduleNames,
+                isRestDay: false,
+                isCompleted: true,
+                lastUpdated: Date()
+            )
+
+            WidgetDataService.writeTodayWorkout(widgetData)
+            WidgetCenter.shared.reloadTimelines(ofKind: "TodayWorkoutWidget")
+            return
+        }
+
         // Get first non-completed workout for today
         guard let scheduled = todayScheduled.first(where: { !$0.isRestDay && $0.completedSessionId == nil }),
               let workoutId = scheduled.workoutId,
@@ -388,6 +423,7 @@ class WorkoutViewModel: ObservableObject {
             workoutName: workout.name,
             moduleNames: moduleNames,
             isRestDay: false,
+            isCompleted: false,
             lastUpdated: Date()
         )
 

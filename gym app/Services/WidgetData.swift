@@ -13,6 +13,7 @@ struct TodayWorkoutData: Codable {
     let workoutName: String?
     let moduleNames: [String]
     let isRestDay: Bool
+    let isCompleted: Bool
     let lastUpdated: Date
 
     /// Rest day placeholder
@@ -20,6 +21,7 @@ struct TodayWorkoutData: Codable {
         workoutName: nil,
         moduleNames: [],
         isRestDay: true,
+        isCompleted: false,
         lastUpdated: Date()
     )
 
@@ -28,6 +30,7 @@ struct TodayWorkoutData: Codable {
         workoutName: nil,
         moduleNames: [],
         isRestDay: false,
+        isCompleted: false,
         lastUpdated: Date()
     )
 }

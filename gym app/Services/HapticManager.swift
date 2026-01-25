@@ -7,6 +7,7 @@
 
 import UIKit
 import SwiftUI
+import AVFoundation
 
 final class HapticManager: @unchecked Sendable {
     static let shared = HapticManager()
@@ -95,9 +96,26 @@ final class HapticManager: @unchecked Sendable {
         }
     }
 
-    /// Timer finished
+    /// Timer finished (with sound)
     func timerComplete() {
         notification.notificationOccurred(.success)
+        playTimerSound()
+    }
+
+    /// Rest timer finished (with sound)
+    func restTimerComplete() {
+        notification.notificationOccurred(.success)
+        playTimerSound()
+    }
+
+    /// Play timer completion sound
+    private func playTimerSound() {
+        // Use system sound 1005 - a pleasant notification sound
+        // Alternative sounds:
+        // 1103 - SMS Received (more attention-grabbing)
+        // 1005 - New Mail (gentle but noticeable)
+        // 1013 - Anticipate (gentle rising tone)
+        AudioServicesPlaySystemSound(1005)
     }
 
     /// Error or warning

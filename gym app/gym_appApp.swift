@@ -16,6 +16,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         StartupGuard.markStartupBegan()
 
         FirebaseApp.configure()
+
+        // Initialize background session manager for workout persistence
+        _ = BackgroundSessionManager.shared
+
+        // Request notification permissions for workout warnings
+        BackgroundSessionManager.shared.requestNotificationPermission()
+
         return true
     }
 }

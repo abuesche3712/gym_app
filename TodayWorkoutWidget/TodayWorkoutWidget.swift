@@ -14,6 +14,7 @@ struct TodayWorkoutData: Codable {
     let workoutName: String?
     let moduleNames: [String]
     let isRestDay: Bool
+    let isCompleted: Bool
     let lastUpdated: Date
 }
 
@@ -24,26 +25,30 @@ struct TodayWorkoutEntry: TimelineEntry {
     let workoutName: String?
     let moduleNames: [String]
     let isRestDay: Bool
+    let isCompleted: Bool
 
     static let placeholder = TodayWorkoutEntry(
         date: Date(),
         workoutName: "Push Day A",
         moduleNames: ["Chest", "Shoulders", "Triceps"],
-        isRestDay: false
+        isRestDay: false,
+        isCompleted: false
     )
 
     static let restDay = TodayWorkoutEntry(
         date: Date(),
         workoutName: nil,
         moduleNames: [],
-        isRestDay: true
+        isRestDay: true,
+        isCompleted: false
     )
 
     static let noWorkout = TodayWorkoutEntry(
         date: Date(),
         workoutName: nil,
         moduleNames: [],
-        isRestDay: false
+        isRestDay: false,
+        isCompleted: false
     )
 }
 
@@ -84,7 +89,8 @@ struct TodayWorkoutProvider: TimelineProvider {
                 date: Date(),
                 workoutName: workoutData.workoutName,
                 moduleNames: workoutData.moduleNames,
-                isRestDay: workoutData.isRestDay
+                isRestDay: workoutData.isRestDay,
+                isCompleted: workoutData.isCompleted
             )
         } catch {
             return .noWorkout
@@ -132,6 +138,23 @@ struct SmallWidgetView: View {
                         .foregroundStyle(.green)
                     Text("Rest Day")
                         .font(.headline)
+                }
+            } else if entry.isCompleted {
+                VStack(alignment: .leading, spacing: 2) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(.green)
+                    if let workoutName = entry.workoutName {
+                        Text(workoutName)
+                            .font(.headline)
+                            .lineLimit(2)
+                        Text("Completed")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    } else {
+                        Text("Completed")
+                            .font(.headline)
+                    }
                 }
             } else if let workoutName = entry.workoutName {
                 VStack(alignment: .leading, spacing: 2) {
@@ -186,6 +209,28 @@ struct MediumWidgetView: View {
                             Text("Recovery is gains")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
+                        }
+                    }
+                } else if entry.isCompleted {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.title)
+                            .foregroundStyle(.green)
+                        VStack(alignment: .leading, spacing: 2) {
+                            if let workoutName = entry.workoutName {
+                                Text(workoutName)
+                                    .font(.title2.weight(.semibold))
+                                    .lineLimit(2)
+                                Text("Workout completed")
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                            } else {
+                                Text("Workout Completed")
+                                    .font(.title2.weight(.semibold))
+                                Text("Nice work!")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 } else if let workoutName = entry.workoutName {
@@ -252,6 +297,18 @@ struct LockScreenWidgetView: View {
                 if entry.isRestDay {
                     Label("Rest Day", systemImage: "bed.double.fill")
                         .font(.headline)
+                } else if entry.isCompleted {
+                    if let workoutName = entry.workoutName {
+                        Label(workoutName, systemImage: "checkmark.circle.fill")
+                            .font(.headline)
+                            .lineLimit(1)
+                        Text("Completed")
+                            .font(.caption2)
+                            .foregroundStyle(.green)
+                    } else {
+                        Label("Completed", systemImage: "checkmark.circle.fill")
+                            .font(.headline)
+                    }
                 } else if let workoutName = entry.workoutName {
                     Text(workoutName)
                         .font(.headline)

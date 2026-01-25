@@ -25,11 +25,24 @@ struct SetGroup: Identifiable, Codable, Hashable {
     var workDuration: Int?  // seconds of work per round
     var intervalRestDuration: Int?  // seconds of rest between rounds
 
-    // Implement-specific measurable fields
-    var implementMeasurableLabel: String?  // e.g., "Height", "Color"
-    var implementMeasurableUnit: String?   // e.g., "in", "cm", ""
-    var implementMeasurableValue: Double?  // numeric value (height, etc)
-    var implementMeasurableStringValue: String?  // string value (band color)
+    // AMRAP mode fields
+    var isAMRAP: Bool
+    var amrapTimeLimit: Int?  // optional time limit in seconds (e.g., 60s AMRAP)
+
+    // Unilateral mode (single-leg/arm exercises)
+    var isUnilateral: Bool  // If true, each set is done left then right
+
+    // RPE tracking
+    var trackRPE: Bool  // Whether to track RPE for this set group
+
+    // Multi-measurable system for tracking multiple implement attributes
+    var implementMeasurables: [ImplementMeasurableTarget]
+
+    // Legacy fields (deprecated, kept for backward compatibility)
+    var implementMeasurableLabel: String?
+    var implementMeasurableUnit: String?
+    var implementMeasurableValue: Double?
+    var implementMeasurableStringValue: String?
 
     init(
         id: UUID = UUID(),
@@ -46,6 +59,11 @@ struct SetGroup: Identifiable, Codable, Hashable {
         isInterval: Bool = false,
         workDuration: Int? = nil,
         intervalRestDuration: Int? = nil,
+        isAMRAP: Bool = false,
+        amrapTimeLimit: Int? = nil,
+        isUnilateral: Bool = false,
+        trackRPE: Bool = true,
+        implementMeasurables: [ImplementMeasurableTarget] = [],
         implementMeasurableLabel: String? = nil,
         implementMeasurableUnit: String? = nil,
         implementMeasurableValue: Double? = nil,
@@ -65,6 +83,11 @@ struct SetGroup: Identifiable, Codable, Hashable {
         self.isInterval = isInterval
         self.workDuration = workDuration
         self.intervalRestDuration = intervalRestDuration
+        self.isAMRAP = isAMRAP
+        self.amrapTimeLimit = amrapTimeLimit
+        self.isUnilateral = isUnilateral
+        self.trackRPE = trackRPE
+        self.implementMeasurables = implementMeasurables
         self.implementMeasurableLabel = implementMeasurableLabel
         self.implementMeasurableUnit = implementMeasurableUnit
         self.implementMeasurableValue = implementMeasurableValue
@@ -80,6 +103,33 @@ struct SetGroup: Identifiable, Codable, Hashable {
 
         // Optional with defaults
         isInterval = try container.decodeIfPresent(Bool.self, forKey: .isInterval) ?? false
+        isAMRAP = try container.decodeIfPresent(Bool.self, forKey: .isAMRAP) ?? false
+        isUnilateral = try container.decodeIfPresent(Bool.self, forKey: .isUnilateral) ?? false
+        trackRPE = try container.decodeIfPresent(Bool.self, forKey: .trackRPE) ?? true
+
+        // Multi-measurable system with backward compatibility migration
+        if let measurables = try container.decodeIfPresent([ImplementMeasurableTarget].self, forKey: .implementMeasurables) {
+            implementMeasurables = measurables
+        } else {
+            // Migrate legacy single measurable to new array format
+            implementMeasurables = []
+            if let legacyLabel = try container.decodeIfPresent(String.self, forKey: .implementMeasurableLabel),
+               let legacyUnit = try container.decodeIfPresent(String.self, forKey: .implementMeasurableUnit) {
+                let isStringBased = (try? container.decodeIfPresent(String.self, forKey: .implementMeasurableStringValue)) != nil
+                let targetValue = try container.decodeIfPresent(Double.self, forKey: .implementMeasurableValue)
+                let targetStringValue = try container.decodeIfPresent(String.self, forKey: .implementMeasurableStringValue)
+
+                // Create a migrated measurable (use a placeholder UUID for implementId since we don't have it)
+                implementMeasurables.append(ImplementMeasurableTarget(
+                    implementId: UUID(), // Will be re-resolved when needed
+                    measurableName: legacyLabel,
+                    unit: legacyUnit,
+                    isStringBased: isStringBased,
+                    targetValue: targetValue,
+                    targetStringValue: targetStringValue
+                ))
+            }
+        }
 
         // Truly optional (target values)
         targetReps = try container.decodeIfPresent(Int.self, forKey: .targetReps)
@@ -93,6 +143,7 @@ struct SetGroup: Identifiable, Codable, Hashable {
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
         workDuration = try container.decodeIfPresent(Int.self, forKey: .workDuration)
         intervalRestDuration = try container.decodeIfPresent(Int.self, forKey: .intervalRestDuration)
+        amrapTimeLimit = try container.decodeIfPresent(Int.self, forKey: .amrapTimeLimit)
         implementMeasurableLabel = try container.decodeIfPresent(String.self, forKey: .implementMeasurableLabel)
         implementMeasurableUnit = try container.decodeIfPresent(String.self, forKey: .implementMeasurableUnit)
         implementMeasurableValue = try container.decodeIfPresent(Double.self, forKey: .implementMeasurableValue)
@@ -102,6 +153,8 @@ struct SetGroup: Identifiable, Codable, Hashable {
     private enum CodingKeys: String, CodingKey {
         case id, sets, targetReps, targetWeight, targetRPE, targetDuration, targetDistance, targetDistanceUnit
         case targetHoldTime, restPeriod, notes, isInterval, workDuration, intervalRestDuration
+        case isAMRAP, amrapTimeLimit, isUnilateral, trackRPE
+        case implementMeasurables
         case implementMeasurableLabel, implementMeasurableUnit, implementMeasurableValue, implementMeasurableStringValue
     }
 
@@ -120,7 +173,14 @@ struct SetGroup: Identifiable, Codable, Hashable {
 
         var parts: [String] = []
 
-        if let reps = targetReps {
+        // AMRAP mode has special formatting
+        if isAMRAP {
+            if let timeLimit = amrapTimeLimit {
+                parts.append("\(sets)x AMRAP (\(formatDurationVerbose(timeLimit)))")
+            } else {
+                parts.append("\(sets)x AMRAP")
+            }
+        } else if let reps = targetReps {
             parts.append("\(sets)x\(reps)")
         } else if let distance = targetDistance {
             let unit = targetDistanceUnit ?? .meters
@@ -155,5 +215,37 @@ struct SetGroup: Identifiable, Codable, Hashable {
     var formattedRest: String? {
         guard let rest = restPeriod else { return nil }
         return formatDurationVerbose(rest) + " rest"
+    }
+}
+
+// MARK: - Implement Measurable Target
+
+/// Represents a target value for an implement measurable in a workout template
+/// Supports both numeric (weight, height, incline) and string-based (band color) measurables
+struct ImplementMeasurableTarget: Identifiable, Codable, Hashable {
+    var id: UUID
+    var implementId: UUID        // Which implement this measurable belongs to
+    var measurableName: String   // e.g., "Height", "Weight", "Incline", "Color"
+    var unit: String             // e.g., "in", "lbs", "°", "" (for string-based)
+    var isStringBased: Bool      // true for text inputs (band color), false for numeric
+    var targetValue: Double?     // numeric target (height: 24, incline: 5)
+    var targetStringValue: String?  // string target (band color: "Red")
+
+    init(
+        id: UUID = UUID(),
+        implementId: UUID,
+        measurableName: String,
+        unit: String,
+        isStringBased: Bool,
+        targetValue: Double? = nil,
+        targetStringValue: String? = nil
+    ) {
+        self.id = id
+        self.implementId = implementId
+        self.measurableName = measurableName
+        self.unit = unit
+        self.isStringBased = isStringBased
+        self.targetValue = targetValue
+        self.targetStringValue = targetStringValue
     }
 }

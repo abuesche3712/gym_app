@@ -45,9 +45,11 @@ class SessionViewModel: ObservableObject {
     @Published var sessions: [Session] = []
 
     private let repository: DataRepository
+    private let libraryService = LibraryService.shared
     private var timerCancellable: AnyCancellable?
     private var sessionTimerCancellable: AnyCancellable?
     private var foregroundCancellable: AnyCancellable?
+    private var libraryChangeCancellable: AnyCancellable?
 
     // Auto-save debouncer for crash recovery (saves at most every 2 seconds)
     private let autoSaveDebouncer = Debouncer(delay: 2.0)
@@ -55,11 +57,41 @@ class SessionViewModel: ObservableObject {
     init(repository: DataRepository? = nil) {
         self.repository = repository ?? DataRepository.shared
         loadSessions()
+        setupLibraryObserver()
     }
 
     func loadSessions() {
         repository.loadSessions()
         sessions = repository.sessions
+    }
+
+    /// Set up observer for library changes to propagate to active sessions
+    private func setupLibraryObserver() {
+        // Listen specifically to implement changes (not muscle groups)
+        libraryChangeCancellable = libraryService.$implements
+            .dropFirst() // Skip initial value
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                Task { @MainActor in
+                    // Only propagate changes if there's an active session
+                    guard self.isSessionActive,
+                          let session = self.currentSession else { return }
+
+                    // Check if any exercise in the current session uses implements
+                    let hasImplements = session.completedModules.contains { module in
+                        module.completedExercises.contains { exercise in
+                            !exercise.implementIds.isEmpty
+                        }
+                    }
+
+                    // If exercises use implements, trigger view update
+                    // This forces computed properties (implementStringMeasurable, usesBox, etc.)
+                    // to re-evaluate with fresh library data
+                    if hasImplements {
+                        self.objectWillChange.send()
+                    }
+                }
+            }
     }
 
     // MARK: - Navigation Accessors
@@ -307,10 +339,36 @@ class SessionViewModel: ObservableObject {
             distanceUnit: effectiveDistanceUnit,
             supersetGroupId: resolved.supersetGroupId,
             completedSetGroups: resolved.setGroups.map { setGroup in
-                CompletedSetGroup(
-                    setGroupId: setGroup.id,
-                    restPeriod: setGroup.restPeriod,
-                    sets: (1...max(setGroup.sets, 1)).map { setNum in
+                let setsData: [SetData]
+                if setGroup.isUnilateral {
+                    // For unilateral, create left and right for each set number
+                    setsData = (1...max(setGroup.sets, 1)).flatMap { setNum -> [SetData] in
+                        [
+                            SetData(
+                                setNumber: setNum,
+                                weight: setGroup.targetWeight,
+                                reps: setGroup.targetReps,
+                                completed: false,
+                                duration: setGroup.isInterval ? setGroup.workDuration : setGroup.targetDuration,
+                                distance: setGroup.targetDistance,
+                                holdTime: setGroup.targetHoldTime,
+                                side: .left
+                            ),
+                            SetData(
+                                setNumber: setNum,
+                                weight: setGroup.targetWeight,
+                                reps: setGroup.targetReps,
+                                completed: false,
+                                duration: setGroup.isInterval ? setGroup.workDuration : setGroup.targetDuration,
+                                distance: setGroup.targetDistance,
+                                holdTime: setGroup.targetHoldTime,
+                                side: .right
+                            )
+                        ]
+                    }
+                } else {
+                    // Normal bilateral sets
+                    setsData = (1...max(setGroup.sets, 1)).map { setNum in
                         SetData(
                             setNumber: setNum,
                             weight: setGroup.targetWeight,
@@ -320,10 +378,21 @@ class SessionViewModel: ObservableObject {
                             distance: setGroup.targetDistance,
                             holdTime: setGroup.targetHoldTime
                         )
-                    },
+                    }
+                }
+
+                return CompletedSetGroup(
+                    setGroupId: setGroup.id,
+                    restPeriod: setGroup.restPeriod,
+                    sets: setsData,
                     isInterval: setGroup.isInterval,
                     workDuration: setGroup.workDuration,
-                    intervalRestDuration: setGroup.intervalRestDuration
+                    intervalRestDuration: setGroup.intervalRestDuration,
+                    isAMRAP: setGroup.isAMRAP,
+                    amrapTimeLimit: setGroup.amrapTimeLimit,
+                    isUnilateral: setGroup.isUnilateral,
+                    trackRPE: setGroup.trackRPE,
+                    implementMeasurables: setGroup.implementMeasurables
                 )
             },
             isBodyweight: currentIsBodyweight,
@@ -354,6 +423,9 @@ class SessionViewModel: ObservableObject {
         currentSession = nil
         navigator = nil
         isSessionActive = false
+
+        // Update widget to show completed status
+        NotificationCenter.default.post(name: .sessionCompleted, object: nil)
     }
 
     func cancelSession() {
@@ -598,6 +670,8 @@ class SessionViewModel: ObservableObject {
             restTimerSeconds = remaining
         } else {
             restTimerSeconds = 0
+            // Play sound and haptic feedback when timer completes
+            HapticManager.shared.restTimerComplete()
             stopRestTimer()
         }
     }
@@ -801,52 +875,37 @@ class SessionViewModel: ObservableObject {
     }
 
     // Get last session data for an exercise within the same workout (for showing previous performance)
-    // This ensures exercises show their last values from THIS workout, not just any occurrence
+    // Only returns data from the same workout - never shows data from other workouts
     func getLastSessionData(for exerciseName: String, workoutId: UUID? = nil) -> SessionExercise? {
-        // If we have a current session, try to filter by its workout first
+        // Get the target workout ID (current session's workout if not specified)
         let targetWorkoutId = workoutId ?? currentSession?.workoutId
         let currentSessionId = currentSession?.id
 
-        // First pass: look for exercise in sessions of the same workout (excluding current session)
-        if let targetId = targetWorkoutId {
-            for session in sessions {
-                // Skip the current session - we want PREVIOUS session data
-                if session.id == currentSessionId { continue }
+        // Only look for exercise in sessions of the SAME workout (excluding current session)
+        // Sessions are sorted by date descending (most recent first)
+        guard let targetId = targetWorkoutId else { return nil }
 
-                if session.workoutId == targetId {
-                    for module in session.completedModules {
-                        // Only return if the exercise has completed sets with actual data
-                        if let exercise = module.completedExercises.first(where: {
-                            $0.exerciseName == exerciseName &&
-                            $0.completedSetGroups.contains { setGroup in
-                                setGroup.sets.contains { $0.completed && ($0.weight != nil || $0.reps != nil || $0.duration != nil || $0.distance != nil) }
-                            }
-                        }) {
-                            return exercise
-                        }
-                    }
-                }
-            }
-        }
-
-        // Fallback: if no match in same workout, return any previous instance
-        // (useful for ad-hoc exercises or first time doing this workout)
         for session in sessions {
-            // Skip the current session
+            // Skip the current session - we want PREVIOUS session data
             if session.id == currentSessionId { continue }
 
-            for module in session.completedModules {
-                // Only return if the exercise has completed sets with actual data
-                if let exercise = module.completedExercises.first(where: {
-                    $0.exerciseName == exerciseName &&
-                    $0.completedSetGroups.contains { setGroup in
-                        setGroup.sets.contains { $0.completed && ($0.weight != nil || $0.reps != nil || $0.duration != nil || $0.distance != nil) }
+            // Only consider sessions from the same workout
+            if session.workoutId == targetId {
+                for module in session.completedModules {
+                    // Only return if the exercise has completed sets with actual data
+                    if let exercise = module.completedExercises.first(where: {
+                        $0.exerciseName == exerciseName &&
+                        $0.completedSetGroups.contains { setGroup in
+                            setGroup.sets.contains { $0.completed && ($0.weight != nil || $0.reps != nil || $0.duration != nil || $0.distance != nil) }
+                        }
+                    }) {
+                        return exercise
                     }
-                }) {
-                    return exercise
                 }
             }
         }
+
+        // No fallback - if this workout has never been done before, return nil
         return nil
     }
 }

@@ -60,7 +60,7 @@ struct SetRowView: View {
     let flatSet: FlatSet
     let exercise: SessionExercise
     var isHighlighted: Bool = false  // Highlight when rest timer ends
-    let onLog: (Double?, Int?, Int?, Int?, Int?, Double?, Double?, Int?, Int?, Int?, String?) -> Void  // weight, reps, rpe, duration, holdTime, distance, height, quality, intensity, temperature, bandColor
+    let onLog: (Double?, Int?, Int?, Int?, Int?, Double?, Double?, Int?, Int?, Int?, String?, [String: String]?) -> Void  // weight, reps, rpe, duration, holdTime, distance, height, quality, intensity, temperature, bandColor, implementMeasurableValues
     var onDelete: (() -> Void)? = nil  // Optional delete callback
     var onDistanceUnitChange: ((DistanceUnit) -> Void)? = nil  // Callback to change distance unit
     var onUncheck: (() -> Void)? = nil  // Callback to uncheck/edit a completed set
@@ -69,6 +69,9 @@ struct SetRowView: View {
     var lastSessionExercise: SessionExercise? = nil
     // Smart friction reduction: previous completed set in current session for "same as last"
     var previousCompletedSet: SetData? = nil
+
+    // Explicit width to prevent layout expansion issues
+    var contentWidth: CGFloat? = nil
 
     @State private var inputWeight: String = ""
     @State private var inputReps: String = ""
@@ -81,6 +84,10 @@ struct SetRowView: View {
     @State private var inputIntensity: Int = 0  // 1-10 for isometric exercises
     @State private var inputTemperature: String = ""  // For recovery activities (sauna/cold plunge)
     @State private var inputBandColor: String = ""  // For band exercises (e.g., "Red", "Blue")
+
+    // Multi-measurable inputs (e.g., {"Height": "24", "Weight": "20"})
+    @State private var inputMeasurableValues: [String: String] = [:]
+
     @FocusState private var focusedField: Field?
 
     enum Field: Hashable {
@@ -127,26 +134,31 @@ struct SetRowView: View {
             setNumberBadge
 
             if flatSet.setData.completed {
-                // Completed state - show summary (fills remaining space)
+                // Completed state - show summary
                 completedView
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: contentWidth.map { $0 - 32 - AppSpacing.sm } ?? .infinity, alignment: .leading)
             } else {
-                // Input fields based on exercise type - compact, no internal spacers
-                inputFieldsView
+                // Input fields based on exercise type
+                HStack(spacing: AppSpacing.sm) {
+                    // Input fields based on exercise type - compact, no internal spacers
+                    inputFieldsView
 
-                Spacer(minLength: 4)
+                    Spacer(minLength: 4)
 
-                // Same as last set button (friction reduction)
-                if previousCompletedSet != nil {
-                    sameAsLastButton
+                    // Same as last set button (friction reduction)
+                    if previousCompletedSet != nil {
+                        sameAsLastButton
+                    }
+
+                    // Log button (delete via swipe only to reduce clutter)
+                    logButton
                 }
-
-                // Log button (delete via swipe only to reduce clutter)
-                logButton
+                .frame(maxWidth: contentWidth.map { $0 - 32 - AppSpacing.sm } ?? .infinity, alignment: .leading)
             }
         }
         .padding(.horizontal, AppSpacing.md)
         .padding(.vertical, AppSpacing.sm)
+        .frame(width: contentWidth)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.medium)
                 .fill(backgroundColor)
@@ -220,12 +232,30 @@ struct SetRowView: View {
                     lineWidth: 2.5
                 )
             } else {
-                Circle()
-                    .fill(AppColors.surfaceLight)
+                if flatSet.isUnilateral, let side = flatSet.setData.side {
+                    // Unilateral set - show L/R indicator
+                    VStack(spacing: 2) {
+                        Text("\(flatSet.setNumber)")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(AppColors.textSecondary)
+                        Text(side.abbreviation)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(side == .left ? AppColors.accentBlue : AppColors.accentOrange)
+                    }
                     .frame(width: 32, height: 32)
-                Text("\(flatSet.setNumber)")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(AppColors.textSecondary)
+                    .background(
+                        Circle()
+                            .fill(AppColors.surfaceLight)
+                    )
+                } else {
+                    // Normal bilateral set
+                    Circle()
+                        .fill(AppColors.surfaceLight)
+                        .frame(width: 32, height: 32)
+                    Text("\(flatSet.setNumber)")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(AppColors.textSecondary)
+                }
             }
         }
     }
@@ -293,10 +323,60 @@ struct SetRowView: View {
         }
     }
 
+    // MARK: - Multi-Measurable Input Field
+
+    @ViewBuilder
+    private func measurableInputField(measurable: ImplementMeasurableTarget) -> some View {
+        VStack(spacing: 4) {
+            TextField(measurable.isStringBased ? measurable.measurableName : "0", text: Binding(
+                get: { inputMeasurableValues[measurable.measurableName] ?? "" },
+                set: { inputMeasurableValues[measurable.measurableName] = $0 }
+            ))
+            .keyboardType(measurable.isStringBased ? .default : .decimalPad)
+            .font(.system(size: 16, weight: .semibold, design: .rounded))
+            .foregroundColor(AppColors.textPrimary)
+            .multilineTextAlignment(.center)
+            .frame(width: measurable.isStringBased ? 60 : 48)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 6)
+            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+
+            Text(measurable.unit)
+                .font(.caption2.weight(.medium))
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
     // MARK: - Strength Inputs
 
     private var strengthInputs: some View {
         HStack(spacing: AppSpacing.sm) {
+            // AMRAP indicator/timer
+            if flatSet.isAMRAP {
+                if let timeLimit = flatSet.amrapTimeLimit {
+                    // Timed AMRAP - show countdown button
+                    amrapTimerButton(timeLimit: timeLimit)
+                } else {
+                    // Untimed AMRAP - show badge
+                    VStack(spacing: 4) {
+                        Image(systemName: "infinity")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(AppColors.accentOrange)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(AppColors.accentOrange.opacity(0.15))
+                            )
+
+                        Text("AMRAP")
+                            .font(.caption2.weight(.medium))
+                            .foregroundColor(AppColors.accentOrange)
+                    }
+                    .fixedSize(horizontal: true, vertical: false)
+                }
+            }
+
             // Primary inputs: implement measurable × reps OR weight × reps
             if let stringMeasurable = exercise.implementStringMeasurable {
                 // String-based implement input (e.g., band color)
@@ -398,36 +478,43 @@ struct SetRowView: View {
                     .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
                     .focused($focusedField, equals: .reps)
 
-                Text("reps")
+                Text(flatSet.isAMRAP ? "AMRAP" : "reps")
                     .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(flatSet.isAMRAP ? AppColors.accentOrange : AppColors.textTertiary)
             }
             .fixedSize(horizontal: true, vertical: false)
 
-            // Secondary input: RPE
-            VStack(spacing: 4) {
-                TextField("-", text: $inputRPE)
-                    .keyboardType(.numberPad)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundColor(AppColors.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .frame(width: 36)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 6)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                    .focused($focusedField, equals: .rpe)
-                    .onChange(of: inputRPE) { _, newValue in
-                        // Validate RPE is 1-10
-                        if let rpe = Int(newValue), rpe > 10 {
-                            inputRPE = "10"
+            // Multi-measurable inputs (up to 2 additional attributes like Height, Incline, etc.)
+            ForEach(flatSet.implementMeasurables.prefix(2)) { measurable in
+                measurableInputField(measurable: measurable)
+            }
+
+            // Secondary input: RPE (not shown for AMRAP to reduce clutter, or if tracking disabled)
+            if !flatSet.isAMRAP && flatSet.trackRPE {
+                VStack(spacing: 4) {
+                    TextField("-", text: $inputRPE)
+                        .keyboardType(.numberPad)
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(AppColors.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .frame(width: 36)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 6)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
+                        .focused($focusedField, equals: .rpe)
+                        .onChange(of: inputRPE) { _, newValue in
+                            // Validate RPE is 1-10
+                            if let rpe = Int(newValue), rpe > 10 {
+                                inputRPE = "10"
+                            }
                         }
-                    }
 
-                Text("RPE")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    Text("RPE")
+                        .font(.caption2.weight(.medium))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .fixedSize(horizontal: true, vertical: false)
             }
-            .fixedSize(horizontal: true, vertical: false)
         }
     }
 
@@ -861,6 +948,16 @@ struct SetRowView: View {
             if let band = prevSet.bandColor {
                 inputBandColor = band
             }
+            // Copy multi-measurable values
+            for measurable in flatSet.implementMeasurables {
+                if let value = prevSet.implementMeasurableValues[measurable.measurableName] {
+                    if let numericValue = value.numericValue {
+                        inputMeasurableValues[measurable.measurableName] = formatMeasurableValue(numericValue)
+                    } else if let stringValue = value.stringValue {
+                        inputMeasurableValues[measurable.measurableName] = stringValue
+                    }
+                }
+            }
             // Light haptic to confirm action
             HapticManager.shared.soft()
         } label: {
@@ -914,7 +1011,8 @@ struct SetRowView: View {
                 inputQuality > 0 ? inputQuality : nil,
                 inputIntensity > 0 ? inputIntensity : nil,
                 Int(inputTemperature),
-                bandColorToSave
+                bandColorToSave,
+                inputMeasurableValues.isEmpty ? nil : inputMeasurableValues
             )
         } label: {
             Image(systemName: "checkmark")
@@ -936,54 +1034,89 @@ struct SetRowView: View {
 
     private var completedSummary: String {
         let set = flatSet.setData
+        var sidePrefix = ""
+
+        // Add side indicator for unilateral sets
+        if flatSet.isUnilateral, let side = set.side {
+            sidePrefix = "\(side.abbreviation): "
+        }
+
+        let mainSummary: String
         switch exercise.exerciseType {
         case .strength:
-            // String-based implement measurables (e.g., band color) show that instead of weight
-            if let stringMeasurable = exercise.implementStringMeasurable {
+            // AMRAP sets get special formatting
+            if flatSet.isAMRAP {
                 if let reps = set.reps {
-                    if let band = set.bandColor, !band.isEmpty {
-                        var result = "\(band) \(stringMeasurable.implementName.lowercased()) × \(reps)"
-                        if let rpe = set.rpe { result += " @ RPE \(rpe)" }
-                        return result
+                    var result = "\(reps) reps"
+                    if let timeLimit = flatSet.amrapTimeLimit {
+                        result += " (\(formatDurationVerbose(timeLimit)) AMRAP)"
                     } else {
-                        var result = "\(reps) reps"
-                        if let rpe = set.rpe { result += " @ RPE \(rpe)" }
-                        return result
+                        result += " (AMRAP)"
                     }
-                }
-                return "Completed"
-            }
-            if exercise.usesBox {
-                // Box format: "24in × 10" for box jumps
-                if let reps = set.reps {
-                    if let height = set.height, height > 0 {
-                        var result = "\(Int(height))in × \(reps)"
-                        if let rpe = set.rpe { result += " @ RPE \(rpe)" }
-                        return result
-                    } else {
-                        var result = "\(reps) reps"
-                        if let rpe = set.rpe { result += " @ RPE \(rpe)" }
-                        return result
-                    }
-                }
-                return "Completed"
-            }
-            if exercise.isBodyweight {
-                // Bodyweight format: "BW + 25 × 10" or "BW × 10" if no added weight
-                if let reps = set.reps {
                     if let weight = set.weight, weight > 0 {
-                        var result = "BW + \(formatWeight(weight)) × \(reps)"
-                        if let rpe = set.rpe { result += " @ RPE \(rpe)" }
-                        return result
-                    } else {
-                        var result = "BW × \(reps)"
-                        if let rpe = set.rpe { result += " @ RPE \(rpe)" }
-                        return result
+                        if exercise.isBodyweight {
+                            result += " @ BW + \(formatWeight(weight))"
+                        } else {
+                            result += " @ \(formatWeight(weight)) lbs"
+                        }
+                    } else if exercise.isBodyweight {
+                        result += " @ BW"
                     }
+                    mainSummary = result
+                } else {
+                    mainSummary = flatSet.amrapTimeLimit != nil ? "AMRAP (\(formatDurationVerbose(flatSet.amrapTimeLimit!)))" : "AMRAP"
                 }
-                return "Completed"
+            } else {
+
+                // String-based implement measurables (e.g., band color) show that instead of weight
+                if let stringMeasurable = exercise.implementStringMeasurable {
+                    if let reps = set.reps {
+                        if let band = set.bandColor, !band.isEmpty {
+                            var result = "\(band) \(stringMeasurable.implementName.lowercased()) × \(reps)"
+                            if let rpe = set.rpe { result += " @ RPE \(rpe)" }
+                            mainSummary = result
+                        } else {
+                            var result = "\(reps) reps"
+                            if let rpe = set.rpe { result += " @ RPE \(rpe)" }
+                            mainSummary = result
+                        }
+                    } else {
+                        mainSummary = "Completed"
+                    }
+                } else if exercise.usesBox {
+                    // Box format: "24in × 10" for box jumps
+                    if let reps = set.reps {
+                        if let height = set.height, height > 0 {
+                            var result = "\(Int(height))in × \(reps)"
+                            if let rpe = set.rpe { result += " @ RPE \(rpe)" }
+                            mainSummary = result
+                        } else {
+                            var result = "\(reps) reps"
+                            if let rpe = set.rpe { result += " @ RPE \(rpe)" }
+                            mainSummary = result
+                        }
+                    } else {
+                        mainSummary = "Completed"
+                    }
+                } else if exercise.isBodyweight {
+                    // Bodyweight format: "BW + 25 × 10" or "BW × 10" if no added weight
+                    if let reps = set.reps {
+                        if let weight = set.weight, weight > 0 {
+                            var result = "BW + \(formatWeight(weight)) × \(reps)"
+                            if let rpe = set.rpe { result += " @ RPE \(rpe)" }
+                            mainSummary = result
+                        } else {
+                            var result = "BW × \(reps)"
+                            if let rpe = set.rpe { result += " @ RPE \(rpe)" }
+                            mainSummary = result
+                        }
+                    } else {
+                        mainSummary = "Completed"
+                    }
+                } else {
+                    mainSummary = set.formattedStrength ?? "Completed"
+                }
             }
-            return set.formattedStrength ?? "Completed"
         case .isometric:
             var parts: [String] = []
             if let holdTime = set.holdTime {
@@ -992,7 +1125,7 @@ struct SetRowView: View {
             if let intensity = set.intensity {
                 parts.append("@ \(intensity)/10")
             }
-            return parts.isEmpty ? "Completed" : parts.joined(separator: " ")
+            mainSummary = parts.isEmpty ? "Completed" : parts.joined(separator: " ")
         case .cardio:
             // Show whatever was actually logged (time, distance, or both)
             var parts: [String] = []
@@ -1002,7 +1135,7 @@ struct SetRowView: View {
             if let distance = set.distance, distance > 0 {
                 parts.append("\(formatDistanceValue(distance)) \(exercise.distanceUnit.abbreviation)")
             }
-            return parts.isEmpty ? "Completed" : parts.joined(separator: " / ")
+            mainSummary = parts.isEmpty ? "Completed" : parts.joined(separator: " / ")
         case .explosive:
             var parts: [String] = []
             if let reps = set.reps {
@@ -1014,7 +1147,7 @@ struct SetRowView: View {
             if let quality = set.quality {
                 parts.append("(\(quality)/5)")
             }
-            return parts.isEmpty ? "Completed" : parts.joined(separator: " ")
+            mainSummary = parts.isEmpty ? "Completed" : parts.joined(separator: " ")
         case .mobility:
             var parts: [String] = []
             if exercise.mobilityTracking.tracksReps, let reps = set.reps {
@@ -1023,16 +1156,43 @@ struct SetRowView: View {
             if exercise.mobilityTracking.tracksDuration, let duration = set.duration {
                 parts.append(formatDuration(duration))
             }
-            return parts.isEmpty ? "Completed" : parts.joined(separator: " · ")
+            mainSummary = parts.isEmpty ? "Completed" : parts.joined(separator: " · ")
         case .recovery:
             if let duration = set.duration {
                 var result = formatDuration(duration)
                 if let temp = set.temperature {
                     result += " @ \(temp)°F"
                 }
-                return result
+                mainSummary = result
+            } else {
+                mainSummary = "Completed"
             }
-            return "Completed"
+        }
+
+        // Append multi-measurable values if present
+        var finalSummary = sidePrefix + mainSummary
+        if !set.implementMeasurableValues.isEmpty {
+            let measurableStrings = flatSet.implementMeasurables.compactMap { measurable -> String? in
+                guard let value = set.implementMeasurableValues[measurable.measurableName] else { return nil }
+                if let numericValue = value.numericValue {
+                    return "\(measurable.measurableName): \(formatMeasurableValue(numericValue)) \(measurable.unit)"
+                } else if let stringValue = value.stringValue {
+                    return "\(measurable.measurableName): \(stringValue) \(measurable.unit)"
+                }
+                return nil
+            }
+            if !measurableStrings.isEmpty {
+                finalSummary += " · " + measurableStrings.joined(separator: " · ")
+            }
+        }
+        return finalSummary
+    }
+
+    private func formatMeasurableValue(_ value: Double) -> String {
+        if value.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(value))"
+        } else {
+            return String(format: "%.1f", value)
         }
     }
 
@@ -1061,6 +1221,47 @@ struct SetRowView: View {
             durationManuallySet = true
         } else {
             sessionViewModel.startExerciseStopwatch(setId: flatSet.id)
+        }
+    }
+
+    // MARK: - AMRAP Timer Button
+
+    @ViewBuilder
+    private func amrapTimerButton(timeLimit: Int) -> some View {
+        Button {
+            toggleAMRAPTimer(timeLimit: timeLimit)
+        } label: {
+            VStack(spacing: 4) {
+                ZStack {
+                    Circle()
+                        .fill(timerRunning ? AppColors.accentOrange : AppColors.surfaceLight)
+                        .frame(width: 36, height: 36)
+
+                    if timerRunning {
+                        Text("\(timerSecondsRemaining)")
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    } else {
+                        Image(systemName: "timer")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+                }
+
+                Text(formatDurationVerbose(timeLimit))
+                    .font(.caption2.weight(.medium))
+                    .foregroundColor(AppColors.textTertiary)
+            }
+            .fixedSize(horizontal: true, vertical: false)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func toggleAMRAPTimer(timeLimit: Int) {
+        if timerRunning {
+            _ = sessionViewModel.stopExerciseTimer()
+        } else {
+            sessionViewModel.startExerciseTimer(seconds: timeLimit, setId: flatSet.id)
         }
     }
 
@@ -1096,13 +1297,21 @@ struct SetRowView: View {
             inputDistance = setData.distance.map { formatDistanceValue($0) } ?? flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
         } else {
             // Smart auto-fill for new sets
-            // Priority: last session values > target values > empty
-            inputWeight = lastWeight.map { formatWeight($0) }
-                ?? flatSet.targetWeight.map { formatWeight($0) }
-                ?? ""
-            inputReps = lastReps.map { "\($0)" }
-                ?? flatSet.targetReps.map { "\($0)" }
-                ?? ""
+            // For AMRAP: pre-fill with last AMRAP score as reference, but don't show target
+            if flatSet.isAMRAP {
+                inputWeight = lastWeight.map { formatWeight($0) }
+                    ?? flatSet.targetWeight.map { formatWeight($0) }
+                    ?? ""
+                inputReps = lastReps.map { "\($0)" } ?? ""  // Show last AMRAP score as reference
+            } else {
+                // Normal sets: Priority: last session values > target values > empty
+                inputWeight = lastWeight.map { formatWeight($0) }
+                    ?? flatSet.targetWeight.map { formatWeight($0) }
+                    ?? ""
+                inputReps = lastReps.map { "\($0)" }
+                    ?? flatSet.targetReps.map { "\($0)" }
+                    ?? ""
+            }
             inputHoldTime = lastHoldTime ?? flatSet.targetHoldTime ?? 0
             if !durationManuallySet {
                 inputDuration = lastDuration ?? flatSet.targetDuration ?? 0
@@ -1121,6 +1330,24 @@ struct SetRowView: View {
         inputIntensity = setData.intensity ?? 0
         inputTemperature = setData.temperature.map { "\($0)" } ?? ""
         inputBandColor = setData.bandColor ?? lastBandColor ?? ""
+
+        // Multi-measurable values: logged value > target value > empty
+        inputMeasurableValues = [:]
+        for measurable in flatSet.implementMeasurables {
+            if let loggedValue = setData.implementMeasurableValues[measurable.measurableName] {
+                // Use logged value
+                if let numericValue = loggedValue.numericValue {
+                    inputMeasurableValues[measurable.measurableName] = formatMeasurableValue(numericValue)
+                } else if let stringValue = loggedValue.stringValue {
+                    inputMeasurableValues[measurable.measurableName] = stringValue
+                }
+            } else if let targetNumeric = measurable.targetValue {
+                // Use target value
+                inputMeasurableValues[measurable.measurableName] = formatMeasurableValue(targetNumeric)
+            } else if let targetString = measurable.targetStringValue {
+                inputMeasurableValues[measurable.measurableName] = targetString
+            }
+        }
     }
 }
 

@@ -38,7 +38,50 @@ struct SetGroupFormView: View {
     @State private var workDuration: Int = 30
     @State private var intervalRestDuration: Int = 30
 
+    // AMRAP mode
+    @State private var isAMRAP: Bool = false
+    @State private var amrapTimeLimit: Int? = nil
+
+    // Unilateral mode
+    @State private var isUnilateral: Bool = false
+
+    // RPE tracking
+    @State private var trackRPE: Bool = true
+
+    // Multi-measurable tracking
+    @State private var selectedMeasurables: [MeasurableSelection] = []
+
+    struct MeasurableSelection: Identifiable {
+        let id: UUID
+        let implementId: UUID
+        let measurableName: String
+        let unit: String
+        let isStringBased: Bool
+        var targetValue: Double?
+        var targetStringValue: String?
+    }
+
     private var isEditing: Bool { existingSetGroup != nil }
+
+    /// Returns all available measurables from selected implements (for multi-measurable picker)
+    private var availableMeasurables: [MeasurableSelection] {
+        var measurables: [MeasurableSelection] = []
+        for id in implementIds {
+            guard let implement = libraryService.getImplement(id: id) else { continue }
+            for measurable in implement.measurableArray {
+                measurables.append(MeasurableSelection(
+                    id: UUID(),
+                    implementId: id,
+                    measurableName: measurable.name,
+                    unit: measurable.unit,
+                    isStringBased: measurable.isStringBased,
+                    targetValue: nil,
+                    targetStringValue: nil
+                ))
+            }
+        }
+        return measurables
+    }
 
     /// Returns the primary implement's string-based measurable info (like band color)
     private var implementStringMeasurable: ImplementMeasurableInfo? {
@@ -70,20 +113,65 @@ struct SetGroupFormView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: AppSpacing.xl) {
-                // Interval Mode Toggle
-                FormSection(title: "Mode", icon: "timer", iconColor: isInterval ? AppColors.accentCyan : AppColors.textTertiary) {
-                    HStack(spacing: AppSpacing.md) {
-                        Image(systemName: "repeat")
-                            .font(.system(size: 16))
-                            .foregroundColor(AppColors.textTertiary)
-                            .frame(width: 24)
+                // Mode Selection
+                FormSection(title: "Mode", icon: "timer", iconColor: (isInterval || isAMRAP) ? AppColors.accentCyan : AppColors.textTertiary) {
+                    VStack(spacing: AppSpacing.sm) {
+                        // Interval Mode Toggle
+                        HStack(spacing: AppSpacing.md) {
+                            Image(systemName: "repeat")
+                                .font(.system(size: 16))
+                                .foregroundColor(AppColors.textTertiary)
+                                .frame(width: 24)
 
-                        Toggle("Interval Mode", isOn: $isInterval)
+                            Toggle("Interval Mode", isOn: Binding(
+                                get: { isInterval },
+                                set: { newValue in
+                                    isInterval = newValue
+                                    if newValue { isAMRAP = false }
+                                }
+                            ))
                             .tint(AppColors.accentCyan)
+                        }
+                        .padding(.horizontal, AppSpacing.cardPadding)
+                        .padding(.vertical, AppSpacing.md)
+                        .background(AppColors.cardBackground)
+
+                        // AMRAP Mode Toggle
+                        HStack(spacing: AppSpacing.md) {
+                            Image(systemName: "figure.strengthtraining.traditional")
+                                .font(.system(size: 16))
+                                .foregroundColor(AppColors.textTertiary)
+                                .frame(width: 24)
+
+                            Toggle("AMRAP Mode", isOn: Binding(
+                                get: { isAMRAP },
+                                set: { newValue in
+                                    isAMRAP = newValue
+                                    if newValue { isInterval = false }
+                                }
+                            ))
+                            .tint(AppColors.accentOrange)
+                        }
+                        .padding(.horizontal, AppSpacing.cardPadding)
+                        .padding(.vertical, AppSpacing.md)
+                        .background(AppColors.cardBackground)
+
+                        // Unilateral Mode Toggle (only show for strength/explosive exercises)
+                        if exerciseType == .strength || exerciseType == .explosive {
+                            HStack(spacing: AppSpacing.md) {
+                                Image(systemName: "figure.walk")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(AppColors.textTertiary)
+                                    .frame(width: 24)
+
+                                Toggle("Unilateral", isOn: $isUnilateral)
+                                    .tint(AppColors.accentPurple)
+                            }
+                            .padding(.horizontal, AppSpacing.cardPadding)
+                            .padding(.vertical, AppSpacing.md)
+                            .background(AppColors.cardBackground)
+                        }
                     }
-                    .padding(.horizontal, AppSpacing.cardPadding)
-                    .padding(.vertical, AppSpacing.md)
-                    .background(AppColors.cardBackground)
 
                     if isInterval {
                         Text("Timer will auto-run through all rounds with work/rest periods")
@@ -91,11 +179,25 @@ struct SetGroupFormView: View {
                             .foregroundColor(AppColors.accentCyan)
                             .padding(.horizontal, AppSpacing.cardPadding)
                             .padding(.bottom, AppSpacing.sm)
+                    } else if isAMRAP {
+                        Text("As Many Reps As Possible - log max reps achieved per set")
+                            .font(.caption)
+                            .foregroundColor(AppColors.accentOrange)
+                            .padding(.horizontal, AppSpacing.cardPadding)
+                            .padding(.bottom, AppSpacing.sm)
+                    } else if isUnilateral {
+                        Text("Single-leg/arm work - log left and right sides separately")
+                            .font(.caption)
+                            .foregroundColor(AppColors.accentPurple)
+                            .padding(.horizontal, AppSpacing.cardPadding)
+                            .padding(.bottom, AppSpacing.sm)
                     }
                 }
 
                 if isInterval {
                     intervalModeSection
+                } else if isAMRAP {
+                    amrapModeSection
                 } else {
                     normalModeSection
                 }
@@ -198,6 +300,125 @@ struct SetGroupFormView: View {
         }
     }
 
+    // MARK: - AMRAP Mode Section
+
+    @ViewBuilder
+    private var amrapModeSection: some View {
+        // Sets
+        FormSection(title: "AMRAP Sets", icon: "figure.strengthtraining.traditional", iconColor: AppColors.accentOrange) {
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: "number")
+                    .font(.system(size: 16))
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(width: 24)
+
+                Text("Number of Sets")
+                    .foregroundColor(AppColors.textPrimary)
+
+                Spacer()
+
+                Stepper("\(sets)", value: $sets, in: 1...20)
+                    .fixedSize()
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.md)
+            .background(AppColors.cardBackground)
+        }
+
+        // Time Limit (Optional)
+        FormSection(title: "Time Limit (Optional)", icon: "timer", iconColor: AppColors.accentCyan) {
+            VStack(spacing: AppSpacing.sm) {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "timer")
+                        .font(.system(size: 16))
+                        .foregroundColor(AppColors.textTertiary)
+                        .frame(width: 24)
+
+                    Picker("Time Limit", selection: $amrapTimeLimit) {
+                        Text("No Limit").tag(nil as Int?)
+                        Text("30 seconds").tag(30 as Int?)
+                        Text("45 seconds").tag(45 as Int?)
+                        Text("60 seconds").tag(60 as Int?)
+                        Text("90 seconds").tag(90 as Int?)
+                        Text("2 minutes").tag(120 as Int?)
+                        Text("3 minutes").tag(180 as Int?)
+                    }
+                    .pickerStyle(.menu)
+                }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, AppSpacing.md)
+                .background(AppColors.cardBackground)
+
+                if amrapTimeLimit == nil {
+                    Text("Track max reps with no time constraint")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                        .padding(.horizontal, AppSpacing.cardPadding)
+                        .padding(.bottom, AppSpacing.sm)
+                }
+            }
+        }
+
+        // Weight/Equipment (for AMRAP sets)
+        if exerciseType == .strength {
+            FormSection(title: "Load", icon: "scalemass", iconColor: AppColors.accentBlue) {
+                VStack(spacing: 0) {
+                    if let stringMeasurable = implementStringMeasurable {
+                        styledRow(icon: "tag", label: stringMeasurable.measurableName) {
+                            TextField("Enter \(stringMeasurable.measurableName.lowercased())", text: $implementMeasurableStringValue)
+                                .multilineTextAlignment(.trailing)
+                                .foregroundColor(AppColors.textPrimary)
+                        }
+                    } else if isBodyweight {
+                        styledRow(icon: "figure.stand", label: "Added Weight") {
+                            HStack(spacing: AppSpacing.xs) {
+                                Text("BW +")
+                                    .foregroundColor(AppColors.textSecondary)
+                                TextField("0", text: $targetWeight)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
+                                    .frame(width: 60)
+                                Text("lbs")
+                                    .foregroundColor(AppColors.textSecondary)
+                            }
+                        }
+                    } else if usesBox {
+                        styledRow(icon: "square.stack.3d.up", label: "Height") {
+                            HStack(spacing: AppSpacing.xs) {
+                                TextField("0", text: $targetWeight)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
+                                    .frame(width: 60)
+                                Text("in")
+                                    .foregroundColor(AppColors.textSecondary)
+                            }
+                        }
+                    } else {
+                        styledRow(icon: "scalemass", label: "Weight") {
+                            HStack(spacing: AppSpacing.xs) {
+                                TextField("0", text: $targetWeight)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
+                                    .frame(width: 60)
+                                Text("lbs")
+                                    .foregroundColor(AppColors.textSecondary)
+                            }
+                        }
+                    }
+                }
+                .background(AppColors.cardBackground)
+            }
+        }
+
+        // Rest Between Sets
+        FormSection(title: "Rest Between Sets", icon: "pause.circle", iconColor: AppColors.accentTeal) {
+            TimePickerView(totalSeconds: $restPeriod, maxMinutes: 5, label: "Rest Period", compact: true)
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, AppSpacing.md)
+                .background(AppColors.cardBackground)
+        }
+    }
+
     // MARK: - Normal Mode Section
 
     @ViewBuilder
@@ -231,6 +452,11 @@ struct SetGroupFormView: View {
             .background(AppColors.cardBackground)
         }
 
+        // Multi-Measurable Tracking (for exercises with equipment like weighted box jumps)
+        if !availableMeasurables.isEmpty && exerciseType == .strength {
+            multiMeasurableSection
+        }
+
         // Rest Between Sets
         FormSection(title: "Rest Between Sets", icon: "pause.circle", iconColor: AppColors.accentTeal) {
             TimePickerView(totalSeconds: $restPeriod, maxMinutes: 5, label: "Rest Period", compact: true)
@@ -238,6 +464,157 @@ struct SetGroupFormView: View {
                 .padding(.vertical, AppSpacing.md)
                 .background(AppColors.cardBackground)
         }
+    }
+
+    // MARK: - Multi-Measurable Section
+
+    @ViewBuilder
+    private var multiMeasurableSection: some View {
+        FormSection(
+            title: "Track Multiple Attributes",
+            icon: "chart.bar",
+            iconColor: AppColors.accentPurple
+        ) {
+            VStack(spacing: AppSpacing.sm) {
+                // Slot 1
+                measurableSlot(
+                    slotIndex: 0,
+                    binding: Binding(
+                        get: { selectedMeasurables.indices.contains(0) ? selectedMeasurables[0] : nil },
+                        set: { newValue in
+                            if let value = newValue {
+                                if selectedMeasurables.indices.contains(0) {
+                                    selectedMeasurables[0] = value
+                                } else {
+                                    selectedMeasurables.append(value)
+                                }
+                            } else {
+                                if selectedMeasurables.indices.contains(0) {
+                                    selectedMeasurables.remove(at: 0)
+                                }
+                            }
+                        }
+                    )
+                )
+
+                // Slot 2
+                measurableSlot(
+                    slotIndex: 1,
+                    binding: Binding(
+                        get: { selectedMeasurables.indices.contains(1) ? selectedMeasurables[1] : nil },
+                        set: { newValue in
+                            if let value = newValue {
+                                if selectedMeasurables.indices.contains(1) {
+                                    selectedMeasurables[1] = value
+                                } else {
+                                    selectedMeasurables.append(value)
+                                }
+                            } else {
+                                if selectedMeasurables.indices.contains(1) {
+                                    selectedMeasurables.remove(at: 1)
+                                }
+                            }
+                        }
+                    )
+                )
+            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.md)
+            .background(AppColors.cardBackground)
+        }
+    }
+
+    @ViewBuilder
+    private func measurableSlot(slotIndex: Int, binding: Binding<MeasurableSelection?>) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            HStack {
+                Text("Attribute \(slotIndex + 1)")
+                    .font(.caption.weight(.medium))
+                    .foregroundColor(AppColors.textTertiary)
+
+                Spacer()
+
+                if binding.wrappedValue != nil {
+                    Button("Clear") {
+                        binding.wrappedValue = nil
+                    }
+                    .font(.caption)
+                    .foregroundColor(AppColors.error)
+                }
+            }
+
+            if binding.wrappedValue != nil {
+                measurableInputRow(measurable: Binding(
+                    get: { binding.wrappedValue! },
+                    set: { binding.wrappedValue = $0 }
+                ))
+            } else {
+                // Picker to select measurable
+                Menu {
+                    ForEach(availableMeasurables) { available in
+                        // Only show measurables not already selected in other slot
+                        if !selectedMeasurables.contains(where: { $0.measurableName == available.measurableName }) {
+                            Button {
+                                binding.wrappedValue = available
+                            } label: {
+                                Text("\(available.measurableName) (\(available.unit.isEmpty ? "text" : available.unit))")
+                            }
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: "plus.circle")
+                        Text("Select Attribute")
+                        Spacer()
+                    }
+                    .foregroundColor(AppColors.textSecondary)
+                    .padding(.vertical, AppSpacing.sm)
+                    .padding(.horizontal, AppSpacing.md)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppCorners.small)
+                            .stroke(AppColors.border, style: StrokeStyle(lineWidth: 1, dash: [5]))
+                    )
+                }
+            }
+        }
+        .padding(.vertical, AppSpacing.xs)
+    }
+
+    @ViewBuilder
+    private func measurableInputRow(measurable: Binding<MeasurableSelection>) -> some View {
+        HStack(spacing: AppSpacing.md) {
+            // Label
+            Text(measurable.wrappedValue.measurableName)
+                .font(.body.weight(.medium))
+                .foregroundColor(AppColors.textPrimary)
+                .frame(width: 80, alignment: .leading)
+
+            // Input based on type
+            if measurable.wrappedValue.isStringBased {
+                TextField("Value", text: Binding(
+                    get: { measurable.wrappedValue.targetStringValue ?? "" },
+                    set: { measurable.wrappedValue.targetStringValue = $0.isEmpty ? nil : $0 }
+                ))
+                .textFieldStyle(.roundedBorder)
+            } else {
+                HStack(spacing: 4) {
+                    TextField("0", text: Binding(
+                        get: { measurable.wrappedValue.targetValue.map { String(format: "%.1f", $0) } ?? "" },
+                        set: { measurable.wrappedValue.targetValue = Double($0) }
+                    ))
+                    .keyboardType(.decimalPad)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 80)
+
+                    Text(measurable.wrappedValue.unit)
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, AppSpacing.xs)
     }
 
     @ViewBuilder
@@ -298,15 +675,26 @@ struct SetGroupFormView: View {
 
             FormDivider()
 
-            // RPE row
-            styledRow(icon: "gauge.with.dots.needle.67percent", label: "RPE") {
-                Picker("", selection: $targetRPE) {
-                    Text("None").tag(0)
-                    ForEach(5...10, id: \.self) { rpe in
-                        Text("\(rpe)").tag(rpe)
+            // RPE toggle
+            styledRow(icon: "gauge.with.dots.needle.67percent", label: "Track RPE") {
+                Toggle("", isOn: $trackRPE)
+                    .labelsHidden()
+                    .tint(AppColors.accentCyan)
+            }
+
+            // RPE target (only shown if tracking enabled)
+            if trackRPE {
+                FormDivider()
+
+                styledRow(icon: "target", label: "Target RPE") {
+                    Picker("", selection: $targetRPE) {
+                        Text("None").tag(0)
+                        ForEach(5...10, id: \.self) { rpe in
+                            Text("\(rpe)").tag(rpe)
+                        }
                     }
+                    .tint(AppColors.accentCyan)
                 }
-                .tint(AppColors.accentCyan)
             }
 
         case .cardio:
@@ -434,7 +822,19 @@ struct SetGroupFormView: View {
     // MARK: - Actions
 
     private func saveSetGroup() {
-        // Determine implement measurable info for storage
+        // Convert selected measurables to ImplementMeasurableTarget objects
+        let measurableTargets = selectedMeasurables.map { selection in
+            ImplementMeasurableTarget(
+                implementId: selection.implementId,
+                measurableName: selection.measurableName,
+                unit: selection.unit,
+                isStringBased: selection.isStringBased,
+                targetValue: selection.targetValue,
+                targetStringValue: selection.targetStringValue
+            )
+        }
+
+        // Legacy single measurable support (for backward compatibility)
         let measurableLabel = implementStringMeasurable?.measurableName
         let measurableUnit = implementStringMeasurable?.unit
         let measurableStringValue = !implementMeasurableStringValue.isEmpty ? implementMeasurableStringValue : nil
@@ -442,21 +842,26 @@ struct SetGroupFormView: View {
         let setGroup = SetGroup(
             id: existingSetGroup?.id ?? UUID(),
             sets: sets,
-            targetReps: !isInterval && (exerciseType == .strength || (exerciseType == .mobility && mobilityTracking.tracksReps) || exerciseType == .explosive) ? (targetReps > 0 ? targetReps : nil) : nil,
-            targetWeight: !isInterval && implementStringMeasurable == nil ? Double(targetWeight) : nil,
-            targetRPE: !isInterval && targetRPE > 0 ? targetRPE : nil,
-            targetDuration: !isInterval && ((exerciseType == .cardio && cardioMetric.tracksTime) || (exerciseType == .mobility && mobilityTracking.tracksDuration) || exerciseType == .recovery) && targetDuration > 0 ? targetDuration : nil,
-            targetDistance: !isInterval && cardioMetric.tracksDistance ? Double(targetDistance) : nil,
-            targetDistanceUnit: !isInterval && cardioMetric.tracksDistance ? distanceUnit : nil,
-            targetHoldTime: !isInterval && targetHoldTime > 0 ? targetHoldTime : nil,
-            restPeriod: !isInterval ? restPeriod : nil,
+            targetReps: !isInterval && !isAMRAP && (exerciseType == .strength || (exerciseType == .mobility && mobilityTracking.tracksReps) || exerciseType == .explosive) ? (targetReps > 0 ? targetReps : nil) : nil,
+            targetWeight: (!isInterval || isAMRAP) && implementStringMeasurable == nil ? Double(targetWeight) : nil,
+            targetRPE: !isInterval && !isAMRAP && trackRPE && targetRPE > 0 ? targetRPE : nil,
+            targetDuration: !isInterval && !isAMRAP && ((exerciseType == .cardio && cardioMetric.tracksTime) || (exerciseType == .mobility && mobilityTracking.tracksDuration) || exerciseType == .recovery) && targetDuration > 0 ? targetDuration : nil,
+            targetDistance: !isInterval && !isAMRAP && cardioMetric.tracksDistance ? Double(targetDistance) : nil,
+            targetDistanceUnit: !isInterval && !isAMRAP && cardioMetric.tracksDistance ? distanceUnit : nil,
+            targetHoldTime: !isInterval && !isAMRAP && targetHoldTime > 0 ? targetHoldTime : nil,
+            restPeriod: !isInterval && !isAMRAP ? restPeriod : (isAMRAP ? restPeriod : nil),
             notes: notes.isEmpty ? nil : notes,
             isInterval: isInterval,
             workDuration: isInterval ? workDuration : nil,
             intervalRestDuration: isInterval ? intervalRestDuration : nil,
+            isAMRAP: isAMRAP,
+            amrapTimeLimit: isAMRAP ? amrapTimeLimit : nil,
+            isUnilateral: isUnilateral,
+            trackRPE: trackRPE,
+            implementMeasurables: measurableTargets,
             implementMeasurableLabel: measurableLabel,
             implementMeasurableUnit: measurableUnit,
-            implementMeasurableStringValue: measurableStringValue
+            implementMeasurableStringValue: isAMRAP || !isInterval ? measurableStringValue : nil
         )
         onSave(setGroup)
         dismiss()
@@ -477,7 +882,26 @@ struct SetGroupFormView: View {
             isInterval = existing.isInterval
             workDuration = existing.workDuration ?? 30
             intervalRestDuration = existing.intervalRestDuration ?? 30
-            // Implement measurable fields
+            // AMRAP fields
+            isAMRAP = existing.isAMRAP
+            amrapTimeLimit = existing.amrapTimeLimit
+            // Unilateral mode
+            isUnilateral = existing.isUnilateral
+            // RPE tracking
+            trackRPE = existing.trackRPE
+            // Multi-measurables
+            selectedMeasurables = existing.implementMeasurables.map { target in
+                MeasurableSelection(
+                    id: UUID(),
+                    implementId: target.implementId,
+                    measurableName: target.measurableName,
+                    unit: target.unit,
+                    isStringBased: target.isStringBased,
+                    targetValue: target.targetValue,
+                    targetStringValue: target.targetStringValue
+                )
+            }
+            // Legacy implement measurable field
             implementMeasurableStringValue = existing.implementMeasurableStringValue ?? ""
         }
     }
