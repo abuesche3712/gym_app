@@ -22,6 +22,7 @@ struct ExerciseTemplate: Identifiable, Codable, Hashable, ExerciseMetrics {
     var primaryMuscles: [MuscleGroup]
     var secondaryMuscles: [MuscleGroup]
     var isBodyweight: Bool
+    var isUnilateral: Bool  // If true, sets are done left then right (single-arm/leg exercises)
     var recoveryActivityType: RecoveryActivityType?
 
     // Equipment
@@ -48,6 +49,7 @@ struct ExerciseTemplate: Identifiable, Codable, Hashable, ExerciseMetrics {
         primary: [MuscleGroup] = [],
         secondary: [MuscleGroup] = [],
         isBodyweight: Bool = false,
+        isUnilateral: Bool = false,
         recoveryActivityType: RecoveryActivityType? = nil,
         implementIds: Set<UUID> = [],
         defaultSetGroups: [SetGroup] = [],
@@ -67,6 +69,7 @@ struct ExerciseTemplate: Identifiable, Codable, Hashable, ExerciseMetrics {
         self.primaryMuscles = primary
         self.secondaryMuscles = secondary
         self.isBodyweight = isBodyweight
+        self.isUnilateral = isUnilateral
         self.recoveryActivityType = recoveryActivityType
         self.implementIds = implementIds
         self.defaultSetGroups = defaultSetGroups

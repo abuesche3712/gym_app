@@ -24,6 +24,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
     var distanceUnit: DistanceUnit
     var mobilityTracking: MobilityTracking
     var isBodyweight: Bool
+    var isUnilateral: Bool  // If true, sets are done left then right (single-arm/leg exercises)
     var recoveryActivityType: RecoveryActivityType?
     var primaryMuscles: [MuscleGroup]
     var secondaryMuscles: [MuscleGroup]
@@ -47,6 +48,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         distanceUnit: DistanceUnit = .meters,
         mobilityTracking: MobilityTracking = .repsOnly,
         isBodyweight: Bool = false,
+        isUnilateral: Bool = false,
         recoveryActivityType: RecoveryActivityType? = nil,
         primaryMuscles: [MuscleGroup] = [],
         secondaryMuscles: [MuscleGroup] = [],
@@ -66,6 +68,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         self.distanceUnit = distanceUnit
         self.mobilityTracking = mobilityTracking
         self.isBodyweight = isBodyweight
+        self.isUnilateral = isUnilateral
         self.recoveryActivityType = recoveryActivityType
         self.primaryMuscles = primaryMuscles
         self.secondaryMuscles = secondaryMuscles
@@ -142,6 +145,16 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
 
         // Optional with defaults
         setGroups = try container.decodeIfPresent([SetGroup].self, forKey: .setGroups) ?? []
+
+        // isUnilateral: check exercise-level first, then migrate from first setGroup if needed
+        if let exerciseLevel = try container.decodeIfPresent(Bool.self, forKey: .isUnilateral) {
+            isUnilateral = exerciseLevel
+        } else if let firstSetGroup = setGroups.first, firstSetGroup.isUnilateral {
+            // Migration: move from setGroup to exercise level
+            isUnilateral = firstSetGroup.isUnilateral
+        } else {
+            isUnilateral = false
+        }
         order = try container.decodeIfPresent(Int.self, forKey: .order) ?? 0
 
         // Truly optional
@@ -166,7 +179,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
     enum CodingKeys: String, CodingKey {
         case schemaVersion
         case id, templateId, name, exerciseType, cardioMetric, distanceUnit, mobilityTracking
-        case isBodyweight, recoveryActivityType, primaryMuscles, secondaryMuscles, implementIds
+        case isBodyweight, isUnilateral, recoveryActivityType, primaryMuscles, secondaryMuscles, implementIds
         case setGroups, supersetGroupId, order, notes
         case createdAt, updatedAt
         // Legacy keys for migration
@@ -186,6 +199,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         try container.encode(distanceUnit, forKey: .distanceUnit)
         try container.encode(mobilityTracking, forKey: .mobilityTracking)
         try container.encode(isBodyweight, forKey: .isBodyweight)
+        try container.encode(isUnilateral, forKey: .isUnilateral)
         try container.encodeIfPresent(recoveryActivityType, forKey: .recoveryActivityType)
         try container.encode(primaryMuscles, forKey: .primaryMuscles)
         try container.encode(secondaryMuscles, forKey: .secondaryMuscles)
@@ -226,6 +240,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
             distanceUnit: template.distanceUnit,
             mobilityTracking: template.mobilityTracking,
             isBodyweight: template.isBodyweight,
+            isUnilateral: template.isUnilateral,  // Copy from template
             recoveryActivityType: template.recoveryActivityType,
             primaryMuscles: template.primaryMuscles,
             secondaryMuscles: template.secondaryMuscles,

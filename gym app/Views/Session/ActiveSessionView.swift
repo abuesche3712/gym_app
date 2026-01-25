@@ -755,7 +755,13 @@ struct ActiveSessionView: View {
         // Calculate running set number by counting sets in previous groups
         var runningSetNumber = 1
         for i in 0..<groupIndex {
-            runningSetNumber += exercise.completedSetGroups[i].sets.count
+            let prevGroup = exercise.completedSetGroups[i]
+            // For unilateral exercises, count pairs (2 SetData = 1 logical set)
+            if prevGroup.isUnilateral {
+                runningSetNumber += prevGroup.sets.count / 2
+            } else {
+                runningSetNumber += prevGroup.sets.count
+            }
         }
 
         var result: [FlatSet] = []

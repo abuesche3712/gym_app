@@ -42,9 +42,6 @@ struct SetGroupFormView: View {
     @State private var isAMRAP: Bool = false
     @State private var amrapTimeLimit: Int? = nil
 
-    // Unilateral mode
-    @State private var isUnilateral: Bool = false
-
     // RPE tracking
     @State private var trackRPE: Bool = true
 
@@ -155,22 +152,6 @@ struct SetGroupFormView: View {
                         .padding(.horizontal, AppSpacing.cardPadding)
                         .padding(.vertical, AppSpacing.md)
                         .background(AppColors.cardBackground)
-
-                        // Unilateral Mode Toggle (only show for strength/explosive exercises)
-                        if exerciseType == .strength || exerciseType == .explosive {
-                            HStack(spacing: AppSpacing.md) {
-                                Image(systemName: "figure.walk")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(AppColors.textTertiary)
-                                    .frame(width: 24)
-
-                                Toggle("Unilateral", isOn: $isUnilateral)
-                                    .tint(AppColors.accentPurple)
-                            }
-                            .padding(.horizontal, AppSpacing.cardPadding)
-                            .padding(.vertical, AppSpacing.md)
-                            .background(AppColors.cardBackground)
-                        }
                     }
 
                     if isInterval {
@@ -183,12 +164,6 @@ struct SetGroupFormView: View {
                         Text("As Many Reps As Possible - log max reps achieved per set")
                             .font(.caption)
                             .foregroundColor(AppColors.accentOrange)
-                            .padding(.horizontal, AppSpacing.cardPadding)
-                            .padding(.bottom, AppSpacing.sm)
-                    } else if isUnilateral {
-                        Text("Single-leg/arm work - log left and right sides separately")
-                            .font(.caption)
-                            .foregroundColor(AppColors.accentPurple)
                             .padding(.horizontal, AppSpacing.cardPadding)
                             .padding(.bottom, AppSpacing.sm)
                     }
@@ -856,7 +831,7 @@ struct SetGroupFormView: View {
             intervalRestDuration: isInterval ? intervalRestDuration : nil,
             isAMRAP: isAMRAP,
             amrapTimeLimit: isAMRAP ? amrapTimeLimit : nil,
-            isUnilateral: isUnilateral,
+            isUnilateral: false,  // Now tracked at exercise level, not set group level
             trackRPE: trackRPE,
             implementMeasurables: measurableTargets,
             implementMeasurableLabel: measurableLabel,
@@ -885,8 +860,6 @@ struct SetGroupFormView: View {
             // AMRAP fields
             isAMRAP = existing.isAMRAP
             amrapTimeLimit = existing.amrapTimeLimit
-            // Unilateral mode
-            isUnilateral = existing.isUnilateral
             // RPE tracking
             trackRPE = existing.trackRPE
             // Multi-measurables

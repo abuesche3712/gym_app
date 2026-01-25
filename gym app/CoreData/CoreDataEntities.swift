@@ -859,6 +859,7 @@ public class CustomExerciseTemplateEntity: NSManagedObject, SyncableEntity {
 
     // Physical attributes
     @NSManaged public var isBodyweight: Bool
+    @NSManaged public var isUnilateral: Bool
     @NSManaged public var recoveryActivityTypeRaw: String?
 
     // Defaults for new instances

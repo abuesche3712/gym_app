@@ -340,7 +340,7 @@ class SessionViewModel: ObservableObject {
             supersetGroupId: resolved.supersetGroupId,
             completedSetGroups: resolved.setGroups.map { setGroup in
                 let setsData: [SetData]
-                if setGroup.isUnilateral {
+                if resolved.isUnilateral {
                     // For unilateral, create left and right for each set number
                     setsData = (1...max(setGroup.sets, 1)).flatMap { setNum -> [SetData] in
                         [
@@ -390,7 +390,7 @@ class SessionViewModel: ObservableObject {
                     intervalRestDuration: setGroup.intervalRestDuration,
                     isAMRAP: setGroup.isAMRAP,
                     amrapTimeLimit: setGroup.amrapTimeLimit,
-                    isUnilateral: setGroup.isUnilateral,
+                    isUnilateral: resolved.isUnilateral,  // Read from exercise level
                     trackRPE: setGroup.trackRPE,
                     implementMeasurables: setGroup.implementMeasurables
                 )

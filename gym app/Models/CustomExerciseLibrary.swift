@@ -43,6 +43,8 @@ class CustomExerciseLibrary: ObservableObject {
                     exerciseType: entity.exerciseType,
                     primary: entity.primaryMuscles,
                     secondary: entity.secondaryMuscles,
+                    isBodyweight: false,
+                    isUnilateral: entity.isUnilateral,
                     implementIds: entity.implementIds,
                     isCustom: true
                 )
@@ -61,6 +63,7 @@ class CustomExerciseLibrary: ObservableObject {
         exerciseType: ExerciseType,
         primary: [MuscleGroup] = [],
         secondary: [MuscleGroup] = [],
+        isUnilateral: Bool = false,
         implementIds: Set<UUID> = []
     ) -> Bool {
         // Validate name is not empty
@@ -83,6 +86,7 @@ class CustomExerciseLibrary: ObservableObject {
         entity.exerciseType = exerciseType
         entity.primaryMuscles = primary
         entity.secondaryMuscles = secondary
+        entity.isUnilateral = isUnilateral
         entity.implementIds = implementIds
         entity.createdAt = Date()
         entity.updatedAt = Date()
@@ -121,6 +125,7 @@ class CustomExerciseLibrary: ObservableObject {
                 entity.exerciseType = template.exerciseType
                 entity.primaryMuscles = template.primaryMuscles
                 entity.secondaryMuscles = template.secondaryMuscles
+                entity.isUnilateral = template.isUnilateral
                 entity.implementIds = template.implementIds
                 entity.updatedAt = Date()
                 save()
@@ -142,6 +147,10 @@ class CustomExerciseLibrary: ObservableObject {
                 viewContext.delete(entity)
                 save()
                 loadExercises()
+
+                // Track deletion to prevent re-sync from cloud
+                DeletionTracker.shared.recordDeletion(entityType: .customExercise, entityId: template.id)
+                Logger.debug("Tracked custom exercise deletion: \(template.name)")
 
                 // Queue deletion for cloud sync if authenticated
                 if AuthService.shared.isAuthenticated {

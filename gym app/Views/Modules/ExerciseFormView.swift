@@ -17,6 +17,7 @@ struct ExerciseFormView: View {
     @EnvironmentObject var moduleViewModel: ModuleViewModel
     @Environment(\.dismiss) private var dismiss
     @StateObject private var libraryService = LibraryService.shared
+    @ObservedObject private var customLibrary = CustomExerciseLibrary.shared
 
     let instance: ExerciseInstance?
     let moduleId: UUID
@@ -31,6 +32,7 @@ struct ExerciseFormView: View {
     @State private var trackDuration: Bool = false
     @State private var notes: String = ""
     @State private var setGroups: [SetGroup] = []
+    @State private var isUnilateral: Bool = false
 
     // Muscle groups from template
     @State private var primaryMuscles: [MuscleGroup] = []
@@ -205,6 +207,23 @@ struct ExerciseFormView: View {
             if exerciseType == .mobility {
                 FormDivider()
                 mobilityOptionsSection
+            }
+
+            // Unilateral toggle (for all exercises except cardio)
+            if exerciseType != .cardio {
+                FormDivider()
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "figure.walk")
+                        .font(.system(size: 16))
+                        .foregroundColor(AppColors.textTertiary)
+                        .frame(width: 24)
+
+                    Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
+                        .tint(AppColors.accentPurple)
+                }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, AppSpacing.md)
+                .background(AppColors.cardBackground)
             }
         }
     }
@@ -547,7 +566,7 @@ struct ExerciseFormView: View {
 
     private func loadExistingExercise() {
         if let instance = instance {
-            // Instance now stores all data directly
+            // Load basic data from instance
             name = instance.name
             exerciseType = instance.exerciseType
             trackTime = instance.cardioMetric.tracksTime
@@ -557,12 +576,34 @@ struct ExerciseFormView: View {
             distanceUnit = instance.distanceUnit
             notes = instance.notes ?? ""
             setGroups = instance.setGroups
-            primaryMuscles = instance.primaryMuscles
-            secondaryMuscles = instance.secondaryMuscles
-            selectedImplementIds = instance.implementIds
-            // Template lookup is optional now
+            isUnilateral = instance.isUnilateral
+
+            // Try to load template if linked
             if let templateId = instance.templateId {
-                selectedTemplate = ExerciseLibrary.shared.template(id: templateId)
+                // Check both built-in and custom libraries
+                if let builtInTemplate = ExerciseLibrary.shared.template(id: templateId) {
+                    selectedTemplate = builtInTemplate
+                    // Load muscles/equipment from built-in template (source of truth)
+                    primaryMuscles = builtInTemplate.primaryMuscles
+                    secondaryMuscles = builtInTemplate.secondaryMuscles
+                    selectedImplementIds = builtInTemplate.implementIds
+                } else if let customTemplate = customLibrary.exercises.first(where: { $0.id == templateId }) {
+                    selectedTemplate = customTemplate
+                    // Load muscles/equipment from custom template (source of truth)
+                    primaryMuscles = customTemplate.primaryMuscles
+                    secondaryMuscles = customTemplate.secondaryMuscles
+                    selectedImplementIds = customTemplate.implementIds
+                } else {
+                    // Template not found - fall back to instance data
+                    primaryMuscles = instance.primaryMuscles
+                    secondaryMuscles = instance.secondaryMuscles
+                    selectedImplementIds = instance.implementIds
+                }
+            } else {
+                // No template - use instance data
+                primaryMuscles = instance.primaryMuscles
+                secondaryMuscles = instance.secondaryMuscles
+                selectedImplementIds = instance.implementIds
             }
         }
     }
@@ -580,12 +621,26 @@ struct ExerciseFormView: View {
             existingInstance.cardioMetric = cardioMetric
             existingInstance.distanceUnit = distanceUnit
             existingInstance.mobilityTracking = mobilityTracking
+            existingInstance.isUnilateral = isUnilateral
             existingInstance.primaryMuscles = primaryMuscles
             existingInstance.secondaryMuscles = secondaryMuscles
             existingInstance.implementIds = selectedImplementIds
             existingInstance.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
             existingInstance.setGroups = setGroups
             existingInstance.updatedAt = Date()
+
+            // If this instance is linked to a custom template, update the template in the library
+            if let templateId = existingInstance.templateId,
+               let customTemplate = customLibrary.exercises.first(where: { $0.id == templateId }) {
+                var updatedTemplate = customTemplate
+                updatedTemplate.name = trimmedName
+                updatedTemplate.exerciseType = exerciseType
+                updatedTemplate.primaryMuscles = primaryMuscles
+                updatedTemplate.secondaryMuscles = secondaryMuscles
+                updatedTemplate.isUnilateral = isUnilateral
+                updatedTemplate.implementIds = selectedImplementIds
+                customLibrary.updateExercise(updatedTemplate)
+            }
 
             module.updateExercise(existingInstance)
         } else {
@@ -599,6 +654,7 @@ struct ExerciseFormView: View {
                 distanceUnit: distanceUnit,
                 mobilityTracking: mobilityTracking,
                 isBodyweight: selectedTemplate?.isBodyweight ?? false,
+                isUnilateral: isUnilateral,
                 recoveryActivityType: selectedTemplate?.recoveryActivityType,
                 primaryMuscles: primaryMuscles,
                 secondaryMuscles: secondaryMuscles,

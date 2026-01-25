@@ -106,6 +106,7 @@ class DataRepository: ObservableObject {
             // Only extract exercises with name overrides that aren't already in custom library
             let builtInLibrary = ExerciseLibrary.shared
             let customLibraryPreExtract = CustomExerciseLibrary.shared
+            let deletedCustomExerciseIds = deletionTracker.getDeletedIds(entityType: .customExercise)
             var extractedCount = 0
             for cloudModule in cloudData.modules {
                 for exerciseInstance in cloudModule.exercises {
@@ -114,13 +115,18 @@ class DataRepository: ObservableObject {
                     let isBuiltInTemplate = exerciseInstance.templateId.flatMap { builtInLibrary.template(id: $0) } != nil
                     let isAlreadyCustom = customLibraryPreExtract.contains(name: name)
 
-                    if !isBuiltInTemplate && !isAlreadyCustom {
+                    // Check if this exercise was deliberately deleted locally
+                    let wasDeletedLocally = exerciseInstance.templateId.map { deletedCustomExerciseIds.contains($0) } ?? false
+
+                    if !isBuiltInTemplate && !isAlreadyCustom && !wasDeletedLocally {
                         Logger.debug("Extracting custom exercise '\(name)' from module '\(cloudModule.name)'")
                         customLibraryPreExtract.addExercise(
                             name: name,
                             exerciseType: exerciseInstance.exerciseType
                         )
                         extractedCount += 1
+                    } else if wasDeletedLocally {
+                        Logger.debug("Skipping extraction of '\(name)' - was deleted locally")
                     }
                 }
             }
@@ -177,6 +183,13 @@ class DataRepository: ObservableObject {
             Logger.verbose("Custom exercises - cloud: \(cloudData.exercises.count), local: \(customLibrary.exercises.count)")
             for cloudExercise in cloudData.exercises {
                 Logger.verbose("Processing custom exercise '\(cloudExercise.name)'")
+
+                // Check if this exercise was deleted locally
+                if deletedCustomExerciseIds.contains(cloudExercise.id) {
+                    Logger.debug("Skipping custom exercise '\(cloudExercise.name)' - was deleted locally")
+                    continue
+                }
+
                 if !customLibrary.exercises.contains(where: { $0.id == cloudExercise.id }) {
                     Logger.debug("Adding custom exercise '\(cloudExercise.name)'")
                     customLibrary.addExercise(cloudExercise)
@@ -291,13 +304,18 @@ class DataRepository: ObservableObject {
         // Extract custom exercises from module data
         let builtInLibrary = ExerciseLibrary.shared
         let customLibraryPreExtract = CustomExerciseLibrary.shared
+        let deletedCustomExerciseIds = deletionTracker.getDeletedIds(entityType: .customExercise)
+
         for cloudModule in cloudData.modules {
             for exerciseInstance in cloudModule.exercises {
                 let name = exerciseInstance.name
                 let isBuiltInTemplate = exerciseInstance.templateId.flatMap { builtInLibrary.template(id: $0) } != nil
                 let isAlreadyCustom = customLibraryPreExtract.contains(name: name)
 
-                if !isBuiltInTemplate && !isAlreadyCustom {
+                // Check if this exercise was deliberately deleted locally
+                let wasDeletedLocally = exerciseInstance.templateId.map { deletedCustomExerciseIds.contains($0) } ?? false
+
+                if !isBuiltInTemplate && !isAlreadyCustom && !wasDeletedLocally {
                     customLibraryPreExtract.addExercise(
                         name: name,
                         exerciseType: exerciseInstance.exerciseType
@@ -342,6 +360,11 @@ class DataRepository: ObservableObject {
         // Merge custom exercises
         let customLibrary = CustomExerciseLibrary.shared
         for cloudExercise in cloudData.exercises {
+            // Check if this exercise was deleted locally
+            if deletedCustomExerciseIds.contains(cloudExercise.id) {
+                continue
+            }
+
             if !customLibrary.exercises.contains(where: { $0.id == cloudExercise.id }) {
                 customLibrary.addExercise(cloudExercise)
             }

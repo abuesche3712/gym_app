@@ -482,6 +482,7 @@ struct PersistenceController {
             createAttribute("distanceUnitRaw", type: .stringAttributeType, optional: true),
             // Physical attributes
             createAttribute("isBodyweight", type: .booleanAttributeType, optional: true, defaultValue: false),
+            createAttribute("isUnilateral", type: .booleanAttributeType, optional: true, defaultValue: false),
             createAttribute("recoveryActivityTypeRaw", type: .stringAttributeType, optional: true),
             // Defaults for new instances
             createAttribute("defaultSetGroupsData", type: .binaryDataAttributeType, optional: true),

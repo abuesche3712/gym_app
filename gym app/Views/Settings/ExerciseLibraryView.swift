@@ -577,6 +577,7 @@ private struct ExerciseEditSheet: View {
 
     @State private var name: String
     @State private var exerciseType: ExerciseType
+    @State private var isUnilateral: Bool
     @State private var primaryMuscles: Set<MuscleGroup>
     @State private var secondaryMuscles: Set<MuscleGroup>
     @State private var selectedImplementIds: Set<UUID>
@@ -591,6 +592,7 @@ private struct ExerciseEditSheet: View {
         self.exercise = exercise
         _name = State(initialValue: exercise.name)
         _exerciseType = State(initialValue: exercise.exerciseType)
+        _isUnilateral = State(initialValue: exercise.isUnilateral)
         _primaryMuscles = State(initialValue: Set(exercise.primaryMuscles))
         _secondaryMuscles = State(initialValue: Set(exercise.secondaryMuscles))
         _selectedImplementIds = State(initialValue: exercise.implementIds)
@@ -603,6 +605,7 @@ private struct ExerciseEditSheet: View {
     private var hasChanges: Bool {
         name != exercise.name ||
         exerciseType != exercise.exerciseType ||
+        isUnilateral != exercise.isUnilateral ||
         Set(exercise.primaryMuscles) != primaryMuscles ||
         Set(exercise.secondaryMuscles) != secondaryMuscles ||
         exercise.implementIds != selectedImplementIds
@@ -617,6 +620,11 @@ private struct ExerciseEditSheet: View {
 
                     // Type Selection
                     typeSection
+
+                    // Unilateral Toggle (for all exercises except cardio)
+                    if exerciseType != .cardio {
+                        unilateralSection
+                    }
 
                     // Primary Muscles Grid
                     muscleSection(
@@ -750,6 +758,33 @@ private struct ExerciseEditSheet: View {
         }
     }
 
+    // MARK: - Unilateral Section
+
+    private var unilateralSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: "figure.walk")
+                    .font(.system(size: 18))
+                    .foregroundColor(AppColors.accentPurple)
+
+                Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
+                    .tint(AppColors.accentPurple)
+            }
+            .padding(AppSpacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppColors.cardBackground)
+            )
+
+            if isUnilateral {
+                Text("Single-leg/arm work - sets are logged separately for left and right sides")
+                    .font(.caption)
+                    .foregroundColor(AppColors.accentPurple)
+                    .padding(.horizontal, AppSpacing.md)
+            }
+        }
+    }
+
     // MARK: - Muscle Section
 
     private func muscleSection(
@@ -847,6 +882,7 @@ private struct ExerciseEditSheet: View {
         var updated = exercise
         updated.name = name.trimmingCharacters(in: .whitespaces)
         updated.exerciseType = exerciseType
+        updated.isUnilateral = isUnilateral
         updated.primaryMuscles = Array(primaryMuscles)
         updated.secondaryMuscles = Array(secondaryMuscles)
         updated.implementIds = selectedImplementIds

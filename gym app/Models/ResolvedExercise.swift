@@ -27,9 +27,24 @@ struct ResolvedExercise: Identifiable, Hashable, ExerciseMetrics {
     var distanceUnit: DistanceUnit { instance.distanceUnit }
     var isBodyweight: Bool { instance.isBodyweight }
     var recoveryActivityType: RecoveryActivityType? { instance.recoveryActivityType }
-    var primaryMuscles: [MuscleGroup] { instance.primaryMuscles }
-    var secondaryMuscles: [MuscleGroup] { instance.secondaryMuscles }
-    var implementIds: Set<UUID> { instance.implementIds }
+
+    // Dynamic property - prefer template (source of truth) over instance snapshot
+    var isUnilateral: Bool {
+        template?.isUnilateral ?? instance.isUnilateral
+    }
+
+    // Dynamic properties - prefer template (source of truth) over instance snapshot
+    var primaryMuscles: [MuscleGroup] {
+        template?.primaryMuscles ?? instance.primaryMuscles
+    }
+
+    var secondaryMuscles: [MuscleGroup] {
+        template?.secondaryMuscles ?? instance.secondaryMuscles
+    }
+
+    var implementIds: Set<UUID> {
+        template?.implementIds ?? instance.implementIds
+    }
 
     // Category is only on template (not critical for display)
     var category: ExerciseCategory {
