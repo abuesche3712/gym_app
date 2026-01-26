@@ -45,39 +45,68 @@ struct SetGroupFormView: View {
     // RPE tracking
     @State private var trackRPE: Bool = true
 
-    // Multi-measurable tracking
-    @State private var selectedMeasurables: [MeasurableSelection] = []
+    // Weight tracking (optional for bodyweight exercises)
+    @State private var trackWeight: Bool = true
 
-    struct MeasurableSelection: Identifiable {
-        let id: UUID
-        let implementId: UUID
-        let measurableName: String
-        let unit: String
+    // Implement-specific measurables (auto-populated from equipment)
+    @State private var implementMeasurableValues: [String: MeasurableValue] = [:]
+
+    struct MeasurableValue {
+        var numericValue: String = ""
+        var stringValue: String = ""
         let isStringBased: Bool
-        var targetValue: Double?
-        var targetStringValue: String?
+        let unit: String
+        let implementName: String
     }
 
     private var isEditing: Bool { existingSetGroup != nil }
 
-    /// Returns all available measurables from selected implements (for multi-measurable picker)
-    private var availableMeasurables: [MeasurableSelection] {
-        var measurables: [MeasurableSelection] = []
+    /// Returns implement-specific measurables to display (e.g., Box Height, Band Color)
+    private var implementSpecificMeasurables: [(key: String, value: MeasurableValue)] {
+        var result: [String: MeasurableValue] = [:]
+
         for id in implementIds {
             guard let implement = libraryService.getImplement(id: id) else { continue }
             for measurable in implement.measurableArray {
-                measurables.append(MeasurableSelection(
-                    id: UUID(),
-                    implementId: id,
-                    measurableName: measurable.name,
-                    unit: measurable.unit,
-                    isStringBased: measurable.isStringBased,
-                    targetValue: nil,
-                    targetStringValue: nil
-                ))
+                let key = "\(implement.name)_\(measurable.name)"
+
+                // Only add if not already set (preserve existing values)
+                if implementMeasurableValues[key] == nil {
+                    result[key] = MeasurableValue(
+                        numericValue: "",
+                        stringValue: "",
+                        isStringBased: measurable.isStringBased,
+                        unit: measurable.unit,
+                        implementName: implement.name
+                    )
+                }
             }
         }
-        return measurables
+
+        // Merge with existing values
+        var merged = implementMeasurableValues
+        for (key, value) in result {
+            if merged[key] == nil {
+                merged[key] = value
+            }
+        }
+
+        // Filter to only include measurables for currently selected implements
+        // AND skip weight measurables for bodyweight exercises (redundant with Added Weight field)
+        let validKeys = result.keys
+        return merged.filter { entry in
+            guard validKeys.contains(entry.key) else { return false }
+
+            // Skip weight/load measurables for bodyweight exercises
+            if isBodyweight {
+                let measurableName = extractMeasurableName(from: entry.key).lowercased()
+                if measurableName.contains("weight") || measurableName.contains("load") {
+                    return false
+                }
+            }
+
+            return true
+        }.sorted { $0.key < $1.key }
     }
 
     /// Returns the primary implement's string-based measurable info (like band color)
@@ -338,45 +367,39 @@ struct SetGroupFormView: View {
         if exerciseType == .strength {
             FormSection(title: "Load", icon: "scalemass", iconColor: AppColors.accentBlue) {
                 VStack(spacing: 0) {
-                    if let stringMeasurable = implementStringMeasurable {
-                        styledRow(icon: "tag", label: stringMeasurable.measurableName) {
-                            TextField("Enter \(stringMeasurable.measurableName.lowercased())", text: $implementMeasurableStringValue)
-                                .multilineTextAlignment(.trailing)
-                                .foregroundColor(AppColors.textPrimary)
-                        }
-                    } else if isBodyweight {
-                        styledRow(icon: "figure.stand", label: "Added Weight") {
-                            HStack(spacing: AppSpacing.xs) {
-                                Text("BW +")
-                                    .foregroundColor(AppColors.textSecondary)
-                                TextField("0", text: $targetWeight)
-                                    .keyboardType(.decimalPad)
-                                    .multilineTextAlignment(.trailing)
-                                    .frame(width: 60)
-                                Text("lbs")
-                                    .foregroundColor(AppColors.textSecondary)
+                    // Weight tracking toggle
+                    styledRow(icon: "scalemass", label: "Track Weight") {
+                        Toggle("", isOn: $trackWeight)
+                            .labelsHidden()
+                            .tint(AppColors.accentBlue)
+                    }
+
+                    if trackWeight {
+                        FormDivider()
+
+                        if isBodyweight {
+                            styledRow(icon: "figure.stand", label: "Added Weight") {
+                                HStack(spacing: AppSpacing.xs) {
+                                    Text("BW +")
+                                        .foregroundColor(AppColors.textSecondary)
+                                    TextField("0", text: $targetWeight)
+                                        .keyboardType(.decimalPad)
+                                        .multilineTextAlignment(.trailing)
+                                        .frame(width: 60)
+                                    Text("lbs")
+                                        .foregroundColor(AppColors.textSecondary)
+                                }
                             }
-                        }
-                    } else if usesBox {
-                        styledRow(icon: "square.stack.3d.up", label: "Height") {
-                            HStack(spacing: AppSpacing.xs) {
-                                TextField("0", text: $targetWeight)
-                                    .keyboardType(.decimalPad)
-                                    .multilineTextAlignment(.trailing)
-                                    .frame(width: 60)
-                                Text("in")
-                                    .foregroundColor(AppColors.textSecondary)
-                            }
-                        }
-                    } else {
-                        styledRow(icon: "scalemass", label: "Weight") {
-                            HStack(spacing: AppSpacing.xs) {
-                                TextField("0", text: $targetWeight)
-                                    .keyboardType(.decimalPad)
-                                    .multilineTextAlignment(.trailing)
-                                    .frame(width: 60)
-                                Text("lbs")
-                                    .foregroundColor(AppColors.textSecondary)
+                        } else {
+                            styledRow(icon: "scalemass", label: "Weight") {
+                                HStack(spacing: AppSpacing.xs) {
+                                    TextField("0", text: $targetWeight)
+                                        .keyboardType(.decimalPad)
+                                        .multilineTextAlignment(.trailing)
+                                        .frame(width: 60)
+                                    Text("lbs")
+                                        .foregroundColor(AppColors.textSecondary)
+                                }
                             }
                         }
                     }
@@ -427,9 +450,9 @@ struct SetGroupFormView: View {
             .background(AppColors.cardBackground)
         }
 
-        // Multi-Measurable Tracking (for exercises with equipment like weighted box jumps)
-        if !availableMeasurables.isEmpty && exerciseType == .strength {
-            multiMeasurableSection
+        // Equipment-Specific Attributes (automatically shown based on selected equipment)
+        if !implementSpecificMeasurables.isEmpty && exerciseType == .strength {
+            equipmentAttributesSection
         }
 
         // Rest Between Sets
@@ -441,57 +464,56 @@ struct SetGroupFormView: View {
         }
     }
 
-    // MARK: - Multi-Measurable Section
+    // MARK: - Equipment Attributes Section
 
     @ViewBuilder
-    private var multiMeasurableSection: some View {
+    private var equipmentAttributesSection: some View {
         FormSection(
-            title: "Track Multiple Attributes",
-            icon: "chart.bar",
+            title: "Equipment Attributes",
+            icon: "wrench.and.screwdriver",
             iconColor: AppColors.accentPurple
         ) {
-            VStack(spacing: AppSpacing.sm) {
-                // Slot 1
-                measurableSlot(
-                    slotIndex: 0,
-                    binding: Binding(
-                        get: { selectedMeasurables.indices.contains(0) ? selectedMeasurables[0] : nil },
-                        set: { newValue in
-                            if let value = newValue {
-                                if selectedMeasurables.indices.contains(0) {
-                                    selectedMeasurables[0] = value
-                                } else {
-                                    selectedMeasurables.append(value)
-                                }
-                            } else {
-                                if selectedMeasurables.indices.contains(0) {
-                                    selectedMeasurables.remove(at: 0)
-                                }
-                            }
-                        }
-                    )
-                )
+            VStack(spacing: 0) {
+                ForEach(Array(implementSpecificMeasurables.enumerated()), id: \.element.key) { index, item in
+                    if index > 0 {
+                        FormDivider()
+                    }
 
-                // Slot 2
-                measurableSlot(
-                    slotIndex: 1,
-                    binding: Binding(
-                        get: { selectedMeasurables.indices.contains(1) ? selectedMeasurables[1] : nil },
-                        set: { newValue in
-                            if let value = newValue {
-                                if selectedMeasurables.indices.contains(1) {
-                                    selectedMeasurables[1] = value
-                                } else {
-                                    selectedMeasurables.append(value)
+                    let measurable = item.value
+                    let displayLabel = "\(measurable.implementName) - \(extractMeasurableName(from: item.key))"
+
+                    styledRow(icon: "ruler", label: displayLabel) {
+                        if measurable.isStringBased {
+                            TextField("Enter value", text: Binding(
+                                get: { implementMeasurableValues[item.key]?.stringValue ?? "" },
+                                set: { newValue in
+                                    var updated = implementMeasurableValues[item.key] ?? measurable
+                                    updated.stringValue = newValue
+                                    implementMeasurableValues[item.key] = updated
                                 }
-                            } else {
-                                if selectedMeasurables.indices.contains(1) {
-                                    selectedMeasurables.remove(at: 1)
-                                }
+                            ))
+                            .multilineTextAlignment(.trailing)
+                            .foregroundColor(AppColors.textPrimary)
+                        } else {
+                            HStack(spacing: AppSpacing.xs) {
+                                TextField("0", text: Binding(
+                                    get: { implementMeasurableValues[item.key]?.numericValue ?? "" },
+                                    set: { newValue in
+                                        var updated = implementMeasurableValues[item.key] ?? measurable
+                                        updated.numericValue = newValue
+                                        implementMeasurableValues[item.key] = updated
+                                    }
+                                ))
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 60)
+
+                                Text(measurable.unit)
+                                    .foregroundColor(AppColors.textSecondary)
                             }
                         }
-                    )
-                )
+                    }
+                }
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.md)
@@ -499,98 +521,11 @@ struct SetGroupFormView: View {
         }
     }
 
-    @ViewBuilder
-    private func measurableSlot(slotIndex: Int, binding: Binding<MeasurableSelection?>) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            HStack {
-                Text("Attribute \(slotIndex + 1)")
-                    .font(.caption.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
-
-                Spacer()
-
-                if binding.wrappedValue != nil {
-                    Button("Clear") {
-                        binding.wrappedValue = nil
-                    }
-                    .font(.caption)
-                    .foregroundColor(AppColors.error)
-                }
-            }
-
-            if binding.wrappedValue != nil {
-                measurableInputRow(measurable: Binding(
-                    get: { binding.wrappedValue! },
-                    set: { binding.wrappedValue = $0 }
-                ))
-            } else {
-                // Picker to select measurable
-                Menu {
-                    ForEach(availableMeasurables) { available in
-                        // Only show measurables not already selected in other slot
-                        if !selectedMeasurables.contains(where: { $0.measurableName == available.measurableName }) {
-                            Button {
-                                binding.wrappedValue = available
-                            } label: {
-                                Text("\(available.measurableName) (\(available.unit.isEmpty ? "text" : available.unit))")
-                            }
-                        }
-                    }
-                } label: {
-                    HStack {
-                        Image(systemName: "plus.circle")
-                        Text("Select Attribute")
-                        Spacer()
-                    }
-                    .foregroundColor(AppColors.textSecondary)
-                    .padding(.vertical, AppSpacing.sm)
-                    .padding(.horizontal, AppSpacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppCorners.small)
-                            .stroke(AppColors.border, style: StrokeStyle(lineWidth: 1, dash: [5]))
-                    )
-                }
-            }
-        }
-        .padding(.vertical, AppSpacing.xs)
+    private func extractMeasurableName(from key: String) -> String {
+        // Key format: "ImplementName_MeasurableName"
+        key.components(separatedBy: "_").last ?? key
     }
 
-    @ViewBuilder
-    private func measurableInputRow(measurable: Binding<MeasurableSelection>) -> some View {
-        HStack(spacing: AppSpacing.md) {
-            // Label
-            Text(measurable.wrappedValue.measurableName)
-                .font(.body.weight(.medium))
-                .foregroundColor(AppColors.textPrimary)
-                .frame(width: 80, alignment: .leading)
-
-            // Input based on type
-            if measurable.wrappedValue.isStringBased {
-                TextField("Value", text: Binding(
-                    get: { measurable.wrappedValue.targetStringValue ?? "" },
-                    set: { measurable.wrappedValue.targetStringValue = $0.isEmpty ? nil : $0 }
-                ))
-                .textFieldStyle(.roundedBorder)
-            } else {
-                HStack(spacing: 4) {
-                    TextField("0", text: Binding(
-                        get: { measurable.wrappedValue.targetValue.map { String(format: "%.1f", $0) } ?? "" },
-                        set: { measurable.wrappedValue.targetValue = Double($0) }
-                    ))
-                    .keyboardType(.decimalPad)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 80)
-
-                    Text(measurable.wrappedValue.unit)
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                }
-            }
-
-            Spacer()
-        }
-        .padding(.vertical, AppSpacing.xs)
-    }
 
     @ViewBuilder
     private var targetFieldsForExerciseType: some View {
@@ -797,16 +732,35 @@ struct SetGroupFormView: View {
     // MARK: - Actions
 
     private func saveSetGroup() {
-        // Convert selected measurables to ImplementMeasurableTarget objects
-        let measurableTargets = selectedMeasurables.map { selection in
-            ImplementMeasurableTarget(
-                implementId: selection.implementId,
-                measurableName: selection.measurableName,
-                unit: selection.unit,
-                isStringBased: selection.isStringBased,
-                targetValue: selection.targetValue,
-                targetStringValue: selection.targetStringValue
-            )
+        // Convert implement measurable values to ImplementMeasurableTarget objects
+        var measurableTargets: [ImplementMeasurableTarget] = []
+        for (key, value) in implementMeasurableValues {
+            // Skip empty values
+            let hasValue = value.isStringBased ? !value.stringValue.isEmpty : !value.numericValue.isEmpty
+
+            if hasValue {
+                // Extract implement ID from the key
+                // Key format: "ImplementName_MeasurableName"
+                let components = key.components(separatedBy: "_")
+                guard components.count >= 2 else { continue }
+
+                let implementName = components.dropLast().joined(separator: "_")
+                let measurableName = components.last!
+
+                // Find the implement ID
+                guard let implementId = implementIds.first(where: { id in
+                    libraryService.getImplement(id: id)?.name == implementName
+                }) else { continue }
+
+                measurableTargets.append(ImplementMeasurableTarget(
+                    implementId: implementId,
+                    measurableName: measurableName,
+                    unit: value.unit,
+                    isStringBased: value.isStringBased,
+                    targetValue: value.isStringBased ? nil : Double(value.numericValue),
+                    targetStringValue: value.isStringBased ? value.stringValue : nil
+                ))
+            }
         }
 
         // Legacy single measurable support (for backward compatibility)
@@ -818,7 +772,7 @@ struct SetGroupFormView: View {
             id: existingSetGroup?.id ?? UUID(),
             sets: sets,
             targetReps: !isInterval && !isAMRAP && (exerciseType == .strength || (exerciseType == .mobility && mobilityTracking.tracksReps) || exerciseType == .explosive) ? (targetReps > 0 ? targetReps : nil) : nil,
-            targetWeight: (!isInterval || isAMRAP) && implementStringMeasurable == nil ? Double(targetWeight) : nil,
+            targetWeight: trackWeight && (!isInterval || isAMRAP) && implementStringMeasurable == nil ? Double(targetWeight) : nil,
             targetRPE: !isInterval && !isAMRAP && trackRPE && targetRPE > 0 ? targetRPE : nil,
             targetDuration: !isInterval && !isAMRAP && ((exerciseType == .cardio && cardioMetric.tracksTime) || (exerciseType == .mobility && mobilityTracking.tracksDuration) || exerciseType == .recovery) && targetDuration > 0 ? targetDuration : nil,
             targetDistance: !isInterval && !isAMRAP && cardioMetric.tracksDistance ? Double(targetDistance) : nil,
@@ -862,16 +816,21 @@ struct SetGroupFormView: View {
             amrapTimeLimit = existing.amrapTimeLimit
             // RPE tracking
             trackRPE = existing.trackRPE
-            // Multi-measurables
-            selectedMeasurables = existing.implementMeasurables.map { target in
-                MeasurableSelection(
-                    id: UUID(),
-                    implementId: target.implementId,
-                    measurableName: target.measurableName,
-                    unit: target.unit,
+            // Weight tracking - default to true if weight exists
+            trackWeight = existing.targetWeight != nil && existing.targetWeight! > 0
+            // Equipment-specific measurables
+            implementMeasurableValues = [:]
+            for target in existing.implementMeasurables {
+                // Find implement name
+                guard let implement = libraryService.getImplement(id: target.implementId) else { continue }
+                let key = "\(implement.name)_\(target.measurableName)"
+
+                implementMeasurableValues[key] = MeasurableValue(
+                    numericValue: target.targetValue.map { formatWeight($0) } ?? "",
+                    stringValue: target.targetStringValue ?? "",
                     isStringBased: target.isStringBased,
-                    targetValue: target.targetValue,
-                    targetStringValue: target.targetStringValue
+                    unit: target.unit,
+                    implementName: implement.name
                 )
             }
             // Legacy implement measurable field

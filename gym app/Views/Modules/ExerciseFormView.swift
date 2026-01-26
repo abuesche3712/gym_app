@@ -145,10 +145,11 @@ struct ExerciseFormView: View {
                         name = template.name
                         exerciseType = template.exerciseType
                         selectedTemplate = template
-                        // Copy muscle groups and equipment from template
+                        // Copy muscle groups, equipment, and unilateral from template
                         primaryMuscles = template.primaryMuscles
                         secondaryMuscles = template.secondaryMuscles
                         selectedImplementIds = template.implementIds
+                        isUnilateral = template.isUnilateral
                     }
                 }
             )
@@ -576,34 +577,37 @@ struct ExerciseFormView: View {
             distanceUnit = instance.distanceUnit
             notes = instance.notes ?? ""
             setGroups = instance.setGroups
-            isUnilateral = instance.isUnilateral
 
             // Try to load template if linked
             if let templateId = instance.templateId {
                 // Check both built-in and custom libraries
                 if let builtInTemplate = ExerciseLibrary.shared.template(id: templateId) {
                     selectedTemplate = builtInTemplate
-                    // Load muscles/equipment from built-in template (source of truth)
+                    // Load muscles/equipment/unilateral from built-in template (source of truth)
                     primaryMuscles = builtInTemplate.primaryMuscles
                     secondaryMuscles = builtInTemplate.secondaryMuscles
                     selectedImplementIds = builtInTemplate.implementIds
+                    isUnilateral = builtInTemplate.isUnilateral
                 } else if let customTemplate = customLibrary.exercises.first(where: { $0.id == templateId }) {
                     selectedTemplate = customTemplate
-                    // Load muscles/equipment from custom template (source of truth)
+                    // Load muscles/equipment/unilateral from custom template (source of truth)
                     primaryMuscles = customTemplate.primaryMuscles
                     secondaryMuscles = customTemplate.secondaryMuscles
                     selectedImplementIds = customTemplate.implementIds
+                    isUnilateral = customTemplate.isUnilateral
                 } else {
                     // Template not found - fall back to instance data
                     primaryMuscles = instance.primaryMuscles
                     secondaryMuscles = instance.secondaryMuscles
                     selectedImplementIds = instance.implementIds
+                    isUnilateral = instance.isUnilateral
                 }
             } else {
                 // No template - use instance data
                 primaryMuscles = instance.primaryMuscles
                 secondaryMuscles = instance.secondaryMuscles
                 selectedImplementIds = instance.implementIds
+                isUnilateral = instance.isUnilateral
             }
         }
     }
