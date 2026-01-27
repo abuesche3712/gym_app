@@ -49,6 +49,8 @@ struct EditExerciseSheet: View {
         var targetHoldTime: Int?
         var targetDistance: Double?
         var restPeriod: Int
+        var isUnilateral: Bool
+        var trackRPE: Bool
         var completedSetsCount: Int  // Number of already completed sets
         var completedSets: [SetData]  // The actual completed sets to preserve
         var allSets: [SetData]  // All sets (completed and incomplete) for history editing
@@ -349,6 +351,8 @@ struct EditExerciseSheet: View {
                 targetHoldTime: firstSet?.holdTime,
                 targetDistance: firstSet?.distance,
                 restPeriod: group.restPeriod ?? 90,
+                isUnilateral: group.isUnilateral,
+                trackRPE: group.trackRPE,
                 completedSetsCount: completedSets.count,
                 completedSets: completedSets,
                 allSets: group.sets  // Store all sets for history editing
@@ -373,6 +377,8 @@ struct EditExerciseSheet: View {
             targetHoldTime: exerciseType == .isometric ? 30 : nil,
             targetDistance: exerciseType == .cardio && trackDistance ? 0 : nil,
             restPeriod: 90,
+            isUnilateral: false,
+            trackRPE: true,
             completedSetsCount: 0,
             completedSets: [],
             allSets: []
@@ -435,7 +441,9 @@ struct EditExerciseSheet: View {
                 newSetGroups.append(CompletedSetGroup(
                     setGroupId: editableGroup.id,
                     restPeriod: editableGroup.restPeriod,
-                    sets: sets
+                    sets: sets,
+                    isUnilateral: editableGroup.isUnilateral,
+                    trackRPE: editableGroup.trackRPE
                 ))
             }
         }
@@ -468,6 +476,8 @@ struct EditSetGroupSheet: View {
     @State private var showTimePicker = false
     @State private var editableSets: [SetData] = []
     @State private var editingSetIndex: Int? = nil
+    @State private var isUnilateral: Bool = false
+    @State private var trackRPE: Bool = true
 
     private var hasIndividualSets: Bool {
         !setGroup.allSets.isEmpty
@@ -519,6 +529,18 @@ struct EditSetGroupSheet: View {
                         Text("5 min").tag(300)
                     }
                     .pickerStyle(.segmented)
+                }
+
+                // Options (unilateral, RPE tracking)
+                Section("Options") {
+                    if exerciseType != .cardio {
+                        Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
+                            .tint(AppColors.accentPurple)
+                    }
+                    if exerciseType == .strength || exerciseType == .explosive {
+                        Toggle("Track RPE", isOn: $trackRPE)
+                            .tint(AppColors.accentCyan)
+                    }
                 }
             }
             .navigationTitle("Edit Set Group")
@@ -698,6 +720,8 @@ struct EditSetGroupSheet: View {
         targetHoldTime = setGroup.targetHoldTime ?? 30
         targetDistance = setGroup.targetDistance.map { formatDistanceValue($0) } ?? ""
         restPeriod = setGroup.restPeriod
+        isUnilateral = setGroup.isUnilateral
+        trackRPE = setGroup.trackRPE
         editableSets = setGroup.allSets
     }
 
@@ -709,6 +733,8 @@ struct EditSetGroupSheet: View {
         setGroup.targetHoldTime = targetHoldTime
         setGroup.targetDistance = Double(targetDistance)
         setGroup.restPeriod = restPeriod
+        setGroup.isUnilateral = isUnilateral
+        setGroup.trackRPE = trackRPE
         // Update allSets if we were editing individual sets
         if !editableSets.isEmpty {
             setGroup.allSets = editableSets

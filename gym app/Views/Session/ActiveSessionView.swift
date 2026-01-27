@@ -1481,10 +1481,38 @@ struct ActiveSessionView: View {
                         metricPill(value: "\(temp)°F", label: nil, color: AppColors.warning)
                     }
                 }
+
+                // Equipment measurables (e.g., box height, band weight, etc.)
+                equipmentMeasurablesPills(set: set, exercise: exercise)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.vertical, 4)
+    }
+
+    private func formatMeasurableValue(_ value: Double) -> String {
+        if value.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(value))"
+        } else {
+            return String(format: "%.1f", value)
+        }
+    }
+
+    @ViewBuilder
+    private func equipmentMeasurablesPills(set: SetData, exercise: SessionExercise) -> some View {
+        if !set.implementMeasurableValues.isEmpty {
+            ForEach(Array(set.implementMeasurableValues.sorted(by: { $0.key < $1.key })), id: \.key) { key, value in
+                if let numericValue = value.numericValue {
+                    metricPill(
+                        value: formatMeasurableValue(numericValue),
+                        label: key,
+                        color: AppColors.accentPurple
+                    )
+                } else if let stringValue = value.stringValue {
+                    metricPill(value: stringValue, label: key, color: AppColors.accentPurple)
+                }
+            }
+        }
     }
 
     @ViewBuilder

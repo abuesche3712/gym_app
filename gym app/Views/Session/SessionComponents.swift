@@ -142,16 +142,19 @@ struct SetRowView: View {
                 HStack(spacing: AppSpacing.sm) {
                     // Input fields based on exercise type - compact, no internal spacers
                     inputFieldsView
+                        .layoutPriority(-1) // Allow compression if needed
 
-                    Spacer(minLength: 4)
+                    Spacer(minLength: 0) // Can compress to 0
 
                     // Same as last set button (friction reduction)
                     if previousCompletedSet != nil {
                         sameAsLastButton
+                            .layoutPriority(1) // Keep visible
                     }
 
                     // Log button (delete via swipe only to reduce clutter)
                     logButton
+                        .layoutPriority(2) // Highest priority - always keep visible
                 }
                 .frame(maxWidth: contentWidth.map { $0 - 32 - AppSpacing.sm } ?? .infinity, alignment: .leading)
             }
@@ -1331,7 +1334,7 @@ struct SetRowView: View {
         inputTemperature = setData.temperature.map { "\($0)" } ?? ""
         inputBandColor = setData.bandColor ?? lastBandColor ?? ""
 
-        // Multi-measurable values: logged value > target value > empty
+        // Multi-measurable values: logged value > last session value > target value > empty
         inputMeasurableValues = [:]
         for measurable in flatSet.implementMeasurables {
             if let loggedValue = setData.implementMeasurableValues[measurable.measurableName] {
@@ -1339,6 +1342,13 @@ struct SetRowView: View {
                 if let numericValue = loggedValue.numericValue {
                     inputMeasurableValues[measurable.measurableName] = formatMeasurableValue(numericValue)
                 } else if let stringValue = loggedValue.stringValue {
+                    inputMeasurableValues[measurable.measurableName] = stringValue
+                }
+            } else if let lastSessionValue = lastSessionSet?.implementMeasurableValues[measurable.measurableName] {
+                // Use last session value
+                if let numericValue = lastSessionValue.numericValue {
+                    inputMeasurableValues[measurable.measurableName] = formatMeasurableValue(numericValue)
+                } else if let stringValue = lastSessionValue.stringValue {
                     inputMeasurableValues[measurable.measurableName] = stringValue
                 }
             } else if let targetNumeric = measurable.targetValue {

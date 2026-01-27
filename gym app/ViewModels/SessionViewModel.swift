@@ -577,8 +577,25 @@ class SessionViewModel: ObservableObject {
               moduleIndex < session.completedModules.count,
               exerciseIndex < session.completedModules[moduleIndex].completedExercises.count else { return }
 
+        // Update distance unit in current session
         session.completedModules[moduleIndex].completedExercises[exerciseIndex].distanceUnit = unit
         currentSession = session
+
+        // Persist to module so it remembers for next session
+        let exerciseId = session.completedModules[moduleIndex].completedExercises[exerciseIndex].exerciseId
+        if let workout = repository.getWorkout(id: session.workoutId) {
+            // Find and update the exercise instance in the module
+            for moduleRef in workout.moduleReferences {
+                if var module = repository.getModule(id: moduleRef.moduleId) {
+                    if let eIndex = module.exercises.firstIndex(where: { $0.id == exerciseId }) {
+                        module.exercises[eIndex].distanceUnit = unit
+                        repository.saveModule(module)
+                        Logger.debug("Updated exercise distance unit to \\(unit.rawValue) in module")
+                        break
+                    }
+                }
+            }
+        }
 
         // Auto-save for crash recovery
         autoSaveInProgressSession()
