@@ -9,6 +9,23 @@ import SwiftUI
 
 // MARK: - Edit Exercise Sheet (Full Featured)
 
+// Enum for different picker types
+enum EditExercisePickerType: Identifiable, Equatable {
+    case exercise
+    case setGroup(Int)
+    case equipment
+    case muscles
+
+    var id: String {
+        switch self {
+        case .exercise: return "exercise"
+        case .setGroup(let index): return "setGroup_\(index)"
+        case .equipment: return "equipment"
+        case .muscles: return "muscles"
+        }
+    }
+}
+
 struct EditExerciseSheet: View {
     @Environment(\.dismiss) private var dismiss
     let exercise: SessionExercise
@@ -20,7 +37,6 @@ struct EditExerciseSheet: View {
     @State private var exerciseName: String = ""
     @State private var selectedTemplate: ExerciseTemplate?
     @State private var exerciseType: ExerciseType = .strength
-    @State private var showingExercisePicker = false
 
     // Cardio tracking options
     @State private var trackTime: Bool = true
@@ -33,11 +49,14 @@ struct EditExerciseSheet: View {
 
     // Set groups
     @State private var setGroups: [EditableSetGroup] = []
-    @State private var editingSetGroupIndex: Int? = nil
 
-    // Muscle groups (display-only)
+    // Muscle groups and equipment
     @State private var primaryMuscles: [MuscleGroup] = []
     @State private var secondaryMuscles: [MuscleGroup] = []
+    @State private var selectedImplementIds: Set<UUID> = []
+
+    // Unified picker state
+    @State private var activePicker: EditExercisePickerType? = nil
 
     // Helper struct for editing set groups
     struct EditableSetGroup: Identifiable {
@@ -74,7 +93,7 @@ struct EditExerciseSheet: View {
                 exerciseSection
                 trackingOptionsSection
                 setGroupsSection
-                musclesSection
+                musclesAndEquipmentSection
                 infoSection
             }
             .navigationTitle("Edit Exercise")
@@ -92,42 +111,83 @@ struct EditExerciseSheet: View {
                 }
             }
             .onAppear { loadCurrentValues() }
-            .sheet(isPresented: $showingExercisePicker) {
-                ExercisePickerView(
-                    selectedTemplate: $selectedTemplate,
-                    customName: $exerciseName,
-                    onSelect: { template in
-                        if let template = template {
-                            exerciseName = template.name
-                            exerciseType = template.exerciseType
-                            selectedTemplate = template
-                            primaryMuscles = template.primaryMuscles
-                            secondaryMuscles = template.secondaryMuscles
-                            if template.exerciseType == .cardio {
-                                trackTime = template.cardioMetric.tracksTime
-                                trackDistance = template.cardioMetric.tracksDistance
-                                distanceUnit = template.distanceUnit
-                            }
+            .sheet(item: $activePicker) { pickerType in
+                pickerSheet(for: pickerType)
+            }
+            .onChange(of: activePicker) { oldValue, newValue in
+                // When set group sheet dismisses, auto-save changes to update the active session immediately
+                if case .setGroup = oldValue, newValue == nil {
+                    saveChanges()
+                }
+            }
+        }
+    }
+
+    // MARK: - Unified Picker Sheet
+
+    @ViewBuilder
+    private func pickerSheet(for type: EditExercisePickerType) -> some View {
+        switch type {
+        case .exercise:
+            ExercisePickerView(
+                selectedTemplate: $selectedTemplate,
+                customName: $exerciseName,
+                onSelect: { template in
+                    if let template = template {
+                        exerciseName = template.name
+                        exerciseType = template.exerciseType
+                        selectedTemplate = template
+                        primaryMuscles = template.primaryMuscles
+                        secondaryMuscles = template.secondaryMuscles
+                        selectedImplementIds = template.implementIds
+                        if template.exerciseType == .cardio {
+                            trackTime = template.cardioMetric.tracksTime
+                            trackDistance = template.cardioMetric.tracksDistance
+                            distanceUnit = template.distanceUnit
                         }
                     }
-                )
+                }
+            )
+
+        case .setGroup(let index):
+            EditSetGroupSheet(
+                setGroup: $setGroups[index],
+                exerciseType: exerciseType,
+                cardioMetric: cardioMetric,
+                mobilityTracking: mobilityTracking,
+                distanceUnit: distanceUnit
+            )
+
+        case .equipment:
+            NavigationStack {
+                ImplementPickerView(selectedIds: $selectedImplementIds)
+                    .navigationTitle("Equipment")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") {
+                                activePicker = nil
+                            }
+                            .foregroundColor(AppColors.accentBlue)
+                        }
+                    }
             }
-            .sheet(item: Binding(
-                get: { editingSetGroupIndex.map { EditingIndex(id: $0) } },
-                set: { editingSetGroupIndex = $0?.id }
-            )) { editing in
-                EditSetGroupSheet(
-                    setGroup: $setGroups[editing.index],
-                    exerciseType: exerciseType,
-                    cardioMetric: cardioMetric,
-                    mobilityTracking: mobilityTracking,
-                    distanceUnit: distanceUnit
+
+        case .muscles:
+            NavigationStack {
+                MuscleGroupEnumPickerView(
+                    primaryMuscles: $primaryMuscles,
+                    secondaryMuscles: $secondaryMuscles
                 )
-            }
-            .onChange(of: editingSetGroupIndex) { oldValue, newValue in
-                // When set group sheet dismisses, auto-save changes to update the active session immediately
-                if oldValue != nil && newValue == nil {
-                    saveChanges()
+                .navigationTitle("Muscles")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") {
+                            activePicker = nil
+                        }
+                        .foregroundColor(AppColors.accentBlue)
+                    }
                 }
             }
         }
@@ -138,7 +198,7 @@ struct EditExerciseSheet: View {
     private var exerciseSection: some View {
         Section("Exercise") {
             Button {
-                showingExercisePicker = true
+                activePicker = .exercise
             } label: {
                 HStack {
                     Text("Exercise")
@@ -205,7 +265,7 @@ struct EditExerciseSheet: View {
         Section {
             ForEach(Array(setGroups.enumerated()), id: \.element.id) { index, setGroup in
                 Button {
-                    editingSetGroupIndex = index
+                    activePicker = .setGroup(index)
                 } label: {
                     setGroupRow(setGroup, index: index)
                 }
@@ -285,35 +345,95 @@ struct EditExerciseSheet: View {
         return parts.joined(separator: " · ")
     }
 
-    // MARK: - Muscles Section
+    // MARK: - Muscles & Equipment Section
 
-    @ViewBuilder
-    private var musclesSection: some View {
-        if !primaryMuscles.isEmpty || !secondaryMuscles.isEmpty {
-            Section("Muscles") {
-                if !primaryMuscles.isEmpty {
-                    HStack {
-                        Text("Primary")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        Spacer()
+    private var musclesAndEquipmentSection: some View {
+        Section("Muscles & Equipment") {
+            // Equipment row
+            Button {
+                activePicker = .equipment
+            } label: {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "figure.strengthtraining.traditional")
+                        .foregroundColor(AppColors.accentTeal)
+                        .frame(width: 24)
+
+                    Text("Equipment")
+                        .foregroundColor(AppColors.textPrimary)
+
+                    Spacer()
+
+                    equipmentValueText
+                        .multilineTextAlignment(.trailing)
+                }
+            }
+            .buttonStyle(.plain)
+
+            // Muscles row
+            Button {
+                activePicker = .muscles
+            } label: {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "figure.walk")
+                        .foregroundColor(AppColors.accentBlue)
+                        .frame(width: 24)
+
+                    Text("Muscles")
+                        .foregroundColor(AppColors.textPrimary)
+
+                    Spacer()
+
+                    muscleValueText
+                        .multilineTextAlignment(.trailing)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var equipmentValueText: some View {
+        Group {
+            if selectedImplementIds.isEmpty {
+                Text("None")
+                    .foregroundColor(AppColors.textTertiary)
+            } else {
+                Text(equipmentNames(for: selectedImplementIds).joined(separator: ", "))
+                    .font(.subheadline)
+                    .foregroundColor(AppColors.textSecondary)
+                    .lineLimit(2)
+            }
+        }
+    }
+
+    private var muscleValueText: some View {
+        Group {
+            if primaryMuscles.isEmpty && secondaryMuscles.isEmpty {
+                Text("None")
+                    .foregroundColor(AppColors.textTertiary)
+            } else {
+                VStack(alignment: .trailing, spacing: 2) {
+                    if !primaryMuscles.isEmpty {
                         Text(primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
                             .font(.subheadline)
+                            .foregroundColor(AppColors.accentBlue)
+                            .lineLimit(1)
                     }
-                }
-                if !secondaryMuscles.isEmpty {
-                    HStack {
-                        Text("Secondary")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        Spacer()
+                    if !secondaryMuscles.isEmpty {
                         Text(secondaryMuscles.map { $0.rawValue }.joined(separator: ", "))
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .font(.caption)
+                            .foregroundColor(AppColors.textSecondary)
+                            .lineLimit(1)
                     }
                 }
             }
         }
+    }
+
+    private func equipmentNames(for ids: Set<UUID>) -> [String] {
+        let library = LibraryService.shared
+        return ids.compactMap { id in
+            library.getImplement(id: id)?.name
+        }.sorted()
     }
 
     // MARK: - Info Section
@@ -342,6 +462,7 @@ struct EditExerciseSheet: View {
         trackDuration = exercise.mobilityTracking.tracksDuration
         primaryMuscles = exercise.primaryMuscles
         secondaryMuscles = exercise.secondaryMuscles
+        selectedImplementIds = exercise.implementIds
 
         // Convert CompletedSetGroups to EditableSetGroups
         setGroups = exercise.completedSetGroups.map { group in
@@ -455,6 +576,9 @@ struct EditExerciseSheet: View {
         }
 
         updatedExercise.completedSetGroups = newSetGroups
+        updatedExercise.primaryMuscles = primaryMuscles
+        updatedExercise.secondaryMuscles = secondaryMuscles
+        updatedExercise.implementIds = selectedImplementIds
 
         onSave(moduleIndex, exerciseIndex, updatedExercise)
         dismiss()
