@@ -348,6 +348,22 @@ class WorkoutViewModel: ObservableObject {
         }
     }
 
+    /// Get the current workout name for a scheduled workout (looks up dynamically)
+    /// Falls back to the stored snapshot if the workout no longer exists
+    func getCurrentWorkoutName(for scheduled: ScheduledWorkout) -> String {
+        if scheduled.isRestDay {
+            return "Rest"
+        }
+
+        guard let workoutId = scheduled.workoutId,
+              let workout = getWorkout(id: workoutId) else {
+            // Workout was deleted or not found, return the snapshot name
+            return scheduled.workoutName
+        }
+
+        return workout.name
+    }
+
     /// Get the week containing a date (Sunday to Saturday)
     func getWeekDates(for date: Date) -> [Date] {
         let calendar = Calendar.current

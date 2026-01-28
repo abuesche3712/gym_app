@@ -124,6 +124,12 @@ struct EditExerciseSheet: View {
                     distanceUnit: distanceUnit
                 )
             }
+            .onChange(of: editingSetGroupIndex) { oldValue, newValue in
+                // When set group sheet dismisses, auto-save changes to update the active session immediately
+                if oldValue != nil && newValue == nil {
+                    saveChanges()
+                }
+            }
         }
     }
 

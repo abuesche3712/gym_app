@@ -286,10 +286,16 @@ struct IntervalTimerView: View {
 
         updateFromStartTime()
 
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            guard !isPaused else { return }
-            updateFromStartTime()
+        // Create timer with proper configuration for accurate timing
+        let newTimer = Timer(timeInterval: 1.0, repeats: true) { [self] _ in
+            guard !self.isPaused else { return }
+            self.updateFromStartTime()
         }
+        // Set tolerance for balance between accuracy and battery life
+        newTimer.tolerance = 0.05  // 50ms tolerance
+        // Add to common mode so timer continues during UI interactions
+        RunLoop.current.add(newTimer, forMode: .common)
+        timer = newTimer
 
         // Listen for foreground to update timer
         NotificationCenter.default.addObserver(

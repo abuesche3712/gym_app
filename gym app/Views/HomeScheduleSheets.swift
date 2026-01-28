@@ -430,7 +430,7 @@ struct ScheduledWorkoutDetailRow: View {
                         .font(.title3)
 
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text(scheduled.workoutName)
+                        Text(workout.name)
                             .font(.subheadline.weight(.medium))
                             .foregroundColor(AppColors.textPrimary)
 

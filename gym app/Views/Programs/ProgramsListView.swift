@@ -539,7 +539,7 @@ struct DayDetailSheet: View {
                             } else if let workout = workouts.first(where: { $0.id == scheduled.workoutId }) {
                                 NavigationLink(destination: WorkoutDetailView(workout: workout)) {
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text(scheduled.workoutName)
+                                        Text(workout.name)
                                             .font(.headline)
 
                                         if scheduled.isFromProgram {
