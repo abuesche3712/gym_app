@@ -1,13 +1,114 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2025-01-27
+> **Last updated:** 2025-01-28
 
 ## Project Overview
 
 iOS workout tracking app built with SwiftUI. Offline-first with CoreData, Firebase for cloud sync.
 
-**Status:** Feature-complete foundation with recent UX bug fixes completed. Focus remains on UX refinement and infrastructure hardening.
+**Status:** Feature-complete foundation with UX bugs fixed and design system finalized (typography + color harmonization). Focus remains on UX refinement and infrastructure hardening.
+
+## Design System Implementation (Jan 28, 2025)
+
+Comprehensive typography system and color harmonization finalized.
+
+### Typography System
+
+**Created modular font system** (`Font+Extensions.swift` + integrated into `AppTheme.swift`):
+- **Display styles** (rounded, bold) - Big celebratory moments, workout stats
+- **Monospaced styles** - Timers/counters that prevent layout shift
+- **Label styles** (uppercase + tracking) - Elegant section headers
+- **Standard styles** (semantic + color) - Convenience wrappers
+
+**Refactored 245+ inline font definitions → 9 semantic modifiers:**
+
+```swift
+// Before (4 lines, verbose)
+Text("TODAY")
+    .font(.caption.weight(.semibold))
+    .textCase(.uppercase)
+    .tracking(1.5)
+    .foregroundColor(AppColors.dominant)
+
+// After (1 line, modular)
+Text("TODAY")
+    .elegantLabel(color: AppColors.dominant)
+```
+
+**Key modifiers:**
+- `.displayLarge()` / `.displayMedium()` / `.displaySmall()` - Rounded display text
+- `.monoLarge()` / `.monoMedium()` / `.monoSmall()` - Monospaced numbers (stable layout)
+- `.elegantLabel()` - Uppercase headers with tracking (e.g., "TODAY", "TRAINING HUB")
+- `.statLabel()` - Stat descriptions (e.g., "completed", "volume")
+- `.headline()` / `.body()` / `.caption()` - Standard text with color
+
+**Files refactored:**
+- `HomeView.swift` - Week in Review stats, headers
+- `WorkoutBuilderView.swift`, `WorkoutsListView.swift`, `ModulesListView.swift` - Section headers
+- `SessionComponents.swift` - All timer displays (4 instances)
+- `IntervalTimerView.swift` - Big countdown + phase label
+- `ActiveSessionView.swift` - Session timer
+- `RecentSetsSheet.swift`, `WorkoutOverviewSheet.swift` - Input fields and labels
+
+**Documentation:** `design docs/TYPOGRAPHY.md` - Complete usage guide, before/after examples, decision tree
+
+### Color Harmonization
+
+**HomeView & WorkoutBuilderView visual improvements:**
+- Added gradient borders to weekly calendar (dominant 0.20 → surfaceTertiary 0.15)
+- Added gradient borders to Week in Review container (dominant 0.25 → surfaceTertiary 0.15)
+- Enhanced shadow on Week in Review (dominant 0.08 opacity, 12px radius)
+- All cards now use consistent gradient card styling
+
+**ActiveSession UI enhancements (subtle pop):**
+- Current set indicator: 0.12 → **0.15 opacity**
+- Timer running state: 0.12 → **0.15 opacity**
+- Log button shadow: 0.06 → **0.10 opacity** (8px radius)
+- Same as last button: 0.10 → **0.15 opacity**
+- Rest timer urgent (<10s): Added **0.15 opacity glow** with amber color
+- Rest timer urgent border: 0.3 → **0.4 opacity**
+
+**Updated documentation:** `design docs/COLOR_PALETTE.md` - Implementation status and ActiveSession guidelines
+
+### Benefits
+
+✅ **Consistency** - Same typography style = cohesive feel across app
+✅ **Accessibility** - Uses semantic text styles, respects Dynamic Type
+✅ **Maintainability** - Change once, updates everywhere
+✅ **Layout Stability** - Monospaced numbers prevent timer/counter jumping
+✅ **Personality** - Rounded display adds confident, friendly feel
+✅ **Elegance** - Tracked labels add premium, refined aesthetic
+✅ **Visual Harmony** - HomeView and WorkoutBuilderView feel cohesive
+✅ **Subtle Pop** - ActiveSession UI has just enough emphasis without being loud
+
+### Implementation Locations
+
+**Typography (`AppTheme.swift` lines 1002+):**
+```swift
+extension Font {
+    static var displayLarge: Font      // .largeTitle, rounded, bold
+    static var displayMedium: Font     // .title, rounded, bold
+    static var monoLarge: Font         // .largeTitle, monospaced
+    static var monoMedium: Font        // .title3, monospaced
+    // ... 8 total font variants
+}
+
+extension View {
+    func displayLarge(color:) -> some View
+    func monoLarge(color:) -> some View
+    func elegantLabel(color:, tracking:) -> some View
+    func statLabel(color:, tracking:) -> some View
+    // ... 13 total view modifiers
+}
+```
+
+**Color enhancements:**
+- `HomeView.swift:623-725` - Week in Review gradient borders
+- `HomeView.swift:165-186` - Weekly calendar gradient border
+- `SessionComponents.swift:46-52` - Current set indicator opacity
+- `SessionComponents.swift:1009` - Log button enhanced shadow
+- `ActiveSessionView.swift:restTimerBar` - Urgent state glow
 
 ## Recent Bug Fixes (Jan 27, 2025)
 
@@ -190,7 +291,10 @@ gym app/                          (90+ Swift files)
 │   └── [supporting services]
 │
 ├── CoreData/                     (3 files)
-├── Theme/                        (2 files)
+├── Theme/                        (3 files)
+│   ├── AppTheme.swift            (Typography + Color system)
+│   ├── Components.swift
+│   └── Font+Extensions.swift     (Standalone, also in AppTheme)
 ├── Utilities/                    (3 files)
 └── gym_appApp.swift
 
@@ -428,9 +532,26 @@ Logger.redactEmail(email)   // "ab***@example.com"
 
 ## Code Style
 
-- Theme: `AppColors`, `AppSpacing`, `AppCorners`, `AppAnimation`
+**Theme System:**
+- Colors: `AppColors.dominant`, `AppColors.textPrimary`, etc.
+- Typography: `.displayLarge()`, `.monoMedium()`, `.elegantLabel()`, `.statLabel()`
+- Spacing: `AppSpacing.sm`, `AppSpacing.md`, `AppSpacing.lg`
+- Corners: `AppCorners.small`, `AppCorners.medium`, `AppCorners.large`
+- Animation: `AppAnimation.quick`, `AppAnimation.standard`, `AppAnimation.bounce`
+
+**Typography Guidelines:**
+- Timers/counters → `.monoLarge()` / `.monoMedium()` (prevents layout shift)
+- Big stats/numbers → `.displayLarge()` / `.displayMedium()` (rounded, bold)
+- Section headers → `.elegantLabel()` (uppercase + tracking)
+- Stat labels → `.statLabel()` (tiny uppercase under numbers)
+- Body text → `.headline()` / `.body()` / `.caption()`
+- See `design docs/TYPOGRAPHY.md` for complete guide
+
+**UI Patterns:**
 - Sheets: `.presentationDetents([.medium])`
 - Exercise types have `.icon` property for SF Symbols
+- Cards use `.gradientCard()` modifier for consistent styling
+- Buttons use `.buttonStyle(.bouncy)` for tactile feedback
 
 ## Key Code Locations
 
