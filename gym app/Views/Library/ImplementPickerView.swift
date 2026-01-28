@@ -51,7 +51,7 @@ struct ImplementPickerView: View {
             if !selectedIds.isEmpty {
                 Text("\(selectedIds.count) selected")
                     .font(.caption)
-                    .foregroundColor(AppColors.accentBlue)
+                    .foregroundColor(AppColors.dominant)
             }
         }
     }
@@ -108,11 +108,11 @@ struct ImplementChip: View {
             .padding(.vertical, AppSpacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(isSelected ? AppColors.accentTeal : AppColors.surfaceLight)
+                    .fill(isSelected ? AppColors.accent1 : AppColors.surfaceTertiary)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .stroke(isSelected ? AppColors.accentTeal : AppColors.border, lineWidth: 1)
+                    .stroke(isSelected ? AppColors.accent1 : AppColors.surfaceTertiary, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -145,9 +145,9 @@ struct ImplementDisplay: View {
                         .padding(.vertical, 4)
                         .background(
                             Capsule()
-                                .fill(AppColors.accentTeal.opacity(0.15))
+                                .fill(AppColors.accent1.opacity(0.12))
                         )
-                        .foregroundColor(AppColors.accentTeal)
+                        .foregroundColor(AppColors.accent1)
                 }
             }
         }

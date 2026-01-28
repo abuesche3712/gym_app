@@ -58,15 +58,7 @@ enum ModuleType: String, Codable, CaseIterable, Identifiable {
     }
 
     var color: Color {
-        switch self {
-        case .warmup: return .orange
-        case .prehab: return .green
-        case .explosive: return .yellow
-        case .strength: return .red
-        case .cardioLong: return .blue
-        case .cardioSpeed: return .purple
-        case .recovery: return .teal
-        }
+        return AppColors.moduleColor(self)
     }
 }
 
@@ -411,9 +403,9 @@ enum ProgressionRecommendation: String, Codable, CaseIterable, Identifiable {
 
     var color: Color {
         switch self {
-        case .regress: return .orange
-        case .stay: return .blue
-        case .progress: return .green
+        case .regress: return AppColors.warning
+        case .stay: return AppColors.dominant
+        case .progress: return AppColors.success
         }
     }
 }

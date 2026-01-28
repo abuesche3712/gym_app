@@ -57,12 +57,12 @@ struct WeekDayCell: View {
             VStack(spacing: AppSpacing.xs) {
                 Text(dayName)
                     .font(.caption2.weight(.medium))
-                    .foregroundColor(isToday ? AppColors.accentBlue : AppColors.textTertiary)
+                    .foregroundColor(isToday ? AppColors.accent1 : AppColors.textTertiary)
 
                 ZStack {
                     if isToday {
                         Circle()
-                            .fill(AppColors.accentBlue)
+                            .fill(AppColors.accent1)
                             .frame(width: 32, height: 32)
                     }
 
@@ -80,14 +80,14 @@ struct WeekDayCell: View {
                     }
                     if hasRestDay {
                         Circle()
-                            .fill(AppColors.accentTeal)
+                            .fill(AppColors.accent1)
                             .frame(width: 6, height: 6)
                     }
                     if hasScheduledWorkouts {
                         let pendingCount = scheduledWorkouts.filter { !$0.isRestDay && $0.completedSessionId == nil }.count
                         ForEach(0..<min(pendingCount, 2), id: \.self) { _ in
                             Circle()
-                                .fill(AppColors.accentBlue)
+                                .fill(AppColors.accent1)
                                 .frame(width: 6, height: 6)
                         }
                     }
@@ -176,7 +176,7 @@ struct ScheduleWorkoutSheet: View {
                         VStack(alignment: .leading, spacing: AppSpacing.md) {
                             Label("Scheduled", systemImage: "calendar")
                                 .font(.headline)
-                                .foregroundColor(AppColors.accentBlue)
+                                .foregroundColor(AppColors.dominant)
 
                             ForEach(scheduledWorkouts) { scheduled in
                                 if let workout = workouts.first(where: { $0.id == scheduled.workoutId }) {
@@ -225,12 +225,12 @@ struct ScheduleWorkoutSheet: View {
                                             Spacer()
 
                                             Image(systemName: "plus.circle")
-                                                .foregroundColor(AppColors.accentBlue)
+                                                .foregroundColor(AppColors.dominant)
                                         }
                                         .padding(AppSpacing.md)
                                         .background(
                                             RoundedRectangle(cornerRadius: AppCorners.medium)
-                                                .fill(AppColors.cardBackground)
+                                                .fill(AppColors.surfacePrimary)
                                         )
                                     }
                                     .buttonStyle(.plain)
@@ -245,7 +245,7 @@ struct ScheduleWorkoutSheet: View {
                                 } label: {
                                     HStack {
                                         Image(systemName: "moon.zzz.fill")
-                                            .foregroundColor(AppColors.accentTeal)
+                                            .foregroundColor(AppColors.accent1)
 
                                         Text("Rest Day")
                                             .font(.subheadline.weight(.medium))
@@ -254,12 +254,12 @@ struct ScheduleWorkoutSheet: View {
                                         Spacer()
 
                                         Image(systemName: "plus.circle")
-                                            .foregroundColor(AppColors.accentTeal)
+                                            .foregroundColor(AppColors.accent1)
                                     }
                                     .padding(AppSpacing.md)
                                     .background(
                                         RoundedRectangle(cornerRadius: AppCorners.medium)
-                                            .fill(AppColors.accentTeal.opacity(0.1))
+                                            .fill(AppColors.accent1.opacity(0.1))
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -275,7 +275,7 @@ struct ScheduleWorkoutSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
             .alert("Rest Day?", isPresented: $showRestDayJab) {
@@ -336,7 +336,7 @@ struct CompletedSessionRow: View {
         switch rating {
         case 1...3: return AppColors.error
         case 4...5: return AppColors.warning
-        case 6...7: return AppColors.accentBlue
+        case 6...7: return AppColors.dominant
         case 8...10: return AppColors.success
         default: return AppColors.textTertiary
         }
@@ -356,7 +356,7 @@ struct ScheduledWorkoutRow: View {
     }
 
     private var iconColor: Color {
-        scheduled.isRestDay ? AppColors.accentTeal : AppColors.accentBlue
+        scheduled.isRestDay ? AppColors.accent1 : AppColors.dominant
     }
 
     var body: some View {
@@ -386,7 +386,7 @@ struct ScheduledWorkoutRow: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, AppSpacing.xs)
-                        .background(AppGradients.accentGradient)
+                        .background(AppGradients.dominantGradient)
                         .clipShape(Capsule())
                 }
             }
@@ -426,7 +426,7 @@ struct ScheduledWorkoutDetailRow: View {
             NavigationLink(destination: WorkoutDetailView(workout: workout)) {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "calendar.badge.clock")
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                         .font(.title3)
 
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
@@ -465,7 +465,7 @@ struct ScheduledWorkoutDetailRow: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, AppSpacing.sm)
-                            .background(AppGradients.accentGradient)
+                            .background(AppGradients.dominantGradient)
                             .clipShape(Capsule())
                     }
                 }
@@ -479,7 +479,7 @@ struct ScheduledWorkoutDetailRow: View {
                         .padding(.horizontal, AppSpacing.md)
                         .background(
                             Capsule()
-                                .fill(AppColors.surfaceLight)
+                                .fill(AppColors.surfaceTertiary)
                         )
                 }
             }
@@ -488,7 +488,7 @@ struct ScheduledWorkoutDetailRow: View {
         .padding(AppSpacing.md)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(AppColors.accentBlue.opacity(0.1))
+                .fill(AppColors.dominant.opacity(0.1))
         )
     }
 }
@@ -558,7 +558,7 @@ struct WorkoutPreviewSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Start") { onStart() }
                         .fontWeight(.semibold)
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
         }
@@ -617,7 +617,7 @@ struct ModulePreviewRow: View {
         .padding(AppSpacing.md)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(AppColors.cardBackground)
+                .fill(AppColors.surfacePrimary)
         )
     }
 }
@@ -667,7 +667,7 @@ struct QuickScheduleTodaySheet: View {
                                     .padding(AppSpacing.md)
                                     .background(
                                         RoundedRectangle(cornerRadius: AppCorners.medium)
-                                            .fill(AppColors.cardBackground)
+                                            .fill(AppColors.surfacePrimary)
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -679,7 +679,7 @@ struct QuickScheduleTodaySheet: View {
                     VStack(alignment: .leading, spacing: AppSpacing.md) {
                         Label("Or Take a Rest Day", systemImage: "moon.zzz.fill")
                             .font(.headline)
-                            .foregroundColor(AppColors.accentTeal)
+                            .foregroundColor(AppColors.accent1)
 
                         Button {
                             restDayJab = restDayJabs.randomElement() ?? ""
@@ -705,7 +705,7 @@ struct QuickScheduleTodaySheet: View {
                             .padding(AppSpacing.md)
                             .background(
                                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                                    .fill(AppColors.accentTeal.opacity(0.1))
+                                    .fill(AppColors.accent1.opacity(0.1))
                             )
                         }
                         .buttonStyle(.plain)

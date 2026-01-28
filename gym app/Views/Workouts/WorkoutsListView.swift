@@ -103,7 +103,7 @@ struct WorkoutsListView: View {
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.title3)
-                            .foregroundColor(AppColors.accentBlue)
+                            .foregroundColor(AppColors.dominant)
                     }
                 }
             }
@@ -134,15 +134,15 @@ struct WorkoutsListView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                         .frame(width: 36, height: 36)
                         .background(
                             Circle()
-                                .fill(AppColors.accentBlue.opacity(0.1))
+                                .fill(AppColors.dominant.opacity(0.1))
                         )
                         .overlay(
                             Circle()
-                                .stroke(AppColors.accentBlue.opacity(0.2), lineWidth: 1)
+                                .stroke(AppColors.dominant.opacity(0.2), lineWidth: 1)
                         )
                 }
 
@@ -153,15 +153,15 @@ struct WorkoutsListView: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                         .frame(width: 36, height: 36)
                         .background(
                             Circle()
-                                .fill(AppColors.accentBlue.opacity(0.1))
+                                .fill(AppColors.dominant.opacity(0.1))
                         )
                         .overlay(
                             Circle()
-                                .stroke(AppColors.accentBlue.opacity(0.2), lineWidth: 1)
+                                .stroke(AppColors.dominant.opacity(0.2), lineWidth: 1)
                         )
                 }
             }
@@ -170,9 +170,7 @@ struct WorkoutsListView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("WORKOUTS")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(AppColors.accentBlue)
-                        .tracking(1.5)
+                        .elegantLabel(color: AppColors.dominant)
 
                     Text("Your Workouts")
                         .font(.system(size: 28, weight: .bold))
@@ -201,7 +199,7 @@ struct WorkoutsListView: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [AppColors.accentBlue.opacity(0.6), AppColors.accentBlue.opacity(0.1), Color.clear],
+                        colors: [AppColors.dominant.opacity(0.6), AppColors.dominant.opacity(0.1), Color.clear],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -293,7 +291,7 @@ struct WorkoutListCard: View {
                     .frame(width: 40, height: 40)
                     .background(
                         Circle()
-                            .fill(AppColors.accentBlue)
+                            .fill(AppColors.dominant)
                     )
             }
             .buttonStyle(.plain)
@@ -301,10 +299,10 @@ struct WorkoutListCard: View {
         .padding(AppSpacing.cardPadding)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.cardBackground)
+                .fill(AppColors.surfacePrimary)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.border.opacity(0.5), lineWidth: 0.5)
+                        .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 0.5)
                 )
         )
         .contentShape(Rectangle())

@@ -140,7 +140,7 @@ struct SetGroupFormView: View {
         ScrollView {
             VStack(spacing: AppSpacing.xl) {
                 // Mode Selection
-                FormSection(title: "Mode", icon: "timer", iconColor: (isInterval || isAMRAP) ? AppColors.accentCyan : AppColors.textTertiary) {
+                FormSection(title: "Mode", icon: "timer", iconColor: (isInterval || isAMRAP) ? AppColors.dominant : AppColors.textTertiary) {
                     VStack(spacing: AppSpacing.sm) {
                         // Interval Mode Toggle
                         HStack(spacing: AppSpacing.md) {
@@ -156,11 +156,11 @@ struct SetGroupFormView: View {
                                     if newValue { isAMRAP = false }
                                 }
                             ))
-                            .tint(AppColors.accentCyan)
+                            .tint(AppColors.dominant)
                         }
                         .padding(.horizontal, AppSpacing.cardPadding)
                         .padding(.vertical, AppSpacing.md)
-                        .background(AppColors.cardBackground)
+                        .background(AppColors.surfacePrimary)
 
                         // AMRAP Mode Toggle
                         HStack(spacing: AppSpacing.md) {
@@ -176,23 +176,23 @@ struct SetGroupFormView: View {
                                     if newValue { isInterval = false }
                                 }
                             ))
-                            .tint(AppColors.accentOrange)
+                            .tint(AppColors.accent2)
                         }
                         .padding(.horizontal, AppSpacing.cardPadding)
                         .padding(.vertical, AppSpacing.md)
-                        .background(AppColors.cardBackground)
+                        .background(AppColors.surfacePrimary)
                     }
 
                     if isInterval {
                         Text("Timer will auto-run through all rounds with work/rest periods")
                             .font(.caption)
-                            .foregroundColor(AppColors.accentCyan)
+                            .foregroundColor(AppColors.dominant)
                             .padding(.horizontal, AppSpacing.cardPadding)
                             .padding(.bottom, AppSpacing.sm)
                     } else if isAMRAP {
                         Text("As Many Reps As Possible - log max reps achieved per set")
                             .font(.caption)
-                            .foregroundColor(AppColors.accentOrange)
+                            .foregroundColor(AppColors.accent2)
                             .padding(.horizontal, AppSpacing.cardPadding)
                             .padding(.bottom, AppSpacing.sm)
                     }
@@ -211,7 +211,7 @@ struct SetGroupFormView: View {
                     TextField("Notes (e.g., 'top set', 'back-off')", text: $notes)
                         .padding(.horizontal, AppSpacing.cardPadding)
                         .padding(.vertical, AppSpacing.md)
-                        .background(AppColors.cardBackground)
+                        .background(AppColors.surfacePrimary)
                 }
             }
             .padding(AppSpacing.screenPadding)
@@ -232,7 +232,7 @@ struct SetGroupFormView: View {
                     saveSetGroup()
                 }
                 .fontWeight(.semibold)
-                .foregroundColor(AppColors.accentBlue)
+                .foregroundColor(AppColors.dominant)
             }
         }
         .onAppear {
@@ -245,7 +245,7 @@ struct SetGroupFormView: View {
     @ViewBuilder
     private var intervalModeSection: some View {
         // Rounds
-        FormSection(title: "Rounds", icon: "repeat.circle", iconColor: AppColors.accentCyan) {
+        FormSection(title: "Rounds", icon: "repeat.circle", iconColor: AppColors.dominant) {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "number")
                     .font(.system(size: 16))
@@ -262,23 +262,23 @@ struct SetGroupFormView: View {
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.md)
-            .background(AppColors.cardBackground)
+            .background(AppColors.surfacePrimary)
         }
 
         // Work Period
-        FormSection(title: "Work Period", icon: "flame", iconColor: AppColors.accentBlue) {
+        FormSection(title: "Work Period", icon: "flame", iconColor: AppColors.dominant) {
             TimePickerView(totalSeconds: $workDuration, maxMinutes: 10, label: "Work Time", secondsStep: 5)
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.md)
-                .background(AppColors.cardBackground)
+                .background(AppColors.surfacePrimary)
         }
 
         // Rest Period
-        FormSection(title: "Rest Period", icon: "pause.circle", iconColor: AppColors.accentTeal) {
+        FormSection(title: "Rest Period", icon: "pause.circle", iconColor: AppColors.accent1) {
             TimePickerView(totalSeconds: $intervalRestDuration, maxMinutes: 10, label: "Rest Time", secondsStep: 5)
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.md)
-                .background(AppColors.cardBackground)
+                .background(AppColors.surfacePrimary)
         }
 
         // Total duration preview
@@ -296,11 +296,11 @@ struct SetGroupFormView: View {
 
                 Text(formatTotalDuration())
                     .font(.headline)
-                    .foregroundColor(AppColors.accentCyan)
+                    .foregroundColor(AppColors.dominant)
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.md)
-            .background(AppColors.cardBackground)
+            .background(AppColors.surfacePrimary)
         }
     }
 
@@ -309,7 +309,7 @@ struct SetGroupFormView: View {
     @ViewBuilder
     private var amrapModeSection: some View {
         // Sets
-        FormSection(title: "AMRAP Sets", icon: "figure.strengthtraining.traditional", iconColor: AppColors.accentOrange) {
+        FormSection(title: "AMRAP Sets", icon: "figure.strengthtraining.traditional", iconColor: AppColors.accent2) {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "number")
                     .font(.system(size: 16))
@@ -326,11 +326,11 @@ struct SetGroupFormView: View {
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.md)
-            .background(AppColors.cardBackground)
+            .background(AppColors.surfacePrimary)
         }
 
         // Time Limit (Optional)
-        FormSection(title: "Time Limit (Optional)", icon: "timer", iconColor: AppColors.accentCyan) {
+        FormSection(title: "Time Limit (Optional)", icon: "timer", iconColor: AppColors.dominant) {
             VStack(spacing: AppSpacing.sm) {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "timer")
@@ -351,7 +351,7 @@ struct SetGroupFormView: View {
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.md)
-                .background(AppColors.cardBackground)
+                .background(AppColors.surfacePrimary)
 
                 if amrapTimeLimit == nil {
                     Text("Track max reps with no time constraint")
@@ -365,13 +365,13 @@ struct SetGroupFormView: View {
 
         // Weight/Equipment (for AMRAP sets)
         if exerciseType == .strength {
-            FormSection(title: "Load", icon: "scalemass", iconColor: AppColors.accentBlue) {
+            FormSection(title: "Load", icon: "scalemass", iconColor: AppColors.dominant) {
                 VStack(spacing: 0) {
                     // Weight tracking toggle
                     styledRow(icon: "scalemass", label: "Track Weight") {
                         Toggle("", isOn: $trackWeight)
                             .labelsHidden()
-                            .tint(AppColors.accentBlue)
+                            .tint(AppColors.dominant)
                     }
 
                     if trackWeight {
@@ -404,16 +404,16 @@ struct SetGroupFormView: View {
                         }
                     }
                 }
-                .background(AppColors.cardBackground)
+                .background(AppColors.surfacePrimary)
             }
         }
 
         // Rest Between Sets
-        FormSection(title: "Rest Between Sets", icon: "pause.circle", iconColor: AppColors.accentTeal) {
+        FormSection(title: "Rest Between Sets", icon: "pause.circle", iconColor: AppColors.accent1) {
             TimePickerView(totalSeconds: $restPeriod, maxMinutes: 5, label: "Rest Period", compact: true)
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.md)
-                .background(AppColors.cardBackground)
+                .background(AppColors.surfacePrimary)
         }
     }
 
@@ -422,7 +422,7 @@ struct SetGroupFormView: View {
     @ViewBuilder
     private var normalModeSection: some View {
         // Sets
-        FormSection(title: "Sets", icon: "number.square", iconColor: AppColors.accentBlue) {
+        FormSection(title: "Sets", icon: "number.square", iconColor: AppColors.dominant) {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "number")
                     .font(.system(size: 16))
@@ -439,15 +439,15 @@ struct SetGroupFormView: View {
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.md)
-            .background(AppColors.cardBackground)
+            .background(AppColors.surfacePrimary)
         }
 
         // Target
-        FormSection(title: "Target", icon: "target", iconColor: AppColors.accentCyan) {
+        FormSection(title: "Target", icon: "target", iconColor: AppColors.dominant) {
             VStack(spacing: 0) {
                 targetFieldsForExerciseType
             }
-            .background(AppColors.cardBackground)
+            .background(AppColors.surfacePrimary)
         }
 
         // Equipment-Specific Attributes (automatically shown based on selected equipment)
@@ -456,11 +456,11 @@ struct SetGroupFormView: View {
         }
 
         // Rest Between Sets
-        FormSection(title: "Rest Between Sets", icon: "pause.circle", iconColor: AppColors.accentTeal) {
+        FormSection(title: "Rest Between Sets", icon: "pause.circle", iconColor: AppColors.accent1) {
             TimePickerView(totalSeconds: $restPeriod, maxMinutes: 5, label: "Rest Period", compact: true)
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.md)
-                .background(AppColors.cardBackground)
+                .background(AppColors.surfacePrimary)
         }
     }
 
@@ -471,7 +471,7 @@ struct SetGroupFormView: View {
         FormSection(
             title: "Equipment Attributes",
             icon: "wrench.and.screwdriver",
-            iconColor: AppColors.accentPurple
+            iconColor: AppColors.accent3
         ) {
             VStack(spacing: 0) {
                 ForEach(Array(implementSpecificMeasurables.enumerated()), id: \.element.key) { index, item in
@@ -517,7 +517,7 @@ struct SetGroupFormView: View {
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.md)
-            .background(AppColors.cardBackground)
+            .background(AppColors.surfacePrimary)
         }
     }
 
@@ -589,7 +589,7 @@ struct SetGroupFormView: View {
             styledRow(icon: "gauge.with.dots.needle.67percent", label: "Track RPE") {
                 Toggle("", isOn: $trackRPE)
                     .labelsHidden()
-                    .tint(AppColors.accentCyan)
+                    .tint(AppColors.dominant)
             }
 
             // RPE target (only shown if tracking enabled)
@@ -603,7 +603,7 @@ struct SetGroupFormView: View {
                             Text("\(rpe)").tag(rpe)
                         }
                     }
-                    .tint(AppColors.accentCyan)
+                    .tint(AppColors.dominant)
                 }
             }
 
@@ -713,10 +713,10 @@ struct SetGroupFormView: View {
                                 .padding(.vertical, AppSpacing.sm)
                                 .background(
                                     Capsule()
-                                        .fill(AppColors.surfaceLight)
+                                        .fill(AppColors.surfaceTertiary)
                                         .overlay(
                                             Capsule()
-                                                .stroke(AppColors.border, lineWidth: 0.5)
+                                                .stroke(AppColors.surfaceTertiary, lineWidth: 0.5)
                                         )
                                 )
                         }

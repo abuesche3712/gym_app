@@ -58,7 +58,7 @@ struct MainTabView: View {
                     .tag(4)
                     .simultaneousGesture(swipeGesture)
             }
-            .tint(AppColors.accentBlue)
+            .tint(AppColors.dominant)
             .safeAreaInset(edge: .bottom) {
                 // Add space for mini bar when visible
                 if showMiniBar {
@@ -214,7 +214,7 @@ struct MiniSessionBar: View {
             .padding(.vertical, AppSpacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.accentBlue)
+                    .fill(AppColors.dominant)
                     .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
             )
             .padding(.horizontal, AppSpacing.md)

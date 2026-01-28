@@ -116,7 +116,7 @@ struct ActiveSessionView: View {
                         Button("Finish") {
                             showingEndConfirmation = true
                         }
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                     }
                 } else {
                     ToolbarItem(placement: .primaryAction) {
@@ -279,11 +279,11 @@ struct ActiveSessionView: View {
 
                 GeometryReader { geo in
                     Rectangle()
-                        .fill(AppColors.accentTeal)
+                        .fill(AppColors.accent1)
                         .frame(width: geo.size.width * progress, height: 3)
                 }
                 .frame(height: 3)
-                .background(AppColors.border.opacity(0.3))
+                .background(AppColors.surfaceTertiary.opacity(0.3))
             }
 
             // Compact info row - tappable for overview
@@ -300,8 +300,7 @@ struct ActiveSessionView: View {
                                 .font(.system(size: 12))
                                 .foregroundColor(AppColors.textTertiary)
                             Text(formatTime(sessionViewModel.sessionElapsedSeconds))
-                                .font(.system(size: 14, weight: .medium, design: .monospaced))
-                                .foregroundColor(AppColors.textSecondary)
+                                .monoSmall(color: AppColors.textSecondary)
                         }
 
                         Spacer()
@@ -326,7 +325,7 @@ struct ActiveSessionView: View {
                     .padding(.vertical, 4)
                     .background(
                         Capsule()
-                            .fill(AppColors.surfaceLight)
+                            .fill(AppColors.surfaceTertiary)
                     )
                 }
                 .padding(.horizontal, AppSpacing.md)
@@ -335,7 +334,7 @@ struct ActiveSessionView: View {
             }
             .buttonStyle(.plain)
         }
-        .background(AppColors.cardBackground.opacity(0.5))
+        .background(AppColors.surfacePrimary.opacity(0.5))
     }
 
     private func countCompletedSets() -> Int {
@@ -401,10 +400,10 @@ struct ActiveSessionView: View {
                 HStack(spacing: AppSpacing.sm) {
                     Image(systemName: "link")
                         .font(.caption)
-                        .foregroundColor(.orange)
+                        .foregroundColor(AppColors.warning)
                     Text("SUPERSET \(position)/\(total)")
                         .font(.caption.weight(.semibold))
-                        .foregroundColor(.orange)
+                        .foregroundColor(AppColors.warning)
 
                     Spacer()
 
@@ -420,7 +419,7 @@ struct ActiveSessionView: View {
                 .padding(.vertical, AppSpacing.sm)
                 .background(
                     RoundedRectangle(cornerRadius: AppCorners.small)
-                        .fill(Color.orange.opacity(0.1))
+                        .fill(AppColors.warning.opacity(0.1))
                 )
             }
 
@@ -452,7 +451,7 @@ struct ActiveSessionView: View {
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                             .background(
                                 Circle()
-                                    .fill(AppColors.surfaceLight)
+                                    .fill(AppColors.surfaceTertiary)
                             )
                     }
                     .buttonStyle(.bouncy)
@@ -468,7 +467,7 @@ struct ActiveSessionView: View {
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                             .background(
                                 Circle()
-                                    .fill(AppColors.surfaceLight)
+                                    .fill(AppColors.surfaceTertiary)
                             )
                     }
                     .buttonStyle(.bouncy)
@@ -485,7 +484,7 @@ struct ActiveSessionView: View {
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                             .background(
                                 Circle()
-                                    .fill(AppColors.surfaceLight)
+                                    .fill(AppColors.surfaceTertiary)
                             )
                     }
                     .buttonStyle(.bouncy)
@@ -503,7 +502,7 @@ struct ActiveSessionView: View {
                 RoundedRectangle(cornerRadius: AppCorners.large)
                     .fill(AppGradients.cardShine)
                 RoundedRectangle(cornerRadius: AppCorners.large)
-                    .stroke(AppColors.border.opacity(0.4), lineWidth: 0.5)
+                    .stroke(AppColors.surfaceTertiary.opacity(0.4), lineWidth: 0.5)
             }
         )
         .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
@@ -604,7 +603,7 @@ struct ActiveSessionView: View {
                     .padding(.vertical, AppSpacing.sm)
                     .background(
                         RoundedRectangle(cornerRadius: AppCorners.small)
-                            .stroke(AppColors.border, style: StrokeStyle(lineWidth: 1, dash: [5]))
+                            .stroke(AppColors.surfaceTertiary, style: StrokeStyle(lineWidth: 1, dash: [5]))
                     )
                 }
                 .buttonStyle(.plain)
@@ -625,7 +624,7 @@ struct ActiveSessionView: View {
                     .padding(.vertical, AppSpacing.lg)
                     .background(
                         RoundedRectangle(cornerRadius: AppCorners.medium)
-                            .fill(allSetsCompleted(exercise) ? AppGradients.accentGradient : LinearGradient(colors: [AppColors.textTertiary], startPoint: .leading, endPoint: .trailing))
+                            .fill(allSetsCompleted(exercise) ? AppGradients.dominantGradient : LinearGradient(colors: [AppColors.textTertiary], startPoint: .leading, endPoint: .trailing))
                     )
                 }
                 .buttonStyle(.plain)
@@ -635,10 +634,10 @@ struct ActiveSessionView: View {
         .frame(width: width)  // Lock width to prevent layout shifts
         .background(
             RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.cardBackground)
+                .fill(AppColors.surfacePrimary)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
+                        .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
                 )
         )
         .clipped()
@@ -655,7 +654,7 @@ struct ActiveSessionView: View {
             HStack {
                 Image(systemName: "timer")
                     .font(.system(size: 16))
-                    .foregroundColor(.orange)
+                    .foregroundColor(AppColors.warning)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Interval")
@@ -726,7 +725,7 @@ struct ActiveSessionView: View {
                     .background(
                         RoundedRectangle(cornerRadius: AppCorners.medium)
                             .fill(LinearGradient(
-                                colors: [.orange, .orange.opacity(0.8)],
+                                colors: [AppColors.warning, AppColors.warning.opacity(0.8)],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             ))
@@ -738,10 +737,10 @@ struct ActiveSessionView: View {
         .padding(AppSpacing.md)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(AppColors.cardBackground)
+                .fill(AppColors.surfacePrimary)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .stroke(allCompleted ? AppColors.success.opacity(0.3) : Color.orange.opacity(0.3), lineWidth: 1)
+                        .stroke(allCompleted ? AppColors.success.opacity(0.3) : AppColors.warning.opacity(0.3), lineWidth: 1)
                 )
         )
     }
@@ -1388,7 +1387,7 @@ struct ActiveSessionView: View {
                 .padding(AppSpacing.cardPadding)
                 .background(
                     RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(AppColors.surfaceLight.opacity(0.5))
+                        .fill(AppColors.surfaceTertiary.opacity(0.5))
                 )
             }
         }
@@ -1402,7 +1401,7 @@ struct ActiveSessionView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundColor(AppColors.textTertiary)
                 .frame(width: 20, height: 20)
-                .background(Circle().fill(AppColors.surfaceLight))
+                .background(Circle().fill(AppColors.surfaceTertiary))
 
             // Metrics based on exercise type
             HStack(spacing: AppSpacing.sm) {
@@ -1411,26 +1410,26 @@ struct ActiveSessionView: View {
                     // Check for string-based implement measurable (e.g., band color)
                     if let stringMeasurable = exercise.implementStringMeasurable {
                         if let bandColor = set.bandColor, !bandColor.isEmpty {
-                            metricPill(value: bandColor, label: stringMeasurable.implementName.lowercased(), color: AppColors.accentPurple)
+                            metricPill(value: bandColor, label: stringMeasurable.implementName.lowercased(), color: AppColors.accent3)
                         }
                         if let reps = set.reps {
-                            metricPill(value: "\(reps)", label: "reps", color: AppColors.accentTeal)
+                            metricPill(value: "\(reps)", label: "reps", color: AppColors.accent1)
                         }
                     } else if exercise.isBodyweight {
                         if let reps = set.reps {
                             if let weight = set.weight, weight > 0 {
-                                metricPill(value: "BW+\(formatWeight(weight))", label: nil, color: AppColors.accentBlue)
+                                metricPill(value: "BW+\(formatWeight(weight))", label: nil, color: AppColors.dominant)
                             } else {
-                                metricPill(value: "BW", label: nil, color: AppColors.accentBlue)
+                                metricPill(value: "BW", label: nil, color: AppColors.dominant)
                             }
-                            metricPill(value: "\(reps)", label: "reps", color: AppColors.accentTeal)
+                            metricPill(value: "\(reps)", label: "reps", color: AppColors.accent1)
                         }
                     } else {
                         if let weight = set.weight {
-                            metricPill(value: formatWeight(weight), label: "lbs", color: AppColors.accentBlue)
+                            metricPill(value: formatWeight(weight), label: "lbs", color: AppColors.dominant)
                         }
                         if let reps = set.reps {
-                            metricPill(value: "\(reps)", label: "reps", color: AppColors.accentTeal)
+                            metricPill(value: "\(reps)", label: "reps", color: AppColors.accent1)
                         }
                     }
                     if let rpe = set.rpe {
@@ -1439,7 +1438,7 @@ struct ActiveSessionView: View {
 
                 case .isometric:
                     if let holdTime = set.holdTime {
-                        metricPill(value: formatDuration(holdTime), label: "hold", color: AppColors.accentBlue)
+                        metricPill(value: formatDuration(holdTime), label: "hold", color: AppColors.dominant)
                     }
                     if let intensity = set.intensity {
                         metricPill(value: "\(intensity)/10", label: nil, color: AppColors.warning)
@@ -1447,31 +1446,31 @@ struct ActiveSessionView: View {
 
                 case .cardio:
                     if let duration = set.duration, duration > 0 {
-                        metricPill(value: formatDuration(duration), label: "time", color: AppColors.accentBlue)
+                        metricPill(value: formatDuration(duration), label: "time", color: AppColors.dominant)
                     }
                     if let distance = set.distance, distance > 0 {
-                        metricPill(value: formatDistanceValue(distance), label: exercise.distanceUnit.abbreviation, color: AppColors.accentTeal)
+                        metricPill(value: formatDistanceValue(distance), label: exercise.distanceUnit.abbreviation, color: AppColors.accent1)
                     }
 
                 case .explosive:
                     if let reps = set.reps {
-                        metricPill(value: "\(reps)", label: "reps", color: AppColors.accentTeal)
+                        metricPill(value: "\(reps)", label: "reps", color: AppColors.accent1)
                     }
                     if let height = set.height {
-                        metricPill(value: formatHeight(height), label: nil, color: AppColors.accentBlue)
+                        metricPill(value: formatHeight(height), label: nil, color: AppColors.dominant)
                     }
 
                 case .mobility:
                     if let reps = set.reps {
-                        metricPill(value: "\(reps)", label: "reps", color: AppColors.accentTeal)
+                        metricPill(value: "\(reps)", label: "reps", color: AppColors.accent1)
                     }
                     if let duration = set.duration, duration > 0 {
-                        metricPill(value: formatDuration(duration), label: nil, color: AppColors.accentBlue)
+                        metricPill(value: formatDuration(duration), label: nil, color: AppColors.dominant)
                     }
 
                 case .recovery:
                     if let duration = set.duration {
-                        metricPill(value: formatDuration(duration), label: nil, color: AppColors.accentBlue)
+                        metricPill(value: formatDuration(duration), label: nil, color: AppColors.dominant)
                     }
                     if let temp = set.temperature {
                         metricPill(value: "\(temp)°F", label: nil, color: AppColors.warning)
@@ -1502,10 +1501,10 @@ struct ActiveSessionView: View {
                     metricPill(
                         value: formatMeasurableValue(numericValue),
                         label: key,
-                        color: AppColors.accentPurple
+                        color: AppColors.accent3
                     )
                 } else if let stringValue = value.stringValue {
-                    metricPill(value: stringValue, label: key, color: AppColors.accentPurple)
+                    metricPill(value: stringValue, label: key, color: AppColors.accent3)
                 }
             }
         }
@@ -1517,16 +1516,16 @@ struct ActiveSessionView: View {
             // Interval icon
             Image(systemName: "timer")
                 .font(.caption.weight(.semibold))
-                .foregroundColor(.orange)
+                .foregroundColor(AppColors.warning)
                 .frame(width: 20, height: 20)
-                .background(Circle().fill(AppColors.surfaceLight))
+                .background(Circle().fill(AppColors.surfaceTertiary))
 
             // Interval summary: "x rounds (y on / z off)"
             HStack(spacing: AppSpacing.sm) {
                 metricPill(
                     value: "\(setGroup.rounds)",
                     label: "rounds",
-                    color: .orange
+                    color: AppColors.warning
                 )
 
                 Text("(\(formatDuration(setGroup.workDuration ?? 0)) on / \(formatDuration(setGroup.intervalRestDuration ?? 0)) off)")
@@ -1565,17 +1564,19 @@ struct ActiveSessionView: View {
     }
 
     private var restTimerBar: some View {
-        VStack(spacing: AppSpacing.sm) {
+        let isUrgent = sessionViewModel.restTimerSeconds <= 10
+
+        return VStack(spacing: AppSpacing.sm) {
             HStack(spacing: AppSpacing.md) {
                 // Progress ring (small)
                 ZStack {
                     Circle()
-                        .stroke(AppColors.surfaceLight, lineWidth: 3)
+                        .stroke(AppColors.surfaceTertiary, lineWidth: 3)
                         .frame(width: 36, height: 36)
 
                     Circle()
                         .trim(from: 0, to: CGFloat(sessionViewModel.restTimerSeconds) / CGFloat(max(sessionViewModel.restTimerTotal, 1)))
-                        .stroke(AppColors.accentTeal, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .stroke(isUrgent ? AppColors.warning : AppColors.accent1, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                         .frame(width: 36, height: 36)
                         .rotationEffect(.degrees(-90))
 
@@ -1607,7 +1608,7 @@ struct ActiveSessionView: View {
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                             .background(
                                 Circle()
-                                    .fill(AppColors.surfaceLight)
+                                    .fill(AppColors.surfaceTertiary)
                             )
                     }
                     .buttonStyle(.bouncy)
@@ -1621,12 +1622,12 @@ struct ActiveSessionView: View {
                 } label: {
                     Text("Skip")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                         .padding(.horizontal, AppSpacing.lg)
                         .frame(height: AppSpacing.minTouchTarget)
                         .background(
                             Capsule()
-                                .fill(AppColors.accentBlue.opacity(0.1))
+                                .fill(AppColors.dominant.opacity(0.1))
                         )
                 }
                 .buttonStyle(.bouncy)
@@ -1637,11 +1638,20 @@ struct ActiveSessionView: View {
         .padding(AppSpacing.md)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(AppColors.cardBackground)
+                .fill(AppColors.surfacePrimary)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .stroke(AppColors.accentTeal.opacity(0.3), lineWidth: 1)
+                        .stroke(
+                            isUrgent ? AppColors.warning.opacity(0.4) : AppColors.accent1.opacity(0.3),
+                            lineWidth: 1
+                        )
                 )
+        )
+        .shadow(
+            color: isUrgent ? AppColors.warning.opacity(0.15) : .clear,
+            radius: isUrgent ? 12 : 0,
+            x: 0,
+            y: 4
         )
         .transition(.opacity.combined(with: .move(edge: .top)))
         .animation(.easeInOut(duration: 0.3), value: sessionViewModel.isRestTimerRunning)
@@ -1743,7 +1753,7 @@ struct ActiveSessionView: View {
                         .padding(.vertical, AppSpacing.lg)
                         .background(
                             RoundedRectangle(cornerRadius: AppCorners.medium)
-                                .fill(AppGradients.accentGradient)
+                                .fill(AppGradients.dominantGradient)
                         )
                 }
                 .padding(.horizontal, AppSpacing.xl)

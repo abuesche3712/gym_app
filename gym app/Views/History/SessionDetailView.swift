@@ -69,7 +69,7 @@ struct SessionDetailView: View {
                         if completedModule.skipped {
                             Text("Skipped")
                                 .font(.caption)
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(AppColors.warning)
                         }
                     }
 
@@ -332,7 +332,7 @@ struct ExerciseResultView: View {
             if !set.completed {
                 Text("(incomplete)")
                     .font(.caption2)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(AppColors.warning)
             }
 
             Spacer()
@@ -345,7 +345,7 @@ struct ExerciseResultView: View {
             HStack {
                 Image(systemName: "timer")
                     .font(.caption)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(AppColors.warning)
                 Text("Interval")
                     .font(.caption)
                     .foregroundStyle(.secondary)

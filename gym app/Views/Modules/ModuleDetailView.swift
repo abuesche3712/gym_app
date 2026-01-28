@@ -94,7 +94,7 @@ struct ModuleDetailView: View {
                                 } label: {
                                     HStack {
                                         Image(systemName: selectedExerciseIds.contains(resolved.id) ? "checkmark.circle.fill" : "circle")
-                                            .foregroundColor(selectedExerciseIds.contains(resolved.id) ? .blue : .gray)
+                                            .foregroundColor(selectedExerciseIds.contains(resolved.id) ? AppColors.dominant : .gray)
                                         ExerciseRow(exercise: resolved)
                                     }
                                 }
@@ -284,10 +284,10 @@ struct SupersetGroupRow: View {
             HStack {
                 Image(systemName: "link")
                     .font(.caption)
-                    .foregroundColor(.orange)
+                    .foregroundColor(AppColors.warning)
                 Text("SUPERSET")
                     .font(.caption.weight(.semibold))
-                    .foregroundColor(.orange)
+                    .foregroundColor(AppColors.warning)
                 Spacer()
                 if !isSelecting {
                     Button {
@@ -308,13 +308,13 @@ struct SupersetGroupRow: View {
                         // Connector line
                         VStack(spacing: 0) {
                             Rectangle()
-                                .fill(Color.orange.opacity(index == 0 ? 0 : 0.5))
+                                .fill(AppColors.warning.opacity(index == 0 ? 0 : 0.5))
                                 .frame(width: 2)
                             Circle()
-                                .fill(Color.orange)
+                                .fill(AppColors.warning)
                                 .frame(width: 8, height: 8)
                             Rectangle()
-                                .fill(Color.orange.opacity(index == exercises.count - 1 ? 0 : 0.5))
+                                .fill(AppColors.warning.opacity(index == exercises.count - 1 ? 0 : 0.5))
                                 .frame(width: 2)
                         }
                         .frame(width: 8)
@@ -325,7 +325,7 @@ struct SupersetGroupRow: View {
                             } label: {
                                 HStack {
                                     Image(systemName: selectedIds.contains(resolved.id) ? "checkmark.circle.fill" : "circle")
-                                        .foregroundColor(selectedIds.contains(resolved.id) ? .blue : .gray)
+                                        .foregroundColor(selectedIds.contains(resolved.id) ? AppColors.dominant : .gray)
                                     CompactExerciseRow(exercise: resolved)
                                 }
                             }
@@ -344,7 +344,7 @@ struct SupersetGroupRow: View {
         .padding(.horizontal, 4)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color.orange.opacity(0.05))
+                .fill(AppColors.warning.opacity(0.05))
         )
     }
 

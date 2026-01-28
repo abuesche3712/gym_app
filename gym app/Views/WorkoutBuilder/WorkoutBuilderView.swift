@@ -69,9 +69,7 @@ struct WorkoutBuilderView: View {
             // Top label row
             HStack(alignment: .center) {
                 Text("TRAINING HUB")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.accentBlue)
-                    .tracking(1.5)
+                    .elegantLabel(color: AppColors.dominant)
 
                 Spacer()
 
@@ -79,11 +77,11 @@ struct WorkoutBuilderView: View {
                 if programViewModel.activeProgram != nil {
                     HStack(spacing: 6) {
                         Circle()
-                            .fill(AppColors.success)
+                            .fill(AppColors.programAccent)
                             .frame(width: 6, height: 6)
                         Text("Program active")
                             .font(.caption.weight(.medium))
-                            .foregroundColor(AppColors.success)
+                            .foregroundColor(AppColors.programAccent)
                     }
                 }
             }
@@ -99,7 +97,7 @@ struct WorkoutBuilderView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("ACTIVE PROGRAM")
                         .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.success)
+                        .foregroundColor(AppColors.programAccent)
                         .tracking(1.2)
 
                     Text(program.name)
@@ -115,7 +113,7 @@ struct WorkoutBuilderView: View {
                     VStack(alignment: .trailing, spacing: 2) {
                         Text("Week \(currentWeek)")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundColor(AppColors.accentBlue)
+                            .foregroundColor(AppColors.dominant)
 
                         Text("of \(program.durationWeeks)")
                             .font(.caption)
@@ -130,10 +128,10 @@ struct WorkoutBuilderView: View {
         .padding(AppSpacing.md)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.cardBackground)
+                .fill(AppColors.surfacePrimary)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.success.opacity(0.3), lineWidth: 1)
+                        .stroke(AppColors.programAccent.opacity(0.3), lineWidth: 1)
                 )
         )
     }
@@ -148,7 +146,7 @@ struct WorkoutBuilderView: View {
                 ForEach(0..<7, id: \.self) { day in
                     Text(dayNames[day])
                         .font(.caption2.weight(.semibold))
-                        .foregroundColor(day == today ? AppColors.accentBlue : AppColors.textTertiary)
+                        .foregroundColor(day == today ? AppColors.dominant : AppColors.textTertiary)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -188,10 +186,10 @@ struct WorkoutBuilderView: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.small)
-                .fill(isToday ? AppColors.accentBlue.opacity(0.1) : AppColors.surfaceLight)
+                .fill(isToday ? AppColors.dominant.opacity(0.1) : AppColors.surfaceTertiary)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppCorners.small)
-                        .stroke(isToday ? AppColors.accentBlue.opacity(0.4) : Color.clear, lineWidth: 1)
+                        .stroke(isToday ? AppColors.dominant.opacity(0.4) : Color.clear, lineWidth: 1)
                 )
         )
     }
@@ -251,7 +249,7 @@ struct WorkoutBuilderView: View {
                 quickActionButton(
                     icon: "square.stack.3d.up.fill",
                     label: "Module",
-                    color: AppColors.accentPurple
+                    color: AppColors.accent3
                 ) {
                     showingNewModule = true
                 }
@@ -261,7 +259,7 @@ struct WorkoutBuilderView: View {
                 quickActionButton(
                     icon: "figure.strengthtraining.traditional",
                     label: "Workout",
-                    color: AppColors.accentBlue
+                    color: AppColors.dominant
                 ) {
                     showingNewWorkout = true
                 }
@@ -271,7 +269,7 @@ struct WorkoutBuilderView: View {
                 quickActionButton(
                     icon: "calendar.badge.plus",
                     label: "Program",
-                    color: AppColors.success
+                    color: AppColors.programAccent
                 ) {
                     showingNewProgram = true
                 }
@@ -313,7 +311,7 @@ struct WorkoutBuilderView: View {
         } label: {
             BuilderCard(
                 icon: "calendar.badge.plus",
-                iconColor: .green,
+                iconColor: AppColors.programAccent,
                 title: "Programs",
                 subtitle: "Multi-week training blocks",
                 count: programViewModel.programs.count,
@@ -330,7 +328,7 @@ struct WorkoutBuilderView: View {
         } label: {
             BuilderCard(
                 icon: "figure.strengthtraining.traditional",
-                iconColor: .blue,
+                iconColor: AppColors.dominant,
                 title: "Workouts",
                 subtitle: "Individual training sessions",
                 count: workoutViewModel.workouts.filter { !$0.archived }.count,
@@ -347,7 +345,7 @@ struct WorkoutBuilderView: View {
         } label: {
             BuilderCard(
                 icon: "square.stack.3d.up.fill",
-                iconColor: .purple,
+                iconColor: AppColors.accent3,
                 title: "Modules",
                 subtitle: "Reusable exercise groups",
                 count: moduleViewModel.modules.count,
@@ -378,7 +376,7 @@ struct BuilderCard: View {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(
                         LinearGradient(
-                            colors: [iconColor.opacity(0.25), iconColor.opacity(0.1)],
+                            colors: [iconColor.opacity(0.12), iconColor.opacity(0.04)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -386,13 +384,12 @@ struct BuilderCard: View {
                     .frame(width: 56, height: 56)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(iconColor.opacity(0.3), lineWidth: 0.5)
+                            .stroke(iconColor.opacity(0.15), lineWidth: 0.5)
                     )
 
                 Image(systemName: icon)
                     .font(.system(size: 24))
-                    .foregroundColor(iconColor)
-                    .shadow(color: iconColor.opacity(0.3), radius: 4, x: 0, y: 0)
+                    .foregroundColor(iconColor.opacity(0.8))
             }
 
             // Content
@@ -411,7 +408,7 @@ struct BuilderCard: View {
                             .padding(.vertical, 2)
                             .background(
                                 LinearGradient(
-                                    colors: [Color.green, Color.green.opacity(0.8)],
+                                    colors: [AppColors.programAccent, AppColors.programAccent.opacity(0.8)],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )

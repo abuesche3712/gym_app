@@ -20,7 +20,7 @@ struct SignInView: View {
             VStack(spacing: 16) {
                 Image(systemName: "dumbbell.fill")
                     .font(.system(size: 80))
-                    .foregroundColor(.blue)
+                    .foregroundColor(AppColors.dominant)
 
                 Text("Gym App")
                     .font(.largeTitle.bold())
@@ -53,7 +53,7 @@ struct SignInView: View {
                 if let error = authService.error {
                     Text(error.localizedDescription)
                         .font(.caption)
-                        .foregroundColor(.red)
+                        .foregroundColor(AppColors.error)
                         .multilineTextAlignment(.center)
                 }
             }

@@ -120,7 +120,7 @@ struct ProgramDetailView: View {
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(Color.green)
+                                .background(AppColors.programAccent)
                                 .cornerRadius(4)
                         }
                     }
@@ -147,7 +147,7 @@ struct ProgramDetailView: View {
 
                 Image(systemName: "pencil.circle.fill")
                     .font(.title2)
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(AppColors.programAccent)
             }
             .padding()
             .background(Color(.secondarySystemGroupedBackground))
@@ -184,7 +184,7 @@ struct ProgramDetailView: View {
 
             AnimatedProgressBar(
                 progress: progress,
-                gradient: AppGradients.successGradient,
+                gradient: AppGradients.programGradient,
                 height: 8
             )
 
@@ -202,7 +202,7 @@ struct ProgramDetailView: View {
                 }
             }
         }
-        .gradientCard(accent: AppColors.success)
+        .gradientCard(accent: AppColors.programAccent)
     }
 
     private func programProgress(startDate: Date) -> Double {
@@ -266,6 +266,7 @@ struct ProgramDetailView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(AppColors.programAccent)
                 .disabled(currentProgram.workoutSlots.isEmpty && currentProgram.moduleSlots.isEmpty)
 
                 if currentProgram.workoutSlots.isEmpty && currentProgram.moduleSlots.isEmpty {
@@ -326,7 +327,7 @@ struct EditProgramSheet: View {
                     Section {
                         HStack {
                             Image(systemName: "info.circle.fill")
-                                .foregroundColor(.blue)
+                                .foregroundColor(AppColors.dominant)
 
                             Text("Changes to duration will update the program end date. The scheduled workouts will be adjusted accordingly.")
                                 .font(.caption)

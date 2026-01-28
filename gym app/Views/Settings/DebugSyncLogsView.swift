@@ -86,17 +86,17 @@ struct DebugSyncLogsView: View {
             StatBadge(
                 count: logs.filter { $0.severity == .error }.count,
                 label: "Errors",
-                color: .red
+                color: AppColors.error
             )
 
             StatBadge(
                 count: logs.filter { $0.severity == .warning }.count,
                 label: "Warnings",
-                color: .orange
+                color: AppColors.warning
             )
         }
         .padding(AppSpacing.md)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     private var filterBar: some View {
@@ -120,7 +120,7 @@ struct DebugSyncLogsView: View {
             .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, AppSpacing.sm)
         }
-        .background(AppColors.cardBackground.opacity(0.5))
+        .background(AppColors.surfacePrimary.opacity(0.5))
     }
 
     private var logList: some View {
@@ -221,7 +221,7 @@ private struct FilterChip: View {
             .padding(.vertical, AppSpacing.sm)
             .background(
                 Capsule()
-                    .fill(isSelected ? AppColors.accentBlue : AppColors.cardBackground)
+                    .fill(isSelected ? AppColors.dominant : AppColors.surfacePrimary)
             )
             .foregroundColor(isSelected ? .white : AppColors.textPrimary)
         }
@@ -259,14 +259,14 @@ private struct LogRowView: View {
                 .lineLimit(3)
         }
         .padding(AppSpacing.md)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     private var severityColor: Color {
         switch log.severity {
         case .info: return AppColors.textSecondary
-        case .warning: return .orange
-        case .error: return .red
+        case .warning: return AppColors.warning
+        case .error: return AppColors.error
         }
     }
 }

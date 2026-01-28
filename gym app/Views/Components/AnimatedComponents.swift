@@ -177,7 +177,7 @@ struct AnimatedStepper: View {
                 } label: {
                     Image(systemName: "minus.circle.fill")
                         .font(.title2)
-                        .foregroundColor(value <= range.lowerBound ? AppColors.textTertiary : AppColors.accentBlue)
+                        .foregroundColor(value <= range.lowerBound ? AppColors.textTertiary : AppColors.dominant)
                 }
                 .disabled(value <= range.lowerBound)
 
@@ -199,7 +199,7 @@ struct AnimatedStepper: View {
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
-                        .foregroundColor(value >= range.upperBound ? AppColors.textTertiary : AppColors.accentBlue)
+                        .foregroundColor(value >= range.upperBound ? AppColors.textTertiary : AppColors.dominant)
                 }
                 .disabled(value >= range.upperBound)
             }
@@ -221,7 +221,7 @@ struct DumbbellRefreshView: View {
             // Dumbbell icon
             Image(systemName: "dumbbell.fill")
                 .font(.system(size: 24, weight: .bold))
-                .foregroundColor(AppColors.accentBlue)
+                .foregroundColor(AppColors.dominant)
                 .rotationEffect(.degrees(isRefreshing ? rotation : Double(-45) + Double(progress) * 45.0))
                 .scaleEffect(0.8 + (progress * 0.2))
                 .opacity(0.3 + (progress * 0.7))

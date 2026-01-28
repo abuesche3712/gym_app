@@ -92,7 +92,7 @@ struct WorkoutFormView: View {
                     saveWorkout()
                 }
                 .fontWeight(.semibold)
-                .foregroundColor(name.trimmingCharacters(in: .whitespaces).isEmpty ? AppColors.textTertiary : AppColors.accentBlue)
+                .foregroundColor(name.trimmingCharacters(in: .whitespaces).isEmpty ? AppColors.textTertiary : AppColors.dominant)
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
@@ -146,9 +146,7 @@ struct WorkoutFormView: View {
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(isEditing ? "EDITING" : "BUILDING")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(isEditing ? AppColors.warning : AppColors.accentBlue)
-                        .tracking(1.5)
+                        .elegantLabel(color: isEditing ? AppColors.warning : AppColors.dominant)
 
                     Text(name.isEmpty ? "New Workout" : name)
                         .font(.system(size: 24, weight: .bold))
@@ -163,11 +161,11 @@ struct WorkoutFormView: View {
 
             // Stats
             HStack(spacing: AppSpacing.lg) {
-                statBadge(value: "\(selectedModuleIds.count)", label: "modules", icon: "square.stack.3d.up", color: AppColors.accentTeal)
-                statBadge(value: "\(totalExerciseCount)", label: "exercises", icon: "dumbbell", color: AppColors.accentBlue)
+                statBadge(value: "\(selectedModuleIds.count)", label: "modules", icon: "square.stack.3d.up", color: AppColors.accent1)
+                statBadge(value: "\(totalExerciseCount)", label: "exercises", icon: "dumbbell", color: AppColors.dominant)
 
                 if let duration = Int(estimatedDuration), duration > 0 {
-                    statBadge(value: "\(duration)", label: "min", icon: "clock", color: AppColors.accentPurple)
+                    statBadge(value: "\(duration)", label: "min", icon: "clock", color: AppColors.accent3)
                 }
 
                 Spacer()
@@ -178,7 +176,7 @@ struct WorkoutFormView: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [(isEditing ? AppColors.warning : AppColors.accentBlue).opacity(0.6), Color.clear],
+                        colors: [(isEditing ? AppColors.warning : AppColors.dominant).opacity(0.6), Color.clear],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -192,14 +190,14 @@ struct WorkoutFormView: View {
         let progress = completionProgress
         return ZStack {
             Circle()
-                .stroke(AppColors.surfaceLight, lineWidth: 4)
+                .stroke(AppColors.surfaceTertiary, lineWidth: 4)
             Circle()
                 .trim(from: 0, to: progress)
-                .stroke(progress >= 1.0 ? AppColors.success : AppColors.accentBlue, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                .stroke(progress >= 1.0 ? AppColors.success : AppColors.dominant, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Image(systemName: progress >= 1.0 ? "checkmark" : "hammer.fill")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(progress >= 1.0 ? AppColors.success : AppColors.accentBlue)
+                .foregroundColor(progress >= 1.0 ? AppColors.success : AppColors.dominant)
         }
         .frame(width: 44, height: 44)
     }
@@ -238,7 +236,7 @@ struct WorkoutFormView: View {
     // MARK: - Workout Info Section
 
     private var workoutInfoSection: some View {
-        FormSection(title: "Workout Info", icon: "figure.strengthtraining.traditional", iconColor: AppColors.accentBlue) {
+        FormSection(title: "Workout Info", icon: "figure.strengthtraining.traditional", iconColor: AppColors.dominant) {
             FormTextField(label: "Name", text: $name, icon: "textformat", placeholder: "e.g., Monday - Lower A")
             FormDivider()
             FormTextField(label: "Duration", text: $estimatedDuration, icon: "clock", placeholder: "minutes", keyboardType: .numberPad)
@@ -248,7 +246,7 @@ struct WorkoutFormView: View {
     // MARK: - Modules Section
 
     private var modulesSection: some View {
-        FormSection(title: "Modules", icon: "square.stack.3d.up", iconColor: AppColors.accentTeal) {
+        FormSection(title: "Modules", icon: "square.stack.3d.up", iconColor: AppColors.accent1) {
             VStack(spacing: 0) {
                 // Quick search
                 moduleQuickAddBar
@@ -298,7 +296,7 @@ struct WorkoutFormView: View {
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     private var moduleSearchResultsDropdown: some View {
@@ -327,11 +325,11 @@ struct WorkoutFormView: View {
 
                         Image(systemName: "plus.circle")
                             .font(.system(size: 16))
-                            .foregroundColor(AppColors.accentTeal)
+                            .foregroundColor(AppColors.accent1)
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
                     .padding(.vertical, AppSpacing.sm)
-                    .background(AppColors.surfaceLight)
+                    .background(AppColors.surfaceTertiary)
                 }
                 .buttonStyle(.plain)
 
@@ -356,7 +354,7 @@ struct WorkoutFormView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppSpacing.xl)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     private var modulesList: some View {
@@ -377,7 +375,7 @@ struct WorkoutFormView: View {
         HStack(spacing: AppSpacing.md) {
             ZStack {
                 Circle()
-                    .fill(AppColors.moduleColor(module.type).opacity(0.15))
+                    .fill(AppColors.moduleColor(module.type).opacity(0.12))
                     .frame(width: 28, height: 28)
                 Text("\(index + 1)")
                     .font(.caption.weight(.semibold))
@@ -414,7 +412,7 @@ struct WorkoutFormView: View {
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     private var browseModulesButton: some View {
@@ -424,10 +422,10 @@ struct WorkoutFormView: View {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "folder")
                     .font(.system(size: 16))
-                    .foregroundColor(AppColors.accentTeal)
+                    .foregroundColor(AppColors.accent1)
                     .frame(width: 24)
                 Text("Browse Module Library")
-                    .foregroundColor(AppColors.accentTeal)
+                    .foregroundColor(AppColors.accent1)
                     .fontWeight(.medium)
                 Spacer()
                 Image(systemName: "chevron.right")
@@ -436,7 +434,7 @@ struct WorkoutFormView: View {
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.md)
-            .background(AppColors.cardBackground)
+            .background(AppColors.surfacePrimary)
         }
         .buttonStyle(.plain)
     }
@@ -444,7 +442,7 @@ struct WorkoutFormView: View {
     // MARK: - Exercises Section
 
     private var exercisesSection: some View {
-        FormSection(title: "Standalone Exercises", icon: "dumbbell", iconColor: AppColors.accentBlue) {
+        FormSection(title: "Standalone Exercises", icon: "dumbbell", iconColor: AppColors.dominant) {
             VStack(spacing: 0) {
                 // Quick search
                 exerciseQuickAddBar
@@ -480,7 +478,7 @@ struct WorkoutFormView: View {
                     .padding(.horizontal, AppSpacing.cardPadding)
                     .padding(.vertical, AppSpacing.sm)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(AppColors.cardBackground)
+                    .background(AppColors.surfacePrimary)
             }
         }
     }
@@ -509,13 +507,13 @@ struct WorkoutFormView: View {
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 20))
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     private var exerciseSearchResultsDropdown: some View {
@@ -528,7 +526,7 @@ struct WorkoutFormView: View {
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: template.exerciseType.icon)
                             .font(.system(size: 14))
-                            .foregroundColor(AppColors.accentBlue)
+                            .foregroundColor(AppColors.dominant)
                             .frame(width: 24)
 
                         Text(template.name)
@@ -543,11 +541,11 @@ struct WorkoutFormView: View {
 
                         Image(systemName: "plus.circle")
                             .font(.system(size: 16))
-                            .foregroundColor(AppColors.accentBlue)
+                            .foregroundColor(AppColors.dominant)
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
                     .padding(.vertical, AppSpacing.sm)
-                    .background(AppColors.surfaceLight)
+                    .background(AppColors.surfaceTertiary)
                 }
                 .buttonStyle(.plain)
 
@@ -572,7 +570,7 @@ struct WorkoutFormView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppSpacing.xl)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     private var exercisesList: some View {
@@ -623,7 +621,7 @@ struct WorkoutFormView: View {
                             Text("Link \(selectedForSuperset.count) as Superset")
                         }
                         .font(.subheadline.weight(.medium))
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                     }
                 } else {
                     Text("Select 2+ exercises")
@@ -642,13 +640,13 @@ struct WorkoutFormView: View {
                         Text("Create Superset")
                     }
                     .font(.subheadline)
-                    .foregroundColor(AppColors.accentBlue)
+                    .foregroundColor(AppColors.dominant)
                 }
             }
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.sm)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     private func createSupersetFromSelection() {
@@ -687,7 +685,7 @@ struct WorkoutFormView: View {
                 } label: {
                     Image(systemName: selectedForSuperset.contains(exercise.id) ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 22))
-                        .foregroundColor(selectedForSuperset.contains(exercise.id) ? AppColors.accentBlue : AppColors.textTertiary)
+                        .foregroundColor(selectedForSuperset.contains(exercise.id) ? AppColors.dominant : AppColors.textTertiary)
                 }
             } else {
                 // Drag handle
@@ -702,20 +700,20 @@ struct WorkoutFormView: View {
                 let supersetIndex = getSupersetIndex(for: supersetId)
                 ZStack {
                     Circle()
-                        .fill(AppColors.accentTeal.opacity(0.15))
+                        .fill(AppColors.accent1.opacity(0.12))
                         .frame(width: 28, height: 28)
                     Text("S\(supersetIndex)")
                         .font(.caption.weight(.semibold))
-                        .foregroundColor(AppColors.accentTeal)
+                        .foregroundColor(AppColors.accent1)
                 }
             } else {
                 ZStack {
                     Circle()
-                        .fill(AppColors.accentBlue.opacity(0.15))
+                        .fill(AppColors.dominant.opacity(0.12))
                         .frame(width: 28, height: 28)
                     Text("\(index + 1)")
                         .font(.caption.weight(.semibold))
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
 
@@ -760,7 +758,7 @@ struct WorkoutFormView: View {
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     private var browseExercisesButton: some View {
@@ -771,10 +769,10 @@ struct WorkoutFormView: View {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "books.vertical")
                         .font(.system(size: 16))
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                         .frame(width: 24)
                     Text("Browse Exercise Library")
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                         .fontWeight(.medium)
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -783,7 +781,7 @@ struct WorkoutFormView: View {
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.md)
-                .background(AppColors.cardBackground)
+                .background(AppColors.surfacePrimary)
             }
             .buttonStyle(.plain)
 
@@ -795,10 +793,10 @@ struct WorkoutFormView: View {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "plus.circle")
                         .font(.system(size: 16))
-                        .foregroundColor(AppColors.accentTeal)
+                        .foregroundColor(AppColors.accent1)
                         .frame(width: 24)
                     Text("Create New Exercise")
-                        .foregroundColor(AppColors.accentTeal)
+                        .foregroundColor(AppColors.accent1)
                         .fontWeight(.medium)
                     Spacer()
                     Image(systemName: "chevron.right")
@@ -807,7 +805,7 @@ struct WorkoutFormView: View {
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.md)
-                .background(AppColors.cardBackground)
+                .background(AppColors.surfacePrimary)
             }
             .buttonStyle(.plain)
         }
@@ -820,7 +818,7 @@ struct WorkoutFormView: View {
             TextEditor(text: $notes)
                 .frame(minHeight: 80)
                 .padding(AppSpacing.md)
-                .background(AppColors.cardBackground)
+                .background(AppColors.surfacePrimary)
                 .scrollContentBackground(.hidden)
         }
     }
@@ -968,7 +966,7 @@ struct ModulePickerSheet: View {
                 .padding(.horizontal, AppSpacing.screenPadding)
                 .padding(.vertical, AppSpacing.md)
             }
-            .background(AppColors.surfaceLight)
+            .background(AppColors.surfaceTertiary)
 
             // Module list
             List {
@@ -1033,7 +1031,7 @@ struct ModulePickerSheet: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, AppSpacing.md)
-                    .background(AppColors.accentTeal)
+                    .background(AppColors.accent1)
                     .foregroundColor(.white)
                     .cornerRadius(AppCorners.medium)
                 }
@@ -1126,7 +1124,7 @@ struct WorkoutExercisePickerSheet: View {
                 .padding(.horizontal, AppSpacing.screenPadding)
                 .padding(.vertical, AppSpacing.md)
             }
-            .background(AppColors.surfaceLight)
+            .background(AppColors.surfaceTertiary)
 
             // Exercise list
             List {
@@ -1173,7 +1171,7 @@ struct WorkoutExercisePickerSheet: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, AppSpacing.md)
-                    .background(AppColors.accentBlue)
+                    .background(AppColors.dominant)
                     .foregroundColor(.white)
                     .cornerRadius(AppCorners.medium)
                 }
@@ -1200,7 +1198,7 @@ struct WorkoutExercisePickerSheet: View {
 private struct ModuleFilterChip: View {
     let title: String
     let isSelected: Bool
-    var color: Color = AppColors.accentBlue
+    var color: Color = AppColors.dominant
     let action: () -> Void
 
     var body: some View {
@@ -1209,12 +1207,12 @@ private struct ModuleFilterChip: View {
                 .font(.subheadline.weight(isSelected ? .semibold : .regular))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .background(isSelected ? color : AppColors.cardBackground)
+                .background(isSelected ? color : AppColors.surfacePrimary)
                 .foregroundColor(isSelected ? .white : AppColors.textPrimary)
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
-                        .stroke(isSelected ? Color.clear : AppColors.border, lineWidth: 1)
+                        .stroke(isSelected ? Color.clear : AppColors.surfaceTertiary, lineWidth: 1)
                 )
         }
     }

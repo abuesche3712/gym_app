@@ -10,11 +10,11 @@ import SwiftUI
 // MARK: - Colors
 
 struct AppColors {
-    // MARK: - Base Neutrals (Near-black with subtle cool tint)
-    static let background = Color(hex: "0A0A0B")       // Near-black (subtle cool tint)
-    static let surfacePrimary = Color(hex: "141416")   // Dark slate (cards)
-    static let surfaceSecondary = Color(hex: "1C1C1F") // Elevated slate (sheets, overlays)
-    static let surfaceTertiary = Color(hex: "2C2C30")  // Medium slate grey (borders, dividers)
+    // MARK: - Base Neutrals (Near-black with subtle purple tint)
+    static let background = Color(hex: "0A0A0B")       // Near-black (no purple, pure dark)
+    static let surfacePrimary = Color(hex: "161419")   // Dark slate with purple tint (cards)
+    static let surfaceSecondary = Color(hex: "1D1B21") // Elevated slate with purple (sheets, overlays)
+    static let surfaceTertiary = Color(hex: "2D2A33")  // Medium slate with more purple (borders, dividers)
 
     // MARK: - Text Hierarchy (Warm off-white + purple-grays)
     static let textPrimary = Color(hex: "FFFCF9")      // Warm off-white
@@ -205,8 +205,8 @@ struct AppGradients {
     static func accentCardGradient(_ color: Color) -> LinearGradient {
         LinearGradient(
             colors: [
-                color.opacity(0.15),
-                color.opacity(0.05),
+                color.opacity(0.06),
+                color.opacity(0.02),
                 AppColors.surfacePrimary
             ],
             startPoint: .topLeading,
@@ -330,7 +330,7 @@ struct CardStyle: ViewModifier {
 
                     // Border
                     RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.border.opacity(0.4), lineWidth: 0.5)
+                        .stroke(AppColors.surfaceTertiary.opacity(0.4), lineWidth: 0.5)
                 }
             )
             .shadow(color: .black.opacity(0.4), radius: 12, x: 0, y: 6)
@@ -374,7 +374,7 @@ struct GradientCardStyle: ViewModifier {
                     RoundedRectangle(cornerRadius: AppCorners.large)
                         .stroke(
                             LinearGradient(
-                                colors: [accentColor.opacity(0.3), AppColors.surfaceTertiary.opacity(0.2)],
+                                colors: [accentColor.opacity(0.12), AppColors.surfaceTertiary.opacity(0.15)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
@@ -382,7 +382,7 @@ struct GradientCardStyle: ViewModifier {
                         )
                 }
             )
-            .shadow(color: accentColor.opacity(0.15), radius: 12, x: 0, y: 6)
+            .shadow(color: accentColor.opacity(0.06), radius: 12, x: 0, y: 6)
     }
 }
 
@@ -648,7 +648,7 @@ struct FormButtonRow: View {
 struct FormDivider: View {
     var body: some View {
         Rectangle()
-            .fill(AppColors.border.opacity(0.3))
+            .fill(AppColors.surfaceTertiary.opacity(0.3))
             .frame(height: 0.5)
             .padding(.leading, AppSpacing.cardPadding + 24 + AppSpacing.md)
     }
@@ -799,24 +799,6 @@ extension View {
     /// Ensures minimum touch target size (44x44 per Apple HIG)
     func minTouchTarget() -> some View {
         self.frame(minWidth: AppSpacing.minTouchTarget, minHeight: AppSpacing.minTouchTarget)
-    }
-
-    /// Elegant uppercase label styling with refined letter-spacing
-    func elegantLabel() -> some View {
-        self
-            .font(.caption.weight(.semibold))
-            .textCase(.uppercase)
-            .tracking(1.5)
-            .foregroundColor(AppColors.textSecondary)
-    }
-
-    /// Stat label style for numeric displays
-    func statLabel() -> some View {
-        self
-            .font(.caption2.weight(.medium))
-            .textCase(.uppercase)
-            .tracking(1.2)
-            .foregroundColor(AppColors.textTertiary)
     }
 }
 
@@ -1014,5 +996,141 @@ struct ScreenHeaderWithBadge: View {
                 .padding(.top, AppSpacing.xs)
         }
         .padding(.bottom, AppSpacing.sm)
+    }
+}
+// MARK: - Typography Extensions (Font System)
+
+extension Font {
+
+    // MARK: - Display (Big numbers, workout titles - Rounded for confident feel)
+
+    /// Large display text - rounded, bold (e.g., workout summaries, big stats)
+    static var displayLarge: Font {
+        .system(.largeTitle, design: .rounded, weight: .bold)
+    }
+
+    /// Medium display text - rounded, bold (e.g., module counts, session time)
+    static var displayMedium: Font {
+        .system(.title, design: .rounded, weight: .bold)
+    }
+
+    /// Small display text - rounded, semibold (e.g., set numbers)
+    static var displaySmall: Font {
+        .system(.title2, design: .rounded, weight: .semibold)
+    }
+
+    // MARK: - Monospaced (Numbers that change - prevents layout shift)
+
+    /// Large monospaced numbers (e.g., rest timer, session duration)
+    static var monoLarge: Font {
+        .system(.largeTitle, design: .monospaced, weight: .medium)
+    }
+
+    /// Medium monospaced numbers (e.g., weight, reps during set)
+    static var monoMedium: Font {
+        .system(.title3, design: .monospaced, weight: .medium)
+    }
+
+    /// Small monospaced numbers (e.g., set indicators, compact stats)
+    static var monoSmall: Font {
+        .system(.body, design: .monospaced, weight: .medium)
+    }
+
+    /// Caption monospaced (e.g., tiny counters, badges)
+    static var monoCaption: Font {
+        .system(.caption, design: .monospaced, weight: .semibold)
+    }
+}
+
+// MARK: - Typography View Modifiers
+
+extension View {
+
+    // MARK: - Display Styles (Rounded, bold - for big moments)
+
+    /// Large display style - rounded, bold
+    func displayLarge(color: Color = AppColors.textPrimary) -> some View {
+        self.font(.displayLarge).foregroundColor(color)
+    }
+
+    /// Medium display style - rounded, bold
+    func displayMedium(color: Color = AppColors.textPrimary) -> some View {
+        self.font(.displayMedium).foregroundColor(color)
+    }
+
+    /// Small display style - rounded, semibold
+    func displaySmall(color: Color = AppColors.textPrimary) -> some View {
+        self.font(.displaySmall).foregroundColor(color)
+    }
+
+    // MARK: - Monospaced Styles (Numbers that change)
+
+    /// Large monospaced numbers - prevents layout shift
+    func monoLarge(color: Color = AppColors.textPrimary) -> some View {
+        self.font(.monoLarge).foregroundColor(color).monospacedDigit()
+    }
+
+    /// Medium monospaced numbers
+    func monoMedium(color: Color = AppColors.textPrimary) -> some View {
+        self.font(.monoMedium).foregroundColor(color).monospacedDigit()
+    }
+
+    /// Small monospaced numbers
+    func monoSmall(color: Color = AppColors.textPrimary) -> some View {
+        self.font(.monoSmall).foregroundColor(color).monospacedDigit()
+    }
+
+    /// Caption monospaced
+    func monoCaption(color: Color = AppColors.textPrimary) -> some View {
+        self.font(.monoCaption).foregroundColor(color).monospacedDigit()
+    }
+
+    // MARK: - Label Styles (Uppercase + tracking)
+
+    /// Elegant uppercase label - semibold, tracked
+    func elegantLabel(color: Color = AppColors.textSecondary, tracking: CGFloat = 1.5) -> some View {
+        self.font(.caption.weight(.semibold)).textCase(.uppercase).tracking(tracking).foregroundColor(color)
+    }
+
+    /// Small caps label - for tiny headers
+    func smallCapsLabel(color: Color = AppColors.textTertiary, tracking: CGFloat = 1.2) -> some View {
+        self.font(.caption2.weight(.medium)).textCase(.uppercase).tracking(tracking).foregroundColor(color)
+    }
+
+    /// Stat label - uppercase, tracked, tiny
+    func statLabel(color: Color = AppColors.textSecondary, tracking: CGFloat = 1.2) -> some View {
+        self.font(.caption2.weight(.semibold)).textCase(.uppercase).tracking(tracking).foregroundColor(color)
+    }
+
+    // MARK: - Standard Text Styles (Semantic + color convenience)
+
+    /// Headline text
+    func headline(color: Color = AppColors.textPrimary) -> some View {
+        self.font(.headline).foregroundColor(color)
+    }
+
+    /// Subheadline text
+    func subheadline(color: Color = AppColors.textSecondary) -> some View {
+        self.font(.subheadline).foregroundColor(color)
+    }
+
+    /// Body text
+    func body(color: Color = AppColors.textPrimary) -> some View {
+        self.font(.body).foregroundColor(color)
+    }
+
+    /// Callout text
+    func callout(color: Color = AppColors.textSecondary) -> some View {
+        self.font(.callout).foregroundColor(color)
+    }
+
+    /// Caption text
+    func caption(color: Color = AppColors.textSecondary) -> some View {
+        self.font(.caption).foregroundColor(color)
+    }
+
+    /// Tiny caption text
+    func caption2(color: Color = AppColors.textTertiary) -> some View {
+        self.font(.caption2).foregroundColor(color)
     }
 }

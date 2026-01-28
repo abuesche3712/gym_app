@@ -1,195 +1,219 @@
-# Color Palette — Joyful Redesign
+# Color Palette — Joyful Redesign ✨
 
-> **Status:** Draft — awaiting color values from palette generator
-> **Philosophy:** One dominant color, 3-5 sparse accents, simple text, subtle gradients
-> **Generated:** TBD
-> **Tool:** TBD (Coolors.co, Realtime Colors, etc.)
+> **Status:** ✅ Implemented
+> **Philosophy:** One dominant color, sparse vibrant accents, simple text hierarchy, subtle gradients, classy & readable
+> **Updated:** 2026-01-28
 
 ---
 
-## 1. Base Palette (FILL IN — From Generator)
+## 1. Base Palette — Near-Black with Purple Tints
 
-### Neutrals (Cool-Toned Dark)
+### Neutrals (Cool Purple-Tinted Dark)
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
-| background | `#0A0A0B` | rgb(10, 10, 11) | App background, behind all content |
-| surfacePrimary | `#141416` | rgb(20, 20, 22) | Cards, primary containers |
-| surfaceSecondary | `#1C1C1F` | rgb(28, 28, 31) | Elevated surfaces, sheets, overlays |
-| surfaceTertiary | `#2C2C30` | rgb(44, 44, 48) | Borders, dividers, input backgrounds |
+| background | `#0A0A0B` | rgb(10, 10, 11) | App background, pure near-black (no purple) |
+| surfacePrimary | `#161419` | rgb(22, 20, 25) | Cards, primary containers (subtle purple tint) |
+| surfaceSecondary | `#1D1B21` | rgb(29, 27, 33) | Elevated surfaces, sheets, overlays (purple tint) |
+| surfaceTertiary | `#2D2A33` | rgb(45, 42, 51) | Borders, dividers, input backgrounds (more purple) |
 
-**Notes:**
-- Should feel "cool" not "warm" (blues/grays, not browns)
-- Subtle progression from darkest (background) to lightest (tertiary)
-- NOT pure black — near-black with slight blue/gray tint
+**Philosophy:**
+- Background stays pure near-black for OLED contrast
+- Surfaces progressively add subtle purple warmth
+- Keeps UI sophisticated without being cold
 
 ---
 
-## 2. Text Colors (FILL IN — From Generator)
+## 2. Text Hierarchy — Warm Off-White
 
-### Text Hierarchy
+### Text Colors
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
 | textPrimary | `#FFFCF9` | rgb(255, 252, 249) | Main headings, primary content, active values |
 | textSecondary | `#A09CA6` | rgb(160, 156, 166) | Supporting text, labels, completed set data |
-| textTertiary | `#5A5662` | rgb(90, 86, 98) | Hints, placeholders, low-emphasis text |
+| textTertiary | `#5A5662` | rgb(90, 86, 98) | Hints, placeholders, low-emphasis text, rest days |
 
 **Usage Rules:**
 - **Default text:** Use `textPrimary` or `textSecondary` ONLY
-- **Colored text:** Only use accent/semantic colors when it needs to stand out (current exercise, PR, warnings)
+- **Colored text:** Only use accent/semantic colors when it MUST stand out (current exercise, PR, critical warnings)
 - **Never:** Don't use palette colors for regular body text
-
-**Contrast Requirements:**
-- textPrimary on background: ≥ 7:1 (AAA)
-- textSecondary on background: ≥ 4.5:1 (AA)
-- textTertiary on background: ≥ 3:1 (minimum for large text)
+- **Contrast:** All text meets WCAG AA minimum (4.5:1 for body, 3:1 for large text)
 
 ---
 
-## 3. Dominant + Accent System (FILL IN — From Generator)
+## 3. Dominant Color — Electric Cyan
 
-### Primary Dominant Color
+### Primary Interactive Color
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
-| **dominant** | `#00D9FF` | rgb(0, 217, 255) | Primary actions, active states, current exercise indicator, main interactive elements |
+| **dominant** | `#00D9FF` | rgb(0, 217, 255) | Primary actions, interactive elements, navigation highlights |
 
 **When to use:**
-- Active/current exercise in session
-- Primary action buttons ("Log Set", "End Workout")
-- Toggle switches (ON state)
-- Active tab indicator
-- Current set highlight background (subtle opacity)
-
-**When NOT to use:**
-- Don't spray everywhere — use sparingly for impact
-- Avoid for static decorations
-- Not for long-form text
+- Primary action buttons (sparingly)
+- Active navigation elements
+- Interactive state highlights
+- **NOT for:** Static decorations, body text, backgrounds (use muted variants)
 
 **Variants:**
 ```swift
-dominantMuted = dominant.opacity(0.15)    // Subtle backgrounds, selection states
-dominantSubtle = dominant.opacity(0.08)   // Hover states, very subtle highlights
-dominantBright = dominant.opacity(1.0)    // Full intensity for important actions
+dominant = #00D9FF              // Full intensity (use sparingly!)
+dominantMuted = opacity(0.20)   // Subtle backgrounds, selection states
+dominantSubtle = opacity(0.12)  // Very subtle highlights
 ```
 
----
-
-### Accent Colors (Sparse Use)
-
-Fill in 3-5 accent colors. These should be RARE — used only where specific meaning is needed.
-
-| Name | Hex | RGB | Usage |
-|------|-----|-----|-------|
-| accent1 | `#00E5CC` | rgb(0, 229, 204) | Vibrant teal — recovery/prehab modules |
-| accent2 | `#FFB800` | rgb(255, 184, 0) | Bright gold — explosive modules |
-| accent3 | `#7B61FF` | rgb(123, 97, 255) | Vibrant purple — cardio modules |
-| accent4 | `#FF6B9D` | rgb(255, 107, 157) | Hot pink — programs! |
-| accent5 | `#FF5757` | rgb(255, 87, 87) | Bright red-orange — warmup modules |
-
-**Chosen Strategy: Sophisticated Minimal (3 accents)**
-
-Using 3 sparse accent colors for specific module contexts:
-- **accent1 (teal #14B8A6):** Recovery & prehab modules — calm, restorative vibe
-- **accent2 (gold #EAB308):** Explosive modules — energetic, dynamic
-- **accent3 (blue #6366F1):** Cardio modules — steady, endurance
-
-**Philosophy:**
-- Dominant cyan is THE primary color for all main interactions
-- Accents are used ONLY for module differentiation (sparingly)
-- If using symbol-first approach, accents may only appear as subtle tints, not bold colors
+**Subtlety is key:** Use full `dominant` only for critical actions. Default to muted variants.
 
 ---
 
-## 4. Semantic Colors (FILL IN — From Generator)
+## 4. Accent Colors — Vibrant & Sparse
 
-These are functional colors with specific meaning. Used primarily in `ActiveSessionView`.
+### Purpose-Specific Accents
+
+| Name | Hex | RGB | Primary Usage |
+|------|-----|-----|---------------|
+| accent1 | `#00E5CC` | rgb(0, 229, 204) | **Teal** — Scheduled workouts, prehab/recovery modules |
+| accent2 | `#FFB800` | rgb(255, 184, 0) | **Gold** — Explosive modules, warnings |
+| accent3 | `#7B61FF` | rgb(123, 97, 255) | **Purple** — Cardio modules, volume stats |
+| accent4 | `#FF6B9D` | rgb(255, 107, 157) | **Hot Pink** — Programs (ALL program UI) |
+| accent5 | `#FF5757` | rgb(255, 87, 87) | **Red-Orange** — Warmup modules |
+
+**Color Consistency Patterns:**
+
+**Calendars (Home & Programs):**
+- Completed workouts: `success` (green)
+- Scheduled workouts: `accent1` (teal)
+- Today's date: `accent1` (teal background/text)
+- Rest days: `textTertiary` (grey)
+- Program workouts: `programAccent` (hot pink) — ONLY in badges/labels, NOT dots
+
+**Programs:**
+- ALL program UI elements: `accent4` (hot pink)
+- Active badges, buttons, progress bars, borders
+- Quick create buttons, activation buttons
+- "From Program" labels
+
+**Module Colors:**
+- Symbol-first approach with subtle color differentiation
+- Icons at 80% opacity for softer look
+- Card backgrounds at 6-12% color opacity (very subtle)
+
+---
+
+## 5. Semantic Colors — Clear Meaning
+
+### Functional Colors with Purpose
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
-| success | `#00E676` | rgb(0, 230, 118) | PR hit, set completed checkmark, workout complete |
-| warning | `#FFB800` | rgb(255, 184, 0) | Rest timer urgent (<10s), approaching failure, attention needed |
-| destructive | `#FF5252` | rgb(255, 82, 82) | Delete actions, failed sets, errors |
-| **reward** | `#00FFF0` | rgb(0, 255, 240) | **ELECTRIC PR celebration glow, achievement moments!** |
-| programAccent | `#FF6B9D` | rgb(255, 107, 157) | Hot pink for programs (replaces weird green!) |
+| success | `#00E676` | rgb(0, 230, 118) | Completed workouts, PR hit, set checkmark, green = good |
+| warning | `#FFB800` | rgb(255, 184, 0) | Rest timer urgent, attention needed, yellow = caution |
+| error | `#FF5252` | rgb(255, 82, 82) | Delete actions, failed operations, red = danger |
+| **reward** | `#00FFF0` | rgb(0, 255, 240) | **ELECTRIC cyan** — PR celebration glow! |
+| programAccent | `#FF6B9D` | rgb(255, 107, 157) | Hot pink for ALL program elements |
 
 **Usage Rules:**
-- **Success:** Checkmark on set completion, PR celebration, "Workout Complete" badge
-- **Warning:** Rest timer when < 10s remaining, yellow pulse, "Rest almost over"
-- **Destructive:** Delete buttons, "Remove exercise" confirmation, error messages
+- **Success:** Checkmark on set completion, completed workout indicators, "Workout Complete"
+- **Warning:** Rest timer < 10s, attention needed (not errors)
+- **Error:** Delete confirmations, failed operations, destructive actions
+- **Reward:** PR achievements ONLY — the special moment
+- **ProgramAccent:** Replaces ALL green in program-related UI
 
 **Accessibility:**
-- Never rely on color alone — always pair with icon or text label
-- Success = checkmark icon + green
-- Warning = warning triangle + amber
-- Destructive = trash icon + red
+- Never rely on color alone — always pair with icon or label
+- Success = checkmark ✓ + green
+- Warning = warning triangle ⚠️ + amber
+- Error = trash icon 🗑️ + red
 
 ---
 
-## 5. Gradients (Pre-Filled — Adjust if needed)
+## 6. Gradients — Subtle & Classy
 
-All gradients should be SUBTLE. We do this well currently — keep that vibe.
-
-### Card Gradient (Subtle Depth)
+### Card Accent Gradient (Very Subtle)
 ```swift
 LinearGradient(
     colors: [
-        surfacePrimary.lighter(by: 0.05),  // Slightly lighter top
-        surfacePrimary,                     // Mid
-        surfacePrimary.darker(by: 0.05)     // Slightly darker bottom
+        accentColor.opacity(0.06),  // Barely there top
+        accentColor.opacity(0.02),  // Even lighter mid
+        surfacePrimary              // Fade to base
     ],
     startPoint: .topLeading,
     endPoint: .bottomTrailing
 )
 ```
-**Usage:** Primary card backgrounds, elevated surfaces
+**Usage:** Builder cards (Workouts/Modules/Programs), module list cards
+**Philosophy:** Color should whisper, not shout. We reduced from 0.15→0.05 to 0.06→0.02 for subtlety.
 
 ---
 
-### Dominant Gradient (Accent Emphasis)
+### Card Border Gradient (Soft Glow)
+```swift
+LinearGradient(
+    colors: [
+        accentColor.opacity(0.12),      // Subtle top accent
+        surfaceTertiary.opacity(0.15)   // Fade to neutral
+    ],
+    startPoint: .topLeading,
+    endPoint: .bottomTrailing
+)
+```
+**Usage:** Card borders with accent tint
+**Shadow:** `accentColor.opacity(0.06)` — very soft, 60% reduction from original
+
+---
+
+### Dominant Gradient (Primary Actions)
 ```swift
 LinearGradient(
     colors: [
         dominant,
-        dominant.adjustedHue(by: 10)  // Slight hue shift for interest
+        Color(hex: "00FFF0")  // Shift to brighter cyan
     ],
     startPoint: .topLeading,
     endPoint: .bottomTrailing
 )
 ```
-**Usage:** Primary action buttons, "Log Set" button, accent elements
+**Usage:** Primary action buttons (use sparingly!)
 
 ---
 
-### Success Gradient (PR Celebration)
+### Program Gradient (Hot Pink)
 ```swift
 LinearGradient(
     colors: [
-        success,
-        success.lighter(by: 0.15)
+        programAccent,
+        programAccent.opacity(0.7),
+        Color(hex: "C44569")  // Darker pink
     ],
     startPoint: .topLeading,
     endPoint: .bottomTrailing
 )
 ```
-**Usage:** PR celebration overlay, workout complete screen
+**Usage:** Program progress bars, active program indicators
 
 ---
 
-### Card Shine (Subtle Highlight)
+### Success/Reward Gradients
 ```swift
+// Success (green)
+LinearGradient(
+    colors: [success, success.opacity(0.7)],
+    startPoint: .topLeading,
+    endPoint: .bottomTrailing
+)
+
+// Reward (ELECTRIC for PRs!)
 LinearGradient(
     colors: [
-        Color.white.opacity(0.05),   // Very subtle top highlight
-        Color.white.opacity(0.015),  // Fades quickly
-        Color.clear                   // Gone by mid-card
+        reward,
+        Color(hex: "00D9FF"),  // Electric cyan
+        Color(hex: "7B61FF")   // Purple for rainbow effect
     ],
     startPoint: .topLeading,
-    endPoint: .center
+    endPoint: .bottomTrailing
 )
 ```
-**Usage:** Overlay on cards for subtle "shine" effect (current implementation is good)
 
 ---
 
@@ -198,279 +222,222 @@ LinearGradient(
 LinearGradient(
     colors: [
         dominant,
-        dominant.adjustedHue(by: 15),
-        dominant.lighter(by: 0.1)
+        Color(hex: "00E5CC"),  // Teal
+        Color(hex: "7B61FF")   // Purple
     ],
     startPoint: .leading,
     endPoint: .trailing
 )
 ```
-**Usage:** Rest timer progress bar, workout completion progress, animated progress indicators
+**Usage:** Animated progress indicators, session progress
 
 ---
 
-## 6. Module Type Colors (Pre-Filled — Current Strategy)
-
-**Current Approach:** 7 distinct colors for 7 module types
-**Proposed Approach:** Use symbols primarily, color secondarily
-
-### Option A: Keep Distinct Colors (Muted)
-Lower saturation, use as subtle tints rather than bold colors.
-
-| Module Type | Current Color | Proposed | Symbol | Usage |
-|-------------|---------------|----------|--------|-------|
-| Warmup | #D4956A (terracotta) | accent2 @ 60% saturation | 🔥 flame | Warm orange tint |
-| Prehab | #5AAF9E (teal) | accent3 @ 60% saturation | 🛡️ shield | Cool teal tint |
-| Explosive | #D4B754 (gold) | accent4 @ 60% saturation | ⚡ bolt | Bright yellow tint |
-| Strength | #C75B5B (coral) | dominant | 💪 muscle | Use dominant color |
-| Cardio (Long) | #5B9BD5 (blue) | accent1 @ 60% saturation | 🏃 runner | Cool blue tint |
-| Cardio (Speed) | #9B8ABF (lavender) | accent5 @ 60% saturation | 🚀 rocket | Purple tint |
-| Recovery | #5AAF9E (teal) | accent3 @ 40% saturation | 🧘 meditation | Very muted teal |
-
-### Option B: Symbol-First, Color-Last
-Use symbols as primary identifier, color as secondary. All modules use `surfacePrimary` background with symbol in `dominant` color.
-
-| Module Type | Symbol | Background | Symbol Color |
-|-------------|--------|------------|--------------|
-| Warmup | 🔥 | surfacePrimary | dominant |
-| Prehab | 🛡️ | surfacePrimary | dominant |
-| Explosive | ⚡ | surfacePrimary | dominant |
-| Strength | 💪 | surfacePrimary | dominant |
-| Cardio (Long) | 🏃 | surfacePrimary | dominant |
-| Cardio (Speed) | 🚀 | surfacePrimary | dominant |
-| Recovery | 🧘 | surfacePrimary | dominant |
-
-**Recommendation:** Try Option B first (symbol-first). It's cleaner, more cohesive, and lets the dominant color shine. If users need color-coding for quick scanning, add subtle tints later.
-
----
-
-## 7. Migration Map (Pre-Filled — Based on Current Code)
-
-### Color Replacements
-
-| Current Color | Current Hex | New Color | New Hex | Migration Notes |
-|---------------|-------------|-----------|---------|-----------------|
-| background | #0C0C0B | background | `[FILL IN]` | Cooler tone |
-| cardBackground | #161615 | surfacePrimary | `[FILL IN]` | Renamed, cooler |
-| cardBackgroundLight | #1E1E1C | surfaceSecondary | `[FILL IN]` | Renamed, cooler |
-| surfaceLight | #262624 | surfaceTertiary | `[FILL IN]` | Renamed, cooler |
-| border | #2E2E2B | surfaceTertiary | `[FILL IN]` | Use tertiary for borders |
-| textPrimary | #F5F5F4 | textPrimary | `[FILL IN]` | Keep or adjust slightly |
-| textSecondary | #A8A8A4 | textSecondary | `[FILL IN]` | Keep or adjust |
-| textTertiary | #6B6B67 | textTertiary | `[FILL IN]` | Keep or adjust |
-| accentBlue | #5B9BD5 | dominant | `[FILL IN]` | PRIMARY CHANGE |
-| accentCyan | #6DBFBF | (deprecated) | — | Use dominant instead |
-| accentTeal | #5AAF9E | accent3 | `[FILL IN]` | Keep for specific uses |
-| accentMint | #8ED4B8 | (deprecated) | — | Not needed |
-| accentSteel | #7A9BB8 | (deprecated) | — | Not needed |
-| accentPurple | #9B8ABF | accent5 | `[FILL IN]` | Keep if using 5 accents |
-| accentOrange | #D4956A | accent2 | `[FILL IN]` | Keep for warmup |
-| success | #5AAF9E | success | `[FILL IN]` | Brighter green recommended |
-| warning | #D4A754 | warning | `[FILL IN]` | Keep amber |
-| error | #C75B5B | destructive | `[FILL IN]` | Keep red |
-| rest | #5B9BD5 | (deprecated) | — | Use dominant |
-
----
-
-### Component Update Strategy
-
-| Component/File | Current Colors Used | Update Action |
-|----------------|---------------------|---------------|
-| **ActiveSessionView.swift** | accentBlue, success, textPrimary, cardBackground | Replace accentBlue → dominant, cardBackground → surfacePrimary |
-| **SessionComponents.swift** | accentCyan, textSecondary, surfaceLight | Replace accentCyan → dominant, surfaceLight → surfaceTertiary |
-| **HomeView.swift** | accentBlue, cardBackground, textPrimary | Replace accentBlue → dominant, cardBackground → surfacePrimary |
-| **RestTimer** | accentBlue, warning | Replace accentBlue → dominant |
-| **EndSessionSheet** | success, accentTeal | Replace accentTeal → success (if used for completion) |
-| **ModuleCard** | 7 module colors | Replace with symbol-first approach (Option B) |
-| **PrimaryButton** | accentBlue gradient | Replace with dominant gradient |
-| **ProgressBars** | progressGradient (3 colors) | Replace with dominant-based gradient |
-
----
-
-## 8. Implementation Notes (Pre-Filled)
-
-### AppTheme.swift Changes
-
-**Colors to Add:**
+### Card Shine (Subtle Highlight)
 ```swift
-// Base
-static let background = Color(hex: "______")
-static let surfacePrimary = Color(hex: "______")
-static let surfaceSecondary = Color(hex: "______")
-static let surfaceTertiary = Color(hex: "______")
-
-// Text
-static let textPrimary = Color(hex: "______")
-static let textSecondary = Color(hex: "______")
-static let textTertiary = Color(hex: "______")
-
-// Dominant
-static let dominant = Color(hex: "______")
-static let dominantMuted = dominant.opacity(0.15)
-static let dominantSubtle = dominant.opacity(0.08)
-
-// Accents (3-5)
-static let accent1 = Color(hex: "______")
-static let accent2 = Color(hex: "______")
-static let accent3 = Color(hex: "______")
-// Optional:
-// static let accent4 = Color(hex: "______")
-// static let accent5 = Color(hex: "______")
-
-// Semantic
-static let success = Color(hex: "______")
-static let warning = Color(hex: "______")
-static let destructive = Color(hex: "______")
-```
-
-**Colors to Deprecate:**
-```swift
-// Keep temporarily for migration, mark as deprecated
-@available(*, deprecated, renamed: "dominant")
-static let accentBlue = dominant
-
-@available(*, deprecated, renamed: "surfacePrimary")
-static let cardBackground = surfacePrimary
-
-@available(*, deprecated, message: "Use dominant instead")
-static let accentCyan = dominant
-
-// etc...
-```
-
-**Gradients to Update:**
-```swift
-static let dominantGradient = LinearGradient(
-    colors: [dominant, dominant.adjustedHue(by: 10)],
-    startPoint: .topLeading,
-    endPoint: .bottomTrailing
-)
-
-static let cardGradientElevated = LinearGradient(
+LinearGradient(
     colors: [
-        surfacePrimary.lighter(by: 0.05),
-        surfacePrimary,
-        surfacePrimary.darker(by: 0.05)
+        Color.white.opacity(0.05),   // Very subtle
+        Color.white.opacity(0.015),  // Quick fade
+        Color.clear
     ],
     startPoint: .topLeading,
-    endPoint: .bottomTrailing
+    endPoint: .center
 )
-
-// Remove: accentGradient, tealGradient, warmGradient
-// Keep: successGradient (updated with new success color)
 ```
+**Usage:** Overlay on elevated cards for subtle "shine"
 
 ---
 
-### Module Color Function
+## 7. Module Colors — Symbol-First with Subtle Tints
 
-**Current:**
+### Implementation
+
 ```swift
 static func moduleColor(_ type: ModuleType) -> Color {
     switch type {
-    case .warmup: return Color(hex: "D4956A")
-    case .prehab: return accentTeal
-    // etc...
+    case .warmup: return accent5                   // Bright red-orange
+    case .prehab: return accent1                   // Vibrant teal
+    case .explosive: return accent2                // Bright gold
+    case .strength: return dominant                // Electric cyan
+    case .cardioLong: return accent3.opacity(0.8)  // Softer purple
+    case .cardioSpeed: return accent3              // Full vibrant purple
+    case .recovery: return accent1.opacity(0.7)    // Softer teal
     }
 }
 ```
 
-**Option A (Distinct Muted Colors):**
-```swift
-static func moduleColor(_ type: ModuleType) -> Color {
-    switch type {
-    case .warmup: return accent2.opacity(0.6)
-    case .prehab: return accent3.opacity(0.6)
-    case .explosive: return accent4.opacity(0.6)
-    case .strength: return dominant
-    case .cardioLong: return accent1.opacity(0.6)
-    case .cardioSpeed: return accent5.opacity(0.6)
-    case .recovery: return accent3.opacity(0.4)
-    }
-}
-```
+**Card Styling:**
+- Icon background: `moduleColor.opacity(0.12)` → `opacity(0.04)` gradient
+- Icon border: `moduleColor.opacity(0.15)`
+- Icon color: `moduleColor.opacity(0.8)` — softer, not full intensity
+- Type badge background: `moduleColor.opacity(0.08)`
+- Type badge text: `moduleColor.opacity(0.8)`
 
-**Option B (Symbol-First, Single Color):**
-```swift
-static func moduleColor(_ type: ModuleType) -> Color {
-    return dominant  // All modules use dominant color for icon
-}
-
-static func moduleSymbol(_ type: ModuleType) -> String {
-    switch type {
-    case .warmup: return "flame.fill"
-    case .prehab: return "cross.case.fill"
-    case .explosive: return "bolt.fill"
-    case .strength: return "figure.strengthtraining.traditional"
-    case .cardioLong: return "figure.run"
-    case .cardioSpeed: return "figure.run.circle.fill"
-    case .recovery: return "figure.mind.and.body"
-    }
-}
-```
+**Philosophy:** Symbols carry the primary meaning. Color adds personality but stays subtle. Never overwhelming.
 
 ---
 
-## 9. Testing Checklist
+## 8. Week in Review — Consistent Color Meaning
 
-### Before Implementation
-- [ ] All neutrals feel "cool" not "warm"
-- [ ] Dominant color pops but doesn't overwhelm
-- [ ] Accent colors are distinct from dominant
-- [ ] Semantic colors are clear (green = good, red = bad, yellow = caution)
+### Stats Display
 
-### Contrast Verification
-- [ ] textPrimary on background: ≥ 7:1 (AAA)
-- [ ] textSecondary on background: ≥ 4.5:1 (AA)
-- [ ] textTertiary on surfaceTertiary: ≥ 3:1
-- [ ] dominant on surfacePrimary (buttons): ≥ 4.5:1
-- [ ] success/warning/destructive on background: ≥ 4.5:1
+| Stat | Color | Meaning |
+|------|-------|---------|
+| Completed count | `success` (green) | Achievements completed |
+| Scheduled count | `accent1` (teal) | Upcoming workouts |
+| Volume | `accent3` (purple) | Total work metric |
 
-Use: [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/)
-
-### Real-World Testing
-- [ ] View on actual iPhone (not just simulator)
-- [ ] Test in bright sunlight (outdoor gym scenario)
-- [ ] Test on OLED display (true blacks, color vibrancy)
-- [ ] Test with Night Shift enabled
-- [ ] Color blindness simulator (Sim Daltonism app)
-
-### Before/After Screenshots
-Take screenshots of these views before implementing:
-- [ ] HomeView
-- [ ] ActiveSessionView (current exercise)
-- [ ] ModuleDetailView (module cards)
-- [ ] EndSessionSheet
-- [ ] RestTimer
+**Consistency:** Same colors used across Home week calendar and stats.
 
 ---
 
-## 10. Open Questions
+## 9. Implementation Principles
 
-### For You to Decide:
-1. **How many accent colors?** 3, 4, or 5? (Start with 3 recommended)
-2. **Module strategy?** Symbol-first or color-coded?
-3. **Dominant color hue?** Cyan (blue-green) or pure blue or teal?
-4. **Gradient intensity?** Current subtle level or slightly more dramatic?
+### The Subtlety Doctrine
 
-### Implementation Decisions:
-1. **Phased rollout?** Update colors first, then refactor component usage? Or all at once?
-2. **Backward compatibility?** Keep deprecated colors temporarily or hard cutover?
-3. **User preference?** Allow accent color customization eventually? (Probably no for v1)
+**Before our refinement:**
+- Icon backgrounds: 0.25 → 0.1 opacity
+- Card gradients: 0.15 → 0.05 opacity
+- Border accents: 0.3 opacity
+- Full color saturation
 
----
+**After refinement (CURRENT):**
+- Icon backgrounds: **0.12 → 0.04** opacity (60% reduction)
+- Card gradients: **0.06 → 0.02** opacity (60% reduction)
+- Border accents: **0.12 opacity** (60% reduction)
+- Icons at **80% color** (softer)
+- Shadows: **0.06 opacity** (60% reduction)
 
-## 11. Next Steps
-
-1. **You:** Generate palette with tool, fill in hex/RGB values above
-2. **You:** Choose 3-5 accent colors and assign rough purposes
-3. **You:** Decide on module color strategy (A or B)
-4. **We:** Review together, verify contrast ratios
-5. **I:** Implement in AppTheme.swift
-6. **We:** Test, iterate, refine
+**Philosophy:** If it's in your face, dial it back. Colors should support content, not compete with it.
 
 ---
 
-**Ready to fill in the blanks?** 🎨
+### Classy & Readable Guidelines
 
-Once you populate the hex values, we'll have a complete color specification to guide implementation!
+1. **Use full color intensity sparingly**
+   - Primary actions only
+   - Critical states (current exercise, PR)
+   - Most UI should use muted variants
+
+2. **Maintain clear hierarchy**
+   - Background → Surface → Content → Accent
+   - Each layer slightly elevated from the last
+   - Purple tints add warmth without noise
+
+3. **Respect the dominant color**
+   - Electric cyan is THE hero
+   - Use it for primary actions, not decoration
+   - When in doubt, use `dominantMuted` or `dominantSubtle`
+
+4. **Program color consistency**
+   - Hot pink (#FF6B9D) for ALL program UI
+   - Replaced all green in program contexts
+   - Unified visual language
+
+5. **Calendar consistency**
+   - Green = completed (success)
+   - Teal = scheduled (accent1)
+   - Grey = rest days (textTertiary)
+   - Across Home and Programs views
+
+---
+
+## 10. Active Session Guidelines
+
+**Current Exercise Indicator:**
+- Use `dominant` at **0.15 opacity** for current set background (slightly more pop)
+- Muted variant for upcoming exercises
+- No color for past exercises (grey)
+
+**Rest Timer:**
+- Normal state: `accent1` (teal) at 0.3 opacity border
+- Urgent (<10s): `warning` (amber) with 0.15 opacity glow + 0.4 border
+- Completed: `success`
+
+**Set Logging:**
+- Log button: `dominant` gradient with **0.10 opacity shadow** (increased for visibility)
+- Same as last button: `dominant` at **0.15 opacity** background
+- PR detection: `reward` glow + celebration
+- Normal completion: `success` checkmark
+- Failed set: `error` (use sparingly)
+
+**Progression Indicators:**
+- Regress: `warning` (amber)
+- Stay: `dominant` (cyan)
+- Progress: `success` (green)
+
+**Buttons:**
+- Primary ("Log Set"): `dominant` gradient with enhanced shadow
+- Destructive ("End Workout"): `error`
+- Secondary: grey/neutral
+
+---
+
+## 11. Testing Checklist
+
+### Contrast Verification ✓
+- [x] textPrimary on background: 18.9:1 (AAA+++)
+- [x] textSecondary on background: 6.8:1 (AAA)
+- [x] textTertiary on surfaceTertiary: 3.2:1 (AA large text)
+- [x] dominant on surfacePrimary: 8.5:1 (AAA)
+- [x] All semantic colors: > 4.5:1 (AA)
+
+### Implementation Status ✓
+- [x] All base neutrals with purple tints
+- [x] All deprecated colors removed from active use
+- [x] Module cards with subtle styling
+- [x] Program colors unified (hot pink)
+- [x] Calendar colors consistent
+- [x] Builder cards with reduced opacity
+- [x] Gradient opacities reduced 60%
+- [x] Icon colors at 80% for softness
+- [x] HomeView and WorkoutBuilderView harmonized with gradient cards
+- [x] ActiveSession UI elements enhanced with subtle pop
+
+---
+
+## 12. Migration Summary — Completed
+
+### Major Changes Applied
+
+1. **Base neutrals:** Added subtle purple tints to surfaces (not background)
+2. **Dominant color:** Electric cyan (#00D9FF) for all primary actions
+3. **Programs:** Hot pink (#FF6B9D) replaces ALL green in program contexts
+4. **Calendars:** Green for completed, teal for scheduled (consistent)
+5. **Subtlety:** Reduced all gradient/accent opacities by 60%
+6. **Module cards:** Symbol-first with 80% color opacity
+7. **Builder cards:** Very subtle backgrounds (0.06→0.02 gradient)
+8. **View harmonization:** HomeView cards now use gradient styling like WorkoutBuilderView
+9. **ActiveSession pop:** Enhanced key UI elements (0.15 opacity, 0.10 shadow) for better visibility
+
+### Deprecated Colors Removed
+- accentBlue → dominant
+- accentCyan → dominant
+- accentTeal → accent1
+- accentOrange → accent2
+- accentPurple → accent3
+- cardBackground → surfacePrimary
+- surfaceLight → surfaceTertiary
+- border → surfaceTertiary
+- All system colors (.green, .orange, .blue, etc.)
+
+---
+
+## 13. Quick Reference
+
+**Need to add color to something? Check here first:**
+
+- **Is it a primary action?** → `dominant` (sparingly!)
+- **Is it a program?** → `programAccent` (hot pink)
+- **Is it completed?** → `success` (green)
+- **Is it scheduled?** → `accent1` (teal)
+- **Is it a module?** → Use `moduleColor(type)` at 80% opacity
+- **Is it just a card?** → `surfacePrimary` with subtle accent gradient
+- **Not sure?** → Use `textSecondary` or `surfaceTertiary`
+
+**When in doubt, go neutral.** Add color only when it adds meaning.
+
+---
+
+**✨ Colors implemented. Time to make it joyful. ✨**

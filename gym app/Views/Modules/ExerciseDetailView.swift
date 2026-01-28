@@ -44,7 +44,7 @@ struct ExerciseDetailView: View {
                             Text("Primary")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
-                            MuscleGroupsDisplay(muscles: resolved.primaryMuscles, color: .blue)
+                            MuscleGroupsDisplay(muscles: resolved.primaryMuscles, color: AppColors.dominant)
                         }
                     }
 
@@ -199,7 +199,7 @@ struct FlowLayout: Layout {
 
 struct MuscleGroupsDisplay: View {
     let muscles: [MuscleGroup]
-    var color: Color = .blue
+    var color: Color = AppColors.dominant
 
     var body: some View {
         FlowLayout(spacing: 6) {

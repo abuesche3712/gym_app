@@ -124,7 +124,7 @@ struct HistoryView: View {
 
                                             if index < sessions.count - 1 {
                                                 Divider()
-                                                    .background(AppColors.border)
+                                                    .background(AppColors.surfaceTertiary)
                                                     .padding(.leading, 60)
                                             }
                                         }
@@ -132,7 +132,7 @@ struct HistoryView: View {
                                     .padding(AppSpacing.cardPadding)
                                     .background(
                                         RoundedRectangle(cornerRadius: AppCorners.large)
-                                            .fill(AppColors.cardBackground)
+                                            .fill(AppColors.surfacePrimary)
                                     )
                                     .padding(.horizontal, AppSpacing.screenPadding)
                                 }
@@ -187,7 +187,7 @@ struct SessionHistoryRow: View {
             VStack(spacing: 2) {
                 Text(dayOfWeek)
                     .font(.caption2.weight(.semibold))
-                    .foregroundColor(AppColors.accentBlue)
+                    .foregroundColor(AppColors.dominant)
                 Text(dayNumber)
                     .font(.title3.bold())
                     .foregroundColor(AppColors.textPrimary)

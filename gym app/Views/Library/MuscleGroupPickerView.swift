@@ -51,7 +51,7 @@ struct MuscleGroupPickerView: View {
             if !selectedIds.isEmpty {
                 Text("\(selectedIds.count) selected")
                     .font(.caption)
-                    .foregroundColor(AppColors.accentBlue)
+                    .foregroundColor(AppColors.dominant)
             }
         }
     }
@@ -111,11 +111,11 @@ struct MuscleGroupChip: View {
             .padding(.vertical, AppSpacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(isSelected ? AppColors.accentBlue : AppColors.surfaceLight)
+                    .fill(isSelected ? AppColors.dominant : AppColors.surfaceTertiary)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .stroke(isSelected ? AppColors.accentBlue : AppColors.border, lineWidth: 1)
+                    .stroke(isSelected ? AppColors.dominant : AppColors.surfaceTertiary, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -148,9 +148,9 @@ struct MuscleGroupDisplay: View {
                         .padding(.vertical, 4)
                         .background(
                             Capsule()
-                                .fill(AppColors.accentBlue.opacity(0.15))
+                                .fill(AppColors.dominant.opacity(0.12))
                         )
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
         }

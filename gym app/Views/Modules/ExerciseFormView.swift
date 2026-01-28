@@ -102,7 +102,7 @@ struct ExerciseFormView: View {
                     saveExercise()
                 }
                 .fontWeight(.semibold)
-                .foregroundColor(name.trimmingCharacters(in: .whitespaces).isEmpty ? AppColors.textTertiary : AppColors.accentBlue)
+                .foregroundColor(name.trimmingCharacters(in: .whitespaces).isEmpty ? AppColors.textTertiary : AppColors.dominant)
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
@@ -162,7 +162,7 @@ struct ExerciseFormView: View {
     // MARK: - Exercise Section
 
     private var exerciseSection: some View {
-        FormSection(title: "Exercise", icon: "dumbbell", iconColor: AppColors.accentBlue) {
+        FormSection(title: "Exercise", icon: "dumbbell", iconColor: AppColors.dominant) {
             // Exercise selection button
             FormButtonRow(
                 label: "Exercise",
@@ -192,11 +192,11 @@ struct ExerciseFormView: View {
                         Text(type.displayName).tag(type)
                     }
                 }
-                .tint(AppColors.accentBlue)
+                .tint(AppColors.dominant)
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.sm)
-            .background(AppColors.cardBackground)
+            .background(AppColors.surfacePrimary)
 
             // Cardio-specific options
             if exerciseType == .cardio {
@@ -220,11 +220,11 @@ struct ExerciseFormView: View {
                         .frame(width: 24)
 
                     Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
-                        .tint(AppColors.accentPurple)
+                        .tint(AppColors.accent3)
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.md)
-                .background(AppColors.cardBackground)
+                .background(AppColors.surfacePrimary)
             }
         }
     }
@@ -244,7 +244,7 @@ struct ExerciseFormView: View {
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 24)
                 Toggle("Time", isOn: $trackTime)
-                    .tint(AppColors.accentBlue)
+                    .tint(AppColors.dominant)
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.xs)
@@ -255,7 +255,7 @@ struct ExerciseFormView: View {
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 24)
                 Toggle("Distance", isOn: $trackDistance)
-                    .tint(AppColors.accentBlue)
+                    .tint(AppColors.dominant)
                     .onChange(of: trackDistance) { _, newValue in
                         if !newValue && !trackTime {
                             trackTime = true
@@ -285,13 +285,13 @@ struct ExerciseFormView: View {
                             Text(unit.displayName).tag(unit)
                         }
                     }
-                    .tint(AppColors.accentBlue)
+                    .tint(AppColors.dominant)
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.sm)
             }
         }
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     @ViewBuilder
@@ -309,7 +309,7 @@ struct ExerciseFormView: View {
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 24)
                 Toggle("Reps", isOn: $trackReps)
-                    .tint(AppColors.accentTeal)
+                    .tint(AppColors.accent1)
                     .onChange(of: trackReps) { _, newValue in
                         if !newValue && !trackDuration {
                             trackDuration = true
@@ -325,7 +325,7 @@ struct ExerciseFormView: View {
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 24)
                 Toggle("Duration", isOn: $trackDuration)
-                    .tint(AppColors.accentTeal)
+                    .tint(AppColors.accent1)
                     .onChange(of: trackDuration) { _, newValue in
                         if !newValue && !trackReps {
                             trackReps = true
@@ -335,7 +335,7 @@ struct ExerciseFormView: View {
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.xs)
         }
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     // MARK: - Muscles & Equipment Section
@@ -356,7 +356,7 @@ struct ExerciseFormView: View {
                     if !primaryMuscles.isEmpty {
                         Text(primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
                             .font(.subheadline)
-                            .foregroundColor(AppColors.accentBlue)
+                            .foregroundColor(AppColors.dominant)
                             .lineLimit(1)
                     }
                     if !secondaryMuscles.isEmpty {
@@ -371,7 +371,7 @@ struct ExerciseFormView: View {
     }
 
     private var musclesAndEquipmentSection: some View {
-        FormSection(title: "Muscles & Equipment", icon: "figure.strengthtraining.traditional", iconColor: AppColors.accentTeal) {
+        FormSection(title: "Muscles & Equipment", icon: "figure.strengthtraining.traditional", iconColor: AppColors.accent1) {
             // Muscles row
             Button {
                 showingMusclePicker = true
@@ -395,7 +395,7 @@ struct ExerciseFormView: View {
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.md)
-                .background(AppColors.cardBackground)
+                .background(AppColors.surfacePrimary)
             }
             .buttonStyle(.plain)
             .sheet(isPresented: $showingMusclePicker) {
@@ -411,7 +411,7 @@ struct ExerciseFormView: View {
                             Button("Done") {
                                 showingMusclePicker = false
                             }
-                            .foregroundColor(AppColors.accentBlue)
+                            .foregroundColor(AppColors.dominant)
                         }
                     }
                 }
@@ -441,7 +441,7 @@ struct ExerciseFormView: View {
                     } else {
                         Text(equipmentNames(for: selectedImplementIds).joined(separator: ", "))
                             .font(.subheadline)
-                            .foregroundColor(AppColors.accentTeal)
+                            .foregroundColor(AppColors.accent1)
                             .lineLimit(1)
                     }
 
@@ -451,7 +451,7 @@ struct ExerciseFormView: View {
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.md)
-                .background(AppColors.cardBackground)
+                .background(AppColors.surfacePrimary)
             }
             .buttonStyle(.plain)
             .sheet(isPresented: $showingEquipmentPicker) {
@@ -468,7 +468,7 @@ struct ExerciseFormView: View {
                             Button("Done") {
                                 showingEquipmentPicker = false
                             }
-                            .foregroundColor(AppColors.accentBlue)
+                            .foregroundColor(AppColors.dominant)
                         }
                     }
                 }
@@ -480,7 +480,7 @@ struct ExerciseFormView: View {
     // MARK: - Sets Section
 
     private var setsSection: some View {
-        FormSection(title: "Sets", icon: "list.number", iconColor: AppColors.accentCyan) {
+        FormSection(title: "Sets", icon: "list.number", iconColor: AppColors.dominant) {
             VStack(spacing: 0) {
                 if setGroups.isEmpty {
                     HStack {
@@ -493,7 +493,7 @@ struct ExerciseFormView: View {
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
                     .padding(.vertical, AppSpacing.md)
-                    .background(AppColors.cardBackground)
+                    .background(AppColors.surfacePrimary)
                 } else {
                     ForEach(Array(setGroups.enumerated()), id: \.element.id) { index, setGroup in
                         Button {
@@ -518,18 +518,18 @@ struct ExerciseFormView: View {
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: "plus.circle.fill")
                             .font(.system(size: 16))
-                            .foregroundColor(AppColors.accentCyan)
+                            .foregroundColor(AppColors.dominant)
                             .frame(width: 24)
 
                         Text("Add Set Group")
-                            .foregroundColor(AppColors.accentCyan)
+                            .foregroundColor(AppColors.dominant)
                             .fontWeight(.medium)
 
                         Spacer()
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
                     .padding(.vertical, AppSpacing.md)
-                    .background(AppColors.cardBackground)
+                    .background(AppColors.surfacePrimary)
                 }
                 .buttonStyle(.plain)
             }
@@ -543,7 +543,7 @@ struct ExerciseFormView: View {
             TextEditor(text: $notes)
                 .frame(minHeight: 80)
                 .padding(AppSpacing.md)
-                .background(AppColors.cardBackground)
+                .background(AppColors.surfacePrimary)
                 .scrollContentBackground(.hidden)
         }
     }
@@ -686,11 +686,11 @@ struct SetGroupEditRow: View {
             // Group number indicator
             ZStack {
                 Circle()
-                    .fill(AppColors.accentCyan.opacity(0.15))
+                    .fill(AppColors.dominant.opacity(0.15))
                     .frame(width: 32, height: 32)
                 Text("\(index)")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(AppColors.accentCyan)
+                    .foregroundColor(AppColors.dominant)
             }
 
             // Set info
@@ -723,7 +723,7 @@ struct SetGroupEditRow: View {
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 }
 
@@ -819,7 +819,7 @@ struct MuscleEnumChip: View {
     let action: () -> Void
 
     private var selectedColor: Color {
-        isPrimary ? AppColors.accentBlue : AppColors.accentTeal
+        isPrimary ? AppColors.dominant : AppColors.accent1
     }
 
     var body: some View {
@@ -844,11 +844,11 @@ struct MuscleEnumChip: View {
             .padding(.vertical, AppSpacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(isSelected ? selectedColor : AppColors.surfaceLight)
+                    .fill(isSelected ? selectedColor : AppColors.surfaceTertiary)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .stroke(isSelected ? selectedColor : AppColors.border, lineWidth: 1)
+                    .stroke(isSelected ? selectedColor : AppColors.surfaceTertiary, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)

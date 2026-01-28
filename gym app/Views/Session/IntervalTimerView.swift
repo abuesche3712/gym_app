@@ -24,10 +24,10 @@ enum IntervalPhase {
 
     var color: Color {
         switch self {
-        case .getReady: return .orange
-        case .work: return AppColors.accentBlue
-        case .rest: return AppColors.accentTeal
-        case .complete: return AppColors.accentBlue
+        case .getReady: return AppColors.warning
+        case .work: return AppColors.dominant
+        case .rest: return AppColors.accent1
+        case .complete: return AppColors.dominant
         }
     }
 }
@@ -60,7 +60,7 @@ struct IntervalTimerView: View {
     var body: some View {
         ZStack {
             // Background - changes based on phase
-            phase.color.opacity(0.15)
+            phase.color.opacity(0.12)
                 .ignoresSafeArea()
                 .animation(.easeInOut(duration: 0.3), value: phase)
 
@@ -125,14 +125,12 @@ struct IntervalTimerView: View {
         VStack(spacing: AppSpacing.xl) {
             // Phase indicator
             Text(phase.label)
-                .font(.system(size: 32, weight: .black, design: .rounded))
-                .foregroundColor(phase.color)
+                .displayMedium(color: phase.color)
                 .animation(.easeInOut(duration: 0.2), value: phase)
 
             // Big countdown
             Text(formatTime(secondsRemaining))
-                .font(.system(size: 100, weight: .bold, design: .rounded))
-                .foregroundColor(AppColors.textPrimary)
+                .displayLarge()
                 .monospacedDigit()
                 .contentTransition(.numericText())
                 .animation(.easeInOut(duration: 0.1), value: secondsRemaining)
@@ -176,7 +174,7 @@ struct IntervalTimerView: View {
         VStack(spacing: AppSpacing.xl) {
             ZStack {
                 Circle()
-                    .fill(AppColors.success.opacity(0.15))
+                    .fill(AppColors.success.opacity(0.12))
                     .frame(width: 120, height: 120)
 
                 Image(systemName: "checkmark")
@@ -203,7 +201,7 @@ struct IntervalTimerView: View {
                     .padding(.vertical, AppSpacing.lg)
                     .background(
                         RoundedRectangle(cornerRadius: AppCorners.medium)
-                            .fill(AppGradients.accentGradient)
+                            .fill(AppGradients.dominantGradient)
                     )
             }
             .padding(.horizontal, AppSpacing.xl)
@@ -243,7 +241,7 @@ struct IntervalTimerView: View {
             Button {
                 togglePause()
             } label: {
-                let buttonColor = isPaused ? AppColors.accentTeal : AppColors.accentBlue
+                let buttonColor = isPaused ? AppColors.accent1 : AppColors.dominant
                 VStack(spacing: 4) {
                     Image(systemName: isPaused ? "play.fill" : "pause.fill")
                         .font(.system(size: 32))
@@ -254,7 +252,7 @@ struct IntervalTimerView: View {
                 .frame(width: 100, height: 100)
                 .background(
                     Circle()
-                        .fill(buttonColor.opacity(0.15))
+                        .fill(buttonColor.opacity(0.12))
                 )
             }
 
@@ -272,7 +270,7 @@ struct IntervalTimerView: View {
                 .frame(width: 80, height: 80)
                 .background(
                     Circle()
-                        .fill(AppColors.surfaceLight)
+                        .fill(AppColors.surfaceTertiary)
                 )
             }
         }
@@ -436,7 +434,7 @@ struct IntervalTimerView: View {
         } else if round == currentRound {
             return phase.color
         } else {
-            return AppColors.surfaceLight
+            return AppColors.surfaceTertiary
         }
     }
 

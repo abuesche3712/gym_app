@@ -228,11 +228,11 @@ struct WorkoutSelectionRow: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.accentColor)
+                        .foregroundColor(AppColors.programAccent)
                 }
             }
         }
-        .listRowBackground(isSelected ? Color.accentColor.opacity(0.1) : nil)
+        .listRowBackground(isSelected ? AppColors.programAccent.opacity(0.1) : nil)
     }
 }
 
@@ -274,11 +274,11 @@ struct ModuleSelectionRow: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.accentColor)
+                        .foregroundColor(AppColors.programAccent)
                 }
             }
         }
-        .listRowBackground(isSelected ? Color.accentColor.opacity(0.1) : nil)
+        .listRowBackground(isSelected ? AppColors.programAccent.opacity(0.1) : nil)
     }
 }
 

@@ -136,7 +136,7 @@ struct ExercisePickerView: View {
                         addCustomExercise()
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundColor(.blue)
+                            .foregroundColor(AppColors.dominant)
                             .font(.title2)
                     }
                 } else {
@@ -167,7 +167,7 @@ struct ExercisePickerView: View {
                         .foregroundColor(.secondary)
                 } else {
                     Text("Tap + to add \"\(customName)\"")
-                        .foregroundColor(.blue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
         }
@@ -231,7 +231,7 @@ struct ExercisePickerView: View {
                         if !template.primaryMuscles.isEmpty || !template.implementIds.isEmpty {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.caption2)
-                                .foregroundColor(.green)
+                                .foregroundColor(AppColors.success)
                         }
                     }
 
@@ -244,7 +244,7 @@ struct ExercisePickerView: View {
                         if !template.primaryMuscles.isEmpty {
                             Text("\(template.primaryMuscles.count) muscles")
                                 .font(.caption2)
-                                .foregroundColor(.blue)
+                                .foregroundColor(AppColors.dominant)
                         }
 
                         // Show equipment if set
@@ -252,7 +252,7 @@ struct ExercisePickerView: View {
                         if !equipment.isEmpty {
                             Text(equipment.joined(separator: ", "))
                                 .font(.caption2)
-                                .foregroundColor(AppColors.accentTeal)
+                                .foregroundColor(AppColors.accent1)
                         }
                     }
                 }
@@ -261,7 +261,7 @@ struct ExercisePickerView: View {
 
                 if selectedTemplate?.id == template.id {
                     Image(systemName: "checkmark")
-                        .foregroundColor(.blue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
         }
@@ -272,7 +272,7 @@ struct ExercisePickerView: View {
             } label: {
                 Label("Edit", systemImage: "pencil")
             }
-            .tint(.orange)
+            .tint(AppColors.warning)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             if isCustom {
@@ -335,7 +335,7 @@ struct CategoryPill: View {
                 .font(.subheadline.weight(isSelected ? .semibold : .regular))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(isSelected ? AppColors.accentBlue : AppColors.surfaceLight)
+                .background(isSelected ? AppColors.dominant : AppColors.surfaceTertiary)
                 .foregroundColor(isSelected ? .white : AppColors.textPrimary)
                 .clipShape(Capsule())
         }
@@ -345,7 +345,7 @@ struct CategoryPill: View {
 struct SelectableChip: View {
     let text: String
     let isSelected: Bool
-    var color: Color = AppColors.accentBlue
+    var color: Color = AppColors.dominant
     let action: () -> Void
 
     var body: some View {
@@ -358,7 +358,7 @@ struct SelectableChip: View {
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(isSelected ? color : AppColors.surfaceLight)
+                        .fill(isSelected ? color : AppColors.surfaceTertiary)
                 )
                 .foregroundColor(isSelected ? .white : AppColors.textPrimary)
         }

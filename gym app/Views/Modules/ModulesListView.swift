@@ -113,7 +113,7 @@ struct ModulesListView: View {
                     } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.title3)
-                            .foregroundColor(AppColors.accentBlue)
+                            .foregroundColor(AppColors.dominant)
                     }
                 }
             }
@@ -144,15 +144,15 @@ struct ModulesListView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(AppColors.accentTeal)
+                        .foregroundColor(AppColors.accent1)
                         .frame(width: 36, height: 36)
                         .background(
                             Circle()
-                                .fill(AppColors.accentTeal.opacity(0.1))
+                                .fill(AppColors.accent1.opacity(0.1))
                         )
                         .overlay(
                             Circle()
-                                .stroke(AppColors.accentTeal.opacity(0.2), lineWidth: 1)
+                                .stroke(AppColors.accent1.opacity(0.2), lineWidth: 1)
                         )
                 }
 
@@ -163,15 +163,15 @@ struct ModulesListView: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(AppColors.accentTeal)
+                        .foregroundColor(AppColors.accent1)
                         .frame(width: 36, height: 36)
                         .background(
                             Circle()
-                                .fill(AppColors.accentTeal.opacity(0.1))
+                                .fill(AppColors.accent1.opacity(0.1))
                         )
                         .overlay(
                             Circle()
-                                .stroke(AppColors.accentTeal.opacity(0.2), lineWidth: 1)
+                                .stroke(AppColors.accent1.opacity(0.2), lineWidth: 1)
                         )
                 }
             }
@@ -180,9 +180,7 @@ struct ModulesListView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("MODULES")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(AppColors.accentTeal)
-                        .tracking(1.5)
+                        .elegantLabel(color: AppColors.accent1)
 
                     Text("Your Modules")
                         .font(.system(size: 28, weight: .bold))
@@ -205,7 +203,7 @@ struct ModulesListView: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [AppColors.accentTeal.opacity(0.6), AppColors.accentTeal.opacity(0.1), Color.clear],
+                        colors: [AppColors.accent1.opacity(0.6), AppColors.accent1.opacity(0.1), Color.clear],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -220,7 +218,7 @@ struct ModulesListView: View {
 struct FilterPill: View {
     let title: String
     let isSelected: Bool
-    var color: Color = AppColors.accentBlue
+    var color: Color = AppColors.dominant
     let action: () -> Void
 
     var body: some View {
@@ -231,10 +229,10 @@ struct FilterPill: View {
                 .padding(.vertical, AppSpacing.sm)
                 .background(
                     Capsule()
-                        .fill(isSelected ? color.opacity(0.2) : AppColors.cardBackground)
+                        .fill(isSelected ? color.opacity(0.2) : AppColors.surfacePrimary)
                         .overlay(
                             Capsule()
-                                .stroke(isSelected ? color.opacity(0.5) : AppColors.border.opacity(0.5), lineWidth: 1)
+                                .stroke(isSelected ? color.opacity(0.5) : AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
                         )
                 )
                 .foregroundColor(isSelected ? color : AppColors.textSecondary)
@@ -262,7 +260,7 @@ struct ModuleListCard: View {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(
                             LinearGradient(
-                                colors: [moduleColor.opacity(0.25), moduleColor.opacity(0.1)],
+                                colors: [moduleColor.opacity(0.12), moduleColor.opacity(0.04)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -270,13 +268,12 @@ struct ModuleListCard: View {
                         .frame(width: 56, height: 56)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(moduleColor.opacity(0.3), lineWidth: 0.5)
+                                .stroke(moduleColor.opacity(0.15), lineWidth: 0.5)
                         )
 
                     Image(systemName: module.type.icon)
                         .font(.system(size: 24))
-                        .foregroundColor(moduleColor)
-                        .shadow(color: moduleColor.opacity(0.3), radius: 4, x: 0, y: 0)
+                        .foregroundColor(moduleColor.opacity(0.8))
                 }
 
                 // Content
@@ -290,12 +287,12 @@ struct ModuleListCard: View {
                         Text(module.type.displayName)
                             .font(.caption2)
                             .fontWeight(.semibold)
-                            .foregroundColor(moduleColor)
+                            .foregroundColor(moduleColor.opacity(0.8))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(
                                 Capsule()
-                                    .fill(moduleColor.opacity(0.15))
+                                    .fill(moduleColor.opacity(0.08))
                             )
                     }
 
@@ -323,7 +320,7 @@ struct ModuleListCard: View {
             // Exercise list (only when filtered to specific type)
             if showExercises && !module.exercises.isEmpty {
                 Divider()
-                    .background(AppColors.border.opacity(0.3))
+                    .background(AppColors.surfaceTertiary.opacity(0.3))
                     .padding(.horizontal, AppSpacing.cardPadding)
 
                 let resolvedExercises = module.resolvedExercises()

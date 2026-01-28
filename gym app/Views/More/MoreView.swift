@@ -18,7 +18,7 @@ struct MoreView: View {
                     } label: {
                         MoreRowView(
                             icon: "clock.arrow.circlepath",
-                            iconColor: .blue,
+                            iconColor: AppColors.dominant,
                             title: "History",
                             subtitle: "View past workouts"
                         )
@@ -43,7 +43,7 @@ struct MoreView: View {
                     } label: {
                         MoreRowView(
                             icon: "books.vertical.fill",
-                            iconColor: .purple,
+                            iconColor: AppColors.accent3,
                             title: "Exercise Library",
                             subtitle: "Browse all exercises"
                         )
@@ -54,7 +54,7 @@ struct MoreView: View {
                     } label: {
                         MoreRowView(
                             icon: "dumbbell.fill",
-                            iconColor: .orange,
+                            iconColor: AppColors.accent2,
                             title: "Equipment Library",
                             subtitle: "Manage your equipment"
                         )

@@ -18,12 +18,12 @@ struct AnalyticsView: View {
                     // Icon
                     ZStack {
                         Circle()
-                            .fill(Color.cyan.opacity(0.15))
+                            .fill(AppColors.dominant.opacity(0.15))
                             .frame(width: 120, height: 120)
 
                         Image(systemName: "chart.line.uptrend.xyaxis")
                             .font(.system(size: 48))
-                            .foregroundColor(.cyan)
+                            .foregroundColor(AppColors.dominant)
                     }
 
                     // Title and Description
@@ -46,7 +46,7 @@ struct AnalyticsView: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(Color.cyan)
+                        .background(AppColors.dominant)
                         .cornerRadius(20)
 
                     // Feature Preview Cards
@@ -104,9 +104,9 @@ struct AnalyticsPreviewCard: View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(.cyan)
+                .foregroundColor(AppColors.dominant)
                 .frame(width: 44, height: 44)
-                .background(Color.cyan.opacity(0.15))
+                .background(AppColors.dominant.opacity(0.15))
                 .cornerRadius(10)
 
             VStack(alignment: .leading, spacing: 2) {

@@ -60,7 +60,7 @@ struct ExerciseLibraryView: View {
                 .padding(AppSpacing.md)
                 .background(
                     RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(AppColors.cardBackground)
+                        .fill(AppColors.surfacePrimary)
                 )
 
                 // Type filter
@@ -137,7 +137,7 @@ struct ExerciseLibraryView: View {
                     showingAddExercise = true
                 } label: {
                     Image(systemName: "plus")
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
         }
@@ -166,7 +166,7 @@ private struct TypeChip: View {
                 .padding(.vertical, AppSpacing.sm)
                 .background(
                     Capsule()
-                        .fill(isSelected ? AppColors.accentBlue : AppColors.cardBackground)
+                        .fill(isSelected ? AppColors.dominant : AppColors.surfacePrimary)
                 )
         }
         .buttonStyle(.plain)
@@ -192,7 +192,7 @@ private struct StatPill: View {
         .padding(.vertical, AppSpacing.sm)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(AppColors.cardBackground)
+                .fill(AppColors.surfacePrimary)
         )
     }
 }
@@ -219,11 +219,11 @@ private struct SourceFilterPill: View {
             .padding(.vertical, AppSpacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(isSelected ? AppColors.accentBlue : AppColors.cardBackground)
+                    .fill(isSelected ? AppColors.dominant : AppColors.surfacePrimary)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .stroke(isSelected ? AppColors.accentBlue : Color.clear, lineWidth: 2)
+                    .stroke(isSelected ? AppColors.dominant : Color.clear, lineWidth: 2)
             )
         }
         .buttonStyle(.plain)
@@ -255,12 +255,12 @@ private struct ExerciseLibraryRow: View {
                         if isCustom {
                             Text("Custom")
                                 .font(.caption2.weight(.semibold))
-                                .foregroundColor(AppColors.accentTeal)
+                                .foregroundColor(AppColors.accent1)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(
                                     Capsule()
-                                        .fill(AppColors.accentTeal.opacity(0.15))
+                                        .fill(AppColors.accent1.opacity(0.12))
                                 )
                         }
                     }
@@ -284,7 +284,7 @@ private struct ExerciseLibraryRow: View {
                                 .foregroundColor(AppColors.textTertiary)
                             Text(equipmentNames)
                                 .font(.caption)
-                                .foregroundColor(AppColors.accentCyan)
+                                .foregroundColor(AppColors.dominant)
                                 .lineLimit(1)
                         }
                     }
@@ -304,7 +304,7 @@ private struct ExerciseLibraryRow: View {
             .padding(AppSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(AppColors.cardBackground)
+                    .fill(AppColors.surfacePrimary)
             )
         }
         .buttonStyle(.plain)
@@ -330,12 +330,12 @@ private struct ExerciseLibraryRow: View {
 
     private var typeColor: Color {
         switch exercise.exerciseType {
-        case .strength: return .blue
-        case .cardio: return .red
-        case .isometric: return .orange
-        case .explosive: return .purple
-        case .mobility: return .green
-        case .recovery: return .cyan
+        case .strength: return AppColors.dominant
+        case .cardio: return AppColors.accent3
+        case .isometric: return AppColors.accent2
+        case .explosive: return AppColors.accent2
+        case .mobility: return AppColors.accent1
+        case .recovery: return AppColors.accent1
         }
     }
 
@@ -389,7 +389,7 @@ struct AddExerciseSheet: View {
                             .padding(AppSpacing.md)
                             .background(
                                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                                    .fill(AppColors.cardBackground)
+                                    .fill(AppColors.surfacePrimary)
                             )
                     }
 
@@ -417,7 +417,7 @@ struct AddExerciseSheet: View {
                                     .foregroundColor(exerciseType == type ? .white : AppColors.textPrimary)
                                     .background(
                                         RoundedRectangle(cornerRadius: AppCorners.medium)
-                                            .fill(exerciseType == type ? AppColors.accentBlue : AppColors.cardBackground)
+                                            .fill(exerciseType == type ? AppColors.dominant : AppColors.surfacePrimary)
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -431,7 +431,7 @@ struct AddExerciseSheet: View {
                         subtitle: "Main muscles worked",
                         selected: $primaryMuscles,
                         excluded: secondaryMuscles,
-                        accentColor: AppColors.accentBlue
+                        accentColor: AppColors.dominant
                     )
 
                     // Secondary Muscles
@@ -440,7 +440,7 @@ struct AddExerciseSheet: View {
                         subtitle: "Supporting muscles",
                         selected: $secondaryMuscles,
                         excluded: primaryMuscles,
-                        accentColor: AppColors.accentTeal
+                        accentColor: AppColors.accent1
                     )
 
                     // Equipment
@@ -539,7 +539,7 @@ struct AddExerciseSheet: View {
                     if !selectedImplementIds.isEmpty {
                         Text("\(selectedImplementIds.count) selected")
                             .font(.caption)
-                            .foregroundColor(AppColors.accentCyan)
+                            .foregroundColor(AppColors.dominant)
                     }
                 }
 
@@ -632,7 +632,7 @@ private struct ExerciseEditSheet: View {
                         subtitle: "Main muscles worked",
                         selected: $primaryMuscles,
                         excluded: secondaryMuscles,
-                        accentColor: AppColors.accentBlue
+                        accentColor: AppColors.dominant
                     )
 
                     // Secondary Muscles Grid
@@ -641,7 +641,7 @@ private struct ExerciseEditSheet: View {
                         subtitle: "Supporting muscles",
                         selected: $secondaryMuscles,
                         excluded: primaryMuscles,
-                        accentColor: AppColors.accentTeal
+                        accentColor: AppColors.accent1
                     )
 
                     // Equipment Grid
@@ -701,10 +701,10 @@ private struct ExerciseEditSheet: View {
                         if exercise.isCustom {
                             Text("Custom")
                                 .font(.caption2.weight(.semibold))
-                                .foregroundColor(AppColors.accentTeal)
+                                .foregroundColor(AppColors.accent1)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(Capsule().fill(AppColors.accentTeal.opacity(0.15)))
+                                .background(Capsule().fill(AppColors.accent1.opacity(0.12)))
                         }
                     }
                 }
@@ -715,7 +715,7 @@ private struct ExerciseEditSheet: View {
         .padding(AppSpacing.md)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.cardBackground)
+                .fill(AppColors.surfacePrimary)
         )
     }
 
@@ -745,11 +745,11 @@ private struct ExerciseEditSheet: View {
                         .foregroundColor(exerciseType == type ? .white : AppColors.textPrimary)
                         .background(
                             RoundedRectangle(cornerRadius: AppCorners.medium)
-                                .fill(exerciseType == type ? exerciseTypeColor(for: type) : AppColors.cardBackground)
+                                .fill(exerciseType == type ? exerciseTypeColor(for: type) : AppColors.surfacePrimary)
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: AppCorners.medium)
-                                .stroke(exerciseType == type ? exerciseTypeColor(for: type) : AppColors.border, lineWidth: 1)
+                                .stroke(exerciseType == type ? exerciseTypeColor(for: type) : AppColors.surfaceTertiary, lineWidth: 1)
                         )
                     }
                     .buttonStyle(.plain)
@@ -765,21 +765,21 @@ private struct ExerciseEditSheet: View {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "figure.walk")
                     .font(.system(size: 18))
-                    .foregroundColor(AppColors.accentPurple)
+                    .foregroundColor(AppColors.accent3)
 
                 Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
-                    .tint(AppColors.accentPurple)
+                    .tint(AppColors.accent3)
             }
             .padding(AppSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.cardBackground)
+                    .fill(AppColors.surfacePrimary)
             )
 
             if isUnilateral {
                 Text("Single-leg/arm work - sets are logged separately for left and right sides")
                     .font(.caption)
-                    .foregroundColor(AppColors.accentPurple)
+                    .foregroundColor(AppColors.accent3)
                     .padding(.horizontal, AppSpacing.md)
             }
         }
@@ -850,7 +850,7 @@ private struct ExerciseEditSheet: View {
                     if !selectedImplementIds.isEmpty {
                         Text("\(selectedImplementIds.count) selected")
                             .font(.caption)
-                            .foregroundColor(AppColors.accentCyan)
+                            .foregroundColor(AppColors.dominant)
                     }
                 }
 
@@ -904,12 +904,12 @@ private struct ExerciseEditSheet: View {
 
     private func exerciseTypeColor(for type: ExerciseType) -> Color {
         switch type {
-        case .strength: return AppColors.accentBlue
+        case .strength: return AppColors.dominant
         case .cardio: return AppColors.warning
-        case .mobility: return AppColors.accentTeal
-        case .isometric: return AppColors.accentCyan
+        case .mobility: return AppColors.accent1
+        case .isometric: return AppColors.dominant
         case .explosive: return Color(hex: "FF8C42")
-        case .recovery: return AppColors.accentMint
+        case .recovery: return AppColors.accent1
         }
     }
 
@@ -948,11 +948,11 @@ private struct MuscleChip: View {
             .padding(.vertical, AppSpacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(isSelected ? accentColor : AppColors.cardBackground)
+                    .fill(isSelected ? accentColor : AppColors.surfacePrimary)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .stroke(isSelected ? accentColor : AppColors.border, lineWidth: 1)
+                    .stroke(isSelected ? accentColor : AppColors.surfaceTertiary, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -1010,11 +1010,11 @@ private struct EquipmentChip: View {
             .padding(.vertical, AppSpacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(isSelected ? AppColors.accentCyan : AppColors.cardBackground)
+                    .fill(isSelected ? AppColors.dominant : AppColors.surfacePrimary)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .stroke(isSelected ? AppColors.accentCyan : AppColors.border, lineWidth: 1)
+                    .stroke(isSelected ? AppColors.dominant : AppColors.surfaceTertiary, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)

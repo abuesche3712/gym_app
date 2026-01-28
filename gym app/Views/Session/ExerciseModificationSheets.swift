@@ -106,7 +106,7 @@ struct EditExerciseSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { saveChanges() }
                         .fontWeight(.semibold)
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                         .disabled(exerciseName.isEmpty)
                 }
             }
@@ -168,7 +168,7 @@ struct EditExerciseSheet: View {
                             Button("Done") {
                                 activePicker = nil
                             }
-                            .foregroundColor(AppColors.accentBlue)
+                            .foregroundColor(AppColors.dominant)
                         }
                     }
             }
@@ -186,7 +186,7 @@ struct EditExerciseSheet: View {
                         Button("Done") {
                             activePicker = nil
                         }
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                     }
                 }
             }
@@ -355,7 +355,7 @@ struct EditExerciseSheet: View {
             } label: {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "figure.strengthtraining.traditional")
-                        .foregroundColor(AppColors.accentTeal)
+                        .foregroundColor(AppColors.accent1)
                         .frame(width: 24)
 
                     Text("Equipment")
@@ -375,7 +375,7 @@ struct EditExerciseSheet: View {
             } label: {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "figure.walk")
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                         .frame(width: 24)
 
                     Text("Muscles")
@@ -415,7 +415,7 @@ struct EditExerciseSheet: View {
                     if !primaryMuscles.isEmpty {
                         Text(primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
                             .font(.subheadline)
-                            .foregroundColor(AppColors.accentBlue)
+                            .foregroundColor(AppColors.dominant)
                             .lineLimit(1)
                     }
                     if !secondaryMuscles.isEmpty {
@@ -442,7 +442,7 @@ struct EditExerciseSheet: View {
         Section {
             HStack {
                 Image(systemName: "info.circle")
-                    .foregroundColor(AppColors.accentBlue)
+                    .foregroundColor(AppColors.dominant)
                 Text("Completed sets are preserved. Changes apply to remaining sets.")
                     .font(.caption)
                     .foregroundColor(AppColors.textSecondary)
@@ -665,11 +665,11 @@ struct EditSetGroupSheet: View {
                 Section("Options") {
                     if exerciseType != .cardio {
                         Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
-                            .tint(AppColors.accentPurple)
+                            .tint(AppColors.accent3)
                     }
                     if exerciseType == .strength || exerciseType == .explosive {
                         Toggle("Track RPE", isOn: $trackRPE)
-                            .tint(AppColors.accentCyan)
+                            .tint(AppColors.dominant)
                     }
                 }
             }
@@ -683,7 +683,7 @@ struct EditSetGroupSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { saveChanges() }
                         .fontWeight(.semibold)
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
             .onAppear { loadValues() }
@@ -995,7 +995,7 @@ struct AddExerciseToModuleSheet: View {
                 dismiss()
             }
             .fontWeight(.semibold)
-            .foregroundColor(AppColors.accentBlue)
+            .foregroundColor(AppColors.dominant)
             .disabled(exerciseName.isEmpty)
         }
     }
@@ -1058,7 +1058,7 @@ struct EditIndividualSetSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { saveChanges() }
                         .fontWeight(.semibold)
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
             .onAppear { loadValues() }

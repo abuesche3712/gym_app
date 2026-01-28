@@ -58,7 +58,7 @@ struct ModuleCard: View {
             .padding(AppSpacing.cardPadding)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.cardBackground)
+                    .fill(AppColors.surfacePrimary)
                     .overlay(
                         RoundedRectangle(cornerRadius: AppCorners.large)
                             .stroke(AppColors.moduleColor(module.type).opacity(0.2), lineWidth: 1)
@@ -106,7 +106,7 @@ struct WorkoutCard: View {
                         .frame(width: 40, height: 40)
                         .background(
                             Circle()
-                                .fill(AppColors.accentBlue)
+                                .fill(AppColors.dominant)
                         )
                 }
             }
@@ -128,7 +128,7 @@ struct WorkoutCard: View {
                 .fill(AppGradients.subtleGradient)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.border.opacity(0.5), lineWidth: 1)
+                        .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
                 )
         )
         .contentShape(Rectangle())
@@ -155,7 +155,7 @@ struct ModulePill: View {
         .padding(.vertical, AppSpacing.xs)
         .background(
             Capsule()
-                .fill(AppColors.moduleColor(module.type).opacity(0.15))
+                .fill(AppColors.moduleColor(module.type).opacity(0.12))
         )
     }
 }
@@ -177,13 +177,13 @@ struct SetTimerRing: View {
         ZStack {
             // Background ring
             Circle()
-                .stroke(AppColors.border, lineWidth: 3)
+                .stroke(AppColors.surfaceTertiary, lineWidth: 3)
 
             // Progress ring
             Circle()
                 .trim(from: 0, to: progress)
                 .stroke(
-                    isActive ? AppColors.accentBlue : AppColors.accentTeal,
+                    isActive ? AppColors.dominant : AppColors.accent1,
                     style: StrokeStyle(lineWidth: 3, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
@@ -192,7 +192,7 @@ struct SetTimerRing: View {
             // Time text
             Text(formatTime(timeRemaining))
                 .font(.system(size: size * 0.28, weight: .semibold, design: .monospaced))
-                .foregroundColor(isActive ? AppColors.accentBlue : AppColors.textSecondary)
+                .foregroundColor(isActive ? AppColors.dominant : AppColors.textSecondary)
         }
         .frame(width: size, height: size)
     }
@@ -203,13 +203,13 @@ struct SetTimerRing: View {
 struct ProgressBar: View {
     let progress: Double
     var height: CGFloat = 4
-    var color: Color = AppColors.accentBlue
+    var color: Color = AppColors.dominant
 
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: height / 2)
-                    .fill(AppColors.border)
+                    .fill(AppColors.surfaceTertiary)
 
                 RoundedRectangle(cornerRadius: height / 2)
                     .fill(color)
@@ -227,7 +227,7 @@ struct StatCard: View {
     let title: String
     let value: String
     var icon: String? = nil
-    var color: Color = AppColors.accentBlue
+    var color: Color = AppColors.dominant
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -251,7 +251,7 @@ struct StatCard: View {
         .padding(AppSpacing.cardPadding)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(AppColors.cardBackground)
+                .fill(AppColors.surfacePrimary)
         )
     }
 }
@@ -312,7 +312,7 @@ struct SectionHeader: View {
                 Button(action: action) {
                     Text(actionLabel)
                         .font(.subheadline)
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
         }
@@ -337,7 +337,7 @@ struct DraggableModuleCard: View {
                 .frame(width: 32, height: 32)
                 .background(
                     Circle()
-                        .fill(AppColors.moduleColor(module.type).opacity(0.15))
+                        .fill(AppColors.moduleColor(module.type).opacity(0.12))
                 )
 
             Text(module.name)
@@ -353,10 +353,10 @@ struct DraggableModuleCard: View {
         .padding(AppSpacing.md)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(AppColors.cardBackground)
+                .fill(AppColors.surfacePrimary)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .stroke(isDragging ? AppColors.accentBlue : AppColors.border.opacity(0.5), lineWidth: 1)
+                        .stroke(isDragging ? AppColors.dominant : AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
                 )
         )
         .scaleEffect(isDragging ? 1.02 : 1)
@@ -473,7 +473,7 @@ struct TimePickerView: View {
             .frame(height: compact ? 100 : 120)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(AppColors.surfaceLight)
+                    .fill(AppColors.surfaceTertiary)
             )
         }
     }

@@ -55,7 +55,7 @@ struct EndSessionSheet: View {
                         onSave(feeling, notes.isEmpty ? nil : notes)
                     }
                     .fontWeight(.semibold)
-                    .foregroundColor(AppColors.accentBlue)
+                    .foregroundColor(AppColors.dominant)
                 }
             }
             .sheet(item: $editingSet) { editing in
@@ -94,7 +94,7 @@ struct EndSessionSheet: View {
         .padding(AppSpacing.cardPadding)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.cardBackground)
+                .fill(AppColors.surfacePrimary)
         )
     }
 
@@ -111,7 +111,7 @@ struct EndSessionSheet: View {
                 .padding(.vertical, AppSpacing.md)
                 .background(
                     RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(feeling == value ? ratingColor(value) : AppColors.surfaceLight)
+                        .fill(feeling == value ? ratingColor(value) : AppColors.surfaceTertiary)
                 )
         }
         .buttonStyle(.plain)
@@ -121,9 +121,9 @@ struct EndSessionSheet: View {
         switch value {
         case 1...3: return AppColors.error
         case 4...5: return AppColors.warning
-        case 6...7: return AppColors.accentBlue
+        case 6...7: return AppColors.dominant
         case 8...10: return AppColors.success
-        default: return AppColors.accentBlue
+        default: return AppColors.dominant
         }
     }
 
@@ -195,7 +195,7 @@ struct EndSessionSheet: View {
             if expandedExercises.contains(exercise.id) {
                 VStack(spacing: AppSpacing.sm) {
                     Divider()
-                        .background(AppColors.border.opacity(0.5))
+                        .background(AppColors.surfaceTertiary.opacity(0.5))
 
                     // Sets list
                     ForEach(exercise.completedSetGroups) { setGroup in
@@ -205,7 +205,7 @@ struct EndSessionSheet: View {
                     }
 
                     Divider()
-                        .background(AppColors.border.opacity(0.5))
+                        .background(AppColors.surfaceTertiary.opacity(0.5))
 
                     // Progression buttons
                     progressionButtons(exercise: exercise, moduleId: moduleId)
@@ -219,10 +219,10 @@ struct EndSessionSheet: View {
         }
         .background(
             RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(AppColors.cardBackground)
+                .fill(AppColors.surfacePrimary)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .stroke(AppColors.border.opacity(0.3), lineWidth: 1)
+                        .stroke(AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
                 )
         )
     }
@@ -245,7 +245,7 @@ struct EndSessionSheet: View {
                     .font(.caption.weight(.semibold))
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 20, height: 20)
-                    .background(Circle().fill(AppColors.surfaceLight))
+                    .background(Circle().fill(AppColors.surfaceTertiary))
 
                 // Set data formatted
                 Text(formatSetData(set: set, exercise: exercise))
@@ -373,7 +373,7 @@ struct EndSessionSheet: View {
             .padding(.vertical, AppSpacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.small)
-                    .fill(isSelected ? color : color.opacity(0.15))
+                    .fill(isSelected ? color : color.opacity(0.12))
             )
         }
         .buttonStyle(.plain)
@@ -413,7 +413,7 @@ struct EndSessionSheet: View {
                 .padding(AppSpacing.sm)
                 .background(
                     RoundedRectangle(cornerRadius: AppCorners.small)
-                        .fill(AppColors.surfaceLight)
+                        .fill(AppColors.surfaceTertiary)
                 )
                 .lineLimit(1...4)
         }
@@ -463,7 +463,7 @@ struct EndSessionSheet: View {
                 .frame(minHeight: 80)
                 .background(
                     RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(AppColors.cardBackground)
+                        .fill(AppColors.surfacePrimary)
                 )
         }
     }

@@ -43,6 +43,7 @@ struct ProgramsListView: View {
                     showingCreateSheet = true
                 } label: {
                     Image(systemName: "plus")
+                        .foregroundColor(AppColors.programAccent)
                 }
             }
         }
@@ -81,12 +82,12 @@ struct ProgramsListView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack(spacing: 6) {
                                     Circle()
-                                        .fill(Color.green)
+                                        .fill(AppColors.programAccent)
                                         .frame(width: 8, height: 8)
                                     Text("Active Program")
                                         .font(.caption)
                                         .fontWeight(.medium)
-                                        .foregroundColor(.green)
+                                        .foregroundColor(AppColors.programAccent)
                                 }
 
                                 Text(activeProgram.name)
@@ -120,12 +121,12 @@ struct ProgramsListView: View {
 
                             AnimatedProgressBar(
                                 progress: progress,
-                                gradient: AppGradients.successGradient,
+                                gradient: AppGradients.programGradient,
                                 height: 6
                             )
                         }
                     }
-                    .gradientCard(accent: AppColors.success)
+                    .gradientCard(accent: AppColors.programAccent)
                 }
                 .buttonStyle(.plain)
             } else {
@@ -156,6 +157,7 @@ struct ProgramsListView: View {
                         .fontWeight(.semibold)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(AppColors.programAccent)
                 .padding(.top, 4)
             } else {
                 Button {
@@ -165,6 +167,7 @@ struct ProgramsListView: View {
                         .fontWeight(.semibold)
                 }
                 .buttonStyle(.borderedProminent)
+                .tint(AppColors.programAccent)
                 .padding(.top, 4)
             }
         }
@@ -327,7 +330,7 @@ struct MonthDayCell: View {
                     HStack(spacing: 2) {
                         ForEach(scheduledWorkouts.prefix(3)) { scheduled in
                             Circle()
-                                .fill(scheduled.isRestDay ? AppColors.textTertiary : (scheduled.isFromProgram ? AppColors.programAccent : AppColors.dominant))
+                                .fill(workoutIndicatorColor(for: scheduled))
                                 .frame(width: 4, height: 4)
                         }
                         if scheduledWorkouts.count > 3 {
@@ -340,7 +343,7 @@ struct MonthDayCell: View {
             }
             .frame(height: 44)
             .frame(maxWidth: .infinity)
-            .background(isToday ? Color.accentColor.opacity(0.2) : Color.clear)
+            .background(isToday ? AppColors.accent1.opacity(0.2) : Color.clear)
             .cornerRadius(8)
             .opacity(isCurrentMonth ? 1 : 0.3)
         }
@@ -349,9 +352,24 @@ struct MonthDayCell: View {
 
     private var dayTextColor: Color {
         if isToday {
-            return .accentColor
+            return AppColors.accent1
         }
         return isCurrentMonth ? .primary : .secondary
+    }
+
+    private func workoutIndicatorColor(for scheduled: ScheduledWorkout) -> Color {
+        // Rest day
+        if scheduled.isRestDay {
+            return AppColors.textTertiary
+        }
+
+        // Completed workout
+        if scheduled.completedSessionId != nil {
+            return AppColors.success
+        }
+
+        // Scheduled workout (teal for both program and regular workouts)
+        return AppColors.accent1
     }
 }
 
@@ -376,7 +394,7 @@ struct ProgramCompactRow: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 4)
                             .padding(.vertical, 1)
-                            .background(Color.green)
+                            .background(AppColors.programAccent)
                             .cornerRadius(3)
                     }
                 }
@@ -458,7 +476,7 @@ struct ProgramRow: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .background(Color.green)
+                        .background(AppColors.programAccent)
                         .cornerRadius(4)
                 }
             }
@@ -549,7 +567,7 @@ struct DayDetailSheet: View {
                                                 Text("From Program")
                                                     .font(.caption)
                                             }
-                                            .foregroundColor(.green)
+                                            .foregroundColor(AppColors.programAccent)
                                         }
                                     }
                                     .padding(.vertical, 4)
@@ -568,7 +586,7 @@ struct DayDetailSheet: View {
                                                 Text("From Program")
                                                     .font(.caption)
                                             }
-                                            .foregroundColor(.green)
+                                            .foregroundColor(AppColors.programAccent)
                                         }
                                     }
 

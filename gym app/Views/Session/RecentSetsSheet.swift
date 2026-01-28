@@ -65,7 +65,7 @@ struct RecentSetsSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
             .sheet(item: $editingSet) { recentSet in
@@ -120,7 +120,7 @@ struct EditRecentSetSheet: View {
                     .padding(AppSpacing.lg)
                     .background(
                         RoundedRectangle(cornerRadius: AppCorners.medium)
-                            .fill(AppColors.surfaceLight)
+                            .fill(AppColors.surfaceTertiary)
                     )
 
                 Spacer()
@@ -147,7 +147,7 @@ struct EditRecentSetSheet: View {
                         dismiss()
                     }
                     .fontWeight(.semibold)
-                    .foregroundColor(AppColors.accentBlue)
+                    .foregroundColor(AppColors.dominant)
                 }
             }
             .onAppear { loadValues() }
@@ -164,28 +164,26 @@ struct EditRecentSetSheet: View {
                 HStack(spacing: AppSpacing.md) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("WEIGHT")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundColor(AppColors.textTertiary)
+                            .statLabel(color: AppColors.textTertiary)
                         TextField("0", text: $inputWeight)
                             .keyboardType(.decimalPad)
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .font(.displayMedium)
                             .foregroundColor(AppColors.textPrimary)
                             .multilineTextAlignment(.center)
                             .padding(AppSpacing.sm)
-                            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.cardBackground))
+                            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("REPS")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundColor(AppColors.textTertiary)
+                            .statLabel(color: AppColors.textTertiary)
                         TextField("0", text: $inputReps)
                             .keyboardType(.numberPad)
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .font(.displayMedium)
                             .foregroundColor(AppColors.textPrimary)
                             .multilineTextAlignment(.center)
                             .padding(AppSpacing.sm)
-                            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.cardBackground))
+                            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     }
                 }
 
@@ -223,7 +221,7 @@ struct EditRecentSetSheet: View {
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .padding(AppSpacing.sm)
-                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.cardBackground))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                 }
             }
 
@@ -238,7 +236,7 @@ struct EditRecentSetSheet: View {
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .padding(AppSpacing.sm)
-                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.cardBackground))
+                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
             }
 
         case .recovery:
@@ -250,7 +248,7 @@ struct EditRecentSetSheet: View {
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundColor(AppColors.textPrimary)
                     .padding(AppSpacing.sm)
-                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.cardBackground))
+                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
             }
         }
     }

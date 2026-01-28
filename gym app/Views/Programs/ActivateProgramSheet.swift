@@ -91,7 +91,7 @@ struct ActivateProgramSheet: View {
                     Section {
                         HStack {
                             Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundColor(.orange)
+                                .foregroundColor(AppColors.warning)
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Another program is active")

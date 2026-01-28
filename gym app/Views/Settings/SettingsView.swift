@@ -118,7 +118,7 @@ struct SettingsView: View {
                         .padding(.horizontal, AppSpacing.md)
                         .background(
                             RoundedRectangle(cornerRadius: AppCorners.large)
-                                .fill(AppColors.cardBackground)
+                                .fill(AppColors.surfacePrimary)
                         )
                     }
                 }
@@ -169,7 +169,7 @@ struct SettingsView: View {
                 SettingsRow(icon: "exclamationmark.triangle.fill", title: "Recovery Mode") {
                     Text("Active")
                         .font(.subheadline)
-                        .foregroundColor(.orange)
+                        .foregroundColor(AppColors.warning)
                 }
             }
 
@@ -184,7 +184,7 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "arrow.triangle.2.circlepath")
-                        .foregroundColor(.orange)
+                        .foregroundColor(AppColors.warning)
                         .frame(width: 28)
                     Text("Reset Startup State")
                         .foregroundColor(AppColors.textPrimary)
@@ -198,7 +198,7 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "checkmark.circle")
-                        .foregroundColor(.green)
+                        .foregroundColor(AppColors.success)
                         .frame(width: 28)
                     Text("Exit Recovery Mode")
                         .foregroundColor(AppColors.textPrimary)
@@ -235,10 +235,10 @@ struct SettingsView: View {
                 } label: {
                     HStack {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .foregroundColor(.red)
+                            .foregroundColor(AppColors.error)
                             .frame(width: 28)
                         Text("Sign Out")
-                            .foregroundColor(.red)
+                            .foregroundColor(AppColors.error)
                         Spacer()
                     }
                 }
@@ -249,10 +249,10 @@ struct SettingsView: View {
                 } label: {
                     HStack {
                         Image(systemName: "trash")
-                            .foregroundColor(.red)
+                            .foregroundColor(AppColors.error)
                             .frame(width: 28)
                         Text("Delete Account")
-                            .foregroundColor(.red)
+                            .foregroundColor(AppColors.error)
                         Spacer()
                     }
                 }
@@ -296,7 +296,7 @@ struct SettingsView: View {
                             .foregroundColor(AppColors.textSecondary)
                     } else {
                         Image(systemName: "checkmark.icloud")
-                            .foregroundColor(.green)
+                            .foregroundColor(AppColors.success)
                         Text("Up to date")
                             .foregroundColor(AppColors.textSecondary)
                     }
@@ -311,7 +311,7 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "arrow.triangle.2.circlepath")
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                         .frame(width: 28)
                     Text("Sync Now")
                         .foregroundColor(AppColors.textPrimary)
@@ -328,7 +328,7 @@ struct SettingsView: View {
             } label: {
                 HStack {
                     Image(systemName: "icloud.and.arrow.up")
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                         .frame(width: 28)
                     Text("Push All to Cloud")
                         .foregroundColor(AppColors.textPrimary)
@@ -361,7 +361,7 @@ struct SettingsSection<Content: View>: View {
             .padding(.horizontal, AppSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.cardBackground)
+                    .fill(AppColors.surfacePrimary)
             )
 
             if let footer = footer {
@@ -385,7 +385,7 @@ struct SettingsRow<Content: View>: View {
         HStack {
             Image(systemName: icon)
                 .font(.system(size: 16))
-                .foregroundColor(AppColors.accentBlue)
+                .foregroundColor(AppColors.dominant)
                 .frame(width: 28)
 
             Text(title)
@@ -408,7 +408,7 @@ struct SettingsRowLabel: View {
         HStack {
             Image(systemName: icon)
                 .font(.system(size: 16))
-                .foregroundColor(AppColors.accentBlue)
+                .foregroundColor(AppColors.dominant)
                 .frame(width: 28)
 
             Text(title)
@@ -512,7 +512,7 @@ struct StatsSection<Content: View>: View {
             .padding(AppSpacing.cardPadding)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.cardBackground)
+                    .fill(AppColors.surfacePrimary)
             )
         }
     }
@@ -577,7 +577,7 @@ struct AboutView: View {
                     // App Icon
                     ZStack {
                         RoundedRectangle(cornerRadius: AppCorners.xl)
-                            .fill(AppGradients.accentGradient)
+                            .fill(AppGradients.dominantGradient)
                             .frame(width: 100, height: 100)
 
                         Image(systemName: "dumbbell.fill")
@@ -606,7 +606,7 @@ struct AboutView: View {
                             .frame(maxWidth: .infinity)
 
                         Divider()
-                            .background(AppColors.border)
+                            .background(AppColors.surfaceTertiary)
 
                         Text("Features")
                             .font(.headline)
@@ -622,7 +622,7 @@ struct AboutView: View {
                     .padding(AppSpacing.cardPadding)
                     .background(
                         RoundedRectangle(cornerRadius: AppCorners.large)
-                            .fill(AppColors.cardBackground)
+                            .fill(AppColors.surfacePrimary)
                     )
 
                     Spacer()
@@ -637,7 +637,7 @@ struct AboutView: View {
                     Button("Done") {
                         dismiss()
                     }
-                    .foregroundColor(AppColors.accentBlue)
+                    .foregroundColor(AppColors.dominant)
                 }
             }
         }
@@ -652,7 +652,7 @@ struct FeatureRow: View {
         HStack(spacing: AppSpacing.md) {
             Image(systemName: icon)
                 .font(.system(size: 16))
-                .foregroundColor(AppColors.accentBlue)
+                .foregroundColor(AppColors.dominant)
                 .frame(width: 24)
 
             Text(text)

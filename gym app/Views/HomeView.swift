@@ -153,9 +153,7 @@ struct HomeView: View {
     private var homeHeader: some View {
         HStack {
             Text(formattedDate.uppercased())
-                .font(.caption.weight(.semibold))
-                .foregroundColor(AppColors.accentBlue)
-                .tracking(1.5)
+                .elegantLabel(color: AppColors.dominant)
 
             Spacer()
 
@@ -274,12 +272,25 @@ struct HomeView: View {
             }
             .padding(AppSpacing.cardPadding)
             .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.success.opacity(0.1))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppCorners.large)
-                            .stroke(AppColors.success.opacity(0.3), lineWidth: 1)
-                    )
+                ZStack {
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .fill(
+                            LinearGradient(
+                                colors: [AppColors.success.opacity(0.08), AppColors.success.opacity(0.03), AppColors.surfacePrimary],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .stroke(
+                            LinearGradient(
+                                colors: [AppColors.success.opacity(0.3), AppColors.surfaceTertiary.opacity(0.15)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                }
             )
         }
         .buttonStyle(.plain)
@@ -289,7 +300,7 @@ struct HomeView: View {
         switch rating {
         case 1...3: return AppColors.error
         case 4...5: return AppColors.warning
-        case 6...7: return AppColors.accentBlue
+        case 6...7: return AppColors.dominant
         case 8...10: return AppColors.success
         default: return AppColors.textTertiary
         }
@@ -325,7 +336,7 @@ struct HomeView: View {
             HStack {
                 Text("Today")
                     .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.accentBlue)
+                    .foregroundColor(AppColors.dominant)
 
                 Spacer()
 
@@ -363,7 +374,7 @@ struct HomeView: View {
                                     .padding(.vertical, 4)
                                     .background(
                                         Capsule()
-                                            .fill(AppColors.surfaceLight)
+                                            .fill(AppColors.surfaceTertiary)
                                     )
                                 }
                                 if workoutModules.count > 4 {
@@ -389,7 +400,7 @@ struct HomeView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, AppSpacing.lg)
                             .padding(.vertical, AppSpacing.md)
-                            .background(AppGradients.accentGradient)
+                            .background(AppGradients.dominantGradient)
                             .clipShape(Capsule())
                     }
                     .glowShadow()
@@ -398,12 +409,25 @@ struct HomeView: View {
         }
         .padding(AppSpacing.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.accentBlue.opacity(0.3), lineWidth: 1)
-                )
+            ZStack {
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(
+                        LinearGradient(
+                            colors: [AppColors.dominant.opacity(0.06), AppColors.dominant.opacity(0.02), AppColors.surfacePrimary],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .stroke(
+                        LinearGradient(
+                            colors: [AppColors.dominant.opacity(0.3), AppColors.surfaceTertiary.opacity(0.15)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            }
         )
     }
 
@@ -412,7 +436,7 @@ struct HomeView: View {
             HStack {
                 Text("Today")
                     .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.accentTeal)
+                    .foregroundColor(AppColors.accent1)
 
                 Spacer()
 
@@ -428,7 +452,7 @@ struct HomeView: View {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "moon.zzz.fill")
                     .font(.title2)
-                    .foregroundColor(AppColors.accentTeal)
+                    .foregroundColor(AppColors.accent1)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Rest Day")
@@ -445,12 +469,25 @@ struct HomeView: View {
         }
         .padding(AppSpacing.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.accentTeal.opacity(0.1))
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.accentTeal.opacity(0.3), lineWidth: 1)
-                )
+            ZStack {
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(
+                        LinearGradient(
+                            colors: [AppColors.accent1.opacity(0.08), AppColors.accent1.opacity(0.03), AppColors.surfacePrimary],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .stroke(
+                        LinearGradient(
+                            colors: [AppColors.accent1.opacity(0.3), AppColors.surfaceTertiary.opacity(0.15)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            }
         )
     }
 
@@ -488,11 +525,11 @@ struct HomeView: View {
             .padding(AppSpacing.cardPadding)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.cardBackground)
+                    .fill(AppColors.surfacePrimary)
                     .overlay(
                         RoundedRectangle(cornerRadius: AppCorners.large)
                             .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [8]))
-                            .foregroundColor(AppColors.border)
+                            .foregroundColor(AppColors.surfaceTertiary)
                     )
             )
         }
@@ -512,7 +549,7 @@ struct HomeView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                         .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 }
                 .buttonStyle(.bouncy)
@@ -533,7 +570,7 @@ struct HomeView: View {
                 } label: {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                         .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 }
                 .buttonStyle(.bouncy)
@@ -555,8 +592,19 @@ struct HomeView: View {
             }
             .padding(.vertical, AppSpacing.sm)
             .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.cardBackground)
+                ZStack {
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .fill(AppColors.surfacePrimary)
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .stroke(
+                            LinearGradient(
+                                colors: [AppColors.dominant.opacity(0.20), AppColors.surfaceTertiary.opacity(0.15)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                }
             )
         }
     }
@@ -590,15 +638,11 @@ struct HomeView: View {
                 // Completed stat
                 VStack(spacing: AppSpacing.xs) {
                     Text("\(sessionsThisWeek)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.success)
+                        .displayMedium(color: AppColors.success)
                         .minimumScaleFactor(0.7)
 
                     Text("completed")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.textSecondary)
-                        .textCase(.uppercase)
-                        .tracking(1.2)
+                        .statLabel()
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .combine)
@@ -606,21 +650,17 @@ struct HomeView: View {
 
                 // Divider
                 Rectangle()
-                    .fill(AppColors.border)
+                    .fill(AppColors.surfaceTertiary)
                     .frame(width: 1, height: 44)
 
                 // Scheduled stat
                 VStack(spacing: AppSpacing.xs) {
                     Text("\(scheduledThisWeek)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.accentBlue)
+                        .displayMedium(color: AppColors.accent1)
                         .minimumScaleFactor(0.7)
 
                     Text("scheduled")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.textSecondary)
-                        .textCase(.uppercase)
-                        .tracking(1.2)
+                        .statLabel()
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .combine)
@@ -628,21 +668,17 @@ struct HomeView: View {
 
                 // Divider
                 Rectangle()
-                    .fill(AppColors.border)
+                    .fill(AppColors.surfaceTertiary)
                     .frame(width: 1, height: 44)
 
                 // Volume stat
                 VStack(spacing: AppSpacing.xs) {
                     Text(formatVolume(volumeThisWeek))
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.accentPurple)
+                        .displayMedium(color: AppColors.accent3)
                         .minimumScaleFactor(0.7)
 
                     Text("volume")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.textSecondary)
-                        .textCase(.uppercase)
-                        .tracking(1.2)
+                        .statLabel()
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .combine)
@@ -650,21 +686,17 @@ struct HomeView: View {
 
                 // Divider
                 Rectangle()
-                    .fill(AppColors.border)
+                    .fill(AppColors.surfaceTertiary)
                     .frame(width: 1, height: 44)
 
                 // Cardio stat
                 VStack(spacing: AppSpacing.xs) {
                     Text("\(cardioMinutesThisWeek)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(AppColors.warning)
+                        .displayMedium(color: AppColors.warning)
                         .minimumScaleFactor(0.7)
 
                     Text("cardio min")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.textSecondary)
-                        .textCase(.uppercase)
-                        .tracking(1.2)
+                        .statLabel()
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .combine)
@@ -674,12 +706,19 @@ struct HomeView: View {
             .background(
                 ZStack {
                     RoundedRectangle(cornerRadius: AppCorners.large)
-                        .fill(AppColors.cardBackground)
+                        .fill(AppColors.surfacePrimary)
                     RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.border.opacity(0.3), lineWidth: 0.5)
+                        .stroke(
+                            LinearGradient(
+                                colors: [AppColors.dominant.opacity(0.25), AppColors.surfaceTertiary.opacity(0.15)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
                 }
             )
-            .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+            .shadow(color: AppColors.dominant.opacity(0.08), radius: 12, x: 0, y: 6)
         }
     }
 
@@ -703,11 +742,11 @@ struct HomeView: View {
             .padding(AppSpacing.cardPadding)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.cardBackground)
+                    .fill(AppColors.surfacePrimary)
                     .overlay(
                         RoundedRectangle(cornerRadius: AppCorners.large)
                             .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [8]))
-                            .foregroundColor(AppColors.border.opacity(0.5))
+                            .foregroundColor(AppColors.surfaceTertiary.opacity(0.5))
                     )
             )
         }

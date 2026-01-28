@@ -75,7 +75,7 @@ struct ModuleFormView: View {
                     saveModule()
                 }
                 .fontWeight(.semibold)
-                .foregroundColor(name.trimmingCharacters(in: .whitespaces).isEmpty ? AppColors.textTertiary : AppColors.accentBlue)
+                .foregroundColor(name.trimmingCharacters(in: .whitespaces).isEmpty ? AppColors.textTertiary : AppColors.dominant)
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
         }
@@ -143,7 +143,7 @@ struct ModuleFormView: View {
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.sm)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     // MARK: - Exercises Section
@@ -206,7 +206,7 @@ struct ModuleFormView: View {
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     private var searchResultsDropdown: some View {
@@ -219,7 +219,7 @@ struct ModuleFormView: View {
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: template.exerciseType.icon)
                             .font(.system(size: 14))
-                            .foregroundColor(AppColors.accentBlue)
+                            .foregroundColor(AppColors.dominant)
                             .frame(width: 24)
 
                         Text(template.name)
@@ -238,7 +238,7 @@ struct ModuleFormView: View {
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
                     .padding(.vertical, AppSpacing.sm)
-                    .background(AppColors.surfaceLight)
+                    .background(AppColors.surfaceTertiary)
                 }
                 .buttonStyle(.plain)
 
@@ -266,7 +266,7 @@ struct ModuleFormView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppSpacing.xl)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     private var exercisesList: some View {
@@ -340,7 +340,7 @@ struct ModuleFormView: View {
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     private var browseLibraryButton: some View {
@@ -365,7 +365,7 @@ struct ModuleFormView: View {
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.md)
-            .background(AppColors.cardBackground)
+            .background(AppColors.surfacePrimary)
         }
         .buttonStyle(.plain)
     }
@@ -377,7 +377,7 @@ struct ModuleFormView: View {
             TextEditor(text: $notes)
                 .frame(minHeight: 80)
                 .padding(AppSpacing.md)
-                .background(AppColors.cardBackground)
+                .background(AppColors.surfacePrimary)
                 .scrollContentBackground(.hidden)
         }
     }
@@ -508,7 +508,7 @@ struct InlineExerciseEditor: View {
         ScrollView {
             VStack(spacing: AppSpacing.xl) {
                 // Exercise info
-                FormSection(title: "Exercise", icon: "dumbbell", iconColor: AppColors.accentBlue) {
+                FormSection(title: "Exercise", icon: "dumbbell", iconColor: AppColors.dominant) {
                     // Name (read-only for now)
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: "textformat")
@@ -525,17 +525,17 @@ struct InlineExerciseEditor: View {
                             .font(.caption)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(AppColors.surfaceLight)
+                            .background(AppColors.surfaceTertiary)
                             .foregroundColor(AppColors.textSecondary)
                             .clipShape(Capsule())
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
                     .padding(.vertical, AppSpacing.md)
-                    .background(AppColors.cardBackground)
+                    .background(AppColors.surfacePrimary)
                 }
 
                 // Sets section
-                FormSection(title: "Sets", icon: "list.number", iconColor: AppColors.accentCyan) {
+                FormSection(title: "Sets", icon: "list.number", iconColor: AppColors.dominant) {
                     VStack(spacing: 0) {
                         if setGroups.isEmpty {
                             HStack {
@@ -548,7 +548,7 @@ struct InlineExerciseEditor: View {
                             }
                             .padding(.horizontal, AppSpacing.cardPadding)
                             .padding(.vertical, AppSpacing.md)
-                            .background(AppColors.cardBackground)
+                            .background(AppColors.surfacePrimary)
                         } else {
                             ForEach(Array(setGroups.enumerated()), id: \.element.id) { index, setGroup in
                                 setGroupRow(setGroup: setGroup, index: index)
@@ -568,18 +568,18 @@ struct InlineExerciseEditor: View {
                             HStack(spacing: AppSpacing.md) {
                                 Image(systemName: "plus.circle.fill")
                                     .font(.system(size: 16))
-                                    .foregroundColor(AppColors.accentCyan)
+                                    .foregroundColor(AppColors.dominant)
                                     .frame(width: 24)
 
                                 Text("Add Set Group")
-                                    .foregroundColor(AppColors.accentCyan)
+                                    .foregroundColor(AppColors.dominant)
                                     .fontWeight(.medium)
 
                                 Spacer()
                             }
                             .padding(.horizontal, AppSpacing.cardPadding)
                             .padding(.vertical, AppSpacing.md)
-                            .background(AppColors.cardBackground)
+                            .background(AppColors.surfacePrimary)
                         }
                         .buttonStyle(.plain)
                     }
@@ -590,7 +590,7 @@ struct InlineExerciseEditor: View {
                     TextEditor(text: $notes)
                         .frame(minHeight: 60)
                         .padding(AppSpacing.md)
-                        .background(AppColors.cardBackground)
+                        .background(AppColors.surfacePrimary)
                         .scrollContentBackground(.hidden)
                 }
             }
@@ -612,7 +612,7 @@ struct InlineExerciseEditor: View {
                     saveExercise()
                 }
                 .fontWeight(.semibold)
-                .foregroundColor(AppColors.accentBlue)
+                .foregroundColor(AppColors.dominant)
             }
         }
         .sheet(isPresented: $showingAddSetGroup) {
@@ -659,11 +659,11 @@ struct InlineExerciseEditor: View {
         HStack(spacing: AppSpacing.md) {
             ZStack {
                 Circle()
-                    .fill(AppColors.accentCyan.opacity(0.15))
+                    .fill(AppColors.dominant.opacity(0.15))
                     .frame(width: 28, height: 28)
                 Text("\(index + 1)")
                     .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.accentCyan)
+                    .foregroundColor(AppColors.dominant)
             }
 
             VStack(alignment: .leading, spacing: 2) {
@@ -698,7 +698,7 @@ struct InlineExerciseEditor: View {
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 
     private func loadExercise() {
@@ -773,7 +773,7 @@ struct ExercisePickerSheet: View {
                 .padding(.horizontal, AppSpacing.screenPadding)
                 .padding(.vertical, AppSpacing.md)
             }
-            .background(AppColors.surfaceLight)
+            .background(AppColors.surfaceTertiary)
 
             // Exercise list
             List {
@@ -821,7 +821,7 @@ struct ExercisePickerSheet: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, AppSpacing.md)
-                    .background(AppColors.accentBlue)
+                    .background(AppColors.dominant)
                     .foregroundColor(.white)
                     .cornerRadius(AppCorners.medium)
                 }
@@ -856,12 +856,12 @@ private struct FilterChip: View {
                 .font(.subheadline.weight(isSelected ? .semibold : .regular))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .background(isSelected ? AppColors.accentBlue : AppColors.cardBackground)
+                .background(isSelected ? AppColors.dominant : AppColors.surfacePrimary)
                 .foregroundColor(isSelected ? .white : AppColors.textPrimary)
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
-                        .stroke(isSelected ? Color.clear : AppColors.border, lineWidth: 1)
+                        .stroke(isSelected ? Color.clear : AppColors.surfaceTertiary, lineWidth: 1)
                 )
         }
     }

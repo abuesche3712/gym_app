@@ -18,12 +18,12 @@ struct SocialView: View {
                     // Icon
                     ZStack {
                         Circle()
-                            .fill(Color.orange.opacity(0.15))
+                            .fill(AppColors.warning.opacity(0.15))
                             .frame(width: 120, height: 120)
 
                         Image(systemName: "person.2.fill")
                             .font(.system(size: 48))
-                            .foregroundColor(.orange)
+                            .foregroundColor(AppColors.warning)
                     }
 
                     // Title and Description
@@ -46,7 +46,7 @@ struct SocialView: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(Color.orange)
+                        .background(AppColors.warning)
                         .cornerRadius(20)
 
                     // Feature Preview Cards
@@ -98,9 +98,9 @@ struct FeaturePreviewCard: View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(.orange)
+                .foregroundColor(AppColors.warning)
                 .frame(width: 44, height: 44)
-                .background(Color.orange.opacity(0.15))
+                .background(AppColors.warning.opacity(0.15))
                 .cornerRadius(10)
 
             VStack(alignment: .leading, spacing: 2) {

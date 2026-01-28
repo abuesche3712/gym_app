@@ -60,7 +60,7 @@ struct EquipmentLibraryView: View {
                 .padding(AppSpacing.md)
                 .background(
                     RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(AppColors.cardBackground)
+                        .fill(AppColors.surfacePrimary)
                 )
 
                 // Stats - clickable source filters
@@ -125,7 +125,7 @@ struct EquipmentLibraryView: View {
                     showingAddEquipment = true
                 } label: {
                     Image(systemName: "plus")
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
         }
@@ -164,7 +164,7 @@ private struct EquipmentStatPill: View {
         .padding(.vertical, AppSpacing.sm)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(AppColors.cardBackground)
+                .fill(AppColors.surfacePrimary)
         )
     }
 }
@@ -191,7 +191,7 @@ private struct EquipmentSourceFilterPill: View {
             .padding(.vertical, AppSpacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(isSelected ? AppColors.accentBlue : AppColors.cardBackground)
+                    .fill(isSelected ? AppColors.dominant : AppColors.surfacePrimary)
             )
         }
         .buttonStyle(.plain)
@@ -211,7 +211,7 @@ private struct EquipmentLibraryRow: View {
                 // Icon
                 Image(systemName: iconForEquipment(equipment.name))
                     .font(.title2)
-                    .foregroundColor(AppColors.accentBlue)
+                    .foregroundColor(AppColors.dominant)
                     .frame(width: 36)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -223,12 +223,12 @@ private struct EquipmentLibraryRow: View {
                         if equipment.isCustom {
                             Text("Custom")
                                 .font(.caption2.weight(.semibold))
-                                .foregroundColor(AppColors.accentTeal)
+                                .foregroundColor(AppColors.accent1)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(
                                     Capsule()
-                                        .fill(AppColors.accentTeal.opacity(0.15))
+                                        .fill(AppColors.accent1.opacity(0.12))
                                 )
                         }
                     }
@@ -248,7 +248,7 @@ private struct EquipmentLibraryRow: View {
             .padding(AppSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(AppColors.cardBackground)
+                    .fill(AppColors.surfacePrimary)
             )
         }
         .buttonStyle(.plain)
@@ -362,7 +362,7 @@ private struct EquipmentDetailSheet: View {
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: EquipmentIconMapper.icon(for: equipment.name))
                             .font(.largeTitle)
-                            .foregroundColor(AppColors.accentBlue)
+                            .foregroundColor(AppColors.dominant)
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text(equipment.name)
@@ -371,7 +371,7 @@ private struct EquipmentDetailSheet: View {
                             if equipment.isCustom {
                                 Text("Custom Equipment")
                                     .font(.caption)
-                                    .foregroundColor(AppColors.accentTeal)
+                                    .foregroundColor(AppColors.accent1)
                             } else {
                                 Text("Provided Equipment")
                                     .font(.caption)
@@ -445,7 +445,7 @@ private struct EquipmentDetailSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
             .sheet(isPresented: $showingAddMeasurable) {
@@ -459,12 +459,12 @@ private struct EquipmentDetailSheet: View {
 
     private func exerciseTypeColor(_ type: ExerciseType) -> Color {
         switch type {
-        case .strength: return AppColors.accentBlue
+        case .strength: return AppColors.dominant
         case .cardio: return AppColors.warning
-        case .mobility: return AppColors.accentTeal
-        case .isometric: return AppColors.accentCyan
+        case .mobility: return AppColors.accent1
+        case .isometric: return AppColors.dominant
         case .explosive: return Color(hex: "FF8C42")
-        case .recovery: return AppColors.accentMint
+        case .recovery: return AppColors.accent1
         }
     }
 }
@@ -493,12 +493,12 @@ private struct EquipmentMeasurableRow: View {
                         ForEach(measurable.units, id: \.self) { unit in
                             Text(unit)
                                 .font(.caption.weight(.medium))
-                                .foregroundColor(AppColors.accentBlue)
+                                .foregroundColor(AppColors.dominant)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(
                                     Capsule()
-                                        .fill(AppColors.accentBlue.opacity(0.1))
+                                        .fill(AppColors.dominant.opacity(0.1))
                                 )
                         }
                     }
@@ -683,7 +683,7 @@ private struct NewEquipmentMeasurableSheet: View {
                                         .padding(.vertical, 6)
                                         .background(
                                             Capsule()
-                                                .fill(name == measurable.0 ? AppColors.accentBlue : AppColors.surfaceLight)
+                                                .fill(name == measurable.0 ? AppColors.dominant : AppColors.surfaceTertiary)
                                         )
                                 }
                                 .buttonStyle(.plain)
@@ -701,7 +701,7 @@ private struct NewEquipmentMeasurableSheet: View {
                                     .padding(.vertical, 6)
                                     .background(
                                         Capsule()
-                                            .fill(name == "Color" && isStringBased ? AppColors.accentBlue : AppColors.surfaceLight)
+                                            .fill(name == "Color" && isStringBased ? AppColors.dominant : AppColors.surfaceTertiary)
                                     )
                             }
                             .buttonStyle(.plain)

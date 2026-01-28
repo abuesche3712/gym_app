@@ -58,11 +58,11 @@ struct WorkoutOverviewSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     EditButton()
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(AppColors.dominant)
                 }
             }
             .sheet(item: $editingSetLocation) { location in
@@ -176,7 +176,7 @@ struct WorkoutOverviewSheet: View {
                 let allDone = exercise.completedSetGroups.allSatisfy { $0.sets.allSatisfy { $0.completed } }
                 ZStack {
                     Circle()
-                        .fill(allDone ? AppColors.success.opacity(0.15) : (isCurrent ? AppColors.accentBlue.opacity(0.15) : AppColors.surfaceLight))
+                        .fill(allDone ? AppColors.success.opacity(0.15) : (isCurrent ? AppColors.dominant.opacity(0.15) : AppColors.surfaceTertiary))
                         .frame(width: 28, height: 28)
 
                     if allDone {
@@ -185,7 +185,7 @@ struct WorkoutOverviewSheet: View {
                             .foregroundColor(AppColors.success)
                     } else if isCurrent {
                         Circle()
-                            .fill(AppColors.accentBlue)
+                            .fill(AppColors.dominant)
                             .frame(width: 8, height: 8)
                     }
                 }
@@ -193,7 +193,7 @@ struct WorkoutOverviewSheet: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(exercise.exerciseName)
                         .font(.subheadline.weight(isCurrent ? .semibold : .regular))
-                        .foregroundColor(isCurrent ? AppColors.accentBlue : AppColors.textPrimary)
+                        .foregroundColor(isCurrent ? AppColors.dominant : AppColors.textPrimary)
 
                     Text(exerciseSetSummary(exercise))
                         .font(.caption)
@@ -279,7 +279,7 @@ struct WorkoutOverviewSheet: View {
                         .padding(.horizontal, AppSpacing.sm)
                         .background(
                             RoundedRectangle(cornerRadius: AppCorners.small)
-                                .fill(setData.completed ? AppColors.success.opacity(0.05) : AppColors.surfaceLight.opacity(0.5))
+                                .fill(setData.completed ? AppColors.success.opacity(0.05) : AppColors.surfaceTertiary.opacity(0.5))
                         )
                     }
                     .buttonStyle(.plain)
@@ -387,7 +387,7 @@ struct EditSetSheet: View {
                     .padding(AppSpacing.lg)
                     .background(
                         RoundedRectangle(cornerRadius: AppCorners.medium)
-                            .fill(AppColors.surfaceLight)
+                            .fill(AppColors.surfaceTertiary)
                     )
 
                 Spacer()
@@ -414,7 +414,7 @@ struct EditSetSheet: View {
                         dismiss()
                     }
                     .fontWeight(.semibold)
-                    .foregroundColor(AppColors.accentBlue)
+                    .foregroundColor(AppColors.dominant)
                 }
             }
             .onAppear { loadValues() }
@@ -431,28 +431,26 @@ struct EditSetSheet: View {
                 HStack(spacing: AppSpacing.md) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("WEIGHT")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundColor(AppColors.textTertiary)
+                            .statLabel(color: AppColors.textTertiary)
                         TextField("0", text: $inputWeight)
                             .keyboardType(.decimalPad)
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .font(.displayMedium)
                             .foregroundColor(AppColors.textPrimary)
                             .multilineTextAlignment(.center)
                             .padding(AppSpacing.sm)
-                            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.cardBackground))
+                            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("REPS")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundColor(AppColors.textTertiary)
+                            .statLabel(color: AppColors.textTertiary)
                         TextField("0", text: $inputReps)
                             .keyboardType(.numberPad)
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .font(.displayMedium)
                             .foregroundColor(AppColors.textPrimary)
                             .multilineTextAlignment(.center)
                             .padding(AppSpacing.sm)
-                            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.cardBackground))
+                            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     }
                 }
 
@@ -490,7 +488,7 @@ struct EditSetSheet: View {
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .padding(AppSpacing.sm)
-                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.cardBackground))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                 }
             }
 
@@ -505,7 +503,7 @@ struct EditSetSheet: View {
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .padding(AppSpacing.sm)
-                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.cardBackground))
+                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
             }
 
         case .recovery:
@@ -517,7 +515,7 @@ struct EditSetSheet: View {
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundColor(AppColors.textPrimary)
                     .padding(AppSpacing.sm)
-                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.cardBackground))
+                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
             }
         }
     }
