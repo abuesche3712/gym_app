@@ -10,11 +10,11 @@ import SwiftUI
 // MARK: - Colors
 
 struct AppColors {
-    // MARK: - Base Neutrals (Cool purple-tinted darks)
-    static let background = Color(hex: "151217")       // Deep purple-black
-    static let surfacePrimary = Color(hex: "1D1821")   // Dark purple (cards)
-    static let surfaceSecondary = Color(hex: "27122B") // Elevated purple (sheets, overlays)
-    static let surfaceTertiary = Color(hex: "34323A")  // Cool dark gray (borders, dividers)
+    // MARK: - Base Neutrals (VIBRANT purple-tinted darks)
+    static let background = Color(hex: "1A0B2E")       // Rich deep purple-black
+    static let surfacePrimary = Color(hex: "2D1B3D")   // Vibrant dark purple (cards)
+    static let surfaceSecondary = Color(hex: "3E2551") // Elevated vibrant purple (sheets, overlays)
+    static let surfaceTertiary = Color(hex: "4A3A5A")  // Medium purple (borders, dividers)
 
     // MARK: - Text Hierarchy (Warm off-white + purple-grays)
     static let textPrimary = Color(hex: "FFFCF9")      // Warm off-white
@@ -22,22 +22,27 @@ struct AppColors {
     static let textTertiary = Color(hex: "5A5662")     // Dark purple-gray
 
     // MARK: - Dominant Color (THE hero color - use sparingly!)
-    static let dominant = Color(hex: "06B6D4")         // Cool cyan
-    static let dominantMuted = dominant.opacity(0.15)  // Subtle backgrounds
-    static let dominantSubtle = dominant.opacity(0.08) // Very subtle highlights
+    static let dominant = Color(hex: "00D9FF")         // VIBRANT electric cyan
+    static let dominantMuted = dominant.opacity(0.20)  // Subtle backgrounds (increased visibility)
+    static let dominantSubtle = dominant.opacity(0.12) // Very subtle highlights
 
-    // MARK: - Accent Colors (Sparse use for module differentiation)
-    static let accent1 = Color(hex: "14B8A6")          // Soft teal (recovery/prehab)
-    static let accent2 = Color(hex: "EAB308")          // Muted gold (explosive)
-    static let accent3 = Color(hex: "6366F1")          // Slate blue (cardio)
+    // MARK: - Accent Colors (More vibrant for personality!)
+    static let accent1 = Color(hex: "00E5CC")          // Vibrant teal (recovery/prehab)
+    static let accent2 = Color(hex: "FFB800")          // Bright gold (explosive)
+    static let accent3 = Color(hex: "7B61FF")          // Vibrant purple (cardio)
+    static let accent4 = Color(hex: "FF6B9D")          // Hot pink (programs!)
+    static let accent5 = Color(hex: "FF5757")          // Bright red-orange (warmup)
 
-    // MARK: - Semantic Colors (Functional meaning)
-    static let success = Color(hex: "10B981")          // Emerald green (PRs, completed)
-    static let warning = Color(hex: "F59E0B")          // Amber (urgent, attention)
-    static let error = Color(hex: "EF4444")            // Red (delete, errors)
+    // MARK: - Semantic Colors (More vibrant functional meaning!)
+    static let success = Color(hex: "00E676")          // Bright emerald green (PRs, completed)
+    static let warning = Color(hex: "FFB800")          // Bright amber (urgent, attention)
+    static let error = Color(hex: "FF5252")            // Bright red (delete, errors)
 
     // MARK: - Special (Reward moments!)
-    static let reward = Color(hex: "B1EDE8")           // Bright cyan (PR celebration, glow)
+    static let reward = Color(hex: "00FFF0")           // ELECTRIC bright cyan (PR celebration!)
+
+    // MARK: - Program Color
+    static let programAccent = accent4                 // Hot pink for programs
 
     // MARK: - Deprecated (Backward compatibility - will be removed)
     @available(*, deprecated, renamed: "dominant")
@@ -76,23 +81,23 @@ struct AppColors {
     @available(*, deprecated, message: "Use dominant instead")
     static let rest = dominant
 
-    // MARK: - Module Type Colors (Symbol-first with VERY subtle accent tints)
+    // MARK: - Module Type Colors (More vibrant with personality!)
     static func moduleColor(_ type: ModuleType) -> Color {
-        // All modules use dominant color, with very subtle accent tints
+        // Vibrant module colors - symbol-first but with more color personality
         switch type {
-        case .warmup: return accent2.opacity(0.3)      // Subtle gold warmth
-        case .prehab: return accent1.opacity(0.3)      // Subtle teal
-        case .explosive: return accent2.opacity(0.4)   // Slightly more gold
-        case .strength: return dominant                // Pure dominant for primary type
-        case .cardioLong: return accent3.opacity(0.3)  // Subtle blue
-        case .cardioSpeed: return accent3.opacity(0.4) // Slightly more blue
-        case .recovery: return accent1.opacity(0.2)    // Very subtle teal
+        case .warmup: return accent5                   // Bright red-orange warmth
+        case .prehab: return accent1                   // Vibrant teal
+        case .explosive: return accent2                // Bright gold energy
+        case .strength: return dominant                // Electric cyan (primary type)
+        case .cardioLong: return accent3.opacity(0.8)  // Vibrant purple
+        case .cardioSpeed: return accent3              // Full vibrant purple
+        case .recovery: return accent1.opacity(0.7)    // Softer teal
         }
     }
 
     // Module symbol color (for icon/symbol itself)
     static func moduleSymbolColor(_ type: ModuleType) -> Color {
-        return dominant // All symbols use dominant color for consistency
+        return moduleColor(type) // Use the module's color for consistency
     }
 }
 
@@ -106,12 +111,12 @@ struct AppGradients {
         endPoint: .bottomTrailing
     )
 
-    // Enhanced card gradient with subtle depth
+    // Enhanced card gradient with vibrant depth
     static let cardGradientElevated = LinearGradient(
         colors: [
-            Color(hex: "221D26"),  // Slightly lighter
+            Color(hex: "3E2658"),  // Brighter purple top
             AppColors.surfacePrimary,
-            Color(hex: "18141C")   // Slightly darker
+            Color(hex: "1F0F2E")   // Darker bottom
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
@@ -128,9 +133,9 @@ struct AppGradients {
         endPoint: .center
     )
 
-    // MARK: - Dominant Gradients
+    // MARK: - Dominant Gradients (VIBRANT!)
     static let dominantGradient = LinearGradient(
-        colors: [AppColors.dominant, Color(hex: "22D3EE")], // Cyan → lighter cyan
+        colors: [AppColors.dominant, Color(hex: "00FFF0")], // Electric cyan → brighter
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
@@ -146,12 +151,12 @@ struct AppGradients {
         endPoint: .bottomTrailing
     )
 
-    // MARK: - Reward Gradient (THE celebration moment)
+    // MARK: - Reward Gradient (THE ELECTRIC celebration moment!)
     static let rewardGradient = LinearGradient(
         colors: [
             AppColors.reward,
-            AppColors.dominant,
-            AppColors.reward.opacity(0.7)
+            Color(hex: "00D9FF"),
+            Color(hex: "7B61FF")  // Add purple for rainbow effect
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
@@ -164,26 +169,37 @@ struct AppGradients {
         endPoint: .bottom
     )
 
-    // MARK: - Progress Bar Gradient (dominant-based)
+    // MARK: - Progress Bar Gradient (VIBRANT rainbow!)
     static let progressGradient = LinearGradient(
         colors: [
             AppColors.dominant,
-            Color(hex: "22D3EE"),  // Lighter cyan
-            AppColors.dominant.opacity(0.8)
+            Color(hex: "00E5CC"),  // Teal
+            Color(hex: "7B61FF")   // Purple
         ],
         startPoint: .leading,
         endPoint: .trailing
     )
 
-    // MARK: - Module Gradient (very subtle tints)
+    // MARK: - Module Gradient (VIBRANT personality!)
     static func moduleGradient(_ type: ModuleType) -> LinearGradient {
         let color = AppColors.moduleColor(type)
         return LinearGradient(
-            colors: [color.opacity(0.2), color.opacity(0.05)],
+            colors: [color.opacity(0.4), color.opacity(0.15)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
     }
+
+    // MARK: - Program Gradient (Hot pink personality!)
+    static let programGradient = LinearGradient(
+        colors: [
+            AppColors.programAccent,
+            AppColors.programAccent.opacity(0.7),
+            Color(hex: "C44569")  // Darker pink
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
 
     // Accent-tinted card background
     static func accentCardGradient(_ color: Color) -> LinearGradient {

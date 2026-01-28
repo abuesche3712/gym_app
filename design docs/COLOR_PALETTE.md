@@ -13,10 +13,10 @@
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
-| background | `#151217` | rgb(21, 18, 23) | App background, behind all content |
-| surfacePrimary | `#1D1821` | rgb(29, 24, 33) | Cards, primary containers |
-| surfaceSecondary | `#27122B` | rgb(39, 18, 43) | Elevated surfaces, sheets, overlays |
-| surfaceTertiary | `#34323A` | rgb(52, 50, 58) | Borders, dividers, input backgrounds |
+| background | `#1A0B2E` | rgb(26, 11, 46) | App background, behind all content |
+| surfacePrimary | `#2D1B3D` | rgb(45, 27, 61) | Cards, primary containers |
+| surfaceSecondary | `#3E2551` | rgb(62, 37, 81) | Elevated surfaces, sheets, overlays |
+| surfaceTertiary | `#4A3A5A` | rgb(74, 58, 90) | Borders, dividers, input backgrounds |
 
 **Notes:**
 - Should feel "cool" not "warm" (blues/grays, not browns)
@@ -53,7 +53,7 @@
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
-| **dominant** | `#06B6D4` | rgb(6, 182, 212) | Primary actions, active states, current exercise indicator, main interactive elements |
+| **dominant** | `#00D9FF` | rgb(0, 217, 255) | Primary actions, active states, current exercise indicator, main interactive elements |
 
 **When to use:**
 - Active/current exercise in session
@@ -82,11 +82,11 @@ Fill in 3-5 accent colors. These should be RARE — used only where specific mea
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
-| accent1 | `#14B8A6` | rgb(20, 184, 166) | Soft teal — recovery/prehab modules |
-| accent2 | `#EAB308` | rgb(234, 179, 8) | Muted gold — explosive modules |
-| accent3 | `#6366F1` | rgb(99, 102, 241) | Slate blue — cardio modules |
-| accent4 | — | — | (Not needed for minimal palette) |
-| accent5 | — | — | (Not needed for minimal palette) |
+| accent1 | `#00E5CC` | rgb(0, 229, 204) | Vibrant teal — recovery/prehab modules |
+| accent2 | `#FFB800` | rgb(255, 184, 0) | Bright gold — explosive modules |
+| accent3 | `#7B61FF` | rgb(123, 97, 255) | Vibrant purple — cardio modules |
+| accent4 | `#FF6B9D` | rgb(255, 107, 157) | Hot pink — programs! |
+| accent5 | `#FF5757` | rgb(255, 87, 87) | Bright red-orange — warmup modules |
 
 **Chosen Strategy: Sophisticated Minimal (3 accents)**
 
@@ -108,10 +108,11 @@ These are functional colors with specific meaning. Used primarily in `ActiveSess
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
-| success | `#10B981` | rgb(16, 185, 129) | PR hit, set completed checkmark, workout complete |
-| warning | `#F59E0B` | rgb(245, 158, 11) | Rest timer urgent (<10s), approaching failure, attention needed |
-| destructive | `#EF4444` | rgb(239, 68, 68) | Delete actions, failed sets, errors |
-| **reward** | `#B1EDE8` | rgb(177, 237, 232) | **PR celebration glow, achievement moments, confetti vibes** |
+| success | `#00E676` | rgb(0, 230, 118) | PR hit, set completed checkmark, workout complete |
+| warning | `#FFB800` | rgb(255, 184, 0) | Rest timer urgent (<10s), approaching failure, attention needed |
+| destructive | `#FF5252` | rgb(255, 82, 82) | Delete actions, failed sets, errors |
+| **reward** | `#00FFF0` | rgb(0, 255, 240) | **ELECTRIC PR celebration glow, achievement moments!** |
+| programAccent | `#FF6B9D` | rgb(255, 107, 157) | Hot pink for programs (replaces weird green!) |
 
 **Usage Rules:**
 - **Success:** Checkmark on set completion, PR celebration, "Workout Complete" badge

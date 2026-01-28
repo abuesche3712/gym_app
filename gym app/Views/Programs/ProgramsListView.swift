@@ -327,7 +327,7 @@ struct MonthDayCell: View {
                     HStack(spacing: 2) {
                         ForEach(scheduledWorkouts.prefix(3)) { scheduled in
                             Circle()
-                                .fill(scheduled.isRestDay ? Color.gray : (scheduled.isFromProgram ? Color.green : Color.accentColor))
+                                .fill(scheduled.isRestDay ? AppColors.textTertiary : (scheduled.isFromProgram ? AppColors.programAccent : AppColors.dominant))
                                 .frame(width: 4, height: 4)
                         }
                         if scheduledWorkouts.count > 3 {
