@@ -13,10 +13,10 @@
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
-| background | `______` | rgb(__, __, __) | App background, behind all content |
-| surfacePrimary | `______` | rgb(__, __, __) | Cards, primary containers |
-| surfaceSecondary | `______` | rgb(__, __, __) | Elevated surfaces, sheets, overlays |
-| surfaceTertiary | `______` | rgb(__, __, __) | Borders, dividers, input backgrounds |
+| background | `#151217` | rgb(21, 18, 23) | App background, behind all content |
+| surfacePrimary | `#1D1821` | rgb(29, 24, 33) | Cards, primary containers |
+| surfaceSecondary | `#27122B` | rgb(39, 18, 43) | Elevated surfaces, sheets, overlays |
+| surfaceTertiary | `#34323A` | rgb(52, 50, 58) | Borders, dividers, input backgrounds |
 
 **Notes:**
 - Should feel "cool" not "warm" (blues/grays, not browns)
@@ -31,9 +31,9 @@
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
-| textPrimary | `______` | rgb(__, __, __) | Main headings, primary content, active values |
-| textSecondary | `______` | rgb(__, __, __) | Supporting text, labels, completed set data |
-| textTertiary | `______` | rgb(__, __, __) | Hints, placeholders, low-emphasis text |
+| textPrimary | `#FFFCF9` | rgb(255, 252, 249) | Main headings, primary content, active values |
+| textSecondary | `#A09CA6` | rgb(160, 156, 166) | Supporting text, labels, completed set data |
+| textTertiary | `#5A5662` | rgb(90, 86, 98) | Hints, placeholders, low-emphasis text |
 
 **Usage Rules:**
 - **Default text:** Use `textPrimary` or `textSecondary` ONLY
@@ -53,7 +53,7 @@
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
-| **dominant** | `______` | rgb(__, __, __) | Primary actions, active states, current exercise indicator, main interactive elements |
+| **dominant** | `#06B6D4` | rgb(6, 182, 212) | Primary actions, active states, current exercise indicator, main interactive elements |
 
 **When to use:**
 - Active/current exercise in session
@@ -82,19 +82,23 @@ Fill in 3-5 accent colors. These should be RARE — used only where specific mea
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
-| accent1 | `______` | rgb(__, __, __) | TBD based on your palette |
-| accent2 | `______` | rgb(__, __, __) | TBD based on your palette |
-| accent3 | `______` | rgb(__, __, __) | TBD based on your palette |
-| accent4 | `______` | rgb(__, __, __) | (Optional) |
-| accent5 | `______` | rgb(__, __, __) | (Optional) |
+| accent1 | `#14B8A6` | rgb(20, 184, 166) | Soft teal — recovery/prehab modules |
+| accent2 | `#EAB308` | rgb(234, 179, 8) | Muted gold — explosive modules |
+| accent3 | `#6366F1` | rgb(99, 102, 241) | Slate blue — cardio modules |
+| accent4 | — | — | (Not needed for minimal palette) |
+| accent5 | — | — | (Not needed for minimal palette) |
 
-**Suggested Usage Strategy:**
-- **Option A:** Use for module type differentiation (if not using symbols)
-- **Option B:** Reserve for specific UI contexts (warmup = orange accent, recovery = blue accent)
-- **Option C:** Don't assign meaning yet — use them when a specific need arises
+**Chosen Strategy: Sophisticated Minimal (3 accents)**
 
-**Current Thinking:**
-Since you mentioned "maybe just have symbols" for modules, we might not need all 5 accents. Consider starting with 2-3 and adding more only if needed.
+Using 3 sparse accent colors for specific module contexts:
+- **accent1 (teal #14B8A6):** Recovery & prehab modules — calm, restorative vibe
+- **accent2 (gold #EAB308):** Explosive modules — energetic, dynamic
+- **accent3 (blue #6366F1):** Cardio modules — steady, endurance
+
+**Philosophy:**
+- Dominant cyan is THE primary color for all main interactions
+- Accents are used ONLY for module differentiation (sparingly)
+- If using symbol-first approach, accents may only appear as subtle tints, not bold colors
 
 ---
 
@@ -104,9 +108,10 @@ These are functional colors with specific meaning. Used primarily in `ActiveSess
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
-| success | `______` | rgb(__, __, __) | PR hit, set completed checkmark, workout complete |
-| warning | `______` | rgb(__, __, __) | Rest timer urgent (<10s), approaching failure, attention needed |
-| destructive | `______` | rgb(__, __, __) | Delete actions, failed sets, errors |
+| success | `#10B981` | rgb(16, 185, 129) | PR hit, set completed checkmark, workout complete |
+| warning | `#F59E0B` | rgb(245, 158, 11) | Rest timer urgent (<10s), approaching failure, attention needed |
+| destructive | `#EF4444` | rgb(239, 68, 68) | Delete actions, failed sets, errors |
+| **reward** | `#B1EDE8` | rgb(177, 237, 232) | **PR celebration glow, achievement moments, confetti vibes** |
 
 **Usage Rules:**
 - **Success:** Checkmark on set completion, PR celebration, "Workout Complete" badge

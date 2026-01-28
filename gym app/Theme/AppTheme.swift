@@ -10,68 +10,114 @@ import SwiftUI
 // MARK: - Colors
 
 struct AppColors {
-    // Base greyscale palette (warm-tinted blacks for premium feel)
-    static let background = Color(hex: "0C0C0B")      // Slightly warm black
-    static let cardBackground = Color(hex: "161615")  // Warm dark gray
-    static let cardBackgroundLight = Color(hex: "1E1E1C")
-    static let surfaceLight = Color(hex: "262624")
-    static let border = Color(hex: "2E2E2B")
+    // MARK: - Base Neutrals (Cool purple-tinted darks)
+    static let background = Color(hex: "151217")       // Deep purple-black
+    static let surfacePrimary = Color(hex: "1D1821")   // Dark purple (cards)
+    static let surfaceSecondary = Color(hex: "27122B") // Elevated purple (sheets, overlays)
+    static let surfaceTertiary = Color(hex: "34323A")  // Cool dark gray (borders, dividers)
 
-    // Text colors (refined contrast)
-    static let textPrimary = Color(hex: "F5F5F4")     // Soft white, not harsh
-    static let textSecondary = Color(hex: "A8A8A4")   // Warm gray
-    static let textTertiary = Color(hex: "6B6B67")    // Muted warm gray
+    // MARK: - Text Hierarchy (Warm off-white + purple-grays)
+    static let textPrimary = Color(hex: "FFFCF9")      // Warm off-white
+    static let textSecondary = Color(hex: "A09CA6")    // Medium purple-gray
+    static let textTertiary = Color(hex: "5A5662")     // Dark purple-gray
 
-    // Refined accent colors (muted, sophisticated)
-    static let accentBlue = Color(hex: "5B9BD5")      // Muted slate blue
-    static let accentCyan = Color(hex: "6DBFBF")      // Soft teal-cyan
-    static let accentTeal = Color(hex: "5AAF9E")      // Muted sage teal
-    static let accentMint = Color(hex: "8ED4B8")      // Soft mint
-    static let accentSteel = Color(hex: "7A9BB8")     // Refined steel blue
-    static let accentPurple = Color(hex: "9B8ABF")    // Soft lavender
-    static let accentOrange = Color(hex: "D4956A")    // Warm terracotta
+    // MARK: - Dominant Color (THE hero color - use sparingly!)
+    static let dominant = Color(hex: "06B6D4")         // Cool cyan
+    static let dominantMuted = dominant.opacity(0.15)  // Subtle backgrounds
+    static let dominantSubtle = dominant.opacity(0.08) // Very subtle highlights
 
-    // Semantic colors (refined)
-    static let success = Color(hex: "5AAF9E")         // Matches muted teal
-    static let warning = Color(hex: "D4A754")         // Warm amber
-    static let error = Color(hex: "C75B5B")           // Muted coral red
-    static let rest = Color(hex: "5B9BD5")            // Matches muted blue
+    // MARK: - Accent Colors (Sparse use for module differentiation)
+    static let accent1 = Color(hex: "14B8A6")          // Soft teal (recovery/prehab)
+    static let accent2 = Color(hex: "EAB308")          // Muted gold (explosive)
+    static let accent3 = Color(hex: "6366F1")          // Slate blue (cardio)
 
-    // Module type colors (refined, sophisticated palette)
+    // MARK: - Semantic Colors (Functional meaning)
+    static let success = Color(hex: "10B981")          // Emerald green (PRs, completed)
+    static let warning = Color(hex: "F59E0B")          // Amber (urgent, attention)
+    static let error = Color(hex: "EF4444")            // Red (delete, errors)
+
+    // MARK: - Special (Reward moments!)
+    static let reward = Color(hex: "B1EDE8")           // Bright cyan (PR celebration, glow)
+
+    // MARK: - Deprecated (Backward compatibility - will be removed)
+    @available(*, deprecated, renamed: "dominant")
+    static let accentBlue = dominant
+
+    @available(*, deprecated, renamed: "surfacePrimary")
+    static let cardBackground = surfacePrimary
+
+    @available(*, deprecated, renamed: "surfaceSecondary")
+    static let cardBackgroundLight = surfaceSecondary
+
+    @available(*, deprecated, renamed: "surfaceTertiary")
+    static let surfaceLight = surfaceTertiary
+
+    @available(*, deprecated, renamed: "surfaceTertiary")
+    static let border = surfaceTertiary
+
+    @available(*, deprecated, renamed: "dominant")
+    static let accentCyan = dominant
+
+    @available(*, deprecated, renamed: "accent1")
+    static let accentTeal = accent1
+
+    @available(*, deprecated, message: "Use dominant instead")
+    static let accentMint = dominant
+
+    @available(*, deprecated, message: "Use dominant instead")
+    static let accentSteel = dominant
+
+    @available(*, deprecated, renamed: "accent3")
+    static let accentPurple = accent3
+
+    @available(*, deprecated, renamed: "accent2")
+    static let accentOrange = accent2
+
+    @available(*, deprecated, message: "Use dominant instead")
+    static let rest = dominant
+
+    // MARK: - Module Type Colors (Symbol-first with VERY subtle accent tints)
     static func moduleColor(_ type: ModuleType) -> Color {
+        // All modules use dominant color, with very subtle accent tints
         switch type {
-        case .warmup: return Color(hex: "D4956A")     // Warm terracotta
-        case .prehab: return accentTeal
-        case .explosive: return Color(hex: "D4B754")  // Warm gold
-        case .strength: return Color(hex: "C75B5B")   // Muted coral
-        case .cardioLong: return accentBlue
-        case .cardioSpeed: return Color(hex: "9B8ABF") // Soft lavender
-        case .recovery: return accentTeal
+        case .warmup: return accent2.opacity(0.3)      // Subtle gold warmth
+        case .prehab: return accent1.opacity(0.3)      // Subtle teal
+        case .explosive: return accent2.opacity(0.4)   // Slightly more gold
+        case .strength: return dominant                // Pure dominant for primary type
+        case .cardioLong: return accent3.opacity(0.3)  // Subtle blue
+        case .cardioSpeed: return accent3.opacity(0.4) // Slightly more blue
+        case .recovery: return accent1.opacity(0.2)    // Very subtle teal
         }
+    }
+
+    // Module symbol color (for icon/symbol itself)
+    static func moduleSymbolColor(_ type: ModuleType) -> Color {
+        return dominant // All symbols use dominant color for consistency
     }
 }
 
 // MARK: - Gradients
 
 struct AppGradients {
+    // MARK: - Card Gradients (Subtle depth)
     static let cardGradient = LinearGradient(
-        colors: [AppColors.cardBackground, AppColors.cardBackground.opacity(0.85)],
+        colors: [AppColors.surfacePrimary, AppColors.surfacePrimary.opacity(0.85)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    // Enhanced card gradient with subtle warmth
+    // Enhanced card gradient with subtle depth
     static let cardGradientElevated = LinearGradient(
         colors: [
-            Color(hex: "1C1C1A"),
-            AppColors.cardBackground,
-            Color(hex: "121211")
+            Color(hex: "221D26"),  // Slightly lighter
+            AppColors.surfacePrimary,
+            Color(hex: "18141C")   // Slightly darker
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    // Refined shine effect - more subtle
+    // Refined shine effect - very subtle highlight
     static let cardShine = LinearGradient(
         colors: [
             Color.white.opacity(0.05),
@@ -82,47 +128,58 @@ struct AppGradients {
         endPoint: .center
     )
 
-    static let accentGradient = LinearGradient(
-        colors: [AppColors.accentBlue, AppColors.accentCyan],
+    // MARK: - Dominant Gradients
+    static let dominantGradient = LinearGradient(
+        colors: [AppColors.dominant, Color(hex: "22D3EE")], // Cyan → lighter cyan
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    static let tealGradient = LinearGradient(
-        colors: [AppColors.accentTeal, AppColors.accentMint],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    // Kept for backward compatibility
+    @available(*, deprecated, renamed: "dominantGradient")
+    static let accentGradient = dominantGradient
 
+    // MARK: - Success Gradient (PR celebration!)
     static let successGradient = LinearGradient(
-        colors: [AppColors.success, AppColors.accentMint],
+        colors: [AppColors.success, AppColors.success.opacity(0.7)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    static let warmGradient = LinearGradient(
-        colors: [Color(hex: "FF8C42"), Color(hex: "FFB347")],
+    // MARK: - Reward Gradient (THE celebration moment)
+    static let rewardGradient = LinearGradient(
+        colors: [
+            AppColors.reward,
+            AppColors.dominant,
+            AppColors.reward.opacity(0.7)
+        ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
+    // MARK: - Subtle Gradient
     static let subtleGradient = LinearGradient(
-        colors: [AppColors.cardBackgroundLight, AppColors.cardBackground],
+        colors: [AppColors.surfaceSecondary, AppColors.surfacePrimary],
         startPoint: .top,
         endPoint: .bottom
     )
 
-    // Progress bar gradient
+    // MARK: - Progress Bar Gradient (dominant-based)
     static let progressGradient = LinearGradient(
-        colors: [AppColors.accentBlue, AppColors.accentCyan, AppColors.accentTeal],
+        colors: [
+            AppColors.dominant,
+            Color(hex: "22D3EE"),  // Lighter cyan
+            AppColors.dominant.opacity(0.8)
+        ],
         startPoint: .leading,
         endPoint: .trailing
     )
 
+    // MARK: - Module Gradient (very subtle tints)
     static func moduleGradient(_ type: ModuleType) -> LinearGradient {
         let color = AppColors.moduleColor(type)
         return LinearGradient(
-            colors: [color.opacity(0.3), color.opacity(0.1)],
+            colors: [color.opacity(0.2), color.opacity(0.05)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
@@ -134,12 +191,23 @@ struct AppGradients {
             colors: [
                 color.opacity(0.15),
                 color.opacity(0.05),
-                AppColors.cardBackground
+                AppColors.surfacePrimary
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
     }
+
+    // MARK: - Deprecated (kept for migration)
+    @available(*, deprecated, renamed: "dominantGradient")
+    static let tealGradient = dominantGradient
+
+    @available(*, deprecated, message: "No longer used")
+    static let warmGradient = LinearGradient(
+        colors: [AppColors.accent2, AppColors.accent2.opacity(0.7)],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
 }
 
 // MARK: - Spacing & Layout
@@ -173,7 +241,8 @@ struct AppCorners {
 struct AppShadows {
     static let soft = ShadowStyle(color: .black.opacity(0.3), radius: 10, x: 0, y: 4)
     static let medium = ShadowStyle(color: .black.opacity(0.4), radius: 15, x: 0, y: 6)
-    static let glow = ShadowStyle(color: AppColors.accentBlue.opacity(0.3), radius: 10, x: 0, y: 0)
+    static let glow = ShadowStyle(color: AppColors.dominant.opacity(0.3), radius: 10, x: 0, y: 0)
+    static let rewardGlow = ShadowStyle(color: AppColors.reward.opacity(0.5), radius: 20, x: 0, y: 0)
 }
 
 struct ShadowStyle {
@@ -270,7 +339,7 @@ struct GlassCardStyle: ViewModifier {
 }
 
 struct GradientCardStyle: ViewModifier {
-    var accentColor: Color = AppColors.accentBlue
+    var accentColor: Color = AppColors.dominant
     var padding: CGFloat = AppSpacing.cardPadding
 
     func body(content: Content) -> some View {
@@ -289,7 +358,7 @@ struct GradientCardStyle: ViewModifier {
                     RoundedRectangle(cornerRadius: AppCorners.large)
                         .stroke(
                             LinearGradient(
-                                colors: [accentColor.opacity(0.3), AppColors.border.opacity(0.2)],
+                                colors: [accentColor.opacity(0.3), AppColors.surfaceTertiary.opacity(0.2)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
@@ -313,7 +382,7 @@ struct SheetBackgroundModifier: ViewModifier {
                     // Subtle gradient overlay
                     LinearGradient(
                         colors: [
-                            AppColors.cardBackground.opacity(0.8),
+                            AppColors.surfacePrimary.opacity(0.8),
                             AppColors.background.opacity(0.9)
                         ],
                         startPoint: .top,
@@ -336,7 +405,7 @@ struct AccentButtonStyle: ButtonStyle {
             .padding(.vertical, AppSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(isDestructive ? AppColors.error : AppColors.accentBlue)
+                    .fill(isDestructive ? AppColors.error : AppColors.dominant)
             )
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
             .animation(AppAnimation.quick, value: configuration.isPressed)
@@ -352,10 +421,10 @@ struct SecondaryButtonStyle: ButtonStyle {
             .padding(.vertical, AppSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(AppColors.cardBackgroundLight)
+                    .fill(AppColors.surfaceSecondary)
                     .overlay(
                         RoundedRectangle(cornerRadius: AppCorners.medium)
-                            .stroke(AppColors.border, lineWidth: 1)
+                            .stroke(AppColors.surfaceTertiary, lineWidth: 1)
                     )
             )
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
@@ -374,7 +443,7 @@ extension View {
         modifier(GlassCardStyle(padding: padding))
     }
 
-    func gradientCard(accent: Color = AppColors.accentBlue, padding: CGFloat = AppSpacing.cardPadding) -> some View {
+    func gradientCard(accent: Color = AppColors.dominant, padding: CGFloat = AppSpacing.cardPadding) -> some View {
         modifier(GradientCardStyle(accentColor: accent, padding: padding))
     }
 
@@ -386,8 +455,12 @@ extension View {
         shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 4)
     }
 
-    func glowShadow(_ color: Color = AppColors.accentBlue) -> some View {
+    func glowShadow(_ color: Color = AppColors.dominant) -> some View {
         shadow(color: color.opacity(0.3), radius: 10, x: 0, y: 0)
+    }
+
+    func rewardGlow() -> some View {
+        shadow(color: AppColors.reward.opacity(0.5), radius: 20, x: 0, y: 0)
     }
 
     func formFieldStyle() -> some View {
@@ -403,7 +476,7 @@ struct FormFieldModifier: ViewModifier {
             .padding(AppSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(AppColors.surfaceLight)
+                    .fill(AppColors.surfaceTertiary)
             )
     }
 }
@@ -413,7 +486,7 @@ struct FormFieldModifier: ViewModifier {
 struct FormSection<Content: View>: View {
     let title: String
     var icon: String? = nil
-    var iconColor: Color = AppColors.accentBlue
+    var iconColor: Color = AppColors.dominant
     @ViewBuilder let content: () -> Content
 
     var body: some View {
@@ -439,11 +512,11 @@ struct FormSection<Content: View>: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.cardBackground)
+                    .fill(AppColors.surfacePrimary)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: AppCorners.large)
-                    .stroke(AppColors.border.opacity(0.5), lineWidth: 0.5)
+                    .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 0.5)
             )
         }
     }
@@ -474,7 +547,7 @@ struct FormRow<Content: View>: View {
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 }
 
@@ -508,7 +581,7 @@ struct FormTextField: View {
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
-        .background(AppColors.cardBackground)
+        .background(AppColors.surfacePrimary)
     }
 }
 
@@ -547,7 +620,7 @@ struct FormButtonRow: View {
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.md)
-            .background(AppColors.cardBackground)
+            .background(AppColors.surfacePrimary)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -581,7 +654,7 @@ struct AnimatedProgressBar: View {
             ZStack(alignment: .leading) {
                 // Background track
                 RoundedRectangle(cornerRadius: height / 2)
-                    .fill(AppColors.surfaceLight)
+                    .fill(AppColors.surfaceTertiary)
 
                 // Progress fill with gradient
                 RoundedRectangle(cornerRadius: height / 2)
@@ -607,7 +680,7 @@ struct AnimatedProgressBar: View {
                                     .frame(width: max(0, geometry.size.width * animatedProgress))
                             )
                     )
-                    .shadow(color: showGlow ? AppColors.accentBlue.opacity(0.4) : .clear, radius: 4, x: 0, y: 0)
+                    .shadow(color: showGlow ? AppColors.dominant.opacity(0.4) : .clear, radius: 4, x: 0, y: 0)
             }
         }
         .frame(height: height)
@@ -644,7 +717,7 @@ struct AnimatedCircularProgress: View {
         ZStack {
             // Background circle
             Circle()
-                .stroke(AppColors.surfaceLight, lineWidth: lineWidth)
+                .stroke(AppColors.surfaceTertiary, lineWidth: lineWidth)
 
             // Progress arc
             Circle()
@@ -654,7 +727,7 @@ struct AnimatedCircularProgress: View {
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
-                .shadow(color: AppColors.accentBlue.opacity(0.4), radius: 4, x: 0, y: 0)
+                .shadow(color: AppColors.dominant.opacity(0.4), radius: 4, x: 0, y: 0)
 
             // Percentage label
             if showLabel {
@@ -683,7 +756,7 @@ struct IconButtonStyle: ButtonStyle {
     var size: CGFloat = AppSpacing.minTouchTarget
     var iconSize: CGFloat = 16
     var foregroundColor: Color = AppColors.textPrimary
-    var backgroundColor: Color = AppColors.surfaceLight
+    var backgroundColor: Color = AppColors.surfaceTertiary
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -757,7 +830,7 @@ struct SkeletonView: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius)
-            .fill(AppColors.surfaceLight)
+            .fill(AppColors.surfaceTertiary)
             .frame(height: height)
             .overlay(
                 GeometryReader { geometry in
@@ -793,7 +866,7 @@ struct ScreenHeader: View {
     var subtitle: String? = nil
     var trailingText: String? = nil
     var trailingIcon: String? = nil
-    var accentColor: Color = AppColors.accentBlue
+    var accentColor: Color = AppColors.dominant
     var showAccentLine: Bool = true
 
     var body: some View {
@@ -862,7 +935,7 @@ struct ScreenHeaderWithBadge: View {
     var badgeIcon: String? = nil
     var badgeColor: Color = AppColors.warning
     var trailingText: String? = nil
-    var accentColor: Color = AppColors.accentBlue
+    var accentColor: Color = AppColors.dominant
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
