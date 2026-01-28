@@ -1,13 +1,105 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2025-01-26
+> **Last updated:** 2025-01-27
 
 ## Project Overview
 
 iOS workout tracking app built with SwiftUI. Offline-first with CoreData, Firebase for cloud sync.
 
-**Status:** Feature-complete foundation, not rushing to launch - focusing on UX refinement and infrastructure hardening.
+**Status:** Feature-complete foundation with recent UX bug fixes completed. Focus remains on UX refinement and infrastructure hardening.
+
+## Recent Bug Fixes (Jan 27, 2025)
+
+All 10 identified UX bugs have been fixed and pushed to main:
+
+1. **Volume calculation** - Fixed to only count completed sets (not scheduled sets)
+   - Location: `Session.swift:270` - `totalVolume` computed property
+   - Added `if set.completed` check before adding to volume total
+
+2. **Distance decimal precision** - Increased from 1 to 2 decimal places
+   - Location: `FormattingHelpers.swift` - `formatDistance()` and `formatDistanceValue()`
+   - Changed format specifier from `%.1f` to `%.2f`
+
+3. **Last session measurables** - Equipment measurables now display correctly
+   - Location: `ActiveSessionView.swift` - `equipmentMeasurablesPills()`
+   - Already working, verified implementation
+
+4. **Completed set layout overflow** - Fixed elements being pushed outside container
+   - Location: `SessionComponents.swift` - SetRowView body
+   - Applied `.fixedSize()` to setNumberBadge, sameAsLastButton, logButton
+   - Added proper `.layoutPriority()` values to prevent squishing
+
+5. **Skipped exercises in last session** - No longer show exercises with no logged data
+   - Location: `SessionViewModel.swift:896` - `getLastSessionData()`
+   - Created `hasAnyMetricData()` helper checking all 12 possible set fields
+   - Filters exercises that only have scheduled but no completed data
+
+6. **Quality measure removed** - Removed 1-5 quality rating from explosive exercises
+   - Locations: `SessionComponents.swift`, `ActiveSessionView.swift`
+   - Removed quality input UI, quality from onLog callback (12 params → 11)
+   - Removed quality display from completed sets
+
+7. **Unilateral/RPE toggle updates** - Changes now reflect immediately in active session
+   - Location: `ExerciseModificationSheets.swift:127` - EditExerciseSheet
+   - Added `.onChange(of: activePicker)` to auto-save when EditSetGroupSheet dismisses
+   - Eliminates need to manually save EditExerciseSheet after toggling options
+
+8. **Interval timer accuracy** - Fixed timer running ~1:02 per minute instead of 1:00
+   - Location: `IntervalTimerView.swift:283` - `startTimer()`
+   - Changed from `Timer.scheduledTimer()` to manual Timer creation
+   - Set `tolerance = 0.05` (50ms) for tight accuracy
+   - Added to `.common` RunLoop mode to continue during UI interactions
+
+9. **Scheduled workout names** - Now display current workout name instead of snapshot
+   - Location: `WorkoutViewModel.swift:344` - Added `getCurrentWorkoutName()`
+   - Updated `HomeScheduleSheets.swift:433` and `ProgramsListView.swift:542`
+   - Changed from `scheduled.workoutName` to `workout.name` where workout available
+   - Falls back to snapshot name if workout deleted
+
+10. **Muscle/equipment editing** - Added full editing capability to EditExerciseSheet
+    - Location: `ExerciseModificationSheets.swift:10` - Refactored sheet architecture
+    - **Problem:** Swift compiler timeout with multiple `.sheet()` modifiers
+    - **Solution:** Created `EditExercisePickerType` enum (Identifiable, Equatable)
+    - Unified all sheets into single `.sheet(item: $activePicker)` with enum-based routing
+    - Added `selectedImplementIds` state and equipment editing UI
+    - Made muscles fully editable (previously read-only)
+    - Saves implementIds, primaryMuscles, and secondaryMuscles on changes
+
+### Technical Patterns from Bug Fixes
+
+**Enum-based sheet routing** (fixes Swift compiler complexity):
+```swift
+enum EditExercisePickerType: Identifiable, Equatable {
+    case exercise
+    case setGroup(Int)
+    case equipment
+    case muscles
+}
+@State private var activePicker: EditExercisePickerType? = nil
+
+// Single sheet instead of 3-4 separate .sheet() modifiers
+.sheet(item: $activePicker) { type in
+    pickerSheet(for: type)  // @ViewBuilder returns appropriate view
+}
+```
+
+**Timer accuracy pattern**:
+```swift
+let timer = Timer(timeInterval: 1.0, repeats: true) { ... }
+timer.tolerance = 0.05  // 50ms tolerance for accuracy
+RunLoop.current.add(timer, forMode: .common)  // Continue during UI
+```
+
+**Layout priority pattern** (prevent UI element squishing):
+```swift
+HStack {
+    fixedElement.fixedSize().layoutPriority(2)  // Never squish
+    flexibleElement.layoutPriority(1)           // Can shrink
+    Spacer(minLength: 0)
+    button.fixedSize().layoutPriority(1)        // Prefer keeping
+}
+```
 
 ## Tech Stack
 
@@ -190,7 +282,7 @@ SessionExercise (Logged Data)
 
 ### Core Workout Tracking
 - [x] Programs (training blocks/periodization)
-- [x] Scheduled workouts within programs
+- [x] Scheduled workouts within programs (dynamically reflect workout name changes)
 - [x] Reusable workout modules
 - [x] Sets, reps, weight, RPE, duration, distance logging
 - [x] Exercise substitution during workout
@@ -198,21 +290,27 @@ SessionExercise (Logged Data)
 - [x] Delete exercises (swipe-to-delete)
 - [x] Superset support
 - [x] Edit workout history
+- [x] Edit exercises during active session (name, type, muscles, equipment, set groups)
+- [x] Unilateral/RPE toggles update session immediately
 
 ### Smart Features
-- [x] Auto-fill from last session (weight, reps, duration, distance, band color)
+- [x] Auto-fill from last session (weight, reps, duration, distance, band color, RPE, equipment measurables)
 - [x] Priority: last session > target values > empty
 - [x] Recent sets quick-edit sheet
 - [x] Workout overview with jump-to-exercise
+- [x] Last session excludes exercises with no logged data (skipped exercises filtered)
 
 ### UI/UX
 - [x] Dark theme with custom palette
 - [x] Time wheel pickers
 - [x] Tab-based navigation
 - [x] Sheet-based editing
-- [x] Interval timer
+- [x] Interval timer (accurate 1-second intervals with proper RunLoop configuration)
 - [x] Session pagination
 - [x] Sync error banner
+- [x] Completed set layout with proper sizing (no overflow)
+- [x] Distance precision to 2 decimal places
+- [x] Volume calculations accurate (completed sets only)
 
 ### Data Management
 - [x] Offline-first CoreData persistence
@@ -247,9 +345,10 @@ SessionExercise (Logged Data)
 ## Development Phases
 
 ### Phase 1: UX Refinement (Current)
-- Dogfood and fix friction points
-- Animation timing, button hit targets, keyboard flow
-- Watch others use it without guidance
+- ✅ Recent bug fix sprint completed (10 bugs fixed)
+- Ongoing: Dogfood and identify new friction points
+- Focus areas: Animation timing, button hit targets, keyboard flow
+- User testing: Watch others use it without guidance
 
 ### Phase 2: Infrastructure
 1. **Auth flow** - full sign up/login/reset, Apple Sign In
@@ -333,8 +432,141 @@ Logger.redactEmail(email)   // "ab***@example.com"
 - Sheets: `.presentationDetents([.medium])`
 - Exercise types have `.icon` property for SF Symbols
 
+## Key Code Locations
+
+### Session/Workout Flow
+- **Active session UI**: `ActiveSessionView.swift` (~1700 lines)
+- **Set input components**: `SessionComponents.swift` (~1200 lines) - SetRowView with exercise-type-specific inputs
+- **Session state management**: `SessionViewModel.swift` (35KB)
+- **Exercise editing during session**: `ExerciseModificationSheets.swift` - EditExerciseSheet, EditSetGroupSheet
+- **Last session data lookup**: `SessionViewModel.swift:896` - `getLastSessionData()`
+- **Interval timer**: `IntervalTimerView.swift` - full-screen timer with pause/skip
+- **Session end flow**: `EndSessionSheet.swift` - workout summary, feeling rating, progression notes
+
+### Data Models
+- **Session data structure**: `Session.swift` - SessionExercise, CompletedSetGroup, SetData
+- **Module/Workout planning**: `Module.swift`, `Workout.swift`, `ExerciseInstance.swift`
+- **Programs**: `Program.swift` - training blocks with scheduled workouts
+- **Scheduled workouts**: `ScheduledWorkout.swift` - workout slots on calendar
+- **Exercise library**: `ExerciseLibrary.swift` (built-in), `CustomExerciseLibrary.swift` (user)
+
+### Formatting & Utilities
+- **Number/time formatting**: `FormattingHelpers.swift` - distance, weight, duration, pace
+- **Exercise resolution**: `ExerciseResolver.swift` - template + instance → resolved exercise
+- **Theme constants**: `Theme/AppTheme.swift`
+- **Logging**: `Logger.swift`, `SyncLogger.swift`
+
+### Home & Scheduling
+- **Home view**: `HomeView.swift` (~800 lines) - today's workout, recent sessions, calendar
+- **Schedule sheets**: `HomeScheduleSheets.swift` (29KB) - date detail, scheduling UI
+- **Workout scheduling**: `WorkoutViewModel.swift` - schedule/unschedule, get current name
+
+### Sync & Persistence
+- **Local storage**: `DataRepository.swift` - CoreData operations, session pagination
+- **Cloud sync**: `FirebaseService.swift` (34KB) - Firestore CRUD
+- **Sync coordination**: `SyncManager.swift` (25KB) - queue, retry, conflict resolution
+- **Merge logic**: Deep merge in `Module.swift:mergedWith()`, `Workout.swift:mergedWith()`
+
 ## Build Notes
 
 - Firebase packages can be slow to resolve
 - If PIF errors: `rm -rf ~/Library/Developer/Xcode/DerivedData/gym_app-*`
 - Build with `CODE_SIGNING_ALLOWED=NO` for CI/testing
+
+## Common Patterns & Solutions
+
+### Swift Compiler Timeout with Multiple Sheets
+**Problem:** Adding 3+ `.sheet()` modifiers to a view causes "compiler unable to type-check this expression in reasonable time"
+
+**Solution:** Use enum-based sheet routing with single `.sheet(item:)` modifier
+```swift
+enum PickerType: Identifiable, Equatable {
+    case option1
+    case option2(Int)  // Can have associated values
+
+    var id: String { /* unique ID */ }
+}
+
+@State private var activePicker: PickerType? = nil
+
+.sheet(item: $activePicker) { type in
+    switch type {
+    case .option1: PickerView1()
+    case .option2(let index): PickerView2(index: index)
+    }
+}
+```
+
+### Auto-Saving Sheet Changes
+**Pattern:** Child sheet edits should reflect immediately in parent view
+```swift
+.sheet(item: $picker) { /* sheet content */ }
+.onChange(of: picker) { oldValue, newValue in
+    // When specific sheet dismisses (oldValue != nil, newValue == nil)
+    if case .specificSheet = oldValue, newValue == nil {
+        saveChanges()  // Auto-save to update parent
+    }
+}
+```
+
+### Accurate Timer Implementation
+**Pattern:** RunLoop configuration for precise timing
+```swift
+let timer = Timer(timeInterval: 1.0, repeats: true) { _ in /* work */ }
+timer.tolerance = 0.05          // 50ms tolerance
+RunLoop.current.add(timer, forMode: .common)  // Continue during UI interactions
+```
+
+### Layout Priority to Prevent Squishing
+**Pattern:** Critical UI elements should never compress
+```swift
+HStack {
+    criticalElement
+        .fixedSize()           // Never compress
+        .layoutPriority(2)     // Highest priority
+
+    flexibleContent
+        .layoutPriority(1)     // Can shrink if needed
+
+    Spacer(minLength: 0)
+
+    button
+        .fixedSize()
+        .layoutPriority(1)
+}
+```
+
+### Comprehensive Data Validation
+**Pattern:** Check all possible fields when filtering data
+```swift
+// Example: Checking if set has any logged data
+private func hasAnyMetricData(_ set: SetData) -> Bool {
+    return set.weight != nil ||
+           set.reps != nil ||
+           set.duration != nil ||
+           set.distance != nil ||
+           set.rpe != nil ||
+           set.bandColor != nil ||
+           set.holdTime != nil ||
+           set.intensity != nil ||
+           set.height != nil ||
+           set.temperature != nil ||
+           !set.implementMeasurableValues.isEmpty
+}
+```
+
+### Dynamic Name Resolution
+**Pattern:** Reference data by ID, look up display name dynamically
+```swift
+// Store: workoutId (UUID reference)
+// Display: workout.name (current name from lookup)
+// Fallback: scheduled.workoutName (snapshot if deleted)
+
+func getCurrentWorkoutName(for scheduled: ScheduledWorkout) -> String {
+    guard let workoutId = scheduled.workoutId,
+          let workout = getWorkout(id: workoutId) else {
+        return scheduled.workoutName  // Fallback to snapshot
+    }
+    return workout.name  // Current name
+}
+```
