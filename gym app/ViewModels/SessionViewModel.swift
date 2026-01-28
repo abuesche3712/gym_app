@@ -913,7 +913,9 @@ class SessionViewModel: ObservableObject {
                     if let exercise = module.completedExercises.first(where: {
                         $0.exerciseName == exerciseName &&
                         $0.completedSetGroups.contains { setGroup in
-                            setGroup.sets.contains { $0.completed && ($0.weight != nil || $0.reps != nil || $0.duration != nil || $0.distance != nil) }
+                            setGroup.sets.contains { set in
+                                set.completed && hasAnyMetricData(set)
+                            }
                         }
                     }) {
                         return exercise
@@ -924,5 +926,21 @@ class SessionViewModel: ObservableObject {
 
         // No fallback - if this workout has never been done before, return nil
         return nil
+    }
+
+    /// Returns true if the set has any logged metric data
+    private func hasAnyMetricData(_ set: SetData) -> Bool {
+        return set.weight != nil ||
+               set.reps != nil ||
+               set.duration != nil ||
+               set.distance != nil ||
+               set.rpe != nil ||
+               set.bandColor != nil ||
+               set.holdTime != nil ||
+               set.intensity != nil ||
+               set.height != nil ||
+               set.quality != nil ||
+               set.temperature != nil ||
+               !set.implementMeasurableValues.isEmpty
     }
 }

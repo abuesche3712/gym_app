@@ -64,16 +64,16 @@ func formatDistance(_ distance: Double, unit: DistanceUnit) -> String {
     if distance == floor(distance) {
         return "\(Int(distance)) \(unit.abbreviation)"
     }
-    return String(format: "%.1f %@", distance, unit.abbreviation)
+    return String(format: "%.2f %@", distance, unit.abbreviation)
 }
 
 /// Formats distance value only, no unit
-/// e.g., 1.0 -> "1", 1.5 -> "1.5"
+/// e.g., 1.0 -> "1", 1.5 -> "1.5", 1.75 -> "1.75"
 func formatDistanceValue(_ distance: Double) -> String {
     if distance == floor(distance) {
         return "\(Int(distance))"
     }
-    return String(format: "%.1f", distance)
+    return String(format: "%.2f", distance)
 }
 
 // MARK: - Height Formatting

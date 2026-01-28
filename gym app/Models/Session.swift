@@ -270,7 +270,11 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
     var totalVolume: Double {
         completedSetGroups.reduce(0) { groupTotal, setGroup in
             groupTotal + setGroup.sets.reduce(0) { setTotal, set in
-                setTotal + (set.weight ?? 0) * Double(set.reps ?? 0)
+                // Only count completed sets
+                if set.completed {
+                    return setTotal + (set.weight ?? 0) * Double(set.reps ?? 0)
+                }
+                return setTotal
             }
         }
     }
