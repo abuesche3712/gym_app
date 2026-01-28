@@ -541,8 +541,8 @@ struct ActiveSessionView: View {
                                 flatSet: flatSet,
                                 exercise: exercise,
                                 isHighlighted: highlightNextSet && isFirstIncomplete,
-                                onLog: { weight, reps, rpe, duration, holdTime, distance, height, quality, intensity, temperature, bandColor, implementMeasurableValues in
-                                    logSetAt(flatSet: flatSet, weight: weight, reps: reps, rpe: rpe, duration: duration, holdTime: holdTime, distance: distance, height: height, quality: quality, intensity: intensity, temperature: temperature, bandColor: bandColor, implementMeasurableValues: implementMeasurableValues)
+                                onLog: { weight, reps, rpe, duration, holdTime, distance, height, intensity, temperature, bandColor, implementMeasurableValues in
+                                    logSetAt(flatSet: flatSet, weight: weight, reps: reps, rpe: rpe, duration: duration, holdTime: holdTime, distance: distance, height: height, intensity: intensity, temperature: temperature, bandColor: bandColor, implementMeasurableValues: implementMeasurableValues)
                                     // Clear highlight when logging
                                     highlightNextSet = false
                                     // Start rest timer (skip for recovery activities)
@@ -1157,7 +1157,7 @@ struct ActiveSessionView: View {
         sessionViewModel.currentSession = session
     }
 
-    private func logSetAt(flatSet: FlatSet, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?, height: Double? = nil, quality: Int? = nil, intensity: Int? = nil, temperature: Int? = nil, bandColor: String? = nil, implementMeasurableValues: [String: String]? = nil) {
+    private func logSetAt(flatSet: FlatSet, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?, height: Double? = nil, intensity: Int? = nil, temperature: Int? = nil, bandColor: String? = nil, implementMeasurableValues: [String: String]? = nil) {
         guard var session = sessionViewModel.currentSession else { return }
         guard sessionViewModel.currentModuleIndex < session.completedModules.count else { return }
 
@@ -1176,7 +1176,6 @@ struct ActiveSessionView: View {
         setData.holdTime = holdTime ?? setData.holdTime
         setData.distance = distance ?? setData.distance
         setData.height = height ?? setData.height
-        setData.quality = quality
         setData.intensity = intensity
         setData.temperature = temperature
         setData.bandColor = bandColor ?? setData.bandColor
@@ -1460,9 +1459,6 @@ struct ActiveSessionView: View {
                     }
                     if let height = set.height {
                         metricPill(value: formatHeight(height), label: nil, color: AppColors.accentBlue)
-                    }
-                    if let quality = set.quality {
-                        metricPill(value: "\(quality)/5", label: nil, color: AppColors.warning)
                     }
 
                 case .mobility:

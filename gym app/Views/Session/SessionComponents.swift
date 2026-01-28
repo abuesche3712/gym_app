@@ -60,7 +60,7 @@ struct SetRowView: View {
     let flatSet: FlatSet
     let exercise: SessionExercise
     var isHighlighted: Bool = false  // Highlight when rest timer ends
-    let onLog: (Double?, Int?, Int?, Int?, Int?, Double?, Double?, Int?, Int?, Int?, String?, [String: String]?) -> Void  // weight, reps, rpe, duration, holdTime, distance, height, quality, intensity, temperature, bandColor, implementMeasurableValues
+    let onLog: (Double?, Int?, Int?, Int?, Int?, Double?, Double?, Int?, Int?, String?, [String: String]?) -> Void  // weight, reps, rpe, duration, holdTime, distance, height, intensity, temperature, bandColor, implementMeasurableValues
     var onDelete: (() -> Void)? = nil  // Optional delete callback
     var onDistanceUnitChange: ((DistanceUnit) -> Void)? = nil  // Callback to change distance unit
     var onUncheck: (() -> Void)? = nil  // Callback to uncheck/edit a completed set
@@ -80,7 +80,6 @@ struct SetRowView: View {
     @State private var inputHoldTime: Int = 0
     @State private var inputDistance: String = ""
     @State private var inputHeight: String = ""  // For explosive exercises (box jumps)
-    @State private var inputQuality: Int = 0  // 1-5 for explosive exercises
     @State private var inputIntensity: Int = 0  // 1-10 for isometric exercises
     @State private var inputTemperature: String = ""  // For recovery activities (sauna/cold plunge)
     @State private var inputBandColor: String = ""  // For band exercises (e.g., "Red", "Blue")
@@ -132,11 +131,13 @@ struct SetRowView: View {
         HStack(spacing: AppSpacing.sm) {
             // Set number indicator
             setNumberBadge
+                .fixedSize() // Prevent set number from shrinking
 
             if flatSet.setData.completed {
                 // Completed state - show summary
                 completedView
-                    .frame(maxWidth: contentWidth.map { $0 - 32 - AppSpacing.sm } ?? .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .layoutPriority(1)
             } else {
                 // Input fields based on exercise type
                 HStack(spacing: AppSpacing.sm) {
@@ -150,15 +151,18 @@ struct SetRowView: View {
                     if previousCompletedSet != nil {
                         sameAsLastButton
                             .layoutPriority(1) // Keep visible
+                            .fixedSize() // Prevent button from shrinking
                     }
 
                     // Log button (delete via swipe only to reduce clutter)
                     logButton
                         .layoutPriority(2) // Highest priority - always keep visible
+                        .fixedSize() // Prevent button from shrinking
                 }
-                .frame(maxWidth: contentWidth.map { $0 - 32 - AppSpacing.sm } ?? .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .frame(maxWidth: contentWidth) // Constrain the entire HStack
         .padding(.horizontal, AppSpacing.md)
         .padding(.vertical, AppSpacing.sm)
         .frame(width: contentWidth)
@@ -800,29 +804,6 @@ struct SetRowView: View {
                     .foregroundColor(AppColors.textTertiary)
             }
             .fixedSize(horizontal: true, vertical: false)
-
-            // Quality picker (1-5)
-            VStack(spacing: 4) {
-                Menu {
-                    Button("--") { inputQuality = 0 }
-                    ForEach(1...5, id: \.self) { quality in
-                        Button("\(quality)") { inputQuality = quality }
-                    }
-                } label: {
-                    Text(inputQuality > 0 ? "\(inputQuality)" : "-")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .foregroundColor(inputQuality > 0 ? AppColors.textPrimary : AppColors.textTertiary)
-                        .frame(width: 32)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 6)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.cardBackground))
-                }
-
-                Text("quality")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
-            }
-            .fixedSize(horizontal: true, vertical: false)
         }
     }
 
@@ -1011,7 +992,6 @@ struct SetRowView: View {
                 inputHoldTime > 0 ? inputHoldTime : nil,
                 Double(inputDistance),
                 Double(inputHeight),
-                inputQuality > 0 ? inputQuality : nil,
                 inputIntensity > 0 ? inputIntensity : nil,
                 Int(inputTemperature),
                 bandColorToSave,
@@ -1146,9 +1126,6 @@ struct SetRowView: View {
             }
             if let height = set.height {
                 parts.append("@ \(formatHeight(height))")
-            }
-            if let quality = set.quality {
-                parts.append("(\(quality)/5)")
             }
             mainSummary = parts.isEmpty ? "Completed" : parts.joined(separator: " ")
         case .mobility:
@@ -1329,7 +1306,6 @@ struct SetRowView: View {
         inputHeight = setData.height.map { formatHeightValue($0) }
             ?? lastHeight.map { formatHeightValue($0) }
             ?? ""
-        inputQuality = setData.quality ?? 0
         inputIntensity = setData.intensity ?? 0
         inputTemperature = setData.temperature.map { "\($0)" } ?? ""
         inputBandColor = setData.bandColor ?? lastBandColor ?? ""
