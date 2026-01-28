@@ -10,11 +10,11 @@ import SwiftUI
 // MARK: - Colors
 
 struct AppColors {
-    // MARK: - Base Neutrals (VIBRANT purple-tinted darks)
-    static let background = Color(hex: "1A0B2E")       // Rich deep purple-black
-    static let surfacePrimary = Color(hex: "2D1B3D")   // Vibrant dark purple (cards)
-    static let surfaceSecondary = Color(hex: "3E2551") // Elevated vibrant purple (sheets, overlays)
-    static let surfaceTertiary = Color(hex: "4A3A5A")  // Medium purple (borders, dividers)
+    // MARK: - Base Neutrals (Near-black with subtle cool tint)
+    static let background = Color(hex: "0A0A0B")       // Near-black (subtle cool tint)
+    static let surfacePrimary = Color(hex: "141416")   // Dark slate (cards)
+    static let surfaceSecondary = Color(hex: "1C1C1F") // Elevated slate (sheets, overlays)
+    static let surfaceTertiary = Color(hex: "2C2C30")  // Medium slate grey (borders, dividers)
 
     // MARK: - Text Hierarchy (Warm off-white + purple-grays)
     static let textPrimary = Color(hex: "FFFCF9")      // Warm off-white
@@ -111,12 +111,12 @@ struct AppGradients {
         endPoint: .bottomTrailing
     )
 
-    // Enhanced card gradient with vibrant depth
+    // Enhanced card gradient with subtle depth
     static let cardGradientElevated = LinearGradient(
         colors: [
-            Color(hex: "3E2658"),  // Brighter purple top
+            Color(hex: "1A1A1C"),  // Slightly lighter slate
             AppColors.surfacePrimary,
-            Color(hex: "1F0F2E")   // Darker bottom
+            Color(hex: "0F0F10")   // Slightly darker
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing

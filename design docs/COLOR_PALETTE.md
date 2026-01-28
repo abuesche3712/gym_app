@@ -13,10 +13,10 @@
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
-| background | `#1A0B2E` | rgb(26, 11, 46) | App background, behind all content |
-| surfacePrimary | `#2D1B3D` | rgb(45, 27, 61) | Cards, primary containers |
-| surfaceSecondary | `#3E2551` | rgb(62, 37, 81) | Elevated surfaces, sheets, overlays |
-| surfaceTertiary | `#4A3A5A` | rgb(74, 58, 90) | Borders, dividers, input backgrounds |
+| background | `#0A0A0B` | rgb(10, 10, 11) | App background, behind all content |
+| surfacePrimary | `#141416` | rgb(20, 20, 22) | Cards, primary containers |
+| surfaceSecondary | `#1C1C1F` | rgb(28, 28, 31) | Elevated surfaces, sheets, overlays |
+| surfaceTertiary | `#2C2C30` | rgb(44, 44, 48) | Borders, dividers, input backgrounds |
 
 **Notes:**
 - Should feel "cool" not "warm" (blues/grays, not browns)
