@@ -88,9 +88,10 @@ struct ImplementChip: View {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: icon)
                     .font(.subheadline)
+                    .foregroundColor(isSelected ? .white : AppColors.textPrimary)
 
                 Text(name)
-                    .font(.subheadline)
+                    .subheadline(color: isSelected ? .white : AppColors.textPrimary)
                     .lineLimit(1)
 
                 Spacer()
@@ -98,9 +99,9 @@ struct ImplementChip: View {
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.body)
+                        .foregroundColor(isSelected ? .white : AppColors.textPrimary)
                 }
             }
-            .foregroundColor(isSelected ? .white : AppColors.textPrimary)
             .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, AppSpacing.sm)
             .background(
@@ -131,19 +132,18 @@ struct ImplementDisplay: View {
     var body: some View {
         if implementNames.isEmpty {
             Text("None selected")
-                .subheadline()
+                .subheadline(color: AppColors.textSecondary)
         } else {
             FlowLayout(spacing: AppSpacing.xs) {
                 ForEach(implementNames, id: \.self) { name in
                     Text(name)
-                        .font(.caption)
+                        .caption(color: AppColors.accent1)
                         .padding(.horizontal, AppSpacing.sm)
                         .padding(.vertical, 4)
                         .background(
                             Capsule()
                                 .fill(AppColors.accent1.opacity(0.12))
                         )
-                        .foregroundColor(AppColors.accent1)
                 }
             }
         }
@@ -158,7 +158,7 @@ struct BandColorInput: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Band Color")
-                .subheadline()
+                .subheadline(color: AppColors.textPrimary)
 
             TextField("e.g., Red, Blue, Green", text: $color)
                 .textFieldStyle(.roundedBorder)

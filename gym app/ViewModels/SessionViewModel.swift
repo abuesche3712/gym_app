@@ -11,6 +11,26 @@ import Foundation
 import Combine
 import UIKit
 
+// MARK: - Sharing Context Structs
+
+/// Context passed through session creation to populate denormalized sharing fields
+struct SessionSharingContext {
+    let sessionId: UUID
+    let workoutId: UUID
+    let workoutName: String
+    let date: Date
+    let programId: UUID?
+    let programName: String?
+    let programWeekNumber: Int?
+}
+
+/// Context for module-level sharing fields
+struct ModuleSharingContext {
+    let sessionContext: SessionSharingContext
+    let moduleId: UUID
+    let moduleName: String
+}
+
 @MainActor
 class SessionViewModel: ObservableObject {
     // Current session state
@@ -211,43 +231,88 @@ class SessionViewModel: ObservableObject {
 
     // MARK: - Session Management
 
-    func startSession(workout: Workout, modules: [Module]) {
+    /// Start a new workout session
+    /// - Parameters:
+    ///   - workout: The workout template to start
+    ///   - modules: The modules to include in this session
+    ///   - scheduledWorkout: Optional scheduled workout for program context
+    func startSession(workout: Workout, modules: [Module], scheduledWorkout: ScheduledWorkout? = nil) {
+        // Generate session ID and date upfront for context propagation
+        let sessionId = UUID()
+        let sessionDate = Date()
+
+        // Create sharing context for all nested entities
+        let context = SessionSharingContext(
+            sessionId: sessionId,
+            workoutId: workout.id,
+            workoutName: workout.name,
+            date: sessionDate,
+            programId: scheduledWorkout?.programId,
+            programName: nil, // TODO: Look up program name if programId exists
+            programWeekNumber: nil // TODO: Calculate week number from program start date
+        )
+
         // Resolve exercises through ExerciseResolver and convert to session format
         var completedModules = modules.map { module in
-            CompletedModule(
+            let moduleContext = ModuleSharingContext(
+                sessionContext: context,
+                moduleId: module.id,
+                moduleName: module.name
+            )
+            return CompletedModule(
                 moduleId: module.id,
                 moduleName: module.name,
                 moduleType: module.type,
                 completedExercises: module.resolvedExercises().map { resolved in
-                    convertResolvedExerciseToSession(resolved)
-                }
+                    convertResolvedExerciseToSession(resolved, context: moduleContext)
+                },
+                sessionId: sessionId,
+                workoutId: workout.id,
+                workoutName: workout.name,
+                date: sessionDate
             )
         }
 
         // Add standalone exercises as a pseudo-module if any exist
         if !workout.standaloneExercises.isEmpty {
             let resolver = ExerciseResolver.shared
+            let standaloneModuleId = UUID()
+            let standaloneContext = ModuleSharingContext(
+                sessionContext: context,
+                moduleId: standaloneModuleId,
+                moduleName: "Exercises"
+            )
             let standaloneModule = CompletedModule(
-                moduleId: UUID(),
+                id: standaloneModuleId,
+                moduleId: standaloneModuleId,
                 moduleName: "Exercises",
                 moduleType: .strength,  // Default type for standalone exercises
                 completedExercises: workout.standaloneExercises
                     .sorted { $0.order < $1.order }
-                    .map { convertResolvedExerciseToSession(resolver.resolve($0.exercise)) }
+                    .map { convertResolvedExerciseToSession(resolver.resolve($0.exercise), context: standaloneContext) },
+                sessionId: sessionId,
+                workoutId: workout.id,
+                workoutName: workout.name,
+                date: sessionDate
             )
             completedModules.append(standaloneModule)
         }
 
         currentSession = Session(
+            id: sessionId,
             workoutId: workout.id,
             workoutName: workout.name,
-            completedModules: completedModules
+            date: sessionDate,
+            completedModules: completedModules,
+            programId: scheduledWorkout?.programId,
+            programName: context.programName,
+            programWeekNumber: context.programWeekNumber
         )
 
         // Create navigator with the modules
         navigator = SessionNavigator(modules: completedModules)
 
-        sessionStartTime = Date()
+        sessionStartTime = sessionDate
         isSessionActive = true
 
         startSessionTimer()
@@ -311,7 +376,7 @@ class SessionViewModel: ObservableObject {
 
     /// Converts a ResolvedExercise to a SessionExercise for use in an active session
     /// Re-syncs equipment from current template to pick up any library changes
-    private func convertResolvedExerciseToSession(_ resolved: ResolvedExercise) -> SessionExercise {
+    private func convertResolvedExerciseToSession(_ resolved: ResolvedExercise, context: ModuleSharingContext) -> SessionExercise {
         // Re-sync implementIds from current template if available (picks up library changes)
         let currentImplementIds: Set<UUID>
         let currentIsBodyweight: Bool
@@ -352,7 +417,12 @@ class SessionViewModel: ObservableObject {
                                 duration: setGroup.isInterval ? setGroup.workDuration : setGroup.targetDuration,
                                 distance: setGroup.targetDistance,
                                 holdTime: setGroup.targetHoldTime,
-                                side: .left
+                                side: .left,
+                                sessionId: context.sessionContext.sessionId,
+                                exerciseId: resolved.id,
+                                exerciseName: resolved.name,
+                                workoutName: context.sessionContext.workoutName,
+                                date: context.sessionContext.date
                             ),
                             SetData(
                                 setNumber: setNum,
@@ -362,7 +432,12 @@ class SessionViewModel: ObservableObject {
                                 duration: setGroup.isInterval ? setGroup.workDuration : setGroup.targetDuration,
                                 distance: setGroup.targetDistance,
                                 holdTime: setGroup.targetHoldTime,
-                                side: .right
+                                side: .right,
+                                sessionId: context.sessionContext.sessionId,
+                                exerciseId: resolved.id,
+                                exerciseName: resolved.name,
+                                workoutName: context.sessionContext.workoutName,
+                                date: context.sessionContext.date
                             )
                         ]
                     }
@@ -376,7 +451,12 @@ class SessionViewModel: ObservableObject {
                             completed: false,
                             duration: setGroup.isInterval ? setGroup.workDuration : setGroup.targetDuration,
                             distance: setGroup.targetDistance,
-                            holdTime: setGroup.targetHoldTime
+                            holdTime: setGroup.targetHoldTime,
+                            sessionId: context.sessionContext.sessionId,
+                            exerciseId: resolved.id,
+                            exerciseName: resolved.name,
+                            workoutName: context.sessionContext.workoutName,
+                            date: context.sessionContext.date
                         )
                     }
                 }
@@ -399,7 +479,13 @@ class SessionViewModel: ObservableObject {
             recoveryActivityType: resolved.recoveryActivityType,
             implementIds: currentImplementIds,
             primaryMuscles: resolved.primaryMuscles,
-            secondaryMuscles: resolved.secondaryMuscles
+            secondaryMuscles: resolved.secondaryMuscles,
+            sessionId: context.sessionContext.sessionId,
+            moduleId: context.moduleId,
+            moduleName: context.moduleName,
+            workoutId: context.sessionContext.workoutId,
+            workoutName: context.sessionContext.workoutName,
+            date: context.sessionContext.date
         )
     }
 

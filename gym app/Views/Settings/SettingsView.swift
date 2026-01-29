@@ -95,8 +95,8 @@ struct SettingsView: View {
                     // About Section (triple-tap "About" title to access debug logs)
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("ABOUT")
-                            .font(.caption.weight(.semibold))
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption(color: AppColors.textTertiary)
+                            .fontWeight(.semibold)
                             .padding(.leading, AppSpacing.xs)
                             .onTapGesture(count: 3) {
                                 showingSyncLogs = true
@@ -105,8 +105,7 @@ struct SettingsView: View {
                         VStack(spacing: 0) {
                             SettingsRow(icon: "info.circle", title: "Version") {
                                 Text("1.0.0 MVP")
-                                    .font(.subheadline)
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .subheadline(color: AppColors.textSecondary)
                             }
 
                             Button {
@@ -168,15 +167,13 @@ struct SettingsView: View {
             if StartupGuard.isInRecoveryMode {
                 SettingsRow(icon: "exclamationmark.triangle.fill", title: "Recovery Mode") {
                     Text("Active")
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.warning)
+                        .subheadline(color: AppColors.warning)
                 }
             }
 
             SettingsRow(icon: "arrow.counterclockwise", title: "Crash Count") {
                 Text("\(StartupGuard.crashCount)")
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textSecondary)
+                    .subheadline(color: AppColors.textSecondary)
             }
 
             Button {
@@ -221,12 +218,10 @@ struct SettingsView: View {
                     VStack(alignment: .trailing, spacing: 2) {
                         if let user = authService.currentUser {
                             Text(user.displayName ?? user.email ?? "Apple ID")
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.textSecondary)
+                                .subheadline(color: AppColors.textSecondary)
                         }
                         Text("via Apple")
-                            .font(.caption2)
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption2(color: AppColors.textTertiary)
                     }
                 }
 
@@ -261,8 +256,7 @@ struct SettingsView: View {
                 // Not signed in state
                 SettingsRow(icon: "person.circle", title: "Not Signed In") {
                     Text("Local Only")
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.textSecondary)
+                        .subheadline(color: AppColors.textSecondary)
                 }
 
                 Button {
@@ -274,8 +268,8 @@ struct SettingsView: View {
                         Text("Sign in with Apple")
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption(color: AppColors.textTertiary)
+                            .fontWeight(.semibold)
                     }
                 }
                 .padding(.vertical, AppSpacing.sm)
@@ -293,15 +287,14 @@ struct SettingsView: View {
                         ProgressView()
                             .scaleEffect(0.8)
                         Text("Syncing...")
-                            .foregroundColor(AppColors.textSecondary)
+                            .subheadline(color: AppColors.textSecondary)
                     } else {
                         Image(systemName: "checkmark.icloud")
                             .foregroundColor(AppColors.success)
                         Text("Up to date")
-                            .foregroundColor(AppColors.textSecondary)
+                            .subheadline(color: AppColors.textSecondary)
                     }
                 }
-                .font(.subheadline)
             }
 
             Button {
@@ -351,8 +344,8 @@ struct SettingsSection<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text(title.uppercased())
-                .font(.caption.weight(.semibold))
-                .foregroundColor(AppColors.textTertiary)
+                .caption(color: AppColors.textTertiary)
+                .fontWeight(.semibold)
                 .padding(.leading, AppSpacing.xs)
 
             VStack(spacing: 0) {
@@ -366,8 +359,7 @@ struct SettingsSection<Content: View>: View {
 
             if let footer = footer {
                 Text(footer)
-                    .font(.caption)
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption(color: AppColors.textTertiary)
                     .padding(.leading, AppSpacing.xs)
             }
         }
@@ -416,8 +408,8 @@ struct SettingsRowLabel: View {
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundColor(AppColors.textTertiary)
+                .caption(color: AppColors.textTertiary)
+                .fontWeight(.semibold)
         }
         .padding(.vertical, AppSpacing.md)
     }
@@ -501,8 +493,7 @@ struct StatsSection<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text(title)
-                .font(.headline)
-                .foregroundColor(AppColors.textPrimary)
+                .headline(color: AppColors.textPrimary)
 
             VStack(spacing: 0) {
                 content
@@ -523,11 +514,11 @@ struct StatsRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .foregroundColor(AppColors.textSecondary)
+                .body(color: AppColors.textSecondary)
             Spacer()
             Text(value)
+                .body(color: AppColors.textPrimary)
                 .fontWeight(.semibold)
-                .foregroundColor(AppColors.textPrimary)
         }
         .padding(.vertical, AppSpacing.sm)
     }
@@ -546,12 +537,11 @@ struct ExportDataView: View {
                     .foregroundColor(AppColors.textTertiary)
 
                 Text("Coming Soon")
-                    .font(.title2.bold())
-                    .foregroundColor(AppColors.textPrimary)
+                    .displaySmall(color: AppColors.textPrimary)
+                    .fontWeight(.bold)
 
                 Text("Export functionality will be available in a future update.")
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textSecondary)
+                    .subheadline(color: AppColors.textSecondary)
                     .multilineTextAlignment(.center)
             }
 
@@ -587,19 +577,17 @@ struct AboutView: View {
                     // App Info
                     VStack(spacing: AppSpacing.xs) {
                         Text("Gym App")
-                            .font(.title.bold())
-                            .foregroundColor(AppColors.textPrimary)
+                            .displayMedium(color: AppColors.textPrimary)
+                            .fontWeight(.bold)
 
                         Text("Version 1.0.0 (MVP)")
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.textSecondary)
+                            .subheadline(color: AppColors.textSecondary)
                     }
 
                     // Description
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
                         Text("A modular gym tracking app designed for flexible workout composition.")
-                            .font(.body)
-                            .foregroundColor(AppColors.textSecondary)
+                            .body(color: AppColors.textSecondary)
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: .infinity)
 
@@ -607,8 +595,7 @@ struct AboutView: View {
                             .background(AppColors.surfaceTertiary)
 
                         Text("Features")
-                            .font(.headline)
-                            .foregroundColor(AppColors.textPrimary)
+                            .headline(color: AppColors.textPrimary)
 
                         VStack(alignment: .leading, spacing: AppSpacing.md) {
                             FeatureRow(icon: "square.stack.3d.up", text: "Modular workout design")

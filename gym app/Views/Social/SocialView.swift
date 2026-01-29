@@ -29,21 +29,19 @@ struct SocialView: View {
                     // Title and Description
                     VStack(spacing: 12) {
                         Text("Social")
-                            .font(.largeTitle)
+                            .displayLarge(color: AppColors.textPrimary)
                             .fontWeight(.bold)
 
                         Text("Connect with friends, share progress, and stay motivated together")
-                            .font(.body)
-                            .foregroundColor(.secondary)
+                            .body(color: AppColors.textSecondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 32)
                     }
 
                     // Coming Soon Badge
                     Text("COMING SOON")
-                        .font(.caption)
+                        .caption(color: .white)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                         .background(AppColors.warning)
@@ -105,11 +103,10 @@ struct FeaturePreviewCard: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.headline)
+                    .headline(color: AppColors.textPrimary)
 
                 Text(description)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .subheadline(color: AppColors.textSecondary)
             }
 
             Spacer()

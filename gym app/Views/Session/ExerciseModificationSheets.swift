@@ -294,28 +294,25 @@ struct EditExerciseSheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
                     Text("Group \(index + 1)")
-                        .font(.subheadline.weight(.medium))
+                        .subheadline()
+                        .fontWeight(.medium)
                     if setGroup.completedSetsCount > 0 {
                         Text("(\(setGroup.completedSetsCount) done)")
-                            .font(.caption)
-                            .foregroundColor(AppColors.success)
+                            .caption(color: AppColors.success)
                     }
                 }
 
                 Text(setGroupSummary(setGroup))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .caption(color: .secondary)
             }
 
             Spacer()
 
             Text("\(setGroup.sets) sets")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .subheadline(color: .secondary)
 
             Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
+                .caption(color: AppColors.textTertiary)
         }
         .padding(.vertical, 4)
     }
@@ -414,14 +411,12 @@ struct EditExerciseSheet: View {
                 VStack(alignment: .trailing, spacing: 2) {
                     if !primaryMuscles.isEmpty {
                         Text(primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.dominant)
+                            .subheadline(color: AppColors.dominant)
                             .lineLimit(1)
                     }
                     if !secondaryMuscles.isEmpty {
                         Text(secondaryMuscles.map { $0.rawValue }.joined(separator: ", "))
-                            .font(.caption)
-                            .foregroundColor(AppColors.textSecondary)
+                            .caption(color: AppColors.textSecondary)
                             .lineLimit(1)
                     }
                 }
@@ -444,8 +439,7 @@ struct EditExerciseSheet: View {
                 Image(systemName: "info.circle")
                     .foregroundColor(AppColors.dominant)
                 Text("Completed sets are preserved. Changes apply to remaining sets.")
-                    .font(.caption)
-                    .foregroundColor(AppColors.textSecondary)
+                    .caption(color: AppColors.textSecondary)
             }
         }
     }
@@ -624,8 +618,7 @@ struct EditSetGroupSheet: View {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundColor(AppColors.success)
                             Text("\(setGroup.completedSetsCount) sets already completed")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .caption(color: .secondary)
                         }
                     }
                 }
@@ -715,19 +708,18 @@ struct EditSetGroupSheet: View {
                     .foregroundColor(set.completed ? AppColors.success : .secondary)
 
                 Text("Set \(index + 1)")
-                    .font(.subheadline.weight(.medium))
+                    .subheadline()
+                    .fontWeight(.medium)
             }
 
             Spacer()
 
             // Set data preview
             Text(setDataPreview(set))
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .subheadline(color: .secondary)
 
             Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
+                .caption(color: AppColors.textTertiary)
         }
         .padding(.vertical, 4)
     }

@@ -85,22 +85,19 @@ struct ProgramsListView: View {
                                         .fill(AppColors.programAccent)
                                         .frame(width: 8, height: 8)
                                     Text("Active Program")
-                                        .font(.caption)
+                                        .caption(color: AppColors.programAccent)
                                         .fontWeight(.medium)
-                                        .foregroundColor(AppColors.programAccent)
                                 }
 
                                 Text(activeProgram.name)
-                                    .font(.title3)
+                                    .displaySmall(color: AppColors.textPrimary)
                                     .fontWeight(.bold)
-                                    .foregroundColor(.primary)
                             }
 
                             Spacer()
 
                             Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .caption(color: AppColors.textSecondary)
                         }
 
                         if let startDate = activeProgram.startDate {
@@ -109,14 +106,12 @@ struct ProgramsListView: View {
 
                             HStack {
                                 Text("Week \(min(currentWeek, activeProgram.durationWeeks)) of \(activeProgram.durationWeeks)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .caption(color: AppColors.textSecondary)
 
                                 Spacer()
 
                                 Text("\(activeProgram.workoutSlots.filter { $0.scheduleType == .weekly }.count) workouts/week")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .caption(color: AppColors.textSecondary)
                             }
 
                             AnimatedProgressBar(
@@ -138,15 +133,13 @@ struct ProgramsListView: View {
     private var noActiveProgramCard: some View {
         VStack(spacing: 12) {
             Image(systemName: "calendar.badge.plus")
-                .font(.largeTitle)
-                .foregroundColor(.secondary)
+                .displayMedium(color: AppColors.textSecondary)
 
             Text("No Active Program")
-                .font(.headline)
+                .headline(color: AppColors.textPrimary)
 
             Text("Create or activate a program to auto-schedule your workouts")
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .caption(color: AppColors.textSecondary)
                 .multilineTextAlignment(.center)
 
             if programViewModel.programs.isEmpty {
@@ -187,13 +180,13 @@ struct ProgramsListView: View {
                     selectedMonth = Calendar.current.date(byAdding: .month, value: -1, to: selectedMonth) ?? selectedMonth
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.title3)
+                        .displaySmall(color: AppColors.textPrimary)
                 }
 
                 Spacer()
 
                 Text(selectedMonth.formatted(.dateTime.month(.wide).year()))
-                    .font(.headline)
+                    .headline(color: AppColors.textPrimary)
 
                 Spacer()
 
@@ -201,7 +194,7 @@ struct ProgramsListView: View {
                     selectedMonth = Calendar.current.date(byAdding: .month, value: 1, to: selectedMonth) ?? selectedMonth
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.title3)
+                        .displaySmall(color: AppColors.textPrimary)
                 }
             }
             .padding(.horizontal, 8)
@@ -210,9 +203,8 @@ struct ProgramsListView: View {
             HStack(spacing: 0) {
                 ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { _, day in
                     Text(day)
-                        .font(.caption)
+                        .caption(color: AppColors.textSecondary)
                         .fontWeight(.medium)
-                        .foregroundColor(.secondary)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -244,7 +236,7 @@ struct ProgramsListView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("All Programs")
-                    .font(.headline)
+                    .headline(color: AppColors.textPrimary)
 
                 Spacer()
 
@@ -252,14 +244,13 @@ struct ProgramsListView: View {
                     Button("Manage") {
                         showingProgramsSheet = true
                     }
-                    .font(.subheadline)
+                    .subheadline(color: AppColors.accent1)
                 }
             }
 
             if programViewModel.programs.isEmpty {
                 Text("No programs yet")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .subheadline(color: AppColors.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding()
             } else {
@@ -322,8 +313,8 @@ struct MonthDayCell: View {
         } label: {
             VStack(spacing: 2) {
                 Text("\(Calendar.current.component(.day, from: date))")
-                    .font(.subheadline.weight(isToday ? .bold : .regular))
-                    .foregroundColor(dayTextColor)
+                    .subheadline(color: dayTextColor)
+                    .fontWeight(isToday ? .bold : .regular)
 
                 // Workout indicators
                 if !scheduledWorkouts.isEmpty {
@@ -335,8 +326,7 @@ struct MonthDayCell: View {
                         }
                         if scheduledWorkouts.count > 3 {
                             Text("+")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
+                                .caption2(color: AppColors.textSecondary)
                         }
                     }
                 }
@@ -384,14 +374,13 @@ struct ProgramCompactRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(program.name)
-                        .font(.subheadline)
+                        .subheadline(color: AppColors.textPrimary)
                         .fontWeight(.medium)
-                        .foregroundColor(.primary)
 
                     if isActive {
                         Text("ACTIVE")
-                            .font(.caption2.weight(.bold))
-                            .foregroundColor(.white)
+                            .caption2(color: .white)
+                            .fontWeight(.bold)
                             .padding(.horizontal, 4)
                             .padding(.vertical, 1)
                             .background(AppColors.programAccent)
@@ -400,15 +389,13 @@ struct ProgramCompactRow: View {
                 }
 
                 Text("\(program.durationWeeks) weeks • \(program.workoutSlots.count) slots")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .caption(color: AppColors.textSecondary)
             }
 
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .caption(color: AppColors.textSecondary)
         }
         .padding(.vertical, 8)
     }
@@ -467,13 +454,12 @@ struct ProgramRow: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(program.name)
-                    .font(.headline)
+                    .headline(color: AppColors.textPrimary)
 
                 if isActive {
                     Text("ACTIVE")
-                        .font(.caption2)
+                        .caption2(color: .white)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(AppColors.programAccent)
@@ -483,18 +469,15 @@ struct ProgramRow: View {
 
             HStack(spacing: 12) {
                 Label("\(program.durationWeeks) weeks", systemImage: "calendar")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .caption(color: AppColors.textSecondary)
 
                 Label("\(program.workoutSlots.count) slots", systemImage: "figure.run")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .caption(color: AppColors.textSecondary)
             }
 
             if let description = program.programDescription, !description.isEmpty {
                 Text(description)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .caption(color: AppColors.textSecondary)
                     .lineLimit(1)
             }
 
@@ -532,13 +515,11 @@ struct DayDetailSheet: View {
                             Spacer()
                             VStack(spacing: 8) {
                                 Image(systemName: "moon.zzz")
-                                    .font(.title)
-                                    .foregroundColor(.secondary)
+                                    .displaySmall(color: AppColors.textSecondary)
                                 Text("Rest Day")
-                                    .font(.headline)
+                                    .headline(color: AppColors.textPrimary)
                                 Text("No workouts scheduled")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .subheadline(color: AppColors.textSecondary)
                             }
                             .padding(.vertical, 24)
                             Spacer()
@@ -550,24 +531,23 @@ struct DayDetailSheet: View {
                             if scheduled.isRestDay {
                                 HStack {
                                     Image(systemName: "moon.zzz")
-                                        .foregroundColor(.secondary)
+                                        .body(color: AppColors.textSecondary)
                                     Text("Rest Day")
-                                        .foregroundColor(.secondary)
+                                        .body(color: AppColors.textSecondary)
                                 }
                             } else if let workout = workouts.first(where: { $0.id == scheduled.workoutId }) {
                                 NavigationLink(destination: WorkoutDetailView(workout: workout)) {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(workout.name)
-                                            .font(.headline)
+                                            .headline(color: AppColors.textPrimary)
 
                                         if scheduled.isFromProgram {
                                             HStack(spacing: 4) {
                                                 Image(systemName: "calendar.badge.clock")
-                                                    .font(.caption)
+                                                    .caption(color: AppColors.programAccent)
                                                 Text("From Program")
-                                                    .font(.caption)
+                                                    .caption(color: AppColors.programAccent)
                                             }
-                                            .foregroundColor(AppColors.programAccent)
                                         }
                                     }
                                     .padding(.vertical, 4)
@@ -577,16 +557,15 @@ struct DayDetailSheet: View {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(scheduled.workoutName)
-                                            .font(.headline)
+                                            .headline(color: AppColors.textPrimary)
 
                                         if scheduled.isFromProgram {
                                             HStack(spacing: 4) {
                                                 Image(systemName: "calendar.badge.clock")
-                                                    .font(.caption)
+                                                    .caption(color: AppColors.programAccent)
                                                 Text("From Program")
-                                                    .font(.caption)
+                                                    .caption(color: AppColors.programAccent)
                                             }
-                                            .foregroundColor(AppColors.programAccent)
                                         }
                                     }
 

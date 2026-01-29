@@ -2,7 +2,8 @@
 //  HistoryView.swift
 //  gym app
 //
-//  View for browsing past workout sessions
+//  Beautiful history view for browsing past workout sessions
+//  Designed to match the modular, shareable aesthetic
 //
 
 import SwiftUI
@@ -13,11 +14,20 @@ struct HistoryView: View {
     @State private var selectedFilter: HistoryFilter = .all
     @State private var sessionToDelete: Session?
     @State private var showingDeleteConfirmation = false
+    @State private var animateIn = false
 
     enum HistoryFilter: String, CaseIterable {
         case all = "All"
         case thisWeek = "This Week"
         case thisMonth = "This Month"
+
+        var icon: String {
+            switch self {
+            case .all: return "infinity"
+            case .thisWeek: return "calendar.badge.clock"
+            case .thisMonth: return "calendar"
+            }
+        }
     }
 
     var filteredSessions: [Session] {
@@ -70,73 +80,36 @@ struct HistoryView: View {
         }
     }
 
+    // Aggregate stats for the selected period
+    private var periodStats: (sessions: Int, sets: Int, volume: Double, duration: Int) {
+        let sessions = filteredSessions
+        let sets = sessions.reduce(0) { $0 + $1.totalSetsCompleted }
+        let volume = sessions.reduce(0.0) { total, session in
+            total + session.completedModules.reduce(0.0) { moduleTotal, module in
+                moduleTotal + module.completedExercises.reduce(0.0) { $0 + $1.totalVolume }
+            }
+        }
+        let duration = sessions.reduce(0) { $0 + ($1.duration ?? 0) }
+        return (sessions.count, sets, volume, duration)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: AppSpacing.lg) {
-                    // Filter pills
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: AppSpacing.sm) {
-                            ForEach(HistoryFilter.allCases, id: \.self) { filter in
-                                FilterPill(
-                                    title: filter.rawValue,
-                                    isSelected: selectedFilter == filter
-                                ) {
-                                    withAnimation(AppAnimation.quick) {
-                                        selectedFilter = filter
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.horizontal, AppSpacing.screenPadding)
+                VStack(spacing: AppSpacing.xl) {
+                    // Stats Summary Card
+                    if !filteredSessions.isEmpty {
+                        statsSummaryCard
                     }
 
+                    // Filter Pills
+                    filterPills
+
+                    // Sessions List
                     if filteredSessions.isEmpty {
-                        EmptyStateView(
-                            icon: "clock.arrow.circlepath",
-                            title: "No Sessions",
-                            message: "Complete a workout to see it here"
-                        )
-                        .padding(.top, AppSpacing.xxl)
+                        emptyState
                     } else {
-                        LazyVStack(spacing: AppSpacing.lg) {
-                            ForEach(groupedSessions, id: \.0) { month, sessions in
-                                VStack(alignment: .leading, spacing: AppSpacing.md) {
-                                    Text(month)
-                                        .displaySmall()
-                                        .padding(.horizontal, AppSpacing.screenPadding)
-
-                                    VStack(spacing: 0) {
-                                        ForEach(Array(sessions.enumerated()), id: \.element.id) { index, session in
-                                            NavigationLink(destination: SessionDetailView(session: session)) {
-                                                SessionHistoryRow(session: session)
-                                            }
-                                            .buttonStyle(.plain)
-                                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                                Button(role: .destructive) {
-                                                    sessionToDelete = session
-                                                    showingDeleteConfirmation = true
-                                                } label: {
-                                                    Label("Delete", systemImage: "trash")
-                                                }
-                                            }
-
-                                            if index < sessions.count - 1 {
-                                                Divider()
-                                                    .background(AppColors.surfaceTertiary)
-                                                    .padding(.leading, 60)
-                                            }
-                                        }
-                                    }
-                                    .padding(AppSpacing.cardPadding)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: AppCorners.large)
-                                            .fill(AppColors.surfacePrimary)
-                                    )
-                                    .padding(.horizontal, AppSpacing.screenPadding)
-                                }
-                            }
-                        }
+                        sessionsList
                     }
                 }
                 .padding(.vertical, AppSpacing.md)
@@ -155,7 +128,9 @@ struct HistoryView: View {
             ) {
                 Button("Delete", role: .destructive) {
                     if let session = sessionToDelete {
-                        sessionViewModel.deleteSession(session)
+                        withAnimation(AppAnimation.standard) {
+                            sessionViewModel.deleteSession(session)
+                        }
                         HapticManager.shared.impact()
                     }
                     sessionToDelete = nil
@@ -171,74 +146,323 @@ struct HistoryView: View {
                     HapticManager.shared.warning()
                 }
             }
+            .onAppear {
+                withAnimation(AppAnimation.entrance) {
+                    animateIn = true
+                }
+            }
         }
+    }
+
+    // MARK: - Stats Summary Card
+
+    private var statsSummaryCard: some View {
+        HStack(spacing: AppSpacing.md) {
+            miniStatCard(
+                value: "\(periodStats.sessions)",
+                label: "WORKOUTS",
+                color: AppColors.dominant
+            )
+
+            miniStatCard(
+                value: "\(periodStats.sets)",
+                label: "SETS",
+                color: AppColors.accent1
+            )
+
+            miniStatCard(
+                value: formatVolume(periodStats.volume),
+                label: "VOLUME",
+                color: AppColors.accent3
+            )
+
+            miniStatCard(
+                value: formatTotalDuration(periodStats.duration),
+                label: "TIME",
+                color: AppColors.accent2
+            )
+        }
+        .padding(.horizontal, AppSpacing.screenPadding)
+        .opacity(animateIn ? 1 : 0)
+        .offset(y: animateIn ? 0 : 20)
+    }
+
+    private func miniStatCard(value: String, label: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .displaySmall(color: color)
+                .fontWeight(.bold)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+
+            Text(label)
+                .caption2(color: AppColors.textTertiary)
+                .fontWeight(.semibold)
+                .tracking(0.8)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, AppSpacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.medium)
+                .fill(AppColors.surfacePrimary)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .stroke(color.opacity(0.1), lineWidth: 1)
+                )
+        )
+    }
+
+    // MARK: - Filter Pills
+
+    private var filterPills: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: AppSpacing.sm) {
+                ForEach(HistoryFilter.allCases, id: \.self) { filter in
+                    HistoryFilterPill(
+                        title: filter.rawValue,
+                        icon: filter.icon,
+                        isSelected: selectedFilter == filter
+                    ) {
+                        withAnimation(AppAnimation.quick) {
+                            selectedFilter = filter
+                        }
+                        HapticManager.shared.tap()
+                    }
+                }
+            }
+            .padding(.horizontal, AppSpacing.screenPadding)
+        }
+        .opacity(animateIn ? 1 : 0)
+        .animation(AppAnimation.entrance.delay(0.1), value: animateIn)
+    }
+
+    // MARK: - Empty State
+
+    private var emptyState: some View {
+        VStack(spacing: AppSpacing.lg) {
+            ZStack {
+                Circle()
+                    .fill(AppColors.surfacePrimary)
+                    .frame(width: 80, height: 80)
+
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 32, weight: .medium))
+                    .foregroundColor(AppColors.textTertiary)
+            }
+
+            VStack(spacing: AppSpacing.xs) {
+                Text("No Sessions")
+                    .headline()
+
+                Text(searchText.isEmpty ? "Complete a workout to see it here" : "No workouts match your search")
+                    .caption()
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding(.top, AppSpacing.xxl)
+        .opacity(animateIn ? 1 : 0)
+        .animation(AppAnimation.entrance.delay(0.2), value: animateIn)
+    }
+
+    // MARK: - Sessions List
+
+    private var sessionsList: some View {
+        LazyVStack(spacing: AppSpacing.xl) {
+            ForEach(Array(groupedSessions.enumerated()), id: \.element.0) { groupIndex, group in
+                let (month, sessions) = group
+
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    // Month header
+                    Text(month)
+                        .displaySmall(color: AppColors.textPrimary)
+                        .fontWeight(.bold)
+                        .padding(.horizontal, AppSpacing.screenPadding)
+
+                    // Sessions in month
+                    VStack(spacing: 0) {
+                        ForEach(Array(sessions.enumerated()), id: \.element.id) { index, session in
+                            NavigationLink(destination: SessionDetailView(session: session)) {
+                                HistorySessionRow(session: session)
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                Button(role: .destructive) {
+                                    sessionToDelete = session
+                                    showingDeleteConfirmation = true
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+
+                            if index < sessions.count - 1 {
+                                Divider()
+                                    .background(AppColors.surfaceTertiary.opacity(0.5))
+                                    .padding(.leading, 72)
+                            }
+                        }
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: AppCorners.large)
+                            .fill(AppColors.surfacePrimary)
+                    )
+                    .padding(.horizontal, AppSpacing.screenPadding)
+                }
+                .opacity(animateIn ? 1 : 0)
+                .offset(y: animateIn ? 0 : 20)
+                .animation(AppAnimation.entrance.delay(0.15 + Double(groupIndex) * 0.05), value: animateIn)
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func formatVolume(_ volume: Double) -> String {
+        if volume >= 1_000_000 {
+            return String(format: "%.1fM", volume / 1_000_000)
+        } else if volume >= 10000 {
+            return String(format: "%.0fk", volume / 1000)
+        } else if volume >= 1000 {
+            return String(format: "%.1fk", volume / 1000)
+        } else {
+            return String(format: "%.0f", volume)
+        }
+    }
+
+    private func formatTotalDuration(_ minutes: Int) -> String {
+        let hours = minutes / 60
+        let mins = minutes % 60
+        if hours > 0 {
+            return "\(hours)h\(mins > 0 ? " \(mins)m" : "")"
+        }
+        return "\(mins)m"
     }
 }
 
-// MARK: - Session History Row
+// MARK: - History Filter Pill
 
-struct SessionHistoryRow: View {
+struct HistoryFilterPill: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: AppSpacing.xs) {
+                Image(systemName: icon)
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+
+                Text(title)
+                    .subheadline(color: isSelected ? AppColors.textPrimary : AppColors.textSecondary)
+                    .fontWeight(.medium)
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
+            .background(
+                Capsule()
+                    .fill(isSelected ? AppColors.dominant.opacity(0.15) : AppColors.surfacePrimary)
+                    .overlay(
+                        Capsule()
+                            .stroke(isSelected ? AppColors.dominant.opacity(0.3) : AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - History Session Row
+
+struct HistorySessionRow: View {
     let session: Session
+
+    private var totalVolume: Double {
+        session.completedModules.reduce(0.0) { total, module in
+            total + module.completedExercises.reduce(0.0) { $0 + $1.totalVolume }
+        }
+    }
 
     var body: some View {
         HStack(spacing: AppSpacing.md) {
             // Date indicator
             VStack(spacing: 2) {
                 Text(dayOfWeek)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundColor(AppColors.dominant)
+                    .caption2(color: AppColors.dominant)
+                    .fontWeight(.bold)
+                    .tracking(0.5)
+
                 Text(dayNumber)
-                    .font(.title3.bold())
-                    .foregroundColor(AppColors.textPrimary)
+                    .displaySmall(color: AppColors.textPrimary)
+                    .fontWeight(.bold)
             }
-            .frame(width: 44)
+            .frame(width: 48)
+            .padding(.vertical, AppSpacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .fill(AppColors.dominant.opacity(0.08))
+            )
 
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            // Main content
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                // Workout name
                 Text(session.workoutName)
-                    .font(.headline)
-                    .foregroundColor(AppColors.textPrimary)
+                    .headline()
+                    .lineLimit(1)
 
+                // Stats row
                 HStack(spacing: AppSpacing.md) {
                     if let duration = session.formattedDuration {
-                        HStack(spacing: 4) {
-                            Image(systemName: "clock")
-                                .font(.caption2)
-                            Text(duration)
-                        }
-                        .caption()
+                        Label(duration, systemImage: "clock")
+                            .caption(color: AppColors.textSecondary)
                     }
 
-                    Text("\(session.totalSetsCompleted) sets")
-                        .caption()
+                    Label("\(session.totalSetsCompleted) sets", systemImage: "square.stack.3d.up")
+                        .caption(color: AppColors.textSecondary)
+
+                    if totalVolume > 0 {
+                        Text(formatVolume(totalVolume))
+                            .caption(color: AppColors.accent3)
+                    }
                 }
 
-                // Module type indicators
+                // Module indicators
                 HStack(spacing: AppSpacing.xs) {
-                    ForEach(session.completedModules.prefix(5)) { module in
-                        Circle()
-                            .fill(AppColors.moduleColor(module.moduleType))
-                            .frame(width: 8, height: 8)
+                    ForEach(session.completedModules.prefix(4)) { module in
+                        HStack(spacing: 3) {
+                            Circle()
+                                .fill(AppColors.moduleColor(module.moduleType))
+                                .frame(width: 6, height: 6)
+
+                            if session.completedModules.count <= 3 {
+                                Text(module.moduleName)
+                                    .caption2(color: AppColors.textTertiary)
+                                    .lineLimit(1)
+                            }
+                        }
                     }
-                    if session.completedModules.count > 5 {
-                        Text("+\(session.completedModules.count - 5)")
-                            .caption2()
+                    if session.completedModules.count > 4 {
+                        Text("+\(session.completedModules.count - 4)")
+                            .caption2(color: AppColors.textTertiary)
+                            .fontWeight(.medium)
                     }
                 }
             }
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: AppSpacing.xs) {
+            // Right side
+            VStack(alignment: .trailing, spacing: AppSpacing.sm) {
                 if let feeling = session.overallFeeling {
-                    FeelingIndicator(feeling: feeling)
+                    HistoryFeelingBadge(feeling: feeling)
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption(color: AppColors.textTertiary)
+                    .fontWeight(.semibold)
             }
         }
-        .padding(.vertical, AppSpacing.sm)
+        .padding(AppSpacing.cardPadding)
     }
 
     private var dayOfWeek: String {
@@ -252,7 +476,61 @@ struct SessionHistoryRow: View {
         formatter.dateFormat = "d"
         return formatter.string(from: session.date)
     }
+
+    private func formatVolume(_ volume: Double) -> String {
+        if volume >= 10000 {
+            return String(format: "%.1fk lbs", volume / 1000)
+        } else if volume >= 1000 {
+            return String(format: "%.0f lbs", volume)
+        } else {
+            return String(format: "%.0f lbs", volume)
+        }
+    }
 }
+
+// MARK: - History Feeling Badge
+
+struct HistoryFeelingBadge: View {
+    let feeling: Int
+
+    private var color: Color {
+        switch feeling {
+        case 1...3: return AppColors.error
+        case 4...6: return AppColors.warning
+        case 7...10: return AppColors.success
+        default: return AppColors.textSecondary
+        }
+    }
+
+    private var emoji: String {
+        switch feeling {
+        case 1...3: return "😓"
+        case 4...6: return "😐"
+        case 7...8: return "😊"
+        case 9...10: return "🔥"
+        default: return ""
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(emoji)
+                .caption(color: AppColors.textPrimary)
+
+            Text("\(feeling)")
+                .caption(color: color)
+                .fontWeight(.bold)
+        }
+        .padding(.horizontal, AppSpacing.sm)
+        .padding(.vertical, 4)
+        .background(
+            Capsule()
+                .fill(color.opacity(0.12))
+        )
+    }
+}
+
+// MARK: - Preview
 
 #Preview {
     HistoryView()

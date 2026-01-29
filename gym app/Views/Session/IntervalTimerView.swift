@@ -73,16 +73,15 @@ struct IntervalTimerView: View {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.title3.weight(.medium))
-                            .foregroundColor(AppColors.textSecondary)
+                            .displaySmall(color: AppColors.textSecondary)
+                            .fontWeight(.medium)
                             .frame(width: 44, height: 44)
                     }
 
                     Spacer()
 
                     Text(exerciseName)
-                        .font(.headline)
-                        .foregroundColor(AppColors.textSecondary)
+                        .headline(color: AppColors.textSecondary)
 
                     Spacer()
 
@@ -138,8 +137,8 @@ struct IntervalTimerView: View {
             if phase == .getReady {
                 // Show what's coming up
                 Text("\(rounds) rounds of \(formatTime(workDuration)) work / \(formatTime(restDuration)) rest")
-                    .font(.title3.weight(.medium))
-                    .foregroundColor(AppColors.textSecondary)
+                    .displaySmall(color: AppColors.textSecondary)
+                    .fontWeight(.medium)
                     .multilineTextAlignment(.center)
             } else {
                 // Round indicator
@@ -153,16 +152,15 @@ struct IntervalTimerView: View {
                 }
 
                 Text("Round \(currentRound) of \(rounds)")
-                    .font(.title3.weight(.medium))
-                    .foregroundColor(AppColors.textSecondary)
+                    .displaySmall(color: AppColors.textSecondary)
+                    .fontWeight(.medium)
 
                 // Progress info
                 VStack(spacing: 4) {
                     let totalTime = (workDuration + restDuration) * rounds - restDuration
                     let elapsed = elapsedTime()
                     Text("Total: \(formatTime(totalTime - elapsed)) remaining")
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.textTertiary)
+                        .subheadline(color: AppColors.textTertiary)
                 }
             }
         }
@@ -178,25 +176,21 @@ struct IntervalTimerView: View {
                     .frame(width: 120, height: 120)
 
                 Image(systemName: "checkmark")
-                    .font(.largeTitle.weight(.bold))
-                    .foregroundColor(AppColors.success)
+                    .displayLarge(color: AppColors.success)
             }
 
             Text("Interval Complete!")
-                .font(.title.bold())
-                .foregroundColor(AppColors.textPrimary)
+                .displayMedium(color: AppColors.textPrimary)
 
             Text("\(rounds) rounds completed")
-                .font(.title3)
-                .foregroundColor(AppColors.textSecondary)
+                .displaySmall(color: AppColors.textSecondary)
 
             Button {
                 onComplete(roundDurations)
                 dismiss()
             } label: {
                 Text("Done")
-                    .font(.headline)
-                    .foregroundColor(.white)
+                    .headline(color: .white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, AppSpacing.lg)
                     .background(
@@ -225,11 +219,11 @@ struct IntervalTimerView: View {
             } label: {
                 VStack(spacing: 4) {
                     Image(systemName: "stop.fill")
-                        .font(.title3)
+                        .displaySmall(color: AppColors.error)
                     Text("Stop")
-                        .font(.caption.weight(.medium))
+                        .caption(color: AppColors.error)
+                        .fontWeight(.medium)
                 }
-                .foregroundColor(AppColors.error)
                 .frame(width: 80, height: 80)
                 .background(
                     Circle()
@@ -244,11 +238,11 @@ struct IntervalTimerView: View {
                 let buttonColor = isPaused ? AppColors.accent1 : AppColors.dominant
                 VStack(spacing: 4) {
                     Image(systemName: isPaused ? "play.fill" : "pause.fill")
-                        .font(.title)
+                        .displayMedium(color: buttonColor)
                     Text(isPaused ? "Resume" : "Pause")
-                        .font(.caption.weight(.medium))
+                        .caption(color: buttonColor)
+                        .fontWeight(.medium)
                 }
-                .foregroundColor(buttonColor)
                 .frame(width: 100, height: 100)
                 .background(
                     Circle()
@@ -262,11 +256,11 @@ struct IntervalTimerView: View {
             } label: {
                 VStack(spacing: 4) {
                     Image(systemName: "forward.fill")
-                        .font(.title3)
+                        .displaySmall(color: AppColors.textSecondary)
                     Text("Skip")
-                        .font(.caption.weight(.medium))
+                        .caption(color: AppColors.textSecondary)
+                        .fontWeight(.medium)
                 }
-                .foregroundColor(AppColors.textSecondary)
                 .frame(width: 80, height: 80)
                 .background(
                     Circle()

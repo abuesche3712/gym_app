@@ -57,27 +57,24 @@ struct LibraryExerciseEditView: View {
                         if !template.primaryMuscles.isEmpty {
                             HStack {
                                 Text("Primary")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .subheadline(color: AppColors.textSecondary)
                                 Spacer()
                                 Text(template.primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
-                                    .font(.subheadline)
+                                    .subheadline(color: AppColors.textPrimary)
                             }
                         }
                         if !template.secondaryMuscles.isEmpty {
                             HStack {
                                 Text("Secondary")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .subheadline(color: AppColors.textSecondary)
                                 Spacer()
                                 Text(template.secondaryMuscles.map { $0.rawValue }.joined(separator: ", "))
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .subheadline(color: AppColors.textSecondary)
                             }
                         }
                     } else {
                         Text("No muscles specified")
-                            .foregroundColor(.secondary)
+                            .subheadline(color: AppColors.textSecondary)
                     }
                 }
             }

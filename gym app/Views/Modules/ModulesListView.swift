@@ -112,8 +112,7 @@ struct ModulesListView: View {
                         showingAddModule = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                            .foregroundColor(AppColors.dominant)
+                            .displaySmall(color: AppColors.dominant)
                     }
                 }
             }
@@ -143,8 +142,8 @@ struct ModulesListView: View {
                     dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.body.weight(.semibold))
-                        .foregroundColor(AppColors.accent1)
+                        .body(color: AppColors.accent1)
+                        .fontWeight(.semibold)
                         .frame(width: 36, height: 36)
                         .background(
                             Circle()
@@ -162,8 +161,8 @@ struct ModulesListView: View {
                     showingAddModule = true
                 } label: {
                     Image(systemName: "plus")
-                        .font(.body.weight(.semibold))
-                        .foregroundColor(AppColors.accent1)
+                        .body(color: AppColors.accent1)
+                        .fontWeight(.semibold)
                         .frame(width: 36, height: 36)
                         .background(
                             Circle()
@@ -183,8 +182,7 @@ struct ModulesListView: View {
                         .elegantLabel(color: AppColors.accent1)
 
                     Text("Your Modules")
-                        .font(.title)
-                        .foregroundColor(AppColors.textPrimary)
+                        .displayMedium(color: AppColors.textPrimary)
                 }
 
                 Spacer()
@@ -192,11 +190,12 @@ struct ModulesListView: View {
                 // Count badge
                 HStack(spacing: 4) {
                     Image(systemName: "square.stack.3d.up")
-                        .font(.caption.weight(.medium))
+                        .caption(color: AppColors.textSecondary)
+                        .fontWeight(.medium)
                     Text("\(moduleViewModel.modules.count) total")
-                        .font(.subheadline.weight(.medium))
+                        .subheadline(color: AppColors.textSecondary)
+                        .fontWeight(.medium)
                 }
-                .foregroundColor(AppColors.textSecondary)
             }
 
             // Accent line
@@ -224,7 +223,8 @@ struct FilterPill: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                .subheadline(color: isSelected ? color : AppColors.textSecondary)
+                .fontWeight(isSelected ? .semibold : .regular)
                 .padding(.horizontal, AppSpacing.lg)
                 .padding(.vertical, AppSpacing.sm)
                 .background(
@@ -235,7 +235,6 @@ struct FilterPill: View {
                                 .stroke(isSelected ? color.opacity(0.5) : AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
                         )
                 )
-                .foregroundColor(isSelected ? color : AppColors.textSecondary)
         }
         .buttonStyle(.plain)
     }
@@ -272,22 +271,19 @@ struct ModuleListCard: View {
                         )
 
                     Image(systemName: module.type.icon)
-                        .font(.title3)
-                        .foregroundColor(moduleColor.opacity(0.8))
+                        .displaySmall(color: moduleColor.opacity(0.8))
                 }
 
                 // Content
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     HStack {
                         Text(module.name)
-                            .font(.headline)
-                            .foregroundColor(AppColors.textPrimary)
+                            .headline(color: AppColors.textPrimary)
 
                         // Type badge
                         Text(module.type.displayName)
-                            .font(.caption2)
+                            .caption2(color: moduleColor.opacity(0.8))
                             .fontWeight(.semibold)
-                            .foregroundColor(moduleColor.opacity(0.8))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(
@@ -298,13 +294,11 @@ struct ModuleListCard: View {
 
                     HStack(spacing: AppSpacing.md) {
                         Label("\(module.exercises.count) exercises", systemImage: "list.bullet")
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.textSecondary)
+                            .subheadline(color: AppColors.textSecondary)
 
                         if let duration = module.estimatedDuration {
                             Label("\(duration)m", systemImage: "clock")
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.textSecondary)
+                                .subheadline(color: AppColors.textSecondary)
                         }
                     }
                 }
@@ -312,8 +306,7 @@ struct ModuleListCard: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textTertiary)
+                    .subheadline(color: AppColors.textTertiary)
             }
             .padding(AppSpacing.cardPadding)
 
@@ -328,29 +321,25 @@ struct ModuleListCard: View {
                     ForEach(Array(resolvedExercises.prefix(5))) { exercise in
                         HStack(spacing: AppSpacing.sm) {
                             Image(systemName: exercise.exerciseType.icon)
-                                .font(.caption)
-                                .foregroundColor(moduleColor)
+                                .caption(color: moduleColor)
                                 .frame(width: 20)
 
                             Text(exercise.name)
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.textSecondary)
+                                .subheadline(color: AppColors.textSecondary)
                                 .lineLimit(1)
 
                             Spacer()
 
                             if !exercise.formattedSetScheme.isEmpty {
                                 Text(exercise.formattedSetScheme)
-                                    .font(.caption)
-                                    .foregroundColor(AppColors.textTertiary)
+                                    .caption(color: AppColors.textTertiary)
                             }
                         }
                     }
 
                     if module.exercises.count > 5 {
                         Text("+\(module.exercises.count - 5) more")
-                            .font(.caption)
-                            .foregroundColor(moduleColor)
+                            .caption(color: moduleColor)
                     }
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)

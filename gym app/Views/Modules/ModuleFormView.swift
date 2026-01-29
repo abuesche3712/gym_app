@@ -124,12 +124,11 @@ struct ModuleFormView: View {
     private var typePickerRow: some View {
         HStack(spacing: AppSpacing.md) {
             Image(systemName: "tag")
-                .font(.body)
-                .foregroundColor(AppColors.textTertiary)
+                .body(color: AppColors.textTertiary)
                 .frame(width: 24)
 
             Text("Type")
-                .foregroundColor(AppColors.textPrimary)
+                .body(color: AppColors.textPrimary)
 
             Spacer()
 
@@ -179,8 +178,7 @@ struct ModuleFormView: View {
     private var quickAddBar: some View {
         HStack(spacing: AppSpacing.md) {
             Image(systemName: "magnifyingglass")
-                .font(.body)
-                .foregroundColor(AppColors.textTertiary)
+                .body(color: AppColors.textTertiary)
                 .frame(width: 24)
 
             TextField("Quick add exercise...", text: $searchText)
@@ -199,8 +197,7 @@ struct ModuleFormView: View {
                     searchText = ""
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .font(.title3)
-                        .foregroundColor(moduleColor)
+                        .displaySmall(color: moduleColor)
                 }
             }
         }
@@ -218,23 +215,19 @@ struct ModuleFormView: View {
                 } label: {
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: template.exerciseType.icon)
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.dominant)
+                            .subheadline(color: AppColors.dominant)
                             .frame(width: 24)
 
                         Text(template.name)
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.textPrimary)
+                            .subheadline(color: AppColors.textPrimary)
 
                         Spacer()
 
                         Text(template.exerciseType.displayName)
-                            .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption(color: AppColors.textTertiary)
 
                         Image(systemName: "plus.circle")
-                            .font(.body)
-                            .foregroundColor(moduleColor)
+                            .body(color: moduleColor)
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
                     .padding(.vertical, AppSpacing.sm)
@@ -253,16 +246,13 @@ struct ModuleFormView: View {
     private var emptyExercisesView: some View {
         VStack(spacing: AppSpacing.sm) {
             Image(systemName: "dumbbell")
-                .font(.title)
-                .foregroundColor(AppColors.textTertiary.opacity(0.5))
+                .displaySmall(color: AppColors.textTertiary.opacity(0.5))
 
             Text("No exercises yet")
-                .font(.subheadline)
-                .foregroundColor(AppColors.textTertiary)
+                .subheadline(color: AppColors.textTertiary)
 
             Text("Search above or browse the library")
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary.opacity(0.7))
+                .caption(color: AppColors.textTertiary.opacity(0.7))
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppSpacing.xl)
@@ -289,27 +279,25 @@ struct ModuleFormView: View {
                     .fill(moduleColor.opacity(0.15))
                     .frame(width: 28, height: 28)
                 Text("\(index + 1)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(moduleColor)
+                    .caption(color: moduleColor)
+                    .fontWeight(.semibold)
             }
 
             // Exercise info
             VStack(alignment: .leading, spacing: 2) {
                 Text(exercise.name)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(AppColors.textPrimary)
+                    .subheadline(color: AppColors.textPrimary)
+                    .fontWeight(.medium)
 
                 HStack(spacing: AppSpacing.sm) {
                     Text(exercise.exerciseType.displayName)
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
+                        .caption(color: AppColors.textSecondary)
 
                     if !exercise.setGroups.isEmpty {
                         Text("•")
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption(color: AppColors.textTertiary)
                         Text(formatSetScheme(exercise.setGroups))
-                            .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption(color: AppColors.textTertiary)
                     }
                 }
             }
@@ -321,8 +309,7 @@ struct ModuleFormView: View {
                 editingExercise = exercise
             } label: {
                 Image(systemName: "slider.horizontal.3")
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textTertiary)
+                    .subheadline(color: AppColors.textTertiary)
                     .frame(width: 32, height: 32)
             }
 
@@ -334,8 +321,7 @@ struct ModuleFormView: View {
                 }
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.body)
-                    .foregroundColor(AppColors.textTertiary.opacity(0.6))
+                    .body(color: AppColors.textTertiary.opacity(0.6))
             }
         }
         .padding(.horizontal, AppSpacing.cardPadding)
@@ -349,19 +335,18 @@ struct ModuleFormView: View {
         } label: {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "books.vertical")
-                    .font(.body)
-                    .foregroundColor(moduleColor)
+                    .body(color: moduleColor)
                     .frame(width: 24)
 
                 Text("Browse Exercise Library")
-                    .foregroundColor(moduleColor)
+                    .body(color: moduleColor)
                     .fontWeight(.medium)
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption(color: AppColors.textTertiary)
+                    .fontWeight(.semibold)
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.vertical, AppSpacing.md)
@@ -512,21 +497,19 @@ struct InlineExerciseEditor: View {
                     // Name (read-only for now)
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: "textformat")
-                            .font(.body)
-                            .foregroundColor(AppColors.textTertiary)
+                            .body(color: AppColors.textTertiary)
                             .frame(width: 24)
 
                         Text(name)
-                            .foregroundColor(AppColors.textPrimary)
+                            .body(color: AppColors.textPrimary)
 
                         Spacer()
 
                         Text(exerciseType.displayName)
-                            .font(.caption)
+                            .caption(color: AppColors.textSecondary)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(AppColors.surfaceTertiary)
-                            .foregroundColor(AppColors.textSecondary)
                             .clipShape(Capsule())
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
@@ -540,10 +523,9 @@ struct InlineExerciseEditor: View {
                         if setGroups.isEmpty {
                             HStack {
                                 Image(systemName: "info.circle")
-                                    .font(.body)
-                                    .foregroundColor(AppColors.textTertiary)
+                                    .body(color: AppColors.textTertiary)
                                 Text("No sets defined")
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .body(color: AppColors.textSecondary)
                                 Spacer()
                             }
                             .padding(.horizontal, AppSpacing.cardPadding)
@@ -567,12 +549,11 @@ struct InlineExerciseEditor: View {
                         } label: {
                             HStack(spacing: AppSpacing.md) {
                                 Image(systemName: "plus.circle.fill")
-                                    .font(.body)
-                                    .foregroundColor(AppColors.dominant)
+                                    .body(color: AppColors.dominant)
                                     .frame(width: 24)
 
                                 Text("Add Set Group")
-                                    .foregroundColor(AppColors.dominant)
+                                    .body(color: AppColors.dominant)
                                     .fontWeight(.medium)
 
                                 Spacer()
@@ -662,19 +643,18 @@ struct InlineExerciseEditor: View {
                     .fill(AppColors.dominant.opacity(0.15))
                     .frame(width: 28, height: 28)
                 Text("\(index + 1)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.dominant)
+                    .caption(color: AppColors.dominant)
+                    .fontWeight(.semibold)
             }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(setGroup.formattedTarget)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(AppColors.textPrimary)
+                    .subheadline(color: AppColors.textPrimary)
+                    .fontWeight(.medium)
 
                 if let rest = setGroup.formattedRest {
                     Text("Rest: \(rest)")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
+                        .caption(color: AppColors.textSecondary)
                 }
             }
 
@@ -684,16 +664,14 @@ struct InlineExerciseEditor: View {
                 editingSetGroupIndex = index
             } label: {
                 Image(systemName: "pencil.circle.fill")
-                    .font(.body)
-                    .foregroundColor(AppColors.textTertiary.opacity(0.6))
+                    .body(color: AppColors.textTertiary.opacity(0.6))
             }
 
             Button {
                 setGroups.remove(at: index)
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.body)
-                    .foregroundColor(AppColors.textTertiary.opacity(0.6))
+                    .body(color: AppColors.textTertiary.opacity(0.6))
             }
         }
         .padding(.horizontal, AppSpacing.cardPadding)
@@ -784,23 +762,20 @@ struct ExercisePickerSheet: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(template.name)
-                                    .foregroundColor(AppColors.textPrimary)
+                                    .body(color: AppColors.textPrimary)
 
                                 Text(template.exerciseType.displayName)
-                                    .font(.caption)
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .caption(color: AppColors.textSecondary)
                             }
 
                             Spacer()
 
                             if isSelected(template) {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(AppColors.success)
-                                    .font(.title2)
+                                    .displaySmall(color: AppColors.success)
                             } else {
                                 Image(systemName: "circle")
-                                    .foregroundColor(AppColors.textTertiary)
-                                    .font(.title2)
+                                    .displaySmall(color: AppColors.textTertiary)
                             }
                         }
                     }
@@ -853,11 +828,11 @@ private struct FilterChip: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                .subheadline(color: isSelected ? .white : AppColors.textPrimary)
+                .fontWeight(isSelected ? .semibold : .regular)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
                 .background(isSelected ? AppColors.dominant : AppColors.surfacePrimary)
-                .foregroundColor(isSelected ? .white : AppColors.textPrimary)
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()

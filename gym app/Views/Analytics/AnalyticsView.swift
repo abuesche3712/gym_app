@@ -29,21 +29,19 @@ struct AnalyticsView: View {
                     // Title and Description
                     VStack(spacing: 12) {
                         Text("Analytics")
-                            .font(.largeTitle)
+                            .displayLarge(color: AppColors.textPrimary)
                             .fontWeight(.bold)
 
                         Text("Track your progress, analyze trends, and optimize your training")
-                            .font(.body)
-                            .foregroundColor(.secondary)
+                            .body(color: AppColors.textSecondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 32)
                     }
 
                     // Coming Soon Badge
                     Text("COMING SOON")
-                        .font(.caption)
+                        .caption(color: .white)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                         .background(AppColors.dominant)
@@ -111,11 +109,10 @@ struct AnalyticsPreviewCard: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.headline)
+                    .headline(color: AppColors.textPrimary)
 
                 Text(description)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .subheadline(color: AppColors.textSecondary)
             }
 
             Spacer()

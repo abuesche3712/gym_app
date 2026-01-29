@@ -25,12 +25,11 @@ struct SyncErrorBanner: View {
             // Error message
             VStack(alignment: .leading, spacing: 2) {
                 Text("Sync Error")
-                    .font(.subheadline.bold())
-                    .foregroundColor(.white)
+                    .subheadline(color: .white)
+                    .fontWeight(.bold)
 
                 Text(errorInfo.message)
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.9))
+                    .caption(color: .white.opacity(0.9))
                     .lineLimit(2)
             }
 

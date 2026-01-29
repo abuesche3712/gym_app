@@ -160,7 +160,7 @@ struct HomeView: View {
             if currentStreak >= 2 {
                 HStack(spacing: 4) {
                     Text("🔥")
-                        .font(.caption)
+                        .caption()
                     Text("\(currentStreak) day streak")
                         .font(.caption.weight(.bold))
                         .foregroundColor(AppColors.warning)
@@ -220,21 +220,19 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 HStack {
                     Text("Today")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(AppColors.success)
+                        .elegantLabel(color: AppColors.success)
 
                     Spacer()
 
                     Label("Completed", systemImage: "checkmark.circle.fill")
-                        .font(.caption.weight(.medium))
-                        .foregroundColor(AppColors.success)
+                        .caption(color: AppColors.success)
+                        .fontWeight(.medium)
                 }
 
                 HStack(spacing: AppSpacing.md) {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         Text(session.workoutName)
-                            .font(.headline)
-                            .foregroundColor(AppColors.textPrimary)
+                            .headline()
 
                         HStack(spacing: AppSpacing.md) {
                             Label("\(session.completedModules.count) modules", systemImage: "square.stack.3d.up")
@@ -243,8 +241,7 @@ struct HomeView: View {
                                 Label(duration, systemImage: "clock")
                             }
                         }
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
+                        .caption()
                     }
 
                     Spacer()
@@ -266,8 +263,8 @@ struct HomeView: View {
                     }
 
                     Image(systemName: "chevron.right")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
+                        .subheadline(color: AppColors.textTertiary)
+                        .fontWeight(.semibold)
                 }
             }
             .padding(AppSpacing.cardPadding)
@@ -335,15 +332,14 @@ struct HomeView: View {
             // Header
             HStack {
                 Text("Today")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.dominant)
+                    .elegantLabel(color: AppColors.dominant)
 
                 Spacer()
 
                 if scheduled.completedSessionId != nil {
                     Label("Completed", systemImage: "checkmark.circle.fill")
-                        .font(.caption.weight(.medium))
-                        .foregroundColor(AppColors.success)
+                        .caption(color: AppColors.success)
+                        .fontWeight(.medium)
                 }
             }
 
@@ -354,8 +350,7 @@ struct HomeView: View {
                 } label: {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         Text(workout.name)
-                            .font(.headline)
-                            .foregroundColor(AppColors.textPrimary)
+                            .headline()
                             .lineLimit(1)
 
                         // Module pills
@@ -367,8 +362,7 @@ struct HomeView: View {
                                             .fill(AppColors.moduleColor(module.type))
                                             .frame(width: 8, height: 8)
                                         Text(module.name)
-                                            .font(.caption)
-                                            .foregroundColor(AppColors.textSecondary)
+                                            .caption()
                                     }
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
@@ -379,8 +373,7 @@ struct HomeView: View {
                                 }
                                 if workoutModules.count > 4 {
                                     Text("+\(workoutModules.count - 4)")
-                                        .font(.caption)
-                                        .foregroundColor(AppColors.textTertiary)
+                                        .caption(color: AppColors.textTertiary)
                                 }
                             }
                         }
@@ -396,7 +389,8 @@ struct HomeView: View {
                         startWorkout(workout)
                     } label: {
                         Text("Start")
-                            .font(.subheadline.bold())
+                            .subheadline()
+                            .fontWeight(.bold)
                             .foregroundColor(.white)
                             .padding(.horizontal, AppSpacing.lg)
                             .padding(.vertical, AppSpacing.md)
@@ -435,8 +429,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack {
                 Text("Today")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.accent1)
+                    .elegantLabel(color: AppColors.accent1)
 
                 Spacer()
 
@@ -444,24 +437,20 @@ struct HomeView: View {
                     workoutViewModel.unscheduleWorkout(scheduled)
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.body)
-                        .foregroundColor(AppColors.textTertiary)
+                        .body(color: AppColors.textTertiary)
                 }
             }
 
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "moon.zzz.fill")
-                    .font(.title2)
-                    .foregroundColor(AppColors.accent1)
+                    .displaySmall(color: AppColors.accent1)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Rest Day")
-                        .font(.headline)
-                        .foregroundColor(AppColors.textPrimary)
+                        .headline()
 
                     Text("Recovery is part of the process")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
+                        .caption()
                 }
 
                 Spacer()
@@ -497,29 +486,25 @@ struct HomeView: View {
         } label: {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Text("Today")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.textTertiary)
+                    .elegantLabel(color: AppColors.textTertiary)
 
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "calendar.badge.plus")
-                        .font(.title2)
-                        .foregroundColor(AppColors.textTertiary)
+                        .displaySmall(color: AppColors.textTertiary)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("No workout scheduled")
-                            .font(.headline)
-                            .foregroundColor(AppColors.textPrimary)
+                            .headline()
 
                         Text("Tap to schedule a workout or rest day")
-                            .font(.caption)
-                            .foregroundColor(AppColors.textSecondary)
+                            .caption()
                     }
 
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
+                        .subheadline(color: AppColors.textTertiary)
+                        .fontWeight(.semibold)
                 }
             }
             .padding(AppSpacing.cardPadding)
@@ -548,8 +533,8 @@ struct HomeView: View {
                     }
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.body.weight(.semibold))
-                        .foregroundColor(AppColors.dominant)
+                        .body(color: AppColors.dominant)
+                        .fontWeight(.semibold)
                         .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 }
                 .buttonStyle(.bouncy)
@@ -558,8 +543,8 @@ struct HomeView: View {
                 Spacer()
 
                 Text(weekRangeText)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(AppColors.textPrimary)
+                    .subheadline()
+                    .fontWeight(.medium)
 
                 Spacer()
 
@@ -569,8 +554,8 @@ struct HomeView: View {
                     }
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.body.weight(.semibold))
-                        .foregroundColor(AppColors.dominant)
+                        .body(color: AppColors.dominant)
+                        .fontWeight(.semibold)
                         .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 }
                 .buttonStyle(.bouncy)
@@ -731,12 +716,10 @@ struct HomeView: View {
             // TODO: Show recent PRs and best performances
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "trophy.fill")
-                    .font(.title2)
-                    .foregroundColor(AppColors.warning.opacity(0.5))
+                    .displaySmall(color: AppColors.warning.opacity(0.5))
 
                 Text("Coming soon - track your PRs and best performances")
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textTertiary)
+                    .subheadline(color: AppColors.textTertiary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(AppSpacing.cardPadding)

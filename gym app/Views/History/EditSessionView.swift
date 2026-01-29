@@ -134,20 +134,17 @@ struct EditableExerciseRow: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(exercise.exerciseName)
-                        .font(.subheadline)
+                        .subheadline(color: AppColors.textPrimary)
                         .fontWeight(.medium)
-                        .foregroundColor(.primary)
 
                     Text(exerciseSummary)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .caption(color: AppColors.textSecondary)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .caption(color: AppColors.textSecondary)
             }
         }
         .buttonStyle(.plain)

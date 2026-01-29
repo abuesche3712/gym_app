@@ -154,11 +154,10 @@ private struct EquipmentStatPill: View {
     var body: some View {
         VStack(spacing: 2) {
             Text(value)
-                .font(.title3.bold())
-                .foregroundColor(AppColors.textPrimary)
+                .displaySmall(color: AppColors.textPrimary)
+                .fontWeight(.bold)
             Text(label)
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
+                .caption(color: AppColors.textTertiary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppSpacing.sm)
@@ -181,11 +180,10 @@ private struct EquipmentSourceFilterPill: View {
         Button(action: action) {
             VStack(spacing: 2) {
                 Text(value)
-                    .font(.title3.bold())
-                    .foregroundColor(isSelected ? .white : AppColors.textPrimary)
+                    .displaySmall(color: isSelected ? .white : AppColors.textPrimary)
+                    .fontWeight(.bold)
                 Text(label)
-                    .font(.caption)
-                    .foregroundColor(isSelected ? .white.opacity(0.8) : AppColors.textTertiary)
+                    .caption(color: isSelected ? .white.opacity(0.8) : AppColors.textTertiary)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, AppSpacing.sm)
@@ -235,15 +233,14 @@ private struct EquipmentLibraryRow: View {
 
                     // Show measurables summary
                     Text(measurablesSummary)
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption(color: AppColors.textTertiary)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption(color: AppColors.textTertiary)
+                    .fontWeight(.semibold)
             }
             .padding(AppSpacing.md)
             .background(

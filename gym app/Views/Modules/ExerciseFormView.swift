@@ -178,12 +178,11 @@ struct ExerciseFormView: View {
             // Type picker row
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "tag")
-                    .font(.body)
-                    .foregroundColor(AppColors.textTertiary)
+                    .body(color: AppColors.textTertiary)
                     .frame(width: 24)
 
                 Text("Type")
-                    .foregroundColor(AppColors.textPrimary)
+                    .body(color: AppColors.textPrimary)
 
                 Spacer()
 
@@ -215,8 +214,7 @@ struct ExerciseFormView: View {
                 FormDivider()
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "figure.walk")
-                        .font(.body)
-                        .foregroundColor(AppColors.textTertiary)
+                        .body(color: AppColors.textTertiary)
                         .frame(width: 24)
 
                     Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
@@ -233,15 +231,14 @@ struct ExerciseFormView: View {
     private var cardioOptionsSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Track During Workout")
-                .font(.caption.weight(.medium))
-                .foregroundColor(AppColors.textSecondary)
+                .caption(color: AppColors.textSecondary)
+                .fontWeight(.medium)
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.top, AppSpacing.sm)
 
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "clock")
-                    .font(.body)
-                    .foregroundColor(AppColors.textTertiary)
+                    .body(color: AppColors.textTertiary)
                     .frame(width: 24)
                 Toggle("Time", isOn: $trackTime)
                     .tint(AppColors.dominant)
@@ -251,8 +248,7 @@ struct ExerciseFormView: View {
 
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "arrow.left.and.right")
-                    .font(.body)
-                    .foregroundColor(AppColors.textTertiary)
+                    .body(color: AppColors.textTertiary)
                     .frame(width: 24)
                 Toggle("Distance", isOn: $trackDistance)
                     .tint(AppColors.dominant)
@@ -274,11 +270,10 @@ struct ExerciseFormView: View {
                 FormDivider()
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "ruler")
-                        .font(.body)
-                        .foregroundColor(AppColors.textTertiary)
+                        .body(color: AppColors.textTertiary)
                         .frame(width: 24)
                     Text("Distance Unit")
-                        .foregroundColor(AppColors.textPrimary)
+                        .body(color: AppColors.textPrimary)
                     Spacer()
                     Picker("", selection: $distanceUnit) {
                         ForEach(DistanceUnit.allCases) { unit in
@@ -298,15 +293,14 @@ struct ExerciseFormView: View {
     private var mobilityOptionsSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Track During Workout")
-                .font(.caption.weight(.medium))
-                .foregroundColor(AppColors.textSecondary)
+                .caption(color: AppColors.textSecondary)
+                .fontWeight(.medium)
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.top, AppSpacing.sm)
 
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "number")
-                    .font(.body)
-                    .foregroundColor(AppColors.textTertiary)
+                    .body(color: AppColors.textTertiary)
                     .frame(width: 24)
                 Toggle("Reps", isOn: $trackReps)
                     .tint(AppColors.accent1)
@@ -321,8 +315,7 @@ struct ExerciseFormView: View {
 
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "clock")
-                    .font(.body)
-                    .foregroundColor(AppColors.textTertiary)
+                    .body(color: AppColors.textTertiary)
                     .frame(width: 24)
                 Toggle("Duration", isOn: $trackDuration)
                     .tint(AppColors.accent1)
@@ -350,19 +343,17 @@ struct ExerciseFormView: View {
         Group {
             if primaryMuscles.isEmpty && secondaryMuscles.isEmpty {
                 Text("None")
-                    .foregroundColor(AppColors.textTertiary)
+                    .body(color: AppColors.textTertiary)
             } else {
                 VStack(alignment: .trailing, spacing: 2) {
                     if !primaryMuscles.isEmpty {
                         Text(primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.dominant)
+                            .subheadline(color: AppColors.dominant)
                             .lineLimit(1)
                     }
                     if !secondaryMuscles.isEmpty {
                         Text(secondaryMuscles.map { $0.rawValue }.joined(separator: ", "))
-                            .font(.caption)
-                            .foregroundColor(AppColors.textSecondary)
+                            .caption(color: AppColors.textSecondary)
                             .lineLimit(1)
                     }
                 }
@@ -378,20 +369,19 @@ struct ExerciseFormView: View {
             } label: {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "figure.arms.open")
-                        .font(.body)
-                        .foregroundColor(AppColors.textTertiary)
+                        .body(color: AppColors.textTertiary)
                         .frame(width: 24)
 
                     Text("Muscles")
-                        .foregroundColor(AppColors.textPrimary)
+                        .body(color: AppColors.textPrimary)
 
                     Spacer()
 
                     muscleValueText
 
                     Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption(color: AppColors.textTertiary)
+                        .fontWeight(.semibold)
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.md)
@@ -426,28 +416,26 @@ struct ExerciseFormView: View {
             } label: {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "dumbbell")
-                        .font(.body)
-                        .foregroundColor(AppColors.textTertiary)
+                        .body(color: AppColors.textTertiary)
                         .frame(width: 24)
 
                     Text("Equipment")
-                        .foregroundColor(AppColors.textPrimary)
+                        .body(color: AppColors.textPrimary)
 
                     Spacer()
 
                     if selectedImplementIds.isEmpty {
                         Text("None")
-                            .foregroundColor(AppColors.textTertiary)
+                            .body(color: AppColors.textTertiary)
                     } else {
                         Text(equipmentNames(for: selectedImplementIds).joined(separator: ", "))
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.accent1)
+                            .subheadline(color: AppColors.accent1)
                             .lineLimit(1)
                     }
 
                     Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption(color: AppColors.textTertiary)
+                        .fontWeight(.semibold)
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
                 .padding(.vertical, AppSpacing.md)
@@ -485,10 +473,9 @@ struct ExerciseFormView: View {
                 if setGroups.isEmpty {
                     HStack {
                         Image(systemName: "info.circle")
-                            .font(.body)
-                            .foregroundColor(AppColors.textTertiary)
+                            .body(color: AppColors.textTertiary)
                         Text("No sets defined yet")
-                            .foregroundColor(AppColors.textSecondary)
+                            .body(color: AppColors.textSecondary)
                         Spacer()
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
@@ -517,12 +504,11 @@ struct ExerciseFormView: View {
                 } label: {
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: "plus.circle.fill")
-                            .font(.body)
-                            .foregroundColor(AppColors.dominant)
+                            .body(color: AppColors.dominant)
                             .frame(width: 24)
 
                         Text("Add Set Group")
-                            .foregroundColor(AppColors.dominant)
+                            .body(color: AppColors.dominant)
                             .fontWeight(.medium)
 
                         Spacer()
@@ -689,27 +675,25 @@ struct SetGroupEditRow: View {
                     .fill(AppColors.dominant.opacity(0.15))
                     .frame(width: 32, height: 32)
                 Text("\(index)")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundColor(AppColors.dominant)
+                    .subheadline(color: AppColors.dominant)
+                    .fontWeight(.semibold)
             }
 
             // Set info
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(setGroup.formattedTarget)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(AppColors.textPrimary)
+                    .subheadline(color: AppColors.textPrimary)
+                    .fontWeight(.medium)
 
                 HStack(spacing: AppSpacing.sm) {
                     if let rest = setGroup.formattedRest {
                         Label(rest, systemImage: "timer")
-                            .font(.caption)
-                            .foregroundColor(AppColors.textSecondary)
+                            .caption(color: AppColors.textSecondary)
                     }
 
                     if let notes = setGroup.notes, !notes.isEmpty {
                         Text("• \(notes)")
-                            .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption(color: AppColors.textTertiary)
                             .lineLimit(1)
                     }
                 }
@@ -718,8 +702,8 @@ struct SetGroupEditRow: View {
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundColor(AppColors.textTertiary)
+                .caption(color: AppColors.textTertiary)
+                .fontWeight(.semibold)
         }
         .padding(.horizontal, AppSpacing.cardPadding)
         .padding(.vertical, AppSpacing.md)
@@ -744,11 +728,9 @@ struct MuscleGroupEnumPickerView: View {
                 // Primary muscles section
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     Text("Primary Muscles")
-                        .font(.headline)
-                        .foregroundColor(AppColors.textPrimary)
+                        .headline(color: AppColors.textPrimary)
                     Text("Main muscles worked by this exercise")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .caption(color: AppColors.textSecondary)
 
                     LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
                         ForEach(MuscleGroup.allCases) { muscle in
@@ -768,11 +750,9 @@ struct MuscleGroupEnumPickerView: View {
                 // Secondary muscles section
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     Text("Secondary Muscles")
-                        .font(.headline)
-                        .foregroundColor(AppColors.textPrimary)
+                        .headline(color: AppColors.textPrimary)
                     Text("Supporting muscles engaged during the movement")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .caption(color: AppColors.textSecondary)
 
                     LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
                         ForEach(MuscleGroup.allCases) { muscle in
@@ -826,20 +806,19 @@ struct MuscleEnumChip: View {
         Button(action: action) {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: muscle.icon)
-                    .font(.subheadline)
+                    .subheadline(color: isSelected ? .white : AppColors.textPrimary)
 
                 Text(muscle.rawValue)
-                    .font(.subheadline)
+                    .subheadline(color: isSelected ? .white : AppColors.textPrimary)
                     .lineLimit(1)
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.body)
+                        .body(color: .white)
                 }
             }
-            .foregroundColor(isSelected ? .white : AppColors.textPrimary)
             .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, AppSpacing.sm)
             .background(

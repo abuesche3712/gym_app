@@ -143,12 +143,10 @@ struct DebugSyncLogsView: View {
                 .foregroundColor(AppColors.textTertiary)
 
             Text("No Logs")
-                .font(.headline)
-                .foregroundColor(AppColors.textPrimary)
+                .headline(color: AppColors.textPrimary)
 
             Text(selectedSeverity == nil ? "Sync logs will appear here" : "No \(selectedSeverity!.rawValue) logs found")
-                .font(.subheadline)
-                .foregroundColor(AppColors.textSecondary)
+                .subheadline(color: AppColors.textSecondary)
 
             Spacer()
         }
@@ -190,12 +188,11 @@ private struct StatBadge: View {
     var body: some View {
         VStack(spacing: 2) {
             Text("\(count)")
-                .font(.title2.bold())
-                .foregroundColor(color)
+                .displaySmall(color: color)
+                .fontWeight(.bold)
 
             Text(label)
-                .font(.caption)
-                .foregroundColor(AppColors.textSecondary)
+                .caption(color: AppColors.textSecondary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -213,9 +210,10 @@ private struct FilterChip: View {
                 if let icon = icon {
                     Image(systemName: icon)
                         .font(.caption)
+                        .foregroundColor(isSelected ? .white : AppColors.textPrimary)
                 }
                 Text(label)
-                    .font(.subheadline)
+                    .subheadline(color: isSelected ? .white : AppColors.textPrimary)
             }
             .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, AppSpacing.sm)
@@ -223,7 +221,6 @@ private struct FilterChip: View {
                 Capsule()
                     .fill(isSelected ? AppColors.dominant : AppColors.surfacePrimary)
             )
-            .foregroundColor(isSelected ? .white : AppColors.textPrimary)
         }
     }
 }
@@ -241,21 +238,19 @@ private struct LogRowView: View {
 
                 // Context
                 Text(log.context)
-                    .font(.caption.bold())
-                    .foregroundColor(AppColors.textSecondary)
+                    .caption(color: AppColors.textSecondary)
+                    .fontWeight(.bold)
 
                 Spacer()
 
                 // Timestamp
                 Text(log.formattedTimestamp)
-                    .font(.caption2.monospacedDigit())
-                    .foregroundColor(AppColors.textTertiary)
+                    .monoSmall(color: AppColors.textTertiary)
             }
 
             // Message
             Text(log.message)
-                .font(.subheadline)
-                .foregroundColor(AppColors.textPrimary)
+                .subheadline(color: AppColors.textPrimary)
                 .lineLimit(3)
         }
         .padding(AppSpacing.md)

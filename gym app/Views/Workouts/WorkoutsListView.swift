@@ -102,8 +102,7 @@ struct WorkoutsListView: View {
                         showingAddWorkout = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                            .foregroundColor(AppColors.dominant)
+                            .displaySmall(color: AppColors.dominant)
                     }
                 }
             }
@@ -133,8 +132,8 @@ struct WorkoutsListView: View {
                     dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.body.weight(.semibold))
-                        .foregroundColor(AppColors.dominant)
+                        .body(color: AppColors.dominant)
+                        .fontWeight(.semibold)
                         .frame(width: 36, height: 36)
                         .background(
                             Circle()
@@ -152,8 +151,8 @@ struct WorkoutsListView: View {
                     showingAddWorkout = true
                 } label: {
                     Image(systemName: "plus")
-                        .font(.body.weight(.semibold))
-                        .foregroundColor(AppColors.dominant)
+                        .body(color: AppColors.dominant)
+                        .fontWeight(.semibold)
                         .frame(width: 36, height: 36)
                         .background(
                             Circle()
@@ -173,13 +172,11 @@ struct WorkoutsListView: View {
                         .elegantLabel(color: AppColors.dominant)
 
                     Text("Your Workouts")
-                        .font(.title)
-                        .foregroundColor(AppColors.textPrimary)
+                        .displayMedium(color: AppColors.textPrimary)
 
                     if let subtitle = workoutSubtitle {
                         Text(subtitle)
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.textSecondary)
+                            .subheadline(color: AppColors.textSecondary)
                     }
                 }
 
@@ -188,11 +185,12 @@ struct WorkoutsListView: View {
                 // Count badge
                 HStack(spacing: 4) {
                     Image(systemName: "list.bullet")
-                        .font(.caption.weight(.medium))
+                        .caption(color: AppColors.textSecondary)
+                        .fontWeight(.medium)
                     Text("\(workoutViewModel.workouts.count) total")
-                        .font(.subheadline.weight(.medium))
+                        .subheadline(color: AppColors.textSecondary)
+                        .fontWeight(.medium)
                 }
-                .foregroundColor(AppColors.textSecondary)
             }
 
             // Accent line
@@ -243,18 +241,15 @@ struct WorkoutListCard: View {
             // Content
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(workout.name)
-                    .font(.headline)
-                    .foregroundColor(AppColors.textPrimary)
+                    .headline(color: AppColors.textPrimary)
 
                 HStack(spacing: AppSpacing.md) {
                     Label("\(modules.count) modules", systemImage: "square.stack.3d.up")
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.textSecondary)
+                        .subheadline(color: AppColors.textSecondary)
 
                     if let duration = workout.estimatedDuration {
                         Label("\(duration) min", systemImage: "clock")
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.textSecondary)
+                            .subheadline(color: AppColors.textSecondary)
                     }
                 }
 
@@ -267,15 +262,13 @@ struct WorkoutListCard: View {
                                     .fill(AppColors.moduleColor(module.type))
                                     .frame(width: 6, height: 6)
                                 Text(module.name)
-                                    .font(.caption)
+                                    .caption(color: AppColors.textTertiary)
                                     .lineLimit(1)
                             }
-                            .foregroundColor(AppColors.textTertiary)
                         }
                         if modules.count > 3 {
                             Text("+\(modules.count - 3)")
-                                .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
+                                .caption(color: AppColors.textTertiary)
                         }
                     }
                 }
@@ -286,8 +279,8 @@ struct WorkoutListCard: View {
             // Play button
             Button(action: { onStart?() }) {
                 Image(systemName: "play.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.white)
+                    .subheadline(color: .white)
+                    .fontWeight(.semibold)
                     .frame(width: 40, height: 40)
                     .background(
                         Circle()

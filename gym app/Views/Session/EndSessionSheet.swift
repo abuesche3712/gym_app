@@ -104,8 +104,7 @@ struct EndSessionSheet: View {
             }
         } label: {
             Text("\(value)")
-                .font(.headline)
-                .foregroundColor(feeling == value ? .white : AppColors.textPrimary)
+                .headline(color: feeling == value ? .white : AppColors.textPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, AppSpacing.md)
                 .background(
@@ -138,11 +137,10 @@ struct EndSessionSheet: View {
                     // Module header
                     HStack(spacing: AppSpacing.sm) {
                         Image(systemName: module.moduleType.icon)
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.moduleColor(module.moduleType))
+                            .subheadline(color: AppColors.moduleColor(module.moduleType))
                         Text(module.moduleName)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(AppColors.textSecondary)
+                            .subheadline(color: AppColors.textSecondary)
+                            .fontWeight(.semibold)
                     }
 
                     // Exercises in this module
@@ -169,8 +167,8 @@ struct EndSessionSheet: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(exercise.exerciseName)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundColor(AppColors.textPrimary)
+                            .subheadline(color: AppColors.textPrimary)
+                            .fontWeight(.medium)
 
                         // Set summary
                         let completedSets = exercise.completedSetGroups.flatMap { $0.sets }.filter { $0.completed }
@@ -181,8 +179,8 @@ struct EndSessionSheet: View {
                     Spacer()
 
                     Image(systemName: expandedExercises.contains(exercise.id) ? "chevron.up" : "chevron.down")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption(color: AppColors.textTertiary)
+                        .fontWeight(.semibold)
                 }
                 .padding(AppSpacing.md)
             }
@@ -239,22 +237,20 @@ struct EndSessionSheet: View {
             HStack(spacing: AppSpacing.sm) {
                 // Set number
                 Text("\(set.setNumber)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption(color: AppColors.textTertiary)
+                    .fontWeight(.semibold)
                     .frame(width: 20, height: 20)
                     .background(Circle().fill(AppColors.surfaceTertiary))
 
                 // Set data formatted
                 Text(formatSetData(set: set, exercise: exercise))
-                    .font(.subheadline)
-                    .foregroundColor(set.completed ? AppColors.textPrimary : AppColors.textTertiary)
+                    .subheadline(color: set.completed ? AppColors.textPrimary : AppColors.textTertiary)
 
                 Spacer()
 
                 // Edit indicator
                 Image(systemName: "pencil")
-                    .font(.caption2)
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption2(color: AppColors.textTertiary)
             }
             .padding(.vertical, 4)
         }
@@ -360,11 +356,11 @@ struct EndSessionSheet: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: recommendation.icon)
-                    .font(.caption)
+                    .caption(color: isSelected ? .white : color)
                 Text(recommendation.displayName)
-                    .font(.caption.weight(.medium))
+                    .caption(color: isSelected ? .white : color)
+                    .fontWeight(.medium)
             }
-            .foregroundColor(isSelected ? .white : color)
             .frame(maxWidth: .infinity)
             .padding(.vertical, AppSpacing.sm)
             .background(
@@ -447,12 +443,11 @@ struct EndSessionSheet: View {
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Notes (optional)")
-                .font(.subheadline.weight(.medium))
-                .foregroundColor(AppColors.textSecondary)
+                .subheadline(color: AppColors.textSecondary)
+                .fontWeight(.medium)
 
             TextEditor(text: $notes)
-                .font(.body)
-                .foregroundColor(AppColors.textPrimary)
+                .body()
                 .scrollContentBackground(.hidden)
                 .padding(AppSpacing.md)
                 .frame(minHeight: 80)

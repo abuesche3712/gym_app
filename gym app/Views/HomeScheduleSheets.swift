@@ -56,8 +56,8 @@ struct WeekDayCell: View {
         Button(action: onTap) {
             VStack(spacing: AppSpacing.xs) {
                 Text(dayName)
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(isToday ? AppColors.accent1 : AppColors.textTertiary)
+                    .caption2(color: isToday ? AppColors.accent1 : AppColors.textTertiary)
+                    .fontWeight(.medium)
 
                 ZStack {
                     if isToday {
@@ -67,8 +67,8 @@ struct WeekDayCell: View {
                     }
 
                     Text(dayNumber)
-                        .font(.subheadline.weight(isToday ? .bold : .medium))
-                        .foregroundColor(isToday ? .white : (isPast ? AppColors.textTertiary : AppColors.textPrimary))
+                        .subheadline(color: isToday ? .white : (isPast ? AppColors.textTertiary : AppColors.textPrimary))
+                        .fontWeight(isToday ? .bold : .medium)
                 }
 
                 // Indicators
@@ -145,8 +145,7 @@ struct ScheduleWorkoutSheet: View {
                     if !sessions.isEmpty {
                         VStack(alignment: .leading, spacing: AppSpacing.md) {
                             Label("Completed", systemImage: "checkmark.circle.fill")
-                                .font(.headline)
-                                .foregroundColor(AppColors.success)
+                                .headline(color: AppColors.success)
 
                             ForEach(sessions) { session in
                                 HStack(spacing: 0) {
@@ -160,8 +159,7 @@ struct ScheduleWorkoutSheet: View {
                                             onDeleteSession?(session)
                                         } label: {
                                             Image(systemName: "trash")
-                                                .font(.subheadline)
-                                                .foregroundColor(AppColors.error)
+                                                .subheadline(color: AppColors.error)
                                                 .frame(width: 44, height: 44)
                                         }
                                         .buttonStyle(.plain)
@@ -175,8 +173,7 @@ struct ScheduleWorkoutSheet: View {
                     if !scheduledWorkouts.isEmpty {
                         VStack(alignment: .leading, spacing: AppSpacing.md) {
                             Label("Scheduled", systemImage: "calendar")
-                                .font(.headline)
-                                .foregroundColor(AppColors.dominant)
+                                .headline(color: AppColors.dominant)
 
                             ForEach(scheduledWorkouts) { scheduled in
                                 if let workout = workouts.first(where: { $0.id == scheduled.workoutId }) {
@@ -204,13 +201,11 @@ struct ScheduleWorkoutSheet: View {
                     if !hasCompletedSession {
                         VStack(alignment: .leading, spacing: AppSpacing.md) {
                             Label("Schedule Workout", systemImage: "plus.circle")
-                                .font(.headline)
-                                .foregroundColor(AppColors.textPrimary)
+                                .headline(color: AppColors.textPrimary)
 
                             if workouts.isEmpty {
                                 Text("No workouts available. Create a workout first.")
-                                    .font(.subheadline)
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .subheadline(color: AppColors.textSecondary)
                                     .padding()
                             } else {
                                 ForEach(workouts) { workout in
@@ -219,8 +214,8 @@ struct ScheduleWorkoutSheet: View {
                                     } label: {
                                         HStack {
                                             Text(workout.name)
-                                                .font(.subheadline.weight(.medium))
-                                                .foregroundColor(AppColors.textPrimary)
+                                                .subheadline(color: AppColors.textPrimary)
+                                                .fontWeight(.medium)
 
                                             Spacer()
 
@@ -248,8 +243,8 @@ struct ScheduleWorkoutSheet: View {
                                             .foregroundColor(AppColors.accent1)
 
                                         Text("Rest Day")
-                                            .font(.subheadline.weight(.medium))
-                                            .foregroundColor(AppColors.textPrimary)
+                                            .subheadline(color: AppColors.textPrimary)
+                                            .fontWeight(.medium)
 
                                         Spacer()
 
@@ -306,20 +301,19 @@ struct CompletedSessionRow: View {
 
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(session.workoutName)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(AppColors.textPrimary)
+                    .subheadline(color: AppColors.textPrimary)
+                    .fontWeight(.medium)
 
                 Text("\(session.totalSetsCompleted) sets • \(session.formattedDuration ?? "—")")
-                    .font(.caption)
-                    .foregroundColor(AppColors.textSecondary)
+                    .caption(color: AppColors.textSecondary)
             }
 
             Spacer()
 
             if let feeling = session.overallFeeling {
                 Text("\(feeling)")
-                    .font(.caption.bold())
-                    .foregroundColor(.white)
+                    .caption(color: .white)
+                    .fontWeight(.bold)
                     .frame(width: 24, height: 24)
                     .background(feelingColor(feeling))
                     .clipShape(Circle())
@@ -367,13 +361,12 @@ struct ScheduledWorkoutRow: View {
 
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(scheduled.workoutName)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(AppColors.textPrimary)
+                    .subheadline(color: AppColors.textPrimary)
+                    .fontWeight(.medium)
 
                 if let notes = scheduled.notes, !notes.isEmpty {
                     Text(notes)
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
+                        .caption(color: AppColors.textSecondary)
                 }
             }
 
@@ -382,8 +375,8 @@ struct ScheduledWorkoutRow: View {
             if isToday && !scheduled.isRestDay && !scheduled.isCompleted {
                 Button(action: onStart) {
                     Text("Start")
-                        .font(.caption.bold())
-                        .foregroundColor(.white)
+                        .caption(color: .white)
+                        .fontWeight(.bold)
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, AppSpacing.xs)
                         .background(AppGradients.dominantGradient)
@@ -431,8 +424,8 @@ struct ScheduledWorkoutDetailRow: View {
 
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         Text(workout.name)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundColor(AppColors.textPrimary)
+                            .subheadline(color: AppColors.textPrimary)
+                            .fontWeight(.medium)
 
                         // Module summary
                         HStack(spacing: AppSpacing.xs) {
@@ -442,16 +435,15 @@ struct ScheduledWorkoutDetailRow: View {
                                     .frame(width: 8, height: 8)
                             }
                             Text("\(workoutModules.count) modules")
-                                .font(.caption)
-                                .foregroundColor(AppColors.textSecondary)
+                                .caption(color: AppColors.textSecondary)
                         }
                     }
 
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption(color: AppColors.textTertiary)
+                        .fontWeight(.semibold)
                 }
             }
             .buttonStyle(.plain)
@@ -461,8 +453,8 @@ struct ScheduledWorkoutDetailRow: View {
                 if isToday && !scheduled.isCompleted {
                     Button(action: onStart) {
                         Text("Start Workout")
-                            .font(.caption.bold())
-                            .foregroundColor(.white)
+                            .caption(color: .white)
+                            .fontWeight(.bold)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, AppSpacing.sm)
                             .background(AppGradients.dominantGradient)
@@ -472,8 +464,8 @@ struct ScheduledWorkoutDetailRow: View {
 
                 Button(action: onRemove) {
                     Text("Remove")
-                        .font(.caption.weight(.medium))
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption(color: AppColors.textTertiary)
+                        .fontWeight(.medium)
                         .frame(maxWidth: isToday && !scheduled.isCompleted ? nil : .infinity)
                         .padding(.vertical, AppSpacing.sm)
                         .padding(.horizontal, AppSpacing.md)
@@ -516,28 +508,24 @@ struct WorkoutPreviewSheet: View {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         if let description = workout.notes, !description.isEmpty {
                             Text(description)
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.textSecondary)
+                                .subheadline(color: AppColors.textSecondary)
                         }
 
                         HStack(spacing: AppSpacing.lg) {
                             if let duration = workout.estimatedDuration {
                                 Label("\(duration) min", systemImage: "clock")
-                                    .font(.caption)
-                                    .foregroundColor(AppColors.textTertiary)
+                                    .caption(color: AppColors.textTertiary)
                             }
 
                             Label("\(workoutModules.count) modules", systemImage: "square.stack.3d.up")
-                                .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
+                                .caption(color: AppColors.textTertiary)
                         }
                     }
 
                     // Modules list
                     VStack(alignment: .leading, spacing: AppSpacing.md) {
                         Text("Modules")
-                            .font(.headline)
-                            .foregroundColor(AppColors.textPrimary)
+                            .headline(color: AppColors.textPrimary)
 
                         ForEach(workoutModules) { module in
                             ModulePreviewRow(module: module)
@@ -581,14 +569,13 @@ struct ModulePreviewRow: View {
                     .frame(width: 10, height: 10)
 
                 Text(module.name)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(AppColors.textPrimary)
+                    .subheadline(color: AppColors.textPrimary)
+                    .fontWeight(.medium)
 
                 Spacer()
 
                 Text(module.type.displayName)
-                    .font(.caption)
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption(color: AppColors.textTertiary)
             }
 
             // Exercise list
@@ -600,14 +587,12 @@ struct ModulePreviewRow: View {
                             Text("•")
                                 .foregroundColor(AppColors.textTertiary)
                             Text(exercise.name)
-                                .font(.caption)
-                                .foregroundColor(AppColors.textSecondary)
+                                .caption(color: AppColors.textSecondary)
                         }
                     }
                     if module.exercises.count > 5 {
                         Text("+\(module.exercises.count - 5) more")
-                            .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption(color: AppColors.textTertiary)
                             .padding(.leading, AppSpacing.md)
                     }
                 }
@@ -640,13 +625,11 @@ struct QuickScheduleTodaySheet: View {
                     // Schedule workout
                     VStack(alignment: .leading, spacing: AppSpacing.md) {
                         Label("Schedule Workout", systemImage: "figure.strengthtraining.traditional")
-                            .font(.headline)
-                            .foregroundColor(AppColors.textPrimary)
+                            .headline(color: AppColors.textPrimary)
 
                         if workouts.isEmpty {
                             Text("No workouts available. Create a workout first.")
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.textSecondary)
+                                .subheadline(color: AppColors.textSecondary)
                                 .padding()
                         } else {
                             ForEach(workouts) { workout in
@@ -655,14 +638,14 @@ struct QuickScheduleTodaySheet: View {
                                 } label: {
                                     HStack {
                                         Text(workout.name)
-                                            .font(.subheadline.weight(.medium))
-                                            .foregroundColor(AppColors.textPrimary)
+                                            .subheadline(color: AppColors.textPrimary)
+                                            .fontWeight(.medium)
 
                                         Spacer()
 
                                         Image(systemName: "chevron.right")
-                                            .font(.caption.weight(.semibold))
-                                            .foregroundColor(AppColors.textTertiary)
+                                            .caption(color: AppColors.textTertiary)
+                                            .fontWeight(.semibold)
                                     }
                                     .padding(AppSpacing.md)
                                     .background(
@@ -678,8 +661,7 @@ struct QuickScheduleTodaySheet: View {
                     // Rest day option
                     VStack(alignment: .leading, spacing: AppSpacing.md) {
                         Label("Or Take a Rest Day", systemImage: "moon.zzz.fill")
-                            .font(.headline)
-                            .foregroundColor(AppColors.accent1)
+                            .headline(color: AppColors.accent1)
 
                         Button {
                             restDayJab = restDayJabs.randomElement() ?? ""
@@ -688,19 +670,18 @@ struct QuickScheduleTodaySheet: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Rest Day")
-                                        .font(.subheadline.weight(.medium))
-                                        .foregroundColor(AppColors.textPrimary)
+                                        .subheadline(color: AppColors.textPrimary)
+                                        .fontWeight(.medium)
 
                                     Text("Recovery is essential for progress")
-                                        .font(.caption)
-                                        .foregroundColor(AppColors.textSecondary)
+                                        .caption(color: AppColors.textSecondary)
                                 }
 
                                 Spacer()
 
                                 Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundColor(AppColors.textTertiary)
+                                    .caption(color: AppColors.textTertiary)
+                                    .fontWeight(.semibold)
                             }
                             .padding(AppSpacing.md)
                             .background(

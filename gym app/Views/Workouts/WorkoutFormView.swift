@@ -149,8 +149,8 @@ struct WorkoutFormView: View {
                         .elegantLabel(color: isEditing ? AppColors.warning : AppColors.dominant)
 
                     Text(name.isEmpty ? "New Workout" : name)
-                        .font(.title3.weight(.bold))
-                        .foregroundColor(AppColors.textPrimary)
+                        .displaySmall(color: AppColors.textPrimary)
+                        .fontWeight(.bold)
                         .lineLimit(1)
                 }
 
@@ -196,8 +196,8 @@ struct WorkoutFormView: View {
                 .stroke(progress >= 1.0 ? AppColors.success : AppColors.dominant, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Image(systemName: progress >= 1.0 ? "checkmark" : "hammer.fill")
-                .font(.subheadline.weight(.semibold))
-                .foregroundColor(progress >= 1.0 ? AppColors.success : AppColors.dominant)
+                .subheadline(color: progress >= 1.0 ? AppColors.success : AppColors.dominant)
+                .fontWeight(.semibold)
         }
         .frame(width: 44, height: 44)
     }
@@ -219,14 +219,13 @@ struct WorkoutFormView: View {
     private func statBadge(value: String, label: String, icon: String, color: Color) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.caption.weight(.medium))
-                .foregroundColor(color)
+                .caption(color: color)
+                .fontWeight(.medium)
             Text(value)
-                .font(.subheadline.weight(.bold))
-                .foregroundColor(AppColors.textPrimary)
+                .subheadline(color: AppColors.textPrimary)
+                .fontWeight(.bold)
             Text(label)
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
+                .caption(color: AppColors.textTertiary)
         }
         .padding(.horizontal, AppSpacing.sm)
         .padding(.vertical, 6)
@@ -1204,11 +1203,11 @@ private struct ModuleFilterChip: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                .subheadline(color: isSelected ? .white : AppColors.textPrimary)
+                .fontWeight(isSelected ? .semibold : .regular)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
                 .background(isSelected ? color : AppColors.surfacePrimary)
-                .foregroundColor(isSelected ? .white : AppColors.textPrimary)
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()

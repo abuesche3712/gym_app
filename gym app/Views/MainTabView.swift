@@ -182,14 +182,13 @@ struct MiniSessionBar: View {
                 // Workout info
                 VStack(alignment: .leading, spacing: 2) {
                     Text(workoutName)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.white)
+                        .subheadline(color: .white)
+                        .fontWeight(.semibold)
                         .lineLimit(1)
 
                     if let exercise = currentExerciseName {
                         Text(exercise)
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
+                            .caption(color: .white.opacity(0.7))
                             .lineLimit(1)
                     }
                 }
@@ -199,16 +198,15 @@ struct MiniSessionBar: View {
                 // Timer
                 HStack(spacing: 4) {
                     Image(systemName: "timer")
-                        .font(.caption)
+                        .caption(color: .white)
                     Text(elapsedTimeString)
-                        .font(.subheadline.monospacedDigit().weight(.medium))
+                        .monoSmall(color: .white)
                 }
-                .foregroundColor(.white)
 
                 // Expand indicator
                 Image(systemName: "chevron.up")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(.white.opacity(0.6))
+                    .caption(color: .white.opacity(0.6))
+                    .fontWeight(.semibold)
             }
             .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, AppSpacing.sm)

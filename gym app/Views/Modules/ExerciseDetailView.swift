@@ -42,8 +42,7 @@ struct ExerciseDetailView: View {
                     if !resolved.primaryMuscles.isEmpty {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Primary")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .caption(color: AppColors.textSecondary)
                             MuscleGroupsDisplay(muscles: resolved.primaryMuscles, color: AppColors.dominant)
                         }
                     }
@@ -51,9 +50,8 @@ struct ExerciseDetailView: View {
                     if !resolved.secondaryMuscles.isEmpty {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Secondary")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            MuscleGroupsDisplay(muscles: resolved.secondaryMuscles, color: .secondary)
+                                .caption(color: AppColors.textSecondary)
+                            MuscleGroupsDisplay(muscles: resolved.secondaryMuscles, color: AppColors.textSecondary)
                         }
                     }
                 }
@@ -76,10 +74,10 @@ struct ExerciseDetailView: View {
                 FlowLayout(spacing: 8) {
                     ForEach(resolved.trackingMetrics, id: \.self) { metric in
                         Text(metric.displayName)
-                            .font(.caption)
+                            .caption(color: AppColors.textSecondary)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
-                            .background(Color(.systemGray5))
+                            .background(AppColors.surfaceTertiary)
                             .clipShape(Capsule())
                     }
                 }
@@ -89,7 +87,7 @@ struct ExerciseDetailView: View {
             if let notes = resolved.notes, !notes.isEmpty {
                 Section("Notes") {
                     Text(notes)
-                        .foregroundStyle(.secondary)
+                        .body(color: AppColors.textSecondary)
                 }
             }
         }
@@ -123,25 +121,23 @@ struct SetGroupRow: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("Group \(index)")
-                    .font(.subheadline)
+                    .subheadline(color: AppColors.textPrimary)
                     .fontWeight(.semibold)
 
                 Spacer()
 
                 if let notes = setGroup.notes {
                     Text(notes)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .caption(color: AppColors.textSecondary)
                 }
             }
 
             Text(setGroup.formattedTarget)
-                .font(.headline)
+                .headline(color: AppColors.textPrimary)
 
             if let rest = setGroup.formattedRest {
                 Label(rest, systemImage: "clock")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .caption(color: AppColors.textSecondary)
             }
         }
         .padding(.vertical, 4)
@@ -205,11 +201,10 @@ struct MuscleGroupsDisplay: View {
         FlowLayout(spacing: 6) {
             ForEach(muscles, id: \.self) { muscle in
                 Text(muscle.rawValue)
-                    .font(.caption)
+                    .caption(color: color)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(color.opacity(0.15))
-                    .foregroundColor(color)
                     .clipShape(Capsule())
             }
         }

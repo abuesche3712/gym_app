@@ -16,6 +16,7 @@ struct ActiveSessionView: View {
     /// Callback to minimize the session (show mini bar instead)
     var onMinimize: (() -> Void)?
 
+    @State private var showingWorkoutSummary = false
     @State private var showingEndConfirmation = false
     @State private var showingCancelConfirmation = false
     @State private var hideToolbarButtons = false
@@ -97,8 +98,8 @@ struct ActiveSessionView: View {
                             onMinimize?()
                         } label: {
                             Image(systemName: "chevron.down")
-                                .font(.body.weight(.semibold))
-                                .foregroundColor(AppColors.textSecondary)
+                                .body(color: AppColors.textSecondary)
+                                .fontWeight(.semibold)
                         }
                     }
                 }
@@ -114,7 +115,7 @@ struct ActiveSessionView: View {
 
                     ToolbarItem(placement: .primaryAction) {
                         Button("Finish") {
-                            showingEndConfirmation = true
+                            showingWorkoutSummary = true
                         }
                         .foregroundColor(AppColors.dominant)
                     }
@@ -136,7 +137,7 @@ struct ActiveSessionView: View {
                             }
 
                             Button {
-                                showingEndConfirmation = true
+                                showingWorkoutSummary = true
                             } label: {
                                 Label("Finish Workout", systemImage: "checkmark.circle")
                             }
@@ -148,8 +149,7 @@ struct ActiveSessionView: View {
                             }
                         } label: {
                             Image(systemName: "ellipsis.circle")
-                                .font(.title3)
-                                .foregroundColor(AppColors.textSecondary)
+                                .displaySmall(color: AppColors.textSecondary)
                         }
                     }
                 }
@@ -175,6 +175,32 @@ struct ActiveSessionView: View {
                 }
             } message: {
                 Text("Are you sure you want to cancel? Your progress will not be saved.")
+            }
+            .sheet(isPresented: $showingWorkoutSummary) {
+                if let session = sessionViewModel.currentSession {
+                    WorkoutSummaryView(
+                        session: session,
+                        elapsedSeconds: sessionViewModel.sessionElapsedSeconds,
+                        onReviewAndSave: {
+                            showingWorkoutSummary = false
+                            // Small delay to allow sheet dismiss animation
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                showingEndConfirmation = true
+                            }
+                        },
+                        onQuickSave: { feeling, notes in
+                            workoutViewModel.markScheduledWorkoutsCompleted(
+                                workoutId: session.workoutId,
+                                sessionId: session.id,
+                                sessionDate: session.date
+                            )
+                            sessionViewModel.endSession(feeling: feeling, notes: notes)
+                            showingWorkoutSummary = false
+                            dismiss()
+                        }
+                    )
+                    .environmentObject(sessionViewModel)
+                }
             }
             .sheet(isPresented: $showingEndConfirmation) {
                 EndSessionSheet(session: $sessionViewModel.currentSession) { feeling, notes in
@@ -297,8 +323,7 @@ struct ActiveSessionView: View {
                         // Timer - subtle
                         HStack(spacing: 4) {
                             Image(systemName: "clock")
-                                .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
+                                .caption(color: AppColors.textTertiary)
                             Text(formatTime(sessionViewModel.sessionElapsedSeconds))
                                 .monoSmall(color: AppColors.textSecondary)
                         }
@@ -308,19 +333,19 @@ struct ActiveSessionView: View {
                         // Module progress - subtle
                         if let session = sessionViewModel.currentSession {
                             Text("\(sessionViewModel.currentModuleIndex + 1)/\(session.completedModules.count)")
-                                .font(.caption.weight(.medium))
-                                .foregroundColor(AppColors.textTertiary)
+                                .caption(color: AppColors.textTertiary)
+                                .fontWeight(.medium)
                         }
                     }
 
                     // Centered overview hint
                     HStack(spacing: 4) {
                         Image(systemName: "list.bullet")
-                            .font(.caption2)
+                            .caption2(color: AppColors.textTertiary)
                         Text("Overview")
-                            .font(.caption2.weight(.medium))
+                            .caption2(color: AppColors.textTertiary)
+                            .fontWeight(.medium)
                     }
-                    .foregroundColor(AppColors.textTertiary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(
@@ -364,12 +389,12 @@ struct ActiveSessionView: View {
     private func moduleIndicator(_ module: CompletedModule) -> some View {
         HStack(spacing: AppSpacing.sm) {
             Image(systemName: module.moduleType.icon)
-                .font(.caption.weight(.medium))
-                .foregroundColor(AppColors.moduleColor(module.moduleType))
+                .caption(color: AppColors.moduleColor(module.moduleType))
+                .fontWeight(.medium)
 
             Text(module.moduleName)
-                .font(.subheadline.weight(.medium))
-                .foregroundColor(AppColors.textSecondary)
+                .subheadline(color: AppColors.textSecondary)
+                .fontWeight(.medium)
 
             Spacer()
 
@@ -377,8 +402,8 @@ struct ActiveSessionView: View {
                 sessionViewModel.skipModule()
             } label: {
                 Text("Skip")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption2(color: AppColors.textTertiary)
+                    .fontWeight(.medium)
             }
         }
         .padding(.horizontal, AppSpacing.md)
@@ -399,11 +424,10 @@ struct ActiveSessionView: View {
                let total = sessionViewModel.supersetTotal {
                 HStack(spacing: AppSpacing.sm) {
                     Image(systemName: "link")
-                        .font(.caption)
-                        .foregroundColor(AppColors.warning)
+                        .caption(color: AppColors.warning)
                     Text("SUPERSET \(position)/\(total)")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(AppColors.warning)
+                        .caption(color: AppColors.warning)
+                        .fontWeight(.semibold)
 
                     Spacer()
 
@@ -411,8 +435,7 @@ struct ActiveSessionView: View {
                     if let supersetExercises = sessionViewModel.currentSupersetExercises,
                        position < total {
                         Text("Next: \(supersetExercises[position].exerciseName)")
-                            .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption(color: AppColors.textTertiary)
                     }
                 }
                 .padding(.horizontal, AppSpacing.md)
@@ -427,15 +450,14 @@ struct ActiveSessionView: View {
             HStack {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text(exercise.exerciseName)
-                        .font(.title3.bold())
-                        .foregroundColor(AppColors.textPrimary)
+                        .headline(color: AppColors.textPrimary)
+                        .fontWeight(.bold)
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     Text(exerciseSetsSummary(exercise))
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.textSecondary)
+                        .subheadline(color: AppColors.textSecondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -446,8 +468,7 @@ struct ActiveSessionView: View {
                         showEditExercise = true
                     } label: {
                         Image(systemName: "pencil")
-                            .font(.body)
-                            .foregroundColor(AppColors.textTertiary)
+                            .body(color: AppColors.textTertiary)
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                             .background(
                                 Circle()
@@ -462,8 +483,7 @@ struct ActiveSessionView: View {
                         goToPreviousExerciseSuperset()
                     } label: {
                         Image(systemName: "backward.fill")
-                            .font(.body)
-                            .foregroundColor(canGoBack ? AppColors.textTertiary : AppColors.textTertiary.opacity(0.3))
+                            .body(color: canGoBack ? AppColors.textTertiary : AppColors.textTertiary.opacity(0.3))
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                             .background(
                                 Circle()
@@ -479,8 +499,7 @@ struct ActiveSessionView: View {
                         skipToNextExerciseSuperset()
                     } label: {
                         Image(systemName: "forward.fill")
-                            .font(.body)
-                            .foregroundColor(AppColors.textTertiary)
+                            .body(color: AppColors.textTertiary)
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                             .background(
                                 Circle()
@@ -594,11 +613,12 @@ struct ActiveSessionView: View {
                 } label: {
                     HStack(spacing: AppSpacing.sm) {
                         Image(systemName: "plus")
-                            .font(.caption.weight(.medium))
+                            .caption(color: AppColors.textSecondary)
+                            .fontWeight(.medium)
                         Text("Add Set")
-                            .font(.subheadline.weight(.medium))
+                            .subheadline(color: AppColors.textSecondary)
+                            .fontWeight(.medium)
                     }
-                    .foregroundColor(AppColors.textSecondary)
                     .frame(width: width - (AppSpacing.cardPadding * 2))
                     .padding(.vertical, AppSpacing.sm)
                     .background(
@@ -615,11 +635,11 @@ struct ActiveSessionView: View {
                 } label: {
                     HStack(spacing: AppSpacing.sm) {
                         Image(systemName: isLastExercise ? "checkmark.circle.fill" : "arrow.right")
-                            .font(.body.weight(.semibold))
+                            .body(color: .white)
+                            .fontWeight(.semibold)
                         Text(isLastExercise ? "Complete Workout" : "Next Exercise")
-                            .font(.headline)
+                            .headline(color: .white)
                     }
-                    .foregroundColor(.white)
                     .frame(width: width - (AppSpacing.cardPadding * 2))
                     .padding(.vertical, AppSpacing.lg)
                     .background(
@@ -653,29 +673,26 @@ struct ActiveSessionView: View {
             // Header
             HStack {
                 Image(systemName: "timer")
-                    .font(.body)
-                    .foregroundColor(AppColors.warning)
+                    .body(color: AppColors.warning)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Interval")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(AppColors.textPrimary)
+                        .subheadline(color: AppColors.textPrimary)
+                        .fontWeight(.semibold)
 
                     Text("\(setGroup.rounds) rounds: \(formatDuration(setGroup.workDuration ?? 30)) on / \(formatDuration(setGroup.intervalRestDuration ?? 30)) off")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
+                        .caption(color: AppColors.textSecondary)
                 }
 
                 Spacer()
 
                 if allCompleted {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.title3)
-                        .foregroundColor(AppColors.success)
+                        .displaySmall(color: AppColors.success)
                 } else if completedCount > 0 {
                     Text("\(completedCount)/\(setGroup.rounds)")
-                        .font(.caption.weight(.medium))
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption(color: AppColors.textTertiary)
+                        .fontWeight(.medium)
                 }
             }
 
@@ -686,20 +703,19 @@ struct ActiveSessionView: View {
                     ForEach(Array(setGroup.sets.enumerated()), id: \.element.id) { index, set in
                         HStack {
                             Text("Round \(index + 1)")
-                                .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
+                                .caption(color: AppColors.textTertiary)
 
                             Spacer()
 
                             if let duration = set.duration {
                                 Text(formatDuration(duration))
-                                    .font(.caption.weight(.medium))
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .caption(color: AppColors.textSecondary)
+                                    .fontWeight(.medium)
                             }
 
                             Image(systemName: "checkmark")
-                                .font(.caption2.weight(.bold))
-                                .foregroundColor(AppColors.success)
+                                .caption2(color: AppColors.success)
+                                .fontWeight(.bold)
                         }
                     }
                 }
@@ -715,11 +731,11 @@ struct ActiveSessionView: View {
                 } label: {
                     HStack(spacing: AppSpacing.sm) {
                         Image(systemName: "play.fill")
-                            .font(.subheadline)
+                            .subheadline(color: .white)
                         Text("Start Interval")
-                            .font(.subheadline.weight(.semibold))
+                            .subheadline(color: .white)
+                            .fontWeight(.semibold)
                     }
-                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, AppSpacing.md)
                     .background(
@@ -1325,11 +1341,10 @@ struct ActiveSessionView: View {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
                     HStack {
                         Image(systemName: "clock.arrow.circlepath")
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.textTertiary)
+                            .subheadline(color: AppColors.textTertiary)
                         Text("Last Session")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(AppColors.textSecondary)
+                            .subheadline(color: AppColors.textSecondary)
+                            .fontWeight(.semibold)
 
                         Spacer()
 
@@ -1337,11 +1352,11 @@ struct ActiveSessionView: View {
                         if let progression = lastData.progressionRecommendation {
                             HStack(spacing: 4) {
                                 Image(systemName: progression.icon)
-                                    .font(.caption)
+                                    .caption(color: progression.color)
                                 Text(progression.displayName)
-                                    .font(.caption.weight(.semibold))
+                                    .caption(color: progression.color)
+                                    .fontWeight(.semibold)
                             }
-                            .foregroundColor(progression.color)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(
@@ -1369,16 +1384,14 @@ struct ActiveSessionView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack(spacing: 4) {
                                 Image(systemName: "note.text")
-                                    .font(.caption)
-                                    .foregroundColor(AppColors.textTertiary)
+                                    .caption(color: AppColors.textTertiary)
                                 Text("Notes")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundColor(AppColors.textTertiary)
+                                    .caption(color: AppColors.textTertiary)
+                                    .fontWeight(.semibold)
                             }
 
                             Text(notes)
-                                .font(.caption)
-                                .foregroundColor(AppColors.textSecondary)
+                                .caption(color: AppColors.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         .padding(.top, AppSpacing.sm)
@@ -1398,8 +1411,8 @@ struct ActiveSessionView: View {
         HStack(spacing: AppSpacing.sm) {
             // Set number badge
             Text("\(set.setNumber)")
-                .font(.caption.weight(.semibold))
-                .foregroundColor(AppColors.textTertiary)
+                .caption(color: AppColors.textTertiary)
+                .fontWeight(.semibold)
                 .frame(width: 20, height: 20)
                 .background(Circle().fill(AppColors.surfaceTertiary))
 
@@ -1515,8 +1528,8 @@ struct ActiveSessionView: View {
         HStack(spacing: AppSpacing.sm) {
             // Interval icon
             Image(systemName: "timer")
-                .font(.caption.weight(.semibold))
-                .foregroundColor(AppColors.warning)
+                .caption(color: AppColors.warning)
+                .fontWeight(.semibold)
                 .frame(width: 20, height: 20)
                 .background(Circle().fill(AppColors.surfaceTertiary))
 
@@ -1529,8 +1542,7 @@ struct ActiveSessionView: View {
                 )
 
                 Text("(\(formatDuration(setGroup.workDuration ?? 0)) on / \(formatDuration(setGroup.intervalRestDuration ?? 0)) off)")
-                    .font(.caption)
-                    .foregroundColor(AppColors.textSecondary)
+                    .caption(color: AppColors.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -1540,12 +1552,11 @@ struct ActiveSessionView: View {
     private func metricPill(value: String, label: String?, color: Color) -> some View {
         HStack(spacing: 2) {
             Text(value)
-                .font(.subheadline.weight(.semibold))
-                .foregroundColor(color)
+                .subheadline(color: color)
+                .fontWeight(.semibold)
             if let label = label {
                 Text(label)
-                    .font(.caption2)
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption2(color: AppColors.textTertiary)
             }
         }
         .padding(.horizontal, 8)
@@ -1588,11 +1599,10 @@ struct ActiveSessionView: View {
                 // Label
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Rest")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundColor(AppColors.textPrimary)
+                        .subheadline(color: AppColors.textPrimary)
+                        .fontWeight(.medium)
                     Text("\(sessionViewModel.restTimerSeconds)s remaining")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption(color: AppColors.textTertiary)
                 }
 
                 Spacer()
@@ -1603,8 +1613,8 @@ struct ActiveSessionView: View {
                         openTwitter()
                     } label: {
                         Text("𝕏")
-                            .font(.body.weight(.bold))
-                            .foregroundColor(AppColors.textSecondary)
+                            .body(color: AppColors.textSecondary)
+                            .fontWeight(.bold)
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                             .background(
                                 Circle()
@@ -1621,8 +1631,8 @@ struct ActiveSessionView: View {
                     highlightNextSet = true
                 } label: {
                     Text("Skip")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(AppColors.dominant)
+                        .subheadline(color: AppColors.dominant)
+                        .fontWeight(.semibold)
                         .padding(.horizontal, AppSpacing.lg)
                         .frame(height: AppSpacing.minTouchTarget)
                         .background(
@@ -1668,25 +1678,22 @@ struct ActiveSessionView: View {
                 // Completed module
                 VStack(spacing: AppSpacing.sm) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.title)
-                        .foregroundColor(AppColors.success)
+                        .displayMedium(color: AppColors.success)
 
                     Text(completedModuleName)
-                        .font(.headline)
-                        .foregroundColor(AppColors.textSecondary)
+                        .headline(color: AppColors.textSecondary)
                 }
                 .opacity(0.6)
 
                 // Arrow
                 Image(systemName: "arrow.down")
-                    .font(.title3.weight(.light))
-                    .foregroundColor(AppColors.textTertiary)
+                    .displaySmall(color: AppColors.textTertiary)
+                    .fontWeight(.light)
 
                 // Next module
                 VStack(spacing: AppSpacing.sm) {
                     Text(nextModuleName)
-                        .font(.title2.bold())
-                        .foregroundColor(AppColors.textPrimary)
+                        .displayMedium(color: AppColors.textPrimary)
                 }
             }
             .padding(AppSpacing.xl)
@@ -1719,8 +1726,7 @@ struct ActiveSessionView: View {
 
                     // Checkmark
                     Image(systemName: "checkmark")
-                        .font(.largeTitle.weight(.bold))
-                        .foregroundColor(AppColors.success)
+                        .displayLarge(color: AppColors.success)
                         .scaleEffect(checkScale)
                 }
 
@@ -1728,8 +1734,7 @@ struct ActiveSessionView: View {
                 if let session = sessionViewModel.currentSession {
                     VStack(spacing: AppSpacing.lg) {
                         Text(session.workoutName)
-                            .font(.title2.bold())
-                            .foregroundColor(AppColors.textPrimary)
+                            .displayMedium(color: AppColors.textPrimary)
 
                         HStack(spacing: AppSpacing.xl) {
                             statItem(value: formatTime(sessionViewModel.sessionElapsedSeconds), label: "Time")
@@ -1744,11 +1749,10 @@ struct ActiveSessionView: View {
 
                 // Finish button
                 Button {
-                    showingEndConfirmation = true
+                    showingWorkoutSummary = true
                 } label: {
                     Text("Finish")
-                        .font(.headline)
-                        .foregroundColor(.white)
+                        .headline(color: .white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, AppSpacing.lg)
                         .background(
@@ -1779,11 +1783,9 @@ struct ActiveSessionView: View {
     private func statItem(value: String, label: String) -> some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundColor(AppColors.textPrimary)
+                .displayMedium(color: AppColors.textPrimary)
             Text(label)
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
+                .caption(color: AppColors.textTertiary)
         }
     }
 
@@ -1813,13 +1815,11 @@ struct ActiveSessionView: View {
                     .frame(width: 100, height: 100)
 
                 Image(systemName: "checkmark")
-                    .font(.largeTitle.weight(.bold))
-                    .foregroundColor(AppColors.success)
+                    .displayLarge(color: AppColors.success)
             }
 
             Text("Done")
-                .font(.title2.bold())
-                .foregroundColor(AppColors.textPrimary)
+                .displayMedium(color: AppColors.textPrimary)
 
             Spacer()
         }

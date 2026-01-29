@@ -23,6 +23,11 @@ struct Session: Identifiable, Codable, Hashable {
     var createdAt: Date
     var syncStatus: SyncStatus
 
+    // Program context (for sessions completed as part of a program)
+    var programId: UUID?
+    var programName: String?
+    var programWeekNumber: Int? // Which week of the program (1-based)
+
     init(
         id: UUID = UUID(),
         workoutId: UUID,
@@ -34,7 +39,10 @@ struct Session: Identifiable, Codable, Hashable {
         overallFeeling: Int? = nil,
         notes: String? = nil,
         createdAt: Date = Date(),
-        syncStatus: SyncStatus = .pendingSync
+        syncStatus: SyncStatus = .pendingSync,
+        programId: UUID? = nil,
+        programName: String? = nil,
+        programWeekNumber: Int? = nil
     ) {
         self.id = id
         self.workoutId = workoutId
@@ -47,6 +55,9 @@ struct Session: Identifiable, Codable, Hashable {
         self.notes = notes
         self.createdAt = createdAt
         self.syncStatus = syncStatus
+        self.programId = programId
+        self.programName = programName
+        self.programWeekNumber = programWeekNumber
     }
 
     init(from decoder: Decoder) throws {
@@ -70,11 +81,17 @@ struct Session: Identifiable, Codable, Hashable {
         duration = try container.decodeIfPresent(Int.self, forKey: .duration)
         overallFeeling = try container.decodeIfPresent(Int.self, forKey: .overallFeeling)
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
+
+        // Program context (optional - nil for ad-hoc workouts)
+        programId = try container.decodeIfPresent(UUID.self, forKey: .programId)
+        programName = try container.decodeIfPresent(String.self, forKey: .programName)
+        programWeekNumber = try container.decodeIfPresent(Int.self, forKey: .programWeekNumber)
     }
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion
         case id, workoutId, workoutName, date, completedModules, skippedModuleIds, duration, overallFeeling, notes, createdAt, syncStatus
+        case programId, programName, programWeekNumber
     }
 
     var formattedDate: String {
@@ -118,6 +135,12 @@ struct CompletedModule: Identifiable, Codable, Hashable {
     var skipped: Bool
     var notes: String?
 
+    // Sharing context (denormalized for standalone sharing)
+    var sessionId: UUID?
+    var workoutId: UUID?
+    var workoutName: String?
+    var date: Date?
+
     init(
         id: UUID = UUID(),
         moduleId: UUID,
@@ -125,7 +148,11 @@ struct CompletedModule: Identifiable, Codable, Hashable {
         moduleType: ModuleType,
         completedExercises: [SessionExercise] = [],
         skipped: Bool = false,
-        notes: String? = nil
+        notes: String? = nil,
+        sessionId: UUID? = nil,
+        workoutId: UUID? = nil,
+        workoutName: String? = nil,
+        date: Date? = nil
     ) {
         self.id = id
         self.moduleId = moduleId
@@ -134,6 +161,10 @@ struct CompletedModule: Identifiable, Codable, Hashable {
         self.completedExercises = completedExercises
         self.skipped = skipped
         self.notes = notes
+        self.sessionId = sessionId
+        self.workoutId = workoutId
+        self.workoutName = workoutName
+        self.date = date
     }
 
     init(from decoder: Decoder) throws {
@@ -151,10 +182,17 @@ struct CompletedModule: Identifiable, Codable, Hashable {
 
         // Truly optional
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
+
+        // Sharing context (optional - populated when needed for sharing)
+        sessionId = try container.decodeIfPresent(UUID.self, forKey: .sessionId)
+        workoutId = try container.decodeIfPresent(UUID.self, forKey: .workoutId)
+        workoutName = try container.decodeIfPresent(String.self, forKey: .workoutName)
+        date = try container.decodeIfPresent(Date.self, forKey: .date)
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, moduleId, moduleName, moduleType, completedExercises, skipped, notes
+        case sessionId, workoutId, workoutName, date
     }
 }
 
@@ -189,6 +227,14 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
     // Progression tracking
     var progressionRecommendation: ProgressionRecommendation? // User's recommendation for next session
 
+    // Sharing context (denormalized for standalone sharing)
+    var sessionId: UUID?
+    var moduleId: UUID?
+    var moduleName: String?
+    var workoutId: UUID?
+    var workoutName: String?
+    var date: Date?
+
     init(
         id: UUID = UUID(),
         exerciseId: UUID,
@@ -208,7 +254,13 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         isSubstitution: Bool = false,
         originalExerciseName: String? = nil,
         isAdHoc: Bool = false,
-        progressionRecommendation: ProgressionRecommendation? = nil
+        progressionRecommendation: ProgressionRecommendation? = nil,
+        sessionId: UUID? = nil,
+        moduleId: UUID? = nil,
+        moduleName: String? = nil,
+        workoutId: UUID? = nil,
+        workoutName: String? = nil,
+        date: Date? = nil
     ) {
         self.id = id
         self.exerciseId = exerciseId
@@ -229,6 +281,12 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         self.originalExerciseName = originalExerciseName
         self.isAdHoc = isAdHoc
         self.progressionRecommendation = progressionRecommendation
+        self.sessionId = sessionId
+        self.moduleId = moduleId
+        self.moduleName = moduleName
+        self.workoutId = workoutId
+        self.workoutName = workoutName
+        self.date = date
     }
 
     init(from decoder: Decoder) throws {
@@ -258,6 +316,14 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         recoveryActivityType = try container.decodeIfPresent(RecoveryActivityType.self, forKey: .recoveryActivityType)
         originalExerciseName = try container.decodeIfPresent(String.self, forKey: .originalExerciseName)
         progressionRecommendation = try container.decodeIfPresent(ProgressionRecommendation.self, forKey: .progressionRecommendation)
+
+        // Sharing context (optional - populated when needed for sharing)
+        sessionId = try container.decodeIfPresent(UUID.self, forKey: .sessionId)
+        moduleId = try container.decodeIfPresent(UUID.self, forKey: .moduleId)
+        moduleName = try container.decodeIfPresent(String.self, forKey: .moduleName)
+        workoutId = try container.decodeIfPresent(UUID.self, forKey: .workoutId)
+        workoutName = try container.decodeIfPresent(String.self, forKey: .workoutName)
+        date = try container.decodeIfPresent(Date.self, forKey: .date)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -265,6 +331,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         case supersetGroupId, completedSetGroups, notes, isBodyweight, recoveryActivityType, implementIds
         case primaryMuscles, secondaryMuscles
         case isSubstitution, originalExerciseName, isAdHoc, progressionRecommendation
+        case sessionId, moduleId, moduleName, workoutId, workoutName, date
     }
 
     var totalVolume: Double {
@@ -468,6 +535,13 @@ struct SetData: Identifiable, Codable, Hashable {
     // Multi-measurable values (e.g., {"Height": 24.0, "Incline": 5.0})
     var implementMeasurableValues: [String: MeasurableValue]
 
+    // Sharing context (denormalized for standalone sharing - "I hit 225x5 on Bench!")
+    var sessionId: UUID?
+    var exerciseId: UUID?
+    var exerciseName: String?
+    var workoutName: String?
+    var date: Date?
+
     init(
         id: UUID = UUID(),
         setNumber: Int,
@@ -487,7 +561,12 @@ struct SetData: Identifiable, Codable, Hashable {
         temperature: Int? = nil,
         restAfter: Int? = nil,
         side: Side? = nil,
-        implementMeasurableValues: [String: MeasurableValue] = [:]
+        implementMeasurableValues: [String: MeasurableValue] = [:],
+        sessionId: UUID? = nil,
+        exerciseId: UUID? = nil,
+        exerciseName: String? = nil,
+        workoutName: String? = nil,
+        date: Date? = nil
     ) {
         self.id = id
         self.setNumber = setNumber
@@ -508,6 +587,11 @@ struct SetData: Identifiable, Codable, Hashable {
         self.restAfter = restAfter
         self.side = side
         self.implementMeasurableValues = implementMeasurableValues
+        self.sessionId = sessionId
+        self.exerciseId = exerciseId
+        self.exerciseName = exerciseName
+        self.workoutName = workoutName
+        self.date = date
     }
 
     init(from decoder: Decoder) throws {
@@ -555,11 +639,19 @@ struct SetData: Identifiable, Codable, Hashable {
                 implementMeasurableValues["Color"] = MeasurableValue(stringValue: legacyBandColor)
             }
         }
+
+        // Sharing context (optional - populated when needed for sharing)
+        sessionId = try container.decodeIfPresent(UUID.self, forKey: .sessionId)
+        exerciseId = try container.decodeIfPresent(UUID.self, forKey: .exerciseId)
+        exerciseName = try container.decodeIfPresent(String.self, forKey: .exerciseName)
+        workoutName = try container.decodeIfPresent(String.self, forKey: .workoutName)
+        date = try container.decodeIfPresent(Date.self, forKey: .date)
     }
 
     private enum CodingKeys: String, CodingKey {
         case id, setNumber, weight, reps, rpe, completed, bandColor, duration, distance, pace, avgHeartRate
         case holdTime, intensity, height, quality, temperature, restAfter, side, implementMeasurableValues
+        case sessionId, exerciseId, exerciseName, workoutName, date
     }
 
     var formattedStrength: String? {

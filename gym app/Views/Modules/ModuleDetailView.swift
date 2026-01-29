@@ -29,25 +29,22 @@ struct ModuleDetailView: View {
             Section {
                 HStack(spacing: 16) {
                     Image(systemName: currentModule.type.icon)
-                        .font(.largeTitle)
-                        .foregroundStyle(currentModule.type.color)
+                        .displayMedium(color: currentModule.type.color)
                         .frame(width: 60, height: 60)
                         .background(currentModule.type.color.opacity(0.2))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(currentModule.name)
-                            .font(.title2)
+                            .displaySmall(color: AppColors.textPrimary)
                             .fontWeight(.bold)
 
                         Text(currentModule.type.displayName)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .subheadline(color: AppColors.textSecondary)
 
                         if let duration = currentModule.estimatedDuration {
                             Label("\(duration) min", systemImage: "clock")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .caption(color: AppColors.textSecondary)
                         }
                     }
                 }
@@ -58,8 +55,7 @@ struct ModuleDetailView: View {
             if let notes = currentModule.notes, !notes.isEmpty {
                 Section("Notes") {
                     Text(notes)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
+                        .body(color: AppColors.textSecondary)
                 }
             }
 
@@ -242,26 +238,24 @@ struct ExerciseRow: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(exercise.name)
-                    .font(.headline)
+                    .headline(color: AppColors.textPrimary)
 
                 Spacer()
 
                 Text(exercise.exerciseType.displayName)
-                    .font(.caption)
+                    .caption(color: AppColors.textSecondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
-                    .background(Color(.systemGray5))
+                    .background(AppColors.surfaceTertiary)
                     .clipShape(Capsule())
             }
 
             Text(exercise.formattedSetScheme)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .subheadline(color: AppColors.textSecondary)
 
             if let notes = exercise.notes, !notes.isEmpty {
                 Text(notes)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .caption(color: AppColors.textSecondary)
                     .lineLimit(1)
             }
         }
@@ -283,19 +277,17 @@ struct SupersetGroupRow: View {
             // Superset header
             HStack {
                 Image(systemName: "link")
-                    .font(.caption)
-                    .foregroundColor(AppColors.warning)
+                    .caption(color: AppColors.warning)
                 Text("SUPERSET")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.warning)
+                    .caption(color: AppColors.warning)
+                    .fontWeight(.semibold)
                 Spacer()
                 if !isSelecting {
                     Button {
                         onBreakSuperset()
                     } label: {
                         Text("Unlink")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .caption(color: AppColors.textSecondary)
                     }
                 }
             }
@@ -365,11 +357,11 @@ struct CompactExerciseRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(exercise.name)
-                .font(.subheadline.weight(.medium))
+                .subheadline(color: AppColors.textPrimary)
+                .fontWeight(.medium)
 
             Text(exercise.formattedSetScheme)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .caption(color: AppColors.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

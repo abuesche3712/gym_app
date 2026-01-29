@@ -31,8 +31,8 @@ struct SetIndicator: View {
                     .frame(width: 40, height: 40)
 
                 Text("\(setNumber)")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundColor(isCurrent ? AppColors.dominant : AppColors.textTertiary)
+                    .subheadline(color: isCurrent ? AppColors.dominant : AppColors.textTertiary)
+                    .fontWeight(.bold)
             }
         }
         .overlay(
@@ -243,11 +243,11 @@ struct SetRowView: View {
                     // Unilateral set - show L/R indicator
                     VStack(spacing: 2) {
                         Text("\(flatSet.setNumber)")
-                            .font(.caption2.weight(.bold))
-                            .foregroundColor(AppColors.textSecondary)
+                            .caption2(color: AppColors.textSecondary)
+                            .fontWeight(.bold)
                         Text(side.abbreviation)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundColor(side == .left ? AppColors.dominant : AppColors.accent2)
+                            .caption2(color: side == .left ? AppColors.dominant : AppColors.accent2)
+                            .fontWeight(.semibold)
                     }
                     .frame(width: 32, height: 32)
                     .background(
@@ -260,8 +260,8 @@ struct SetRowView: View {
                         .fill(AppColors.surfaceTertiary)
                         .frame(width: 32, height: 32)
                     Text("\(flatSet.setNumber)")
-                        .font(.caption.weight(.bold))
-                        .foregroundColor(AppColors.textSecondary)
+                        .caption(color: AppColors.textSecondary)
+                        .fontWeight(.bold)
                 }
             }
         }
@@ -297,12 +297,12 @@ struct SetRowView: View {
         } label: {
             HStack {
                 Text(completedSummary)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(AppColors.textPrimary)
+                    .subheadline(color: AppColors.textPrimary)
+                    .fontWeight(.medium)
                 Spacer()
                 Image(systemName: "pencil")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    .subheadline(color: AppColors.textTertiary)
+                    .fontWeight(.medium)
                     .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
             }
             .contentShape(Rectangle())
@@ -349,8 +349,8 @@ struct SetRowView: View {
             .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
 
             Text(measurable.unit)
-                .font(.caption2.weight(.medium))
-                .foregroundColor(AppColors.textTertiary)
+                .caption2(color: AppColors.textTertiary)
+                .fontWeight(.medium)
         }
         .fixedSize(horizontal: true, vertical: false)
     }
@@ -368,8 +368,8 @@ struct SetRowView: View {
                     // Untimed AMRAP - show badge
                     VStack(spacing: 4) {
                         Image(systemName: "infinity")
-                            .font(.body.weight(.bold))
-                            .foregroundColor(AppColors.accent2)
+                            .body(color: AppColors.accent2)
+                            .fontWeight(.bold)
                             .frame(width: 36, height: 36)
                             .background(
                                 Circle()
@@ -377,8 +377,8 @@ struct SetRowView: View {
                             )
 
                         Text("AMRAP")
-                            .font(.caption2.weight(.medium))
-                            .foregroundColor(AppColors.accent2)
+                            .caption2(color: AppColors.accent2)
+                            .fontWeight(.medium)
                     }
                     .fixedSize(horizontal: true, vertical: false)
                 }
@@ -399,8 +399,8 @@ struct SetRowView: View {
                         .focused($focusedField, equals: .bandColor)
 
                     Text(stringMeasurable.implementName.lowercased())
-                        .font(.caption2.weight(.medium))
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption2(color: AppColors.textTertiary)
+                        .fontWeight(.medium)
                 }
                 .fixedSize(horizontal: true, vertical: false)
             } else if exercise.usesBox {
@@ -418,8 +418,8 @@ struct SetRowView: View {
                         .focused($focusedField, equals: .height)
 
                     Text("in")
-                        .font(.caption2.weight(.medium))
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption2(color: AppColors.textTertiary)
+                        .fontWeight(.medium)
                 }
                 .fixedSize(horizontal: true, vertical: false)
             } else if exercise.isBodyweight {
@@ -442,8 +442,8 @@ struct SetRowView: View {
                             .focused($focusedField, equals: .weight)
 
                         Text("lbs")
-                            .font(.caption2.weight(.medium))
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption2(color: AppColors.textTertiary)
+                            .fontWeight(.medium)
                     }
                     .fixedSize(horizontal: true, vertical: false)
                 }
@@ -462,15 +462,15 @@ struct SetRowView: View {
                         .focused($focusedField, equals: .weight)
 
                     Text("lbs")
-                        .font(.caption2.weight(.medium))
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption2(color: AppColors.textTertiary)
+                        .fontWeight(.medium)
                 }
                 .fixedSize(horizontal: true, vertical: false)
             }
 
             Text("×")
-                .font(.callout.weight(.medium))
-                .foregroundColor(AppColors.textTertiary)
+                .subheadline(color: AppColors.textTertiary)
+                .fontWeight(.medium)
 
             // Reps input box
             VStack(spacing: 4) {
@@ -486,8 +486,8 @@ struct SetRowView: View {
                     .focused($focusedField, equals: .reps)
 
                 Text(flatSet.isAMRAP ? "AMRAP" : "reps")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(flatSet.isAMRAP ? AppColors.accent2 : AppColors.textTertiary)
+                    .caption2(color: flatSet.isAMRAP ? AppColors.accent2 : AppColors.textTertiary)
+                    .fontWeight(.medium)
             }
             .fixedSize(horizontal: true, vertical: false)
 
@@ -517,8 +517,8 @@ struct SetRowView: View {
                         }
 
                     Text("RPE")
-                        .font(.caption2.weight(.medium))
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption2(color: AppColors.textTertiary)
+                        .fontWeight(.medium)
                 }
                 .fixedSize(horizontal: true, vertical: false)
             }
@@ -552,8 +552,8 @@ struct SetRowView: View {
                             toggleTimer()
                         } label: {
                             Image(systemName: timerRunning ? "stop.fill" : "play.fill")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundColor(timerRunning ? AppColors.warning : AppColors.dominant)
+                                .subheadline(color: timerRunning ? AppColors.warning : AppColors.dominant)
+                                .fontWeight(.semibold)
                                 .frame(width: 32, height: 32)
                                 .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.dominant.opacity(0.12)))
                         }
@@ -581,8 +581,8 @@ struct SetRowView: View {
                             toggleStopwatch()
                         } label: {
                             Image(systemName: timerRunning ? "stop.fill" : "stopwatch")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundColor(timerRunning ? AppColors.warning : AppColors.accent1)
+                                .subheadline(color: timerRunning ? AppColors.warning : AppColors.accent1)
+                                .fontWeight(.semibold)
                                 .frame(width: 32, height: 32)
                                 .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accent1.opacity(0.12)))
                         }
@@ -592,8 +592,8 @@ struct SetRowView: View {
                 }
 
                 Text("time")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption2(color: AppColors.textTertiary)
+                    .fontWeight(.medium)
             }
             .fixedSize(horizontal: true, vertical: false)
 
@@ -616,8 +616,8 @@ struct SetRowView: View {
                         showDistanceUnitPicker = true
                     } label: {
                         Text(exercise.distanceUnit.abbreviation)
-                            .font(.caption.weight(.medium))
-                            .foregroundColor(AppColors.dominant)
+                            .caption(color: AppColors.dominant)
+                            .fontWeight(.medium)
                             .frame(minWidth: 24)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 8)
@@ -627,8 +627,8 @@ struct SetRowView: View {
                 }
 
                 Text("distance")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption2(color: AppColors.textTertiary)
+                    .fontWeight(.medium)
             }
             .fixedSize(horizontal: true, vertical: false)
         }
@@ -667,8 +667,8 @@ struct SetRowView: View {
                         toggleTimer()
                     } label: {
                         Image(systemName: timerRunning ? "stop.fill" : "play.fill")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(timerRunning ? AppColors.warning : AppColors.dominant)
+                            .subheadline(color: timerRunning ? AppColors.warning : AppColors.dominant)
+                            .fontWeight(.semibold)
                             .frame(width: 32, height: 32)
                             .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.dominant.opacity(0.12)))
                     }
@@ -677,8 +677,8 @@ struct SetRowView: View {
                 }
 
                 Text("hold")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption2(color: AppColors.textTertiary)
+                    .fontWeight(.medium)
             }
             .fixedSize(horizontal: true, vertical: false)
         }
@@ -701,8 +701,8 @@ struct SetRowView: View {
                     .focused($focusedField, equals: .reps)
 
                 Text("reps")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption2(color: AppColors.textTertiary)
+                    .fontWeight(.medium)
             }
             .fixedSize(horizontal: true, vertical: false)
         }
@@ -777,8 +777,8 @@ struct SetRowView: View {
                     .focused($focusedField, equals: .reps)
 
                 Text("reps")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption2(color: AppColors.textTertiary)
+                    .fontWeight(.medium)
             }
             .fixedSize(horizontal: true, vertical: false)
 
@@ -796,8 +796,8 @@ struct SetRowView: View {
                     .focused($focusedField, equals: .height)
 
                 Text("in")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption2(color: AppColors.textTertiary)
+                    .fontWeight(.medium)
             }
             .fixedSize(horizontal: true, vertical: false)
         }
@@ -811,11 +811,11 @@ struct SetRowView: View {
             if let activityType = exercise.recoveryActivityType {
                 HStack(spacing: 2) {
                     Image(systemName: activityType.icon)
-                        .font(.caption.weight(.medium))
-                        .foregroundColor(AppColors.accent1)
+                        .caption(color: AppColors.accent1)
+                        .fontWeight(.medium)
                     Text(activityType.displayName)
-                        .font(.caption2.weight(.medium))
-                        .foregroundColor(AppColors.textSecondary)
+                        .caption2(color: AppColors.textSecondary)
+                        .fontWeight(.medium)
                 }
                 .fixedSize(horizontal: true, vertical: false)
             }
@@ -842,8 +842,8 @@ struct SetRowView: View {
                         toggleStopwatch()
                     } label: {
                         Image(systemName: timerRunning ? "stop.fill" : "stopwatch")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(timerRunning ? AppColors.warning : AppColors.accent1)
+                            .subheadline(color: timerRunning ? AppColors.warning : AppColors.accent1)
+                            .fontWeight(.semibold)
                             .frame(width: 32, height: 32)
                             .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accent1.opacity(0.12)))
                     }
@@ -852,8 +852,8 @@ struct SetRowView: View {
                 }
 
                 Text("time")
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption2(color: AppColors.textTertiary)
+                    .fontWeight(.medium)
             }
             .fixedSize(horizontal: true, vertical: false)
 
@@ -872,8 +872,8 @@ struct SetRowView: View {
                         .focused($focusedField, equals: .temperature)
 
                     Text("°F")
-                        .font(.caption2.weight(.medium))
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption2(color: AppColors.textTertiary)
+                        .fontWeight(.medium)
                 }
                 .fixedSize(horizontal: true, vertical: false)
             }
@@ -888,8 +888,8 @@ struct SetRowView: View {
             action()
         } label: {
             Image(systemName: "trash")
-                .font(.subheadline.weight(.medium))
-                .foregroundColor(AppColors.error)
+                .subheadline(color: AppColors.error)
+                .fontWeight(.medium)
                 .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 .background(
                     Circle()
@@ -940,8 +940,8 @@ struct SetRowView: View {
             HapticManager.shared.soft()
         } label: {
             Image(systemName: "arrow.uturn.backward")
-                .font(.subheadline.weight(.semibold))
-                .foregroundColor(AppColors.dominant)
+                .subheadline(color: AppColors.dominant)
+                .fontWeight(.semibold)
                 .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 .background(
                     Circle()
@@ -993,8 +993,8 @@ struct SetRowView: View {
             )
         } label: {
             Image(systemName: "checkmark")
-                .font(.body.weight(.bold))
-                .foregroundColor(.white)
+                .body(color: .white)
+                .fontWeight(.bold)
                 .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 .background(
                     Circle()
@@ -1217,14 +1217,14 @@ struct SetRowView: View {
                             .foregroundColor(.white)
                     } else {
                         Image(systemName: "timer")
-                            .font(.body.weight(.medium))
-                            .foregroundColor(AppColors.textSecondary)
+                            .body(color: AppColors.textSecondary)
+                            .fontWeight(.medium)
                     }
                 }
 
                 Text(formatDurationVerbose(timeLimit))
-                    .font(.caption2.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption2(color: AppColors.textTertiary)
+                    .fontWeight(.medium)
             }
             .fixedSize(horizontal: true, vertical: false)
         }
@@ -1359,8 +1359,7 @@ struct TimePickerSheet: View {
                     .clipped()
 
                     Text("hr")
-                        .font(.headline)
-                        .foregroundColor(AppColors.textSecondary)
+                        .headline(color: AppColors.textSecondary)
                         .frame(width: 30)
 
                     // Minutes picker
@@ -1374,8 +1373,7 @@ struct TimePickerSheet: View {
                     .clipped()
 
                     Text("min")
-                        .font(.headline)
-                        .foregroundColor(AppColors.textSecondary)
+                        .headline(color: AppColors.textSecondary)
                         .frame(width: 35)
 
                     // Seconds picker
@@ -1389,8 +1387,7 @@ struct TimePickerSheet: View {
                     .clipped()
 
                     Text("sec")
-                        .font(.headline)
-                        .foregroundColor(AppColors.textSecondary)
+                        .headline(color: AppColors.textSecondary)
                         .frame(width: 35)
                 }
                 .frame(height: 150)

@@ -136,13 +136,11 @@ struct ExercisePickerView: View {
                         addCustomExercise()
                     } label: {
                         Image(systemName: "plus.circle.fill")
-                            .foregroundColor(AppColors.dominant)
-                            .font(.title2)
+                            .displaySmall(color: AppColors.dominant)
                     }
                 } else {
                     Image(systemName: "plus.circle.fill")
-                        .foregroundColor(.gray.opacity(0.5))
-                        .font(.title2)
+                        .displaySmall(color: .gray.opacity(0.5))
                 }
             }
 
@@ -156,7 +154,7 @@ struct ExercisePickerView: View {
                 }
 
                 Toggle("Save to My Exercises", isOn: $saveToLibrary)
-                    .font(.subheadline)
+                    .subheadline(color: AppColors.textPrimary)
             }
         } header: {
             Text("New Exercise")
@@ -185,8 +183,7 @@ struct ExercisePickerView: View {
                 Text("My Exercises (\(filteredCustomExercises.count))")
                 Spacer()
                 Image(systemName: "person.fill")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .caption(color: AppColors.textSecondary)
             }
         }
     }
@@ -203,8 +200,7 @@ struct ExercisePickerView: View {
                 Text("Exercise Library (\(filteredLibraryExercises.count))")
                 Spacer()
                 Image(systemName: "building.columns.fill")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .caption(color: AppColors.textSecondary)
             }
         }
     }
@@ -225,34 +221,30 @@ struct ExercisePickerView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 4) {
                         Text(template.name)
-                            .foregroundColor(.primary)
+                            .body(color: AppColors.textPrimary)
 
                         // Show indicator if exercise has muscles or equipment set
                         if !template.primaryMuscles.isEmpty || !template.implementIds.isEmpty {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.caption2)
-                                .foregroundColor(AppColors.success)
+                                .caption2(color: AppColors.success)
                         }
                     }
 
                     HStack(spacing: 4) {
                         Text(template.exerciseType.displayName)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .caption(color: AppColors.textSecondary)
 
                         // Show muscle count if set
                         if !template.primaryMuscles.isEmpty {
                             Text("\(template.primaryMuscles.count) muscles")
-                                .font(.caption2)
-                                .foregroundColor(AppColors.dominant)
+                                .caption2(color: AppColors.dominant)
                         }
 
                         // Show equipment if set
                         let equipment = equipmentNames(for: template)
                         if !equipment.isEmpty {
                             Text(equipment.joined(separator: ", "))
-                                .font(.caption2)
-                                .foregroundColor(AppColors.accent1)
+                                .caption2(color: AppColors.accent1)
                         }
                     }
                 }
@@ -261,7 +253,7 @@ struct ExercisePickerView: View {
 
                 if selectedTemplate?.id == template.id {
                     Image(systemName: "checkmark")
-                        .foregroundColor(AppColors.dominant)
+                        .body(color: AppColors.dominant)
                 }
             }
         }
@@ -332,11 +324,11 @@ struct CategoryPill: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                .subheadline(color: isSelected ? .white : AppColors.textPrimary)
+                .fontWeight(isSelected ? .semibold : .regular)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(isSelected ? AppColors.dominant : AppColors.surfaceTertiary)
-                .foregroundColor(isSelected ? .white : AppColors.textPrimary)
                 .clipShape(Capsule())
         }
     }
@@ -351,7 +343,8 @@ struct SelectableChip: View {
     var body: some View {
         Button(action: action) {
             Text(text)
-                .font(.caption.weight(isSelected ? .semibold : .regular))
+                .caption(color: isSelected ? .white : AppColors.textPrimary)
+                .fontWeight(isSelected ? .semibold : .regular)
                 .lineLimit(1)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
@@ -360,7 +353,6 @@ struct SelectableChip: View {
                     RoundedRectangle(cornerRadius: 6)
                         .fill(isSelected ? color : AppColors.surfaceTertiary)
                 )
-                .foregroundColor(isSelected ? .white : AppColors.textPrimary)
         }
         .buttonStyle(.plain)
     }

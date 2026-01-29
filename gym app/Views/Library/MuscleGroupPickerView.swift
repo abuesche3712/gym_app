@@ -91,9 +91,10 @@ struct MuscleGroupChip: View {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: icon)
                     .font(.subheadline)
+                    .foregroundColor(isSelected ? .white : AppColors.textPrimary)
 
                 Text(name)
-                    .font(.subheadline)
+                    .subheadline(color: isSelected ? .white : AppColors.textPrimary)
                     .lineLimit(1)
 
                 Spacer()
@@ -101,9 +102,9 @@ struct MuscleGroupChip: View {
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.body)
+                        .foregroundColor(isSelected ? .white : AppColors.textPrimary)
                 }
             }
-            .foregroundColor(isSelected ? .white : AppColors.textPrimary)
             .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, AppSpacing.sm)
             .background(
@@ -134,19 +135,18 @@ struct MuscleGroupDisplay: View {
     var body: some View {
         if muscleNames.isEmpty {
             Text("None selected")
-                .subheadline()
+                .subheadline(color: AppColors.textSecondary)
         } else {
             FlowLayout(spacing: AppSpacing.xs) {
                 ForEach(muscleNames, id: \.self) { name in
                     Text(name)
-                        .font(.caption)
+                        .caption(color: AppColors.dominant)
                         .padding(.horizontal, AppSpacing.sm)
                         .padding(.vertical, 4)
                         .background(
                             Capsule()
                                 .fill(AppColors.dominant.opacity(0.12))
                         )
-                        .foregroundColor(AppColors.dominant)
                 }
             }
         }

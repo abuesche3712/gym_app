@@ -160,8 +160,8 @@ private struct TypeChip: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline.weight(.medium))
-                .foregroundColor(isSelected ? .white : AppColors.textSecondary)
+                .subheadline(color: isSelected ? .white : AppColors.textSecondary)
+                .fontWeight(.medium)
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.vertical, AppSpacing.sm)
                 .background(
@@ -182,11 +182,10 @@ private struct StatPill: View {
     var body: some View {
         VStack(spacing: 2) {
             Text(value)
-                .font(.title3.bold())
-                .foregroundColor(AppColors.textPrimary)
+                .displaySmall(color: AppColors.textPrimary)
+                .fontWeight(.bold)
             Text(label)
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
+                .caption(color: AppColors.textTertiary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppSpacing.sm)
@@ -209,11 +208,10 @@ private struct SourceFilterPill: View {
         Button(action: action) {
             VStack(spacing: 2) {
                 Text(value)
-                    .font(.title3.bold())
-                    .foregroundColor(isSelected ? .white : AppColors.textPrimary)
+                    .displaySmall(color: isSelected ? .white : AppColors.textPrimary)
+                    .fontWeight(.bold)
                 Text(label)
-                    .font(.caption)
-                    .foregroundColor(isSelected ? .white.opacity(0.8) : AppColors.textTertiary)
+                    .caption(color: isSelected ? .white.opacity(0.8) : AppColors.textTertiary)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, AppSpacing.sm)
@@ -267,15 +265,13 @@ private struct ExerciseLibraryRow: View {
 
                     HStack(spacing: AppSpacing.sm) {
                         Text(exercise.exerciseType.displayName)
-                            .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption(color: AppColors.textTertiary)
 
                         if !exercise.primaryMuscles.isEmpty {
                             Text("•")
                                 .foregroundColor(AppColors.textTertiary)
                             Text(muscleNames)
-                                .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
+                                .caption(color: AppColors.textTertiary)
                                 .lineLimit(1)
                         }
 
@@ -283,8 +279,7 @@ private struct ExerciseLibraryRow: View {
                             Text("•")
                                 .foregroundColor(AppColors.textTertiary)
                             Text(equipmentNames)
-                                .font(.caption)
-                                .foregroundColor(AppColors.dominant)
+                                .caption(color: AppColors.dominant)
                                 .lineLimit(1)
                         }
                     }
@@ -298,8 +293,8 @@ private struct ExerciseLibraryRow: View {
                     .foregroundColor(AppColors.textTertiary)
 
                 Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption(color: AppColors.textTertiary)
+                    .fontWeight(.semibold)
             }
             .padding(AppSpacing.md)
             .background(

@@ -22,11 +22,11 @@ struct SignInView: View {
                     .displayLarge(color: AppColors.dominant)
 
                 Text("Gym App")
-                    .font(.largeTitle.bold())
+                    .displayLarge(color: AppColors.textPrimary)
+                    .fontWeight(.bold)
 
                 Text("Track your workouts and progress")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .subheadline(color: AppColors.textSecondary)
             }
 
             Spacer()
@@ -51,8 +51,7 @@ struct SignInView: View {
 
                 if let error = authService.error {
                     Text(error.localizedDescription)
-                        .font(.caption)
-                        .foregroundColor(AppColors.error)
+                        .caption(color: AppColors.error)
                         .multilineTextAlignment(.center)
                 }
             }
@@ -63,8 +62,7 @@ struct SignInView: View {
                 dismiss()
             } label: {
                 Text("Continue without signing in")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .subheadline(color: AppColors.textSecondary)
             }
 
             Spacer()

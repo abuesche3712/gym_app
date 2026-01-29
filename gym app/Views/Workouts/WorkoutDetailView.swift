@@ -32,7 +32,7 @@ struct WorkoutDetailView: View {
             Section {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(currentWorkout.name)
-                        .font(.title2)
+                        .displaySmall(color: AppColors.textPrimary)
                         .fontWeight(.bold)
 
                     HStack(spacing: 16) {
@@ -41,19 +41,17 @@ struct WorkoutDetailView: View {
                             Label("\(duration) min", systemImage: "clock")
                         }
                     }
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .subheadline(color: AppColors.textSecondary)
 
                     // Start Workout Button
                     Button {
                         startWorkout()
                     } label: {
                         Label("Start Workout", systemImage: "play.fill")
-                            .font(.headline)
+                            .headline(color: .white)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(AppColors.success)
-                            .foregroundStyle(.white)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)
@@ -65,7 +63,7 @@ struct WorkoutDetailView: View {
             if let notes = currentWorkout.notes, !notes.isEmpty {
                 Section("Notes") {
                     Text(notes)
-                        .foregroundStyle(.secondary)
+                        .body(color: AppColors.textSecondary)
                 }
             }
 
@@ -95,11 +93,10 @@ struct WorkoutDetailView: View {
                             HStack {
                                 VStack(alignment: .leading) {
                                     Text(session.formattedDate)
-                                        .font(.subheadline)
+                                        .subheadline(color: AppColors.textPrimary)
                                     if let duration = session.formattedDuration {
                                         Text(duration)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                            .caption(color: AppColors.textSecondary)
                                     }
                                 }
                                 Spacer()
@@ -181,10 +178,10 @@ struct WorkoutModuleRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Text("\(order)")
-                .font(.caption)
+                .caption(color: AppColors.textPrimary)
                 .fontWeight(.semibold)
                 .frame(width: 24, height: 24)
-                .background(Color(.systemGray5))
+                .background(AppColors.surfaceTertiary)
                 .clipShape(Circle())
 
             Image(systemName: module.type.icon)
@@ -192,20 +189,18 @@ struct WorkoutModuleRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(module.name)
-                    .font(.subheadline)
+                    .subheadline(color: AppColors.textPrimary)
                     .fontWeight(.medium)
 
                 Text("\(module.exercises.count) exercises")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .caption(color: AppColors.textSecondary)
             }
 
             Spacer()
 
             if let duration = module.estimatedDuration {
                 Text("\(duration)m")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .caption(color: AppColors.textSecondary)
             }
         }
     }
@@ -218,7 +213,8 @@ struct FeelingIndicator: View {
 
     var body: some View {
         Text("\(feeling)")
-            .font(.caption.bold())
+            .caption(color: AppColors.textPrimary)
+            .fontWeight(.bold)
     }
 }
 

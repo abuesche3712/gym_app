@@ -98,13 +98,11 @@ struct WorkoutOverviewSheet: View {
         } label: {
             HStack {
                 Image(systemName: module.moduleType.icon)
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.moduleColor(module.moduleType))
+                    .subheadline(color: AppColors.moduleColor(module.moduleType))
                     .frame(width: 24)
 
                 Text(module.moduleName)
-                    .font(.headline)
-                    .foregroundColor(AppColors.textPrimary)
+                    .headline(color: AppColors.textPrimary)
 
                 Spacer()
 
@@ -112,12 +110,11 @@ struct WorkoutOverviewSheet: View {
                     exercise.completedSetGroups.allSatisfy { $0.sets.allSatisfy { $0.completed } }
                 }.count
                 Text("\(completed)/\(module.completedExercises.count)")
-                    .font(.caption)
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption(color: AppColors.textTertiary)
 
                 Image(systemName: expandedModules.contains(moduleIndex) ? "chevron.down" : "chevron.right")
-                    .font(.caption.weight(.medium))
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption(color: AppColors.textTertiary)
+                    .fontWeight(.medium)
             }
             .padding(.vertical, 4)
         }
@@ -181,8 +178,8 @@ struct WorkoutOverviewSheet: View {
 
                     if allDone {
                         Image(systemName: "checkmark")
-                            .font(.caption2.weight(.bold))
-                            .foregroundColor(AppColors.success)
+                            .caption2(color: AppColors.success)
+                            .fontWeight(.bold)
                     } else if isCurrent {
                         Circle()
                             .fill(AppColors.dominant)
@@ -192,12 +189,11 @@ struct WorkoutOverviewSheet: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(exercise.exerciseName)
-                        .font(.subheadline.weight(isCurrent ? .semibold : .regular))
-                        .foregroundColor(isCurrent ? AppColors.dominant : AppColors.textPrimary)
+                        .subheadline(color: isCurrent ? AppColors.dominant : AppColors.textPrimary)
+                        .fontWeight(isCurrent ? .semibold : .regular)
 
                     Text(exerciseSetSummary(exercise))
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption(color: AppColors.textTertiary)
                 }
 
                 Spacer()
@@ -212,8 +208,8 @@ struct WorkoutOverviewSheet: View {
                     }
                 } label: {
                     Image(systemName: expandedExercises.contains(exerciseKey) ? "chevron.up" : "chevron.down")
-                        .font(.caption2.weight(.medium))
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption2(color: AppColors.textTertiary)
+                        .fontWeight(.medium)
                         .frame(width: 24, height: 24)
                 }
                 .buttonStyle(.plain)
@@ -247,33 +243,29 @@ struct WorkoutOverviewSheet: View {
                     } label: {
                         HStack(spacing: AppSpacing.sm) {
                             Text("Set \(currentSetNum)")
-                                .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
+                                .caption(color: AppColors.textTertiary)
                                 .frame(width: 44, alignment: .leading)
 
                             if setData.completed {
                                 Image(systemName: "checkmark")
-                                    .font(.caption2.weight(.bold))
-                                    .foregroundColor(AppColors.success)
+                                    .caption2(color: AppColors.success)
+                                    .fontWeight(.bold)
 
                                 Text(formatSetData(setData, exerciseType: exercise.exerciseType))
-                                    .font(.caption)
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .caption(color: AppColors.textSecondary)
                             } else {
                                 Circle()
                                     .stroke(AppColors.textTertiary, lineWidth: 1)
                                     .frame(width: 10, height: 10)
 
                                 Text(formatTargetData(setData, exerciseType: exercise.exerciseType))
-                                    .font(.caption)
-                                    .foregroundColor(AppColors.textTertiary)
+                                    .caption(color: AppColors.textTertiary)
                             }
 
                             Spacer()
 
                             Image(systemName: "pencil")
-                                .font(.caption2)
-                                .foregroundColor(AppColors.textTertiary)
+                                .caption2(color: AppColors.textTertiary)
                         }
                         .padding(.vertical, 4)
                         .padding(.horizontal, AppSpacing.sm)
@@ -297,11 +289,12 @@ struct WorkoutOverviewSheet: View {
         } label: {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: "plus")
-                    .font(.caption.weight(.medium))
+                    .caption(color: AppColors.textTertiary)
+                    .fontWeight(.medium)
                 Text("Add Exercise")
-                    .font(.subheadline.weight(.medium))
+                    .subheadline(color: AppColors.textTertiary)
+                    .fontWeight(.medium)
             }
-            .foregroundColor(AppColors.textTertiary)
             .frame(maxWidth: .infinity)
             .padding(.vertical, AppSpacing.sm)
             .padding(.leading, AppSpacing.lg)
@@ -376,11 +369,9 @@ struct EditSetSheet: View {
             VStack(spacing: AppSpacing.lg) {
                 VStack(spacing: 4) {
                     Text(location.exerciseName)
-                        .font(.headline)
-                        .foregroundColor(AppColors.textPrimary)
+                        .headline(color: AppColors.textPrimary)
                     Text("Set \(location.setNumber)")
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.textSecondary)
+                        .subheadline(color: AppColors.textSecondary)
                 }
 
                 inputFields
@@ -456,8 +447,8 @@ struct EditSetSheet: View {
 
                 HStack {
                     Text("RPE")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundColor(AppColors.textSecondary)
+                        .subheadline(color: AppColors.textSecondary)
+                        .fontWeight(.medium)
                     Spacer()
                     Picker("RPE", selection: $inputRPE) {
                         Text("--").tag(0)
@@ -480,11 +471,10 @@ struct EditSetSheet: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("DISTANCE")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
+                        .statLabel(color: AppColors.textTertiary)
                     TextField("0", text: $inputDistance)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(.displayMedium)
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .padding(AppSpacing.sm)
@@ -495,11 +485,10 @@ struct EditSetSheet: View {
         case .mobility, .explosive:
             VStack(alignment: .leading, spacing: 4) {
                 Text("REPS")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundColor(AppColors.textTertiary)
+                    .statLabel(color: AppColors.textTertiary)
                 TextField("0", text: $inputReps)
                     .keyboardType(.numberPad)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(.displayMedium)
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .padding(AppSpacing.sm)
@@ -509,11 +498,9 @@ struct EditSetSheet: View {
         case .recovery:
             VStack(alignment: .leading, spacing: 4) {
                 Text("DURATION")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundColor(AppColors.textTertiary)
+                    .statLabel(color: AppColors.textTertiary)
                 Text(inputDuration > 0 ? formatDuration(inputDuration) : "--")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundColor(AppColors.textPrimary)
+                    .displayMedium(color: AppColors.textPrimary)
                     .padding(AppSpacing.sm)
                     .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
             }

@@ -67,10 +67,10 @@ struct MoreView: View {
                 Section {
                     HStack {
                         Text("Version")
-                            .foregroundColor(.primary)
+                            .body()
                         Spacer()
                         Text("1.0.0")
-                            .foregroundColor(.secondary)
+                            .body(color: AppColors.textSecondary)
                     }
                 } header: {
                     Text("About")
@@ -92,20 +92,17 @@ struct MoreRowView: View {
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
-                .font(.title3)
-                .foregroundColor(iconColor)
+                .displaySmall(color: iconColor)
                 .frame(width: 32, height: 32)
                 .background(iconColor.opacity(0.15))
                 .cornerRadius(8)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.body)
-                    .foregroundColor(.primary)
+                    .body()
 
                 Text(subtitle)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .caption()
             }
         }
         .padding(.vertical, 4)
