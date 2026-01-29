@@ -2,6 +2,10 @@
 
 A design philosophy and implementation guide for creating a distinctive, joy-inducing iOS experience that doesn't look like every other fitness app.
 
+> **See also:**
+> - [TYPOGRAPHY.md](./TYPOGRAPHY.md) — Complete typography system with semantic modifiers
+> - [COLOR_PALETTE.md](./COLOR_PALETTE.md) — Full color system with usage guidelines
+
 ---
 
 ## Design Philosophy
@@ -20,53 +24,49 @@ A design philosophy and implementation guide for creating a distinctive, joy-ind
 
 ## Color System
 
+> **Full implementation:** See [COLOR_PALETTE.md](./COLOR_PALETTE.md) for complete color definitions and usage guidelines.
+
 ### Philosophy
 Dominant neutrals with surgical accent deployment. Accents should feel like rewards, not decorations.
 
-### Palette
+### Current Palette (Implemented)
 
 ```swift
-extension Color {
-    // MARK: - Neutrals (The Foundation)
-    static let background = Color(hex: "0A0A0B")      // Near-black, not pure black
-    static let surfacePrimary = Color(hex: "141416")  // Cards, sheets
-    static let surfaceSecondary = Color(hex: "1C1C1F") // Elevated surfaces
-    static let surfaceTertiary = Color(hex: "2C2C30")  // Borders, dividers
-    
-    // MARK: - Text Hierarchy
-    static let textPrimary = Color(hex: "FAFAFA")     // High emphasis
-    static let textSecondary = Color(hex: "A1A1AA")   // Medium emphasis
-    static let textTertiary = Color(hex: "52525B")    // Low emphasis, hints
-    
-    // MARK: - Accent (Cool Tones — Pick ONE Primary)
-    static let accent = Color(hex: "06B6D4")          // Cyan — energetic but not aggressive
-    // Alternatives to consider:
-    // static let accent = Color(hex: "22D3EE")       // Lighter cyan
-    // static let accent = Color(hex: "0EA5E9")       // Sky blue
-    // static let accent = Color(hex: "6366F1")       // Indigo (if you want more "tech")
-    
-    // MARK: - Semantic (Functional)
-    static let success = Color(hex: "22C55E")         // PR hit, workout complete
-    static let warning = Color(hex: "F59E0B")         // Approaching failure, rest timer
-    static let destructive = Color(hex: "EF4444")     // Delete, failed set
-    
-    // MARK: - Accent Variants (Generated)
-    static let accentMuted = accent.opacity(0.15)     // Backgrounds, badges
-    static let accentSubtle = accent.opacity(0.08)    // Hover states, selection
-}
+// Access via AppColors in Theme/AppTheme.swift
+AppColors.background        // Near-black base (#0D0D0F)
+AppColors.surfacePrimary    // Cards (#151518)
+AppColors.surfaceTertiary   // Borders (#2A2A2E)
+
+AppColors.textPrimary       // High emphasis (#FAFAFA)
+AppColors.textSecondary     // Medium emphasis (#A1A1AA)
+AppColors.textTertiary      // Low emphasis (#5A5A62)
+
+// Accent Colors (Multiple for visual variety)
+AppColors.dominant          // Cyan (#00D4E8) - Primary actions, active states
+AppColors.accent1           // Purple (#A78BFA) - Modules, secondary UI
+AppColors.accent2           // Rose (#F472B6) - Social features
+AppColors.accent3           // Teal (#2DD4BF) - Tertiary accent
+AppColors.programAccent     // Amber (#F59E0B) - Programs, scheduling
+
+// Semantic
+AppColors.success           // Green (#22C55E) - Completion, PRs
+AppColors.warning           // Amber (#F59E0B) - Urgent states
+AppColors.error             // Red (#EF4444) - Destructive actions
 ```
 
 ### Usage Rules
 
 | Context | Color |
 |---------|-------|
-| Active/current exercise | `accent` |
-| Completed sets | `textSecondary` with strikethrough or checkmark |
+| Active/current exercise | `dominant` |
+| Completed sets | `success` checkmark or `textSecondary` |
 | Upcoming sets | `textTertiary` |
-| Interactive elements (buttons, toggles) | `accent` |
-| Destructive actions | `destructive` (but require confirmation) |
-| PR indicators | `success` + subtle animation |
-| Rest timer (urgent) | `warning` pulse |
+| Interactive elements (buttons, toggles) | `dominant` |
+| Module-related UI | `accent1` or `moduleColor(type)` |
+| Program/schedule UI | `programAccent` |
+| Destructive actions | `error` (require confirmation) |
+| PR indicators | `success` + animation |
+| Rest timer (urgent <10s) | `warning` pulse |
 
 ### Anti-Patterns
 - ❌ Don't use accent color for everything — it loses meaning
@@ -78,55 +78,53 @@ extension Color {
 
 ## Typography
 
+> **Full implementation:** See [TYPOGRAPHY.md](./TYPOGRAPHY.md) for complete typography system, modifiers, and usage examples.
+
 ### Philosophy
 Typography does the heavy lifting in a minimal UI. Strong hierarchy, no ambiguity about what's important.
 
-### Type Scale
+### Semantic Modifiers (Implemented)
+
+All typography now uses semantic View modifiers instead of inline font definitions:
 
 ```swift
-extension Font {
-    // MARK: - Display (Workout titles, big numbers)
-    static let displayLarge = Font.system(size: 48, weight: .bold, design: .rounded)
-    static let displayMedium = Font.system(size: 36, weight: .bold, design: .rounded)
-    
-    // MARK: - Headings
-    static let headlineLarge = Font.system(size: 24, weight: .semibold)
-    static let headlineMedium = Font.system(size: 20, weight: .semibold)
-    static let headlineSmall = Font.system(size: 17, weight: .semibold)
-    
-    // MARK: - Body
-    static let bodyLarge = Font.system(size: 17, weight: .regular)
-    static let bodyMedium = Font.system(size: 15, weight: .regular)
-    static let bodySmall = Font.system(size: 13, weight: .regular)
-    
-    // MARK: - Mono (Numbers, timers, weights)
-    static let monoLarge = Font.system(size: 32, weight: .medium, design: .monospaced)
-    static let monoMedium = Font.system(size: 20, weight: .medium, design: .monospaced)
-    static let monoSmall = Font.system(size: 15, weight: .medium, design: .monospaced)
-    
-    // MARK: - Labels
-    static let labelLarge = Font.system(size: 13, weight: .medium)
-    static let labelSmall = Font.system(size: 11, weight: .medium)
-    static let labelSmallCaps = Font.system(size: 11, weight: .semibold).smallCaps()
-}
+// Display (Rounded, bold — celebration moments, big stats)
+Text("5").displayLarge()           // Workout summaries, massive stats
+Text("12").displayMedium()         // Module counts, prominent numbers
+
+// Monospaced (Numbers that change — prevents layout shift)
+Text("1:30").monoLarge()           // Rest timers, countdowns
+Text("135").monoMedium()           // Weight/reps during sets
+
+// Labels (Uppercase + tracking — elegant headers)
+Text("TODAY").elegantLabel(color: AppColors.dominant)
+Text("completed").statLabel()      // Stat descriptions
+
+// Standard (Semantic SwiftUI styles with color)
+Text("Bench Press").headline()
+Text("3 sets remaining").subheadline()
+Text("Last performed 2 days ago").caption()
 ```
 
 ### Usage Patterns
 
-| Element | Font | Color |
-|---------|------|-------|
-| Current weight/reps (active set) | `monoLarge` | `textPrimary` |
-| Exercise name | `headlineMedium` | `textPrimary` |
-| Set scheme (1x3 + 3x6) | `labelSmallCaps` | `textSecondary` |
-| Rest timer | `monoLarge` | `warning` when < 10s |
-| Section headers | `labelSmallCaps` | `textTertiary` |
-| Completed set data | `monoMedium` | `textSecondary` |
+| Element | Modifier | Color Override |
+|---------|----------|----------------|
+| Current weight/reps | `.monoMedium()` | — |
+| Exercise name | `.headline()` | — |
+| Section headers | `.elegantLabel()` | `AppColors.dominant` |
+| Rest timer | `.monoLarge()` | `AppColors.warning` when < 10s |
+| Stat labels | `.statLabel()` | — |
+| Completed set data | `.monoMedium()` | `AppColors.textSecondary` |
 
 ### Why `.rounded` for Display?
 It's confident without being aggressive. Fitness apps often go ultra-bold condensed — that screams "GAINS BRO." Rounded says "I'm serious about training but I'm not insufferable about it."
 
 ### Why Monospaced for Numbers?
 Numbers changing (timer counting, weight incrementing) shouldn't cause layout shifts. Mono keeps everything stable.
+
+### Numeric Input Fields
+Weight/rep/timer input fields use `.design: .rounded` for visual consistency with the display aesthetic. These are preserved as inline definitions since they're specialized UI.
 
 ---
 
@@ -473,15 +471,16 @@ Every design system needs a "signature" — the thing that makes people recogniz
 
 ## Implementation Checklist
 
-- [ ] Create `Color+Extensions.swift` with full palette
-- [ ] Create `Font+Extensions.swift` with type scale
-- [ ] Create `CGFloat+Spacing.swift` with spacing constants
-- [ ] Create `Animation+Extensions.swift` with timing presets
-- [ ] Build `PrimaryButton` component
-- [ ] Build `SetRow` component
-- [ ] Build `RestTimer` component
-- [ ] Audit all touch targets (44pt minimum)
-- [ ] Add haptic feedback to key interactions
+- [x] Create `Color+Extensions.swift` with full palette → `Theme/AppTheme.swift` (AppColors)
+- [x] Create `Font+Extensions.swift` with type scale → `Theme/Font+Extensions.swift` + `AppTheme.swift`
+- [x] Create `CGFloat+Spacing.swift` with spacing constants → `Theme/AppTheme.swift` (AppSpacing)
+- [x] Create `Animation+Extensions.swift` with timing presets → `Theme/AppTheme.swift` (AppAnimation)
+- [x] Build `PrimaryButton` component → `Theme/Components.swift`
+- [x] Build `SetRow` component → `Views/Session/SessionComponents.swift`
+- [x] Build `RestTimer` component → `Views/Session/ActiveSessionView.swift`
+- [x] Audit all touch targets (44pt minimum) → `AppSpacing.minTouchTarget = 44`
+- [x] Add haptic feedback to key interactions → `HapticManager` service
+- [x] Refactor all views to semantic typography (Jan 29, 2025) → 30 files converted
 - [ ] Test with Dynamic Type at all sizes
 - [ ] Test with VoiceOver
 - [ ] Choose your "signature moment" and polish it
