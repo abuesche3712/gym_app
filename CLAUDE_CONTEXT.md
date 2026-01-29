@@ -1,17 +1,17 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2025-01-28
+> **Last updated:** 2025-01-29
 
 ## Project Overview
 
 iOS workout tracking app built with SwiftUI. Offline-first with CoreData, Firebase for cloud sync.
 
-**Status:** Feature-complete foundation with UX bugs fixed and design system finalized (typography + color harmonization). Focus remains on UX refinement and infrastructure hardening.
+**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete (all 30 view files converted). Focus remains on UX refinement and infrastructure hardening.
 
-## Design System Implementation (Jan 28, 2025)
+## Design System Implementation (Jan 28-29, 2025)
 
-Comprehensive typography system and color harmonization finalized.
+Comprehensive typography system and color harmonization finalized. **Full typography refactoring completed Jan 29.**
 
 ### Typography System
 
@@ -21,7 +21,7 @@ Comprehensive typography system and color harmonization finalized.
 - **Label styles** (uppercase + tracking) - Elegant section headers
 - **Standard styles** (semantic + color) - Convenience wrappers
 
-**Refactored 245+ inline font definitions → 9 semantic modifiers:**
+**Refactored all 30 view files** - converted inline `.font(.system(size:))` to semantic modifiers:
 
 ```swift
 // Before (4 lines, verbose)
@@ -43,13 +43,15 @@ Text("TODAY")
 - `.statLabel()` - Stat descriptions (e.g., "completed", "volume")
 - `.headline()` / `.body()` / `.caption()` - Standard text with color
 
-**Files refactored:**
-- `HomeView.swift` - Week in Review stats, headers
-- `WorkoutBuilderView.swift`, `WorkoutsListView.swift`, `ModulesListView.swift` - Section headers
-- `SessionComponents.swift` - All timer displays (4 instances)
-- `IntervalTimerView.swift` - Big countdown + phase label
-- `ActiveSessionView.swift` - Session timer
-- `RecentSetsSheet.swift`, `WorkoutOverviewSheet.swift` - Input fields and labels
+**All view files refactored (30 total):**
+- Session: `ActiveSessionView`, `SessionComponents`, `IntervalTimerView`, `WorkoutOverviewSheet`, `RecentSetsSheet`, `EndSessionSheet`
+- Home: `HomeView`, `HomeScheduleSheets`, `WorkoutBuilderView`
+- Programs: `ProgramsListView`, `ProgramFormView`, `ProgramWeeklyGridView`, `AddWorkoutSlotSheet`
+- Workouts/Modules: `WorkoutsListView`, `WorkoutFormView`, `ModulesListView`, `ModuleFormView`, `ExerciseFormView`, `SetGroupFormView`
+- Library/Settings: `ExerciseLibraryView`, `EquipmentLibraryView`, `ImplementPickerView`, `MuscleGroupPickerView`, `SettingsView`, `DebugSyncLogsView`
+- Other: `HistoryView`, `AnalyticsView`, `SocialView`, `SignInView`, `AnimatedComponents`
+
+**Preserved:** Fonts with `.design: .rounded` for numeric input displays (weight/reps/timers)
 
 **Documentation:** `design docs/TYPOGRAPHY.md` - Complete usage guide, before/after examples, decision tree
 

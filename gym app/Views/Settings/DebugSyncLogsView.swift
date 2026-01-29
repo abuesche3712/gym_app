@@ -139,7 +139,7 @@ struct DebugSyncLogsView: View {
             Spacer()
 
             Image(systemName: "doc.text.magnifyingglass")
-                .font(.system(size: 48))
+                .font(.largeTitle)
                 .foregroundColor(AppColors.textTertiary)
 
             Text("No Logs")
@@ -212,7 +212,7 @@ private struct FilterChip: View {
             HStack(spacing: 4) {
                 if let icon = icon {
                     Image(systemName: icon)
-                        .font(.system(size: 12))
+                        .font(.caption)
                 }
                 Text(label)
                     .font(.subheadline)
@@ -236,7 +236,7 @@ private struct LogRowView: View {
             HStack {
                 // Severity icon
                 Image(systemName: log.severity.icon)
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundColor(severityColor)
 
                 // Context

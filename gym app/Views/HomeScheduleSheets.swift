@@ -160,7 +160,7 @@ struct ScheduleWorkoutSheet: View {
                                             onDeleteSession?(session)
                                         } label: {
                                             Image(systemName: "trash")
-                                                .font(.system(size: 14))
+                                                .font(.subheadline)
                                                 .foregroundColor(AppColors.error)
                                                 .frame(width: 44, height: 44)
                                         }
@@ -450,7 +450,7 @@ struct ScheduledWorkoutDetailRow: View {
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.caption.weight(.semibold))
                         .foregroundColor(AppColors.textTertiary)
                 }
             }
@@ -661,7 +661,7 @@ struct QuickScheduleTodaySheet: View {
                                         Spacer()
 
                                         Image(systemName: "chevron.right")
-                                            .font(.system(size: 12, weight: .semibold))
+                                            .font(.caption.weight(.semibold))
                                             .foregroundColor(AppColors.textTertiary)
                                     }
                                     .padding(AppSpacing.md)
@@ -699,7 +699,7 @@ struct QuickScheduleTodaySheet: View {
                                 Spacer()
 
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(.caption.weight(.semibold))
                                     .foregroundColor(AppColors.textTertiary)
                             }
                             .padding(AppSpacing.md)

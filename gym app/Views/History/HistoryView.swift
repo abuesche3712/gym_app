@@ -103,8 +103,7 @@ struct HistoryView: View {
                             ForEach(groupedSessions, id: \.0) { month, sessions in
                                 VStack(alignment: .leading, spacing: AppSpacing.md) {
                                     Text(month)
-                                        .font(.title3.bold())
-                                        .foregroundColor(AppColors.textPrimary)
+                                        .displaySmall()
                                         .padding(.horizontal, AppSpacing.screenPadding)
 
                                     VStack(spacing: 0) {
@@ -203,16 +202,14 @@ struct SessionHistoryRow: View {
                     if let duration = session.formattedDuration {
                         HStack(spacing: 4) {
                             Image(systemName: "clock")
-                                .font(.system(size: 10))
+                                .font(.caption2)
                             Text(duration)
                         }
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
+                        .caption()
                     }
 
                     Text("\(session.totalSetsCompleted) sets")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
+                        .caption()
                 }
 
                 // Module type indicators
@@ -224,8 +221,7 @@ struct SessionHistoryRow: View {
                     }
                     if session.completedModules.count > 5 {
                         Text("+\(session.completedModules.count - 5)")
-                            .font(.caption2)
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption2()
                     }
                 }
             }
@@ -238,7 +234,7 @@ struct SessionHistoryRow: View {
                 }
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12))
+                    .font(.caption)
                     .foregroundColor(AppColors.textTertiary)
             }
         }

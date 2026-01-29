@@ -242,7 +242,7 @@ private struct EquipmentLibraryRow: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundColor(AppColors.textTertiary)
             }
             .padding(AppSpacing.md)

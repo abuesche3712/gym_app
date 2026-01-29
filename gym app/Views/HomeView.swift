@@ -160,7 +160,7 @@ struct HomeView: View {
             if currentStreak >= 2 {
                 HStack(spacing: 4) {
                     Text("🔥")
-                        .font(.system(size: 12))
+                        .font(.caption)
                     Text("\(currentStreak) day streak")
                         .font(.caption.weight(.bold))
                         .foregroundColor(AppColors.warning)
@@ -256,7 +256,7 @@ struct HomeView: View {
                                 .font(.headline.bold())
                                 .foregroundColor(.white)
                             Image(systemName: feelingIcon(feeling))
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.caption2.weight(.bold))
                                 .foregroundColor(.white.opacity(0.8))
                         }
                         .frame(width: 52, height: 36)
@@ -266,7 +266,7 @@ struct HomeView: View {
                     }
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundColor(AppColors.textTertiary)
                 }
             }
@@ -444,7 +444,7 @@ struct HomeView: View {
                     workoutViewModel.unscheduleWorkout(scheduled)
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.body)
                         .foregroundColor(AppColors.textTertiary)
                 }
             }
@@ -518,7 +518,7 @@ struct HomeView: View {
                     Spacer()
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundColor(AppColors.textTertiary)
                 }
             }
@@ -548,7 +548,7 @@ struct HomeView: View {
                     }
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundColor(AppColors.dominant)
                         .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 }
@@ -569,7 +569,7 @@ struct HomeView: View {
                     }
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundColor(AppColors.dominant)
                         .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 }

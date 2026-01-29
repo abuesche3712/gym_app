@@ -123,14 +123,14 @@ struct SlotChip: View {
     var body: some View {
         HStack(spacing: 2) {
             Text(abbreviatedName(slot.workoutName))
-                .font(.system(size: 9, weight: .medium))
+                .font(.caption2.weight(.medium))
                 .lineLimit(1)
 
             Button {
                 onRemove()
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 10))
+                    .font(.caption2)
                     .foregroundColor(.white.opacity(0.8))
             }
             .buttonStyle(.plain)
@@ -230,18 +230,18 @@ struct UnifiedSlotChip: View {
             // Module type icon for modules
             if let moduleType = slot.content.moduleType {
                 Image(systemName: moduleType.icon)
-                    .font(.system(size: 7))
+                    .font(.caption2)
             }
 
             Text(abbreviatedName(slot.displayName))
-                .font(.system(size: 9, weight: .medium))
+                .font(.caption2.weight(.medium))
                 .lineLimit(1)
 
             Button {
                 onRemove()
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 10))
+                    .font(.caption2)
                     .foregroundColor(.white.opacity(0.8))
             }
             .buttonStyle(.plain)

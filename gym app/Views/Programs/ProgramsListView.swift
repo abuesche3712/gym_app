@@ -138,7 +138,7 @@ struct ProgramsListView: View {
     private var noActiveProgramCard: some View {
         VStack(spacing: 12) {
             Image(systemName: "calendar.badge.plus")
-                .font(.system(size: 40))
+                .font(.largeTitle)
                 .foregroundColor(.secondary)
 
             Text("No Active Program")
@@ -322,7 +322,7 @@ struct MonthDayCell: View {
         } label: {
             VStack(spacing: 2) {
                 Text("\(Calendar.current.component(.day, from: date))")
-                    .font(.system(size: 14, weight: isToday ? .bold : .regular))
+                    .font(.subheadline.weight(isToday ? .bold : .regular))
                     .foregroundColor(dayTextColor)
 
                 // Workout indicators
@@ -335,7 +335,7 @@ struct MonthDayCell: View {
                         }
                         if scheduledWorkouts.count > 3 {
                             Text("+")
-                                .font(.system(size: 8))
+                                .font(.caption2)
                                 .foregroundColor(.secondary)
                         }
                     }
@@ -390,7 +390,7 @@ struct ProgramCompactRow: View {
 
                     if isActive {
                         Text("ACTIVE")
-                            .font(.system(size: 9, weight: .bold))
+                            .font(.caption2.weight(.bold))
                             .foregroundColor(.white)
                             .padding(.horizontal, 4)
                             .padding(.vertical, 1)
@@ -532,7 +532,7 @@ struct DayDetailSheet: View {
                             Spacer()
                             VStack(spacing: 8) {
                                 Image(systemName: "moon.zzz")
-                                    .font(.system(size: 32))
+                                    .font(.title)
                                     .foregroundColor(.secondary)
                                 Text("Rest Day")
                                     .font(.headline)

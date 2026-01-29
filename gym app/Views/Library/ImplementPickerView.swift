@@ -24,13 +24,11 @@ struct ImplementPickerView: View {
             // Header
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(title)
-                    .font(.headline)
-                    .foregroundColor(AppColors.textPrimary)
+                    .headline()
 
                 if let subtitle = subtitle {
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
+                        .caption()
                 }
             }
 
@@ -50,8 +48,7 @@ struct ImplementPickerView: View {
             // Selected count
             if !selectedIds.isEmpty {
                 Text("\(selectedIds.count) selected")
-                    .font(.caption)
-                    .foregroundColor(AppColors.dominant)
+                    .caption(color: AppColors.dominant)
             }
         }
     }
@@ -90,7 +87,7 @@ struct ImplementChip: View {
         Button(action: action) {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: icon)
-                    .font(.system(size: 14))
+                    .font(.subheadline)
 
                 Text(name)
                     .font(.subheadline)
@@ -100,7 +97,7 @@ struct ImplementChip: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.body)
                 }
             }
             .foregroundColor(isSelected ? .white : AppColors.textPrimary)
@@ -134,8 +131,7 @@ struct ImplementDisplay: View {
     var body: some View {
         if implementNames.isEmpty {
             Text("None selected")
-                .font(.subheadline)
-                .foregroundColor(AppColors.textSecondary)
+                .subheadline()
         } else {
             FlowLayout(spacing: AppSpacing.xs) {
                 ForEach(implementNames, id: \.self) { name in
@@ -162,8 +158,7 @@ struct BandColorInput: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Band Color")
-                .font(.subheadline)
-                .foregroundColor(AppColors.textSecondary)
+                .subheadline()
 
             TextField("e.g., Red, Blue, Green", text: $color)
                 .textFieldStyle(.roundedBorder)

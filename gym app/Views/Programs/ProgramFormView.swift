@@ -130,7 +130,7 @@ struct ProgramFormView: View {
                     dismiss()
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundColor(AppColors.textSecondary)
                         .frame(width: 36, height: 36)
                         .background(
@@ -168,7 +168,7 @@ struct ProgramFormView: View {
                     .elegantLabel(color: AppColors.programAccent)
 
                 Text(isEditing ? "Edit Program" : "Create Program")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.title)
                     .foregroundColor(AppColors.textPrimary)
             }
 
@@ -357,7 +357,7 @@ struct ProgramFormView: View {
                     } label: {
                         HStack {
                             Image(systemName: "stop.circle")
-                                .font(.system(size: 18))
+                                .font(.body)
                             Text("Deactivate Program")
                                 .font(.subheadline.weight(.semibold))
                         }
@@ -384,7 +384,7 @@ struct ProgramFormView: View {
                     } label: {
                         HStack {
                             Image(systemName: "play.circle.fill")
-                                .font(.system(size: 18))
+                                .font(.body)
                             Text("Activate Program")
                                 .font(.subheadline.weight(.semibold))
                         }
@@ -498,7 +498,7 @@ struct ProgramFormView: View {
     private func sectionHeader(title: String, icon: String) -> some View {
         HStack(spacing: AppSpacing.sm) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(.subheadline)
                 .foregroundColor(AppColors.programAccent)
 
             Text(title)
@@ -657,16 +657,16 @@ private struct InlineSlotChip: View {
         HStack(spacing: 2) {
             if let icon = icon {
                 Image(systemName: icon)
-                    .font(.system(size: 7))
+                    .font(.caption2)
             }
 
             Text(abbreviatedName(name))
-                .font(.system(size: 9, weight: .medium))
+                .font(.caption2.weight(.medium))
                 .lineLimit(1)
 
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 10))
+                    .font(.caption2)
                     .foregroundColor(.white.opacity(0.8))
             }
             .buttonStyle(.plain)
@@ -935,7 +935,7 @@ private struct TypeButton: View {
         Button(action: action) {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: icon)
-                    .font(.system(size: 14))
+                    .font(.subheadline)
                 Text(title)
                     .font(.subheadline.weight(.medium))
             }
@@ -1017,7 +1017,7 @@ private struct SelectionRow: View {
         Button(action: action) {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: icon)
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(color)
                     .frame(width: 24)
 

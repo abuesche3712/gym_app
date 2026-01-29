@@ -145,7 +145,7 @@ struct SetGroupFormView: View {
                         // Interval Mode Toggle
                         HStack(spacing: AppSpacing.md) {
                             Image(systemName: "repeat")
-                                .font(.system(size: 16))
+                                .font(.body)
                                 .foregroundColor(AppColors.textTertiary)
                                 .frame(width: 24)
 
@@ -165,7 +165,7 @@ struct SetGroupFormView: View {
                         // AMRAP Mode Toggle
                         HStack(spacing: AppSpacing.md) {
                             Image(systemName: "figure.strengthtraining.traditional")
-                                .font(.system(size: 16))
+                                .font(.body)
                                 .foregroundColor(AppColors.textTertiary)
                                 .frame(width: 24)
 
@@ -248,7 +248,7 @@ struct SetGroupFormView: View {
         FormSection(title: "Rounds", icon: "repeat.circle", iconColor: AppColors.dominant) {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "number")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 24)
 
@@ -285,7 +285,7 @@ struct SetGroupFormView: View {
         FormSection(title: "Summary", icon: "clock", iconColor: AppColors.textSecondary) {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "hourglass")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 24)
 
@@ -312,7 +312,7 @@ struct SetGroupFormView: View {
         FormSection(title: "AMRAP Sets", icon: "figure.strengthtraining.traditional", iconColor: AppColors.accent2) {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "number")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 24)
 
@@ -334,7 +334,7 @@ struct SetGroupFormView: View {
             VStack(spacing: AppSpacing.sm) {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "timer")
-                        .font(.system(size: 16))
+                        .font(.body)
                         .foregroundColor(AppColors.textTertiary)
                         .frame(width: 24)
 
@@ -425,7 +425,7 @@ struct SetGroupFormView: View {
         FormSection(title: "Sets", icon: "number.square", iconColor: AppColors.dominant) {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "number")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 24)
 
@@ -658,7 +658,7 @@ struct SetGroupFormView: View {
     private func styledRow<Content: View>(icon: String, label: String, @ViewBuilder content: () -> Content) -> some View {
         HStack(spacing: AppSpacing.md) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.body)
                 .foregroundColor(AppColors.textTertiary)
                 .frame(width: 24)
 
@@ -678,7 +678,7 @@ struct SetGroupFormView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "arrow.left.and.right")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 24)
 

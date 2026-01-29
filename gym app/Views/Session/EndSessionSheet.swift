@@ -74,8 +74,7 @@ struct EndSessionSheet: View {
     private var ratingSection: some View {
         VStack(spacing: AppSpacing.md) {
             Text("How did you feel?")
-                .font(.headline)
-                .foregroundColor(AppColors.textPrimary)
+                .headline()
 
             // 1-10 rating buttons in two rows
             VStack(spacing: AppSpacing.sm) {
@@ -132,15 +131,14 @@ struct EndSessionSheet: View {
     private func exercisesSection(session: Session) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             Text("Exercises")
-                .font(.headline)
-                .foregroundColor(AppColors.textPrimary)
+                .headline()
 
             ForEach(session.completedModules) { module in
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     // Module header
                     HStack(spacing: AppSpacing.sm) {
                         Image(systemName: module.moduleType.icon)
-                            .font(.system(size: 14))
+                            .font(.subheadline)
                             .foregroundColor(AppColors.moduleColor(module.moduleType))
                         Text(module.moduleName)
                             .font(.subheadline.weight(.semibold))
@@ -177,14 +175,13 @@ struct EndSessionSheet: View {
                         // Set summary
                         let completedSets = exercise.completedSetGroups.flatMap { $0.sets }.filter { $0.completed }
                         Text("\(completedSets.count) sets completed")
-                            .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption2()
                     }
 
                     Spacer()
 
                     Image(systemName: expandedExercises.contains(exercise.id) ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.caption.weight(.semibold))
                         .foregroundColor(AppColors.textTertiary)
                 }
                 .padding(AppSpacing.md)
@@ -256,7 +253,7 @@ struct EndSessionSheet: View {
 
                 // Edit indicator
                 Image(systemName: "pencil")
-                    .font(.system(size: 10))
+                    .font(.caption2)
                     .foregroundColor(AppColors.textTertiary)
             }
             .padding(.vertical, 4)
@@ -343,8 +340,7 @@ struct EndSessionSheet: View {
     private func progressionButtons(exercise: SessionExercise, moduleId: UUID) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Next session:")
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
+                .caption2()
 
             HStack(spacing: AppSpacing.sm) {
                 ForEach(ProgressionRecommendation.allCases) { recommendation in
@@ -364,7 +360,7 @@ struct EndSessionSheet: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: recommendation.icon)
-                    .font(.system(size: 12))
+                    .font(.caption)
                 Text(recommendation.displayName)
                     .font(.caption.weight(.medium))
             }
@@ -404,8 +400,7 @@ struct EndSessionSheet: View {
     private func exerciseNotesField(exercise: SessionExercise, moduleId: UUID) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Notes")
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
+                .caption2()
 
             TextField("Add notes for this exercise...", text: exerciseNotesBinding(exercise: exercise, moduleId: moduleId), axis: .vertical)
                 .font(.subheadline)

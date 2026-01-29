@@ -149,7 +149,7 @@ struct WorkoutFormView: View {
                         .elegantLabel(color: isEditing ? AppColors.warning : AppColors.dominant)
 
                     Text(name.isEmpty ? "New Workout" : name)
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.title3.weight(.bold))
                         .foregroundColor(AppColors.textPrimary)
                         .lineLimit(1)
                 }
@@ -196,7 +196,7 @@ struct WorkoutFormView: View {
                 .stroke(progress >= 1.0 ? AppColors.success : AppColors.dominant, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Image(systemName: progress >= 1.0 ? "checkmark" : "hammer.fill")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundColor(progress >= 1.0 ? AppColors.success : AppColors.dominant)
         }
         .frame(width: 44, height: 44)
@@ -219,7 +219,7 @@ struct WorkoutFormView: View {
     private func statBadge(value: String, label: String, icon: String, color: Color) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 12, weight: .medium))
+                .font(.caption.weight(.medium))
                 .foregroundColor(color)
             Text(value)
                 .font(.subheadline.weight(.bold))
@@ -276,7 +276,7 @@ struct WorkoutFormView: View {
     private var moduleQuickAddBar: some View {
         HStack(spacing: AppSpacing.md) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 16))
+                .font(.body)
                 .foregroundColor(AppColors.textTertiary)
                 .frame(width: 24)
 
@@ -289,7 +289,7 @@ struct WorkoutFormView: View {
                     moduleSearchText = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.body)
                         .foregroundColor(AppColors.textTertiary)
                 }
             }
@@ -308,7 +308,7 @@ struct WorkoutFormView: View {
                 } label: {
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: module.type.icon)
-                            .font(.system(size: 14))
+                            .font(.subheadline)
                             .foregroundColor(AppColors.moduleColor(module.type))
                             .frame(width: 24)
 
@@ -324,7 +324,7 @@ struct WorkoutFormView: View {
                         Spacer()
 
                         Image(systemName: "plus.circle")
-                            .font(.system(size: 16))
+                            .font(.body)
                             .foregroundColor(AppColors.accent1)
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
@@ -343,7 +343,7 @@ struct WorkoutFormView: View {
     private var emptyModulesView: some View {
         VStack(spacing: AppSpacing.sm) {
             Image(systemName: "square.stack.3d.up")
-                .font(.system(size: 32))
+                .font(.title)
                 .foregroundColor(AppColors.textTertiary.opacity(0.5))
             Text("No modules added")
                 .font(.subheadline)
@@ -406,7 +406,7 @@ struct WorkoutFormView: View {
                 }
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 18))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary.opacity(0.6))
             }
         }
@@ -421,7 +421,7 @@ struct WorkoutFormView: View {
         } label: {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "folder")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(AppColors.accent1)
                     .frame(width: 24)
                 Text("Browse Module Library")
@@ -429,7 +429,7 @@ struct WorkoutFormView: View {
                     .fontWeight(.medium)
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundColor(AppColors.textTertiary)
             }
             .padding(.horizontal, AppSpacing.cardPadding)
@@ -486,7 +486,7 @@ struct WorkoutFormView: View {
     private var exerciseQuickAddBar: some View {
         HStack(spacing: AppSpacing.md) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 16))
+                .font(.body)
                 .foregroundColor(AppColors.textTertiary)
                 .frame(width: 24)
 
@@ -506,7 +506,7 @@ struct WorkoutFormView: View {
                     exerciseSearchText = ""
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 20))
+                        .font(.title3)
                         .foregroundColor(AppColors.dominant)
                 }
             }
@@ -525,7 +525,7 @@ struct WorkoutFormView: View {
                 } label: {
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: template.exerciseType.icon)
-                            .font(.system(size: 14))
+                            .font(.subheadline)
                             .foregroundColor(AppColors.dominant)
                             .frame(width: 24)
 
@@ -540,7 +540,7 @@ struct WorkoutFormView: View {
                             .foregroundColor(AppColors.textTertiary)
 
                         Image(systemName: "plus.circle")
-                            .font(.system(size: 16))
+                            .font(.body)
                             .foregroundColor(AppColors.dominant)
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
@@ -559,7 +559,7 @@ struct WorkoutFormView: View {
     private var emptyExercisesView: some View {
         VStack(spacing: AppSpacing.sm) {
             Image(systemName: "dumbbell")
-                .font(.system(size: 32))
+                .font(.title)
                 .foregroundColor(AppColors.textTertiary.opacity(0.5))
             Text("No standalone exercises")
                 .font(.subheadline)
@@ -684,13 +684,13 @@ struct WorkoutFormView: View {
                     }
                 } label: {
                     Image(systemName: selectedForSuperset.contains(exercise.id) ? "checkmark.circle.fill" : "circle")
-                        .font(.system(size: 22))
+                        .font(.title3)
                         .foregroundColor(selectedForSuperset.contains(exercise.id) ? AppColors.dominant : AppColors.textTertiary)
                 }
             } else {
                 // Drag handle
                 Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 20)
             }
@@ -741,7 +741,7 @@ struct WorkoutFormView: View {
                 editingExercise = exercise
             } label: {
                 Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 14))
+                    .font(.subheadline)
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 32, height: 32)
             }
@@ -752,7 +752,7 @@ struct WorkoutFormView: View {
                 }
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 18))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary.opacity(0.6))
             }
         }
@@ -768,7 +768,7 @@ struct WorkoutFormView: View {
             } label: {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "books.vertical")
-                        .font(.system(size: 16))
+                        .font(.body)
                         .foregroundColor(AppColors.dominant)
                         .frame(width: 24)
                     Text("Browse Exercise Library")
@@ -776,7 +776,7 @@ struct WorkoutFormView: View {
                         .fontWeight(.medium)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.caption.weight(.semibold))
                         .foregroundColor(AppColors.textTertiary)
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
@@ -792,7 +792,7 @@ struct WorkoutFormView: View {
             } label: {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "plus.circle")
-                        .font(.system(size: 16))
+                        .font(.body)
                         .foregroundColor(AppColors.accent1)
                         .frame(width: 24)
                     Text("Create New Exercise")
@@ -800,7 +800,7 @@ struct WorkoutFormView: View {
                         .fontWeight(.medium)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.caption.weight(.semibold))
                         .foregroundColor(AppColors.textTertiary)
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
@@ -999,11 +999,11 @@ struct ModulePickerSheet: View {
                                 if isSelected(module.id) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundColor(AppColors.success)
-                                        .font(.system(size: 22))
+                                        .font(.title3)
                                 } else {
                                     Image(systemName: "circle")
                                         .foregroundColor(AppColors.textTertiary)
-                                        .font(.system(size: 22))
+                                        .font(.title3)
                                 }
                             }
                         }
@@ -1146,11 +1146,11 @@ struct WorkoutExercisePickerSheet: View {
                             if isSelected(template) {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundColor(AppColors.success)
-                                    .font(.system(size: 22))
+                                    .font(.title3)
                             } else {
                                 Image(systemName: "circle")
                                     .foregroundColor(AppColors.textTertiary)
-                                    .font(.system(size: 22))
+                                    .font(.title3)
                             }
                         }
                     }

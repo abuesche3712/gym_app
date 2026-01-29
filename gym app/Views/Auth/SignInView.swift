@@ -19,8 +19,7 @@ struct SignInView: View {
             // App logo/title
             VStack(spacing: 16) {
                 Image(systemName: "dumbbell.fill")
-                    .font(.system(size: 80))
-                    .foregroundColor(AppColors.dominant)
+                    .displayLarge(color: AppColors.dominant)
 
                 Text("Gym App")
                     .font(.largeTitle.bold())

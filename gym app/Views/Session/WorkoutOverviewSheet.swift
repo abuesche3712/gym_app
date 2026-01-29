@@ -98,7 +98,7 @@ struct WorkoutOverviewSheet: View {
         } label: {
             HStack {
                 Image(systemName: module.moduleType.icon)
-                    .font(.system(size: 14))
+                    .font(.subheadline)
                     .foregroundColor(AppColors.moduleColor(module.moduleType))
                     .frame(width: 24)
 
@@ -116,7 +116,7 @@ struct WorkoutOverviewSheet: View {
                     .foregroundColor(AppColors.textTertiary)
 
                 Image(systemName: expandedModules.contains(moduleIndex) ? "chevron.down" : "chevron.right")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .foregroundColor(AppColors.textTertiary)
             }
             .padding(.vertical, 4)
@@ -181,7 +181,7 @@ struct WorkoutOverviewSheet: View {
 
                     if allDone {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.caption2.weight(.bold))
                             .foregroundColor(AppColors.success)
                     } else if isCurrent {
                         Circle()
@@ -212,7 +212,7 @@ struct WorkoutOverviewSheet: View {
                     }
                 } label: {
                     Image(systemName: expandedExercises.contains(exerciseKey) ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.caption2.weight(.medium))
                         .foregroundColor(AppColors.textTertiary)
                         .frame(width: 24, height: 24)
                 }
@@ -253,7 +253,7 @@ struct WorkoutOverviewSheet: View {
 
                             if setData.completed {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 9, weight: .bold))
+                                    .font(.caption2.weight(.bold))
                                     .foregroundColor(AppColors.success)
 
                                 Text(formatSetData(setData, exerciseType: exercise.exerciseType))
@@ -272,7 +272,7 @@ struct WorkoutOverviewSheet: View {
                             Spacer()
 
                             Image(systemName: "pencil")
-                                .font(.system(size: 10))
+                                .font(.caption2)
                                 .foregroundColor(AppColors.textTertiary)
                         }
                         .padding(.vertical, 4)
@@ -297,7 +297,7 @@ struct WorkoutOverviewSheet: View {
         } label: {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: "plus")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.caption.weight(.medium))
                 Text("Add Exercise")
                     .font(.subheadline.weight(.medium))
             }

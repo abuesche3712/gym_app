@@ -22,7 +22,7 @@ struct SocialView: View {
                             .frame(width: 120, height: 120)
 
                         Image(systemName: "person.2.fill")
-                            .font(.system(size: 48))
+                            .font(.largeTitle)
                             .foregroundColor(AppColors.warning)
                     }
 

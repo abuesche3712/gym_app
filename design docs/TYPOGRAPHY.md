@@ -300,25 +300,55 @@ Text("\(sessionsThisWeek)")
 
 ## Implementation Status
 
-### ✅ Refactored (Using New System)
-- HomeView (all stats, headers)
-- WorkoutBuilderView (header)
-- WorkoutsListView (header)
-- ModulesListView (header)
-- ProgramFormView (header)
-- WorkoutFormView (header)
-- SessionComponents (all timers)
-- IntervalTimerView (countdown, phase)
-- ActiveSessionView (session timer)
-- RecentSetsSheet (inputs, labels)
-- WorkoutOverviewSheet (inputs, labels)
+### ✅ Fully Refactored (Jan 29, 2025)
 
-### 🔄 Can Be Refactored Incrementally
-- Exercise library views
-- Settings screens
-- History views
-- Analytics views
-- Smaller components (badges, chips, etc.)
+**All 30 view files converted** from inline `.font(.system(size:))` to semantic typography:
+
+**Session Views:**
+- ActiveSessionView.swift - session timer, completion overlays
+- SessionComponents.swift - set inputs, timers (rounded design preserved for numeric displays)
+- IntervalTimerView.swift - countdown, phase labels
+- WorkoutOverviewSheet.swift - navigation, editing
+- RecentSetsSheet.swift - set editing
+- EndSessionSheet.swift - summary stats
+
+**Home & Builder:**
+- HomeView.swift - stats, calendar, headers
+- HomeScheduleSheets.swift - scheduling UI
+- WorkoutBuilderView.swift - training hub header
+
+**Programs:**
+- ProgramsListView.swift - list and calendar
+- ProgramFormView.swift - form inputs, schedule grid
+- ProgramWeeklyGridView.swift - compact calendar chips
+- AddWorkoutSlotSheet.swift - slot selection
+
+**Workouts & Modules:**
+- WorkoutsListView.swift - list cards, headers
+- WorkoutFormView.swift - builder interface
+- ModulesListView.swift - module cards, filters
+- ModuleFormView.swift - exercise management
+- ExerciseFormView.swift - exercise editing
+- SetGroupFormView.swift - set configuration
+
+**Library & Settings:**
+- ExerciseLibraryView.swift - exercise browser
+- EquipmentLibraryView.swift - equipment management
+- ImplementPickerView.swift - equipment selection
+- MuscleGroupPickerView.swift - muscle selection
+- SettingsView.swift - app settings
+- DebugSyncLogsView.swift - sync debugging
+
+**Other Views:**
+- HistoryView.swift - session history
+- AnalyticsView.swift - analytics dashboard
+- SocialView.swift - social features
+- SignInView.swift - authentication
+- AnimatedComponents.swift - reusable animations
+
+### Preserved As-Is
+- **Rounded design fonts** (`.design: .rounded`) for numeric input fields - these are intentionally kept for visual consistency in weight/rep/timer displays
+- **Theme definition files** (AppTheme.swift, Components.swift, Font+Extensions.swift) - contain the font system definitions
 
 ---
 

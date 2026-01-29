@@ -124,7 +124,7 @@ struct ModuleFormView: View {
     private var typePickerRow: some View {
         HStack(spacing: AppSpacing.md) {
             Image(systemName: "tag")
-                .font(.system(size: 16))
+                .font(.body)
                 .foregroundColor(AppColors.textTertiary)
                 .frame(width: 24)
 
@@ -179,7 +179,7 @@ struct ModuleFormView: View {
     private var quickAddBar: some View {
         HStack(spacing: AppSpacing.md) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 16))
+                .font(.body)
                 .foregroundColor(AppColors.textTertiary)
                 .frame(width: 24)
 
@@ -199,7 +199,7 @@ struct ModuleFormView: View {
                     searchText = ""
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 20))
+                        .font(.title3)
                         .foregroundColor(moduleColor)
                 }
             }
@@ -218,7 +218,7 @@ struct ModuleFormView: View {
                 } label: {
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: template.exerciseType.icon)
-                            .font(.system(size: 14))
+                            .font(.subheadline)
                             .foregroundColor(AppColors.dominant)
                             .frame(width: 24)
 
@@ -233,7 +233,7 @@ struct ModuleFormView: View {
                             .foregroundColor(AppColors.textTertiary)
 
                         Image(systemName: "plus.circle")
-                            .font(.system(size: 16))
+                            .font(.body)
                             .foregroundColor(moduleColor)
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
@@ -253,7 +253,7 @@ struct ModuleFormView: View {
     private var emptyExercisesView: some View {
         VStack(spacing: AppSpacing.sm) {
             Image(systemName: "dumbbell")
-                .font(.system(size: 32))
+                .font(.title)
                 .foregroundColor(AppColors.textTertiary.opacity(0.5))
 
             Text("No exercises yet")
@@ -321,7 +321,7 @@ struct ModuleFormView: View {
                 editingExercise = exercise
             } label: {
                 Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 14))
+                    .font(.subheadline)
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 32, height: 32)
             }
@@ -334,7 +334,7 @@ struct ModuleFormView: View {
                 }
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 18))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary.opacity(0.6))
             }
         }
@@ -349,7 +349,7 @@ struct ModuleFormView: View {
         } label: {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "books.vertical")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(moduleColor)
                     .frame(width: 24)
 
@@ -360,7 +360,7 @@ struct ModuleFormView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundColor(AppColors.textTertiary)
             }
             .padding(.horizontal, AppSpacing.cardPadding)
@@ -512,7 +512,7 @@ struct InlineExerciseEditor: View {
                     // Name (read-only for now)
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: "textformat")
-                            .font(.system(size: 16))
+                            .font(.body)
                             .foregroundColor(AppColors.textTertiary)
                             .frame(width: 24)
 
@@ -540,7 +540,7 @@ struct InlineExerciseEditor: View {
                         if setGroups.isEmpty {
                             HStack {
                                 Image(systemName: "info.circle")
-                                    .font(.system(size: 16))
+                                    .font(.body)
                                     .foregroundColor(AppColors.textTertiary)
                                 Text("No sets defined")
                                     .foregroundColor(AppColors.textSecondary)
@@ -567,7 +567,7 @@ struct InlineExerciseEditor: View {
                         } label: {
                             HStack(spacing: AppSpacing.md) {
                                 Image(systemName: "plus.circle.fill")
-                                    .font(.system(size: 16))
+                                    .font(.body)
                                     .foregroundColor(AppColors.dominant)
                                     .frame(width: 24)
 
@@ -684,7 +684,7 @@ struct InlineExerciseEditor: View {
                 editingSetGroupIndex = index
             } label: {
                 Image(systemName: "pencil.circle.fill")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary.opacity(0.6))
             }
 
@@ -692,7 +692,7 @@ struct InlineExerciseEditor: View {
                 setGroups.remove(at: index)
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary.opacity(0.6))
             }
         }
@@ -796,11 +796,11 @@ struct ExercisePickerSheet: View {
                             if isSelected(template) {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundColor(AppColors.success)
-                                    .font(.system(size: 22))
+                                    .font(.title2)
                             } else {
                                 Image(systemName: "circle")
                                     .foregroundColor(AppColors.textTertiary)
-                                    .font(.system(size: 22))
+                                    .font(.title2)
                             }
                         }
                     }

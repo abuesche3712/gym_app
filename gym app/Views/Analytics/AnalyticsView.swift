@@ -22,7 +22,7 @@ struct AnalyticsView: View {
                             .frame(width: 120, height: 120)
 
                         Image(systemName: "chart.line.uptrend.xyaxis")
-                            .font(.system(size: 48))
+                            .font(.largeTitle)
                             .foregroundColor(AppColors.dominant)
                     }
 

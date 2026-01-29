@@ -166,7 +166,7 @@ struct WorkoutBuilderView: View {
             if slots.isEmpty {
                 // Rest day
                 Text("Rest")
-                    .font(.system(size: 8))
+                    .font(.caption2)
                     .foregroundColor(AppColors.textTertiary)
                     .frame(maxHeight: .infinity)
             } else {
@@ -176,7 +176,7 @@ struct WorkoutBuilderView: View {
                 }
                 if slots.count > 3 {
                     Text("+\(slots.count - 3)")
-                        .font(.system(size: 7, weight: .medium))
+                        .font(.caption2.weight(.medium))
                         .foregroundColor(AppColors.textTertiary)
                 }
             }
@@ -211,7 +211,7 @@ struct WorkoutBuilderView: View {
                 .frame(width: 4, height: 4)
 
             Text(abbreviatedSlotName(slot.displayName))
-                .font(.system(size: 8, weight: .medium))
+                .font(.caption2.weight(.medium))
                 .foregroundColor(AppColors.textSecondary)
                 .lineLimit(1)
         }
@@ -291,7 +291,7 @@ struct WorkoutBuilderView: View {
                         .frame(width: 64, height: 64)
 
                     Image(systemName: icon)
-                        .font(.system(size: 24, weight: .medium))
+                        .font(.title3.weight(.medium))
                         .foregroundColor(color)
                 }
 
@@ -388,7 +388,7 @@ struct BuilderCard: View {
                     )
 
                 Image(systemName: icon)
-                    .font(.system(size: 24))
+                    .font(.title3)
                     .foregroundColor(iconColor.opacity(0.8))
             }
 

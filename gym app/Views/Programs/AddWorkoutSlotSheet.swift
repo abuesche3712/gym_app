@@ -250,7 +250,7 @@ struct ModuleSelectionRow: View {
             HStack {
                 // Module type icon
                 Image(systemName: module.type.icon)
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(module.type.color)
                     .frame(width: 24)
 

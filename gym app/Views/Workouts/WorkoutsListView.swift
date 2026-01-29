@@ -133,7 +133,7 @@ struct WorkoutsListView: View {
                     dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundColor(AppColors.dominant)
                         .frame(width: 36, height: 36)
                         .background(
@@ -152,7 +152,7 @@ struct WorkoutsListView: View {
                     showingAddWorkout = true
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundColor(AppColors.dominant)
                         .frame(width: 36, height: 36)
                         .background(
@@ -173,7 +173,7 @@ struct WorkoutsListView: View {
                         .elegantLabel(color: AppColors.dominant)
 
                     Text("Your Workouts")
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.title)
                         .foregroundColor(AppColors.textPrimary)
 
                     if let subtitle = workoutSubtitle {
@@ -188,7 +188,7 @@ struct WorkoutsListView: View {
                 // Count badge
                 HStack(spacing: 4) {
                     Image(systemName: "list.bullet")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.caption.weight(.medium))
                     Text("\(workoutViewModel.workouts.count) total")
                         .font(.subheadline.weight(.medium))
                 }
@@ -286,7 +286,7 @@ struct WorkoutListCard: View {
             // Play button
             Button(action: { onStart?() }) {
                 Image(systemName: "play.fill")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundColor(.white)
                     .frame(width: 40, height: 40)
                     .background(

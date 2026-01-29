@@ -178,7 +178,7 @@ struct ExerciseFormView: View {
             // Type picker row
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "tag")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 24)
 
@@ -215,7 +215,7 @@ struct ExerciseFormView: View {
                 FormDivider()
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "figure.walk")
-                        .font(.system(size: 16))
+                        .font(.body)
                         .foregroundColor(AppColors.textTertiary)
                         .frame(width: 24)
 
@@ -240,7 +240,7 @@ struct ExerciseFormView: View {
 
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "clock")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 24)
                 Toggle("Time", isOn: $trackTime)
@@ -251,7 +251,7 @@ struct ExerciseFormView: View {
 
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "arrow.left.and.right")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 24)
                 Toggle("Distance", isOn: $trackDistance)
@@ -274,7 +274,7 @@ struct ExerciseFormView: View {
                 FormDivider()
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "ruler")
-                        .font(.system(size: 16))
+                        .font(.body)
                         .foregroundColor(AppColors.textTertiary)
                         .frame(width: 24)
                     Text("Distance Unit")
@@ -305,7 +305,7 @@ struct ExerciseFormView: View {
 
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "number")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 24)
                 Toggle("Reps", isOn: $trackReps)
@@ -321,7 +321,7 @@ struct ExerciseFormView: View {
 
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "clock")
-                    .font(.system(size: 16))
+                    .font(.body)
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: 24)
                 Toggle("Duration", isOn: $trackDuration)
@@ -378,7 +378,7 @@ struct ExerciseFormView: View {
             } label: {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "figure.arms.open")
-                        .font(.system(size: 16))
+                        .font(.body)
                         .foregroundColor(AppColors.textTertiary)
                         .frame(width: 24)
 
@@ -390,7 +390,7 @@ struct ExerciseFormView: View {
                     muscleValueText
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.caption.weight(.semibold))
                         .foregroundColor(AppColors.textTertiary)
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
@@ -426,7 +426,7 @@ struct ExerciseFormView: View {
             } label: {
                 HStack(spacing: AppSpacing.md) {
                     Image(systemName: "dumbbell")
-                        .font(.system(size: 16))
+                        .font(.body)
                         .foregroundColor(AppColors.textTertiary)
                         .frame(width: 24)
 
@@ -446,7 +446,7 @@ struct ExerciseFormView: View {
                     }
 
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.caption.weight(.semibold))
                         .foregroundColor(AppColors.textTertiary)
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)
@@ -485,7 +485,7 @@ struct ExerciseFormView: View {
                 if setGroups.isEmpty {
                     HStack {
                         Image(systemName: "info.circle")
-                            .font(.system(size: 16))
+                            .font(.body)
                             .foregroundColor(AppColors.textTertiary)
                         Text("No sets defined yet")
                             .foregroundColor(AppColors.textSecondary)
@@ -517,7 +517,7 @@ struct ExerciseFormView: View {
                 } label: {
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 16))
+                            .font(.body)
                             .foregroundColor(AppColors.dominant)
                             .frame(width: 24)
 
@@ -718,7 +718,7 @@ struct SetGroupEditRow: View {
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundColor(AppColors.textTertiary)
         }
         .padding(.horizontal, AppSpacing.cardPadding)
@@ -826,7 +826,7 @@ struct MuscleEnumChip: View {
         Button(action: action) {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: muscle.icon)
-                    .font(.system(size: 14))
+                    .font(.subheadline)
 
                 Text(muscle.rawValue)
                     .font(.subheadline)
@@ -836,7 +836,7 @@ struct MuscleEnumChip: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.body)
                 }
             }
             .foregroundColor(isSelected ? .white : AppColors.textPrimary)

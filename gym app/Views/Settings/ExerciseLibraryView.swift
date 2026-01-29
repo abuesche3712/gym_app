@@ -294,11 +294,11 @@ private struct ExerciseLibraryRow: View {
 
                 // Exercise type icon
                 Image(systemName: exerciseTypeIcon)
-                    .font(.system(size: 14))
+                    .font(.subheadline)
                     .foregroundColor(AppColors.textTertiary)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundColor(AppColors.textTertiary)
             }
             .padding(AppSpacing.md)
@@ -406,7 +406,7 @@ struct AddExerciseSheet: View {
                                 } label: {
                                     VStack(spacing: 6) {
                                         Image(systemName: type.icon)
-                                            .font(.system(size: 20))
+                                            .font(.title3)
 
                                         Text(type.displayName)
                                             .font(.caption)
@@ -734,7 +734,7 @@ private struct ExerciseEditSheet: View {
                     } label: {
                         VStack(spacing: 6) {
                             Image(systemName: type.icon)
-                                .font(.system(size: 20))
+                                .font(.title3)
 
                             Text(type.displayName)
                                 .font(.caption)
@@ -764,7 +764,7 @@ private struct ExerciseEditSheet: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "figure.walk")
-                    .font(.system(size: 18))
+                    .font(.body)
                     .foregroundColor(AppColors.accent3)
 
                 Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
@@ -930,7 +930,7 @@ private struct MuscleChip: View {
         Button(action: action) {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: muscle.icon)
-                    .font(.system(size: 14))
+                    .font(.subheadline)
 
                 Text(muscle.rawValue)
                     .font(.subheadline)
@@ -940,7 +940,7 @@ private struct MuscleChip: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.body)
                 }
             }
             .foregroundColor(isSelected ? .white : AppColors.textPrimary)
@@ -992,7 +992,7 @@ private struct EquipmentChip: View {
         Button(action: action) {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: icon)
-                    .font(.system(size: 14))
+                    .font(.subheadline)
 
                 Text(name)
                     .font(.subheadline)
@@ -1002,7 +1002,7 @@ private struct EquipmentChip: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.body)
                 }
             }
             .foregroundColor(isSelected ? .white : AppColors.textPrimary)

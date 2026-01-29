@@ -143,7 +143,7 @@ struct ModulesListView: View {
                     dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundColor(AppColors.accent1)
                         .frame(width: 36, height: 36)
                         .background(
@@ -162,7 +162,7 @@ struct ModulesListView: View {
                     showingAddModule = true
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundColor(AppColors.accent1)
                         .frame(width: 36, height: 36)
                         .background(
@@ -183,7 +183,7 @@ struct ModulesListView: View {
                         .elegantLabel(color: AppColors.accent1)
 
                     Text("Your Modules")
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.title)
                         .foregroundColor(AppColors.textPrimary)
                 }
 
@@ -192,7 +192,7 @@ struct ModulesListView: View {
                 // Count badge
                 HStack(spacing: 4) {
                     Image(systemName: "square.stack.3d.up")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.caption.weight(.medium))
                     Text("\(moduleViewModel.modules.count) total")
                         .font(.subheadline.weight(.medium))
                 }
@@ -272,7 +272,7 @@ struct ModuleListCard: View {
                         )
 
                     Image(systemName: module.type.icon)
-                        .font(.system(size: 24))
+                        .font(.title3)
                         .foregroundColor(moduleColor.opacity(0.8))
                 }
 
@@ -328,7 +328,7 @@ struct ModuleListCard: View {
                     ForEach(Array(resolvedExercises.prefix(5))) { exercise in
                         HStack(spacing: AppSpacing.sm) {
                             Image(systemName: exercise.exerciseType.icon)
-                                .font(.system(size: 12))
+                                .font(.caption)
                                 .foregroundColor(moduleColor)
                                 .frame(width: 20)
 

@@ -34,7 +34,7 @@ struct RecentSetsSheet: View {
                                         .fill(AppColors.success.opacity(0.15))
                                         .frame(width: 32, height: 32)
                                     Image(systemName: "checkmark")
-                                        .font(.system(size: 11, weight: .bold))
+                                        .font(.caption2.weight(.bold))
                                         .foregroundColor(AppColors.success)
                                 }
 
@@ -50,7 +50,7 @@ struct RecentSetsSheet: View {
                                 Spacer()
 
                                 Image(systemName: "pencil")
-                                    .font(.system(size: 12))
+                                    .font(.caption)
                                     .foregroundColor(AppColors.textTertiary)
                             }
                             .padding(.vertical, 4)

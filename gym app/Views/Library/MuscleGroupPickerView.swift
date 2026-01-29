@@ -24,13 +24,11 @@ struct MuscleGroupPickerView: View {
             // Header
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(title)
-                    .font(.headline)
-                    .foregroundColor(AppColors.textPrimary)
+                    .headline()
 
                 if let subtitle = subtitle {
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
+                        .caption()
                 }
             }
 
@@ -50,8 +48,7 @@ struct MuscleGroupPickerView: View {
             // Selected count
             if !selectedIds.isEmpty {
                 Text("\(selectedIds.count) selected")
-                    .font(.caption)
-                    .foregroundColor(AppColors.dominant)
+                    .caption(color: AppColors.dominant)
             }
         }
     }
@@ -93,7 +90,7 @@ struct MuscleGroupChip: View {
         Button(action: action) {
             HStack(spacing: AppSpacing.sm) {
                 Image(systemName: icon)
-                    .font(.system(size: 14))
+                    .font(.subheadline)
 
                 Text(name)
                     .font(.subheadline)
@@ -103,7 +100,7 @@ struct MuscleGroupChip: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16))
+                        .font(.body)
                 }
             }
             .foregroundColor(isSelected ? .white : AppColors.textPrimary)
@@ -137,8 +134,7 @@ struct MuscleGroupDisplay: View {
     var body: some View {
         if muscleNames.isEmpty {
             Text("None selected")
-                .font(.subheadline)
-                .foregroundColor(AppColors.textSecondary)
+                .subheadline()
         } else {
             FlowLayout(spacing: AppSpacing.xs) {
                 ForEach(muscleNames, id: \.self) { name in

@@ -31,7 +31,7 @@ struct SetIndicator: View {
                     .frame(width: 40, height: 40)
 
                 Text("\(setNumber)")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.subheadline.weight(.bold))
                     .foregroundColor(isCurrent ? AppColors.dominant : AppColors.textTertiary)
             }
         }
@@ -243,10 +243,10 @@ struct SetRowView: View {
                     // Unilateral set - show L/R indicator
                     VStack(spacing: 2) {
                         Text("\(flatSet.setNumber)")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.caption2.weight(.bold))
                             .foregroundColor(AppColors.textSecondary)
                         Text(side.abbreviation)
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.caption2.weight(.semibold))
                             .foregroundColor(side == .left ? AppColors.dominant : AppColors.accent2)
                     }
                     .frame(width: 32, height: 32)
@@ -260,7 +260,7 @@ struct SetRowView: View {
                         .fill(AppColors.surfaceTertiary)
                         .frame(width: 32, height: 32)
                     Text("\(flatSet.setNumber)")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.caption.weight(.bold))
                         .foregroundColor(AppColors.textSecondary)
                 }
             }
@@ -301,7 +301,7 @@ struct SetRowView: View {
                     .foregroundColor(AppColors.textPrimary)
                 Spacer()
                 Image(systemName: "pencil")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundColor(AppColors.textTertiary)
                     .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
             }
@@ -368,7 +368,7 @@ struct SetRowView: View {
                     // Untimed AMRAP - show badge
                     VStack(spacing: 4) {
                         Image(systemName: "infinity")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.body.weight(.bold))
                             .foregroundColor(AppColors.accent2)
                             .frame(width: 36, height: 36)
                             .background(
@@ -552,7 +552,7 @@ struct SetRowView: View {
                             toggleTimer()
                         } label: {
                             Image(systemName: timerRunning ? "stop.fill" : "play.fill")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.subheadline.weight(.semibold))
                                 .foregroundColor(timerRunning ? AppColors.warning : AppColors.dominant)
                                 .frame(width: 32, height: 32)
                                 .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.dominant.opacity(0.12)))
@@ -581,7 +581,7 @@ struct SetRowView: View {
                             toggleStopwatch()
                         } label: {
                             Image(systemName: timerRunning ? "stop.fill" : "stopwatch")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.subheadline.weight(.semibold))
                                 .foregroundColor(timerRunning ? AppColors.warning : AppColors.accent1)
                                 .frame(width: 32, height: 32)
                                 .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accent1.opacity(0.12)))
@@ -616,7 +616,7 @@ struct SetRowView: View {
                         showDistanceUnitPicker = true
                     } label: {
                         Text(exercise.distanceUnit.abbreviation)
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.caption.weight(.medium))
                             .foregroundColor(AppColors.dominant)
                             .frame(minWidth: 24)
                             .padding(.horizontal, 6)
@@ -667,7 +667,7 @@ struct SetRowView: View {
                         toggleTimer()
                     } label: {
                         Image(systemName: timerRunning ? "stop.fill" : "play.fill")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(timerRunning ? AppColors.warning : AppColors.dominant)
                             .frame(width: 32, height: 32)
                             .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.dominant.opacity(0.12)))
@@ -811,7 +811,7 @@ struct SetRowView: View {
             if let activityType = exercise.recoveryActivityType {
                 HStack(spacing: 2) {
                     Image(systemName: activityType.icon)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.caption.weight(.medium))
                         .foregroundColor(AppColors.accent1)
                     Text(activityType.displayName)
                         .font(.caption2.weight(.medium))
@@ -842,7 +842,7 @@ struct SetRowView: View {
                         toggleStopwatch()
                     } label: {
                         Image(systemName: timerRunning ? "stop.fill" : "stopwatch")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(timerRunning ? AppColors.warning : AppColors.accent1)
                             .frame(width: 32, height: 32)
                             .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accent1.opacity(0.12)))
@@ -888,7 +888,7 @@ struct SetRowView: View {
             action()
         } label: {
             Image(systemName: "trash")
-                .font(.system(size: 14, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundColor(AppColors.error)
                 .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 .background(
@@ -940,7 +940,7 @@ struct SetRowView: View {
             HapticManager.shared.soft()
         } label: {
             Image(systemName: "arrow.uturn.backward")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundColor(AppColors.dominant)
                 .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 .background(
@@ -993,7 +993,7 @@ struct SetRowView: View {
             )
         } label: {
             Image(systemName: "checkmark")
-                .font(.system(size: 16, weight: .bold))
+                .font(.body.weight(.bold))
                 .foregroundColor(.white)
                 .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 .background(
@@ -1217,7 +1217,7 @@ struct SetRowView: View {
                             .foregroundColor(.white)
                     } else {
                         Image(systemName: "timer")
-                            .font(.system(size: 16, weight: .medium))
+                            .font(.body.weight(.medium))
                             .foregroundColor(AppColors.textSecondary)
                     }
                 }

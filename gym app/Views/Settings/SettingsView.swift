@@ -274,7 +274,7 @@ struct SettingsView: View {
                         Text("Sign in with Apple")
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.caption.weight(.semibold))
                             .foregroundColor(AppColors.textTertiary)
                     }
                 }
@@ -384,13 +384,12 @@ struct SettingsRow<Content: View>: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.body)
                 .foregroundColor(AppColors.dominant)
                 .frame(width: 28)
 
             Text(title)
-                .font(.body)
-                .foregroundColor(AppColors.textPrimary)
+                .body()
 
             Spacer()
 
@@ -407,18 +406,17 @@ struct SettingsRowLabel: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.body)
                 .foregroundColor(AppColors.dominant)
                 .frame(width: 28)
 
             Text(title)
-                .font(.body)
-                .foregroundColor(AppColors.textPrimary)
+                .body()
 
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundColor(AppColors.textTertiary)
         }
         .padding(.vertical, AppSpacing.md)
@@ -544,7 +542,7 @@ struct ExportDataView: View {
 
             VStack(spacing: AppSpacing.md) {
                 Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 48))
+                    .font(.largeTitle)
                     .foregroundColor(AppColors.textTertiary)
 
                 Text("Coming Soon")
@@ -581,7 +579,7 @@ struct AboutView: View {
                             .frame(width: 100, height: 100)
 
                         Image(systemName: "dumbbell.fill")
-                            .font(.system(size: 40))
+                            .font(.largeTitle)
                             .foregroundColor(.white)
                     }
                     .padding(.top, AppSpacing.xl)
@@ -651,12 +649,12 @@ struct FeatureRow: View {
     var body: some View {
         HStack(spacing: AppSpacing.md) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.body)
                 .foregroundColor(AppColors.dominant)
                 .frame(width: 24)
 
             Text(text)
-                .foregroundColor(AppColors.textPrimary)
+                .body()
         }
     }
 }

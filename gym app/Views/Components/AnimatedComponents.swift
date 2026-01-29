@@ -182,11 +182,10 @@ struct AnimatedStepper: View {
                 .disabled(value <= range.lowerBound)
 
                 HStack(spacing: 2) {
-                    AnimatedNumber(value: value, font: .body.monospacedDigit().bold(), color: AppColors.textPrimary)
+                    AnimatedNumber(value: value, font: .monoSmall, color: AppColors.textPrimary)
                     if !unit.isEmpty {
                         Text(unit)
-                            .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption2()
                     }
                 }
                 .frame(minWidth: 50)
@@ -220,7 +219,7 @@ struct DumbbellRefreshView: View {
         ZStack {
             // Dumbbell icon
             Image(systemName: "dumbbell.fill")
-                .font(.system(size: 24, weight: .bold))
+                .font(.title2.bold())
                 .foregroundColor(AppColors.dominant)
                 .rotationEffect(.degrees(isRefreshing ? rotation : Double(-45) + Double(progress) * 45.0))
                 .scaleEffect(0.8 + (progress * 0.2))

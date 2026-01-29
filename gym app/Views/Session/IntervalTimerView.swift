@@ -73,7 +73,7 @@ struct IntervalTimerView: View {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 20, weight: .medium))
+                            .font(.title3.weight(.medium))
                             .foregroundColor(AppColors.textSecondary)
                             .frame(width: 44, height: 44)
                     }
@@ -178,7 +178,7 @@ struct IntervalTimerView: View {
                     .frame(width: 120, height: 120)
 
                 Image(systemName: "checkmark")
-                    .font(.system(size: 50, weight: .bold))
+                    .font(.largeTitle.weight(.bold))
                     .foregroundColor(AppColors.success)
             }
 
@@ -225,7 +225,7 @@ struct IntervalTimerView: View {
             } label: {
                 VStack(spacing: 4) {
                     Image(systemName: "stop.fill")
-                        .font(.system(size: 24))
+                        .font(.title3)
                     Text("Stop")
                         .font(.caption.weight(.medium))
                 }
@@ -244,7 +244,7 @@ struct IntervalTimerView: View {
                 let buttonColor = isPaused ? AppColors.accent1 : AppColors.dominant
                 VStack(spacing: 4) {
                     Image(systemName: isPaused ? "play.fill" : "pause.fill")
-                        .font(.system(size: 32))
+                        .font(.title)
                     Text(isPaused ? "Resume" : "Pause")
                         .font(.caption.weight(.medium))
                 }
@@ -262,7 +262,7 @@ struct IntervalTimerView: View {
             } label: {
                 VStack(spacing: 4) {
                     Image(systemName: "forward.fill")
-                        .font(.system(size: 24))
+                        .font(.title3)
                     Text("Skip")
                         .font(.caption.weight(.medium))
                 }
