@@ -26,6 +26,11 @@ struct Program: Identifiable, Codable, Hashable {
     var workoutSlots: [ProgramWorkoutSlot]  // Legacy workout-only slots
     var moduleSlots: [ProgramSlot]           // Unified slots (workouts and modules)
 
+    // Progression configuration
+    var progressionRules: [UUID: ProgressionRule]  // Keyed by ExerciseTemplate.id
+    var defaultProgressionRule: ProgressionRule?   // Fallback for exercises without specific rules
+    var progressionEnabled: Bool                   // Global toggle for auto-progression
+
     init(
         id: UUID = UUID(),
         name: String,
@@ -38,7 +43,10 @@ struct Program: Identifiable, Codable, Hashable {
         updatedAt: Date = Date(),
         syncStatus: SyncStatus = .pendingSync,
         workoutSlots: [ProgramWorkoutSlot] = [],
-        moduleSlots: [ProgramSlot] = []
+        moduleSlots: [ProgramSlot] = [],
+        progressionRules: [UUID: ProgressionRule] = [:],
+        defaultProgressionRule: ProgressionRule? = nil,
+        progressionEnabled: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -52,6 +60,9 @@ struct Program: Identifiable, Codable, Hashable {
         self.syncStatus = syncStatus
         self.workoutSlots = workoutSlots
         self.moduleSlots = moduleSlots
+        self.progressionRules = progressionRules
+        self.defaultProgressionRule = defaultProgressionRule
+        self.progressionEnabled = progressionEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -76,11 +87,37 @@ struct Program: Identifiable, Codable, Hashable {
         programDescription = try container.decodeIfPresent(String.self, forKey: .programDescription)
         startDate = try container.decodeIfPresent(Date.self, forKey: .startDate)
         endDate = try container.decodeIfPresent(Date.self, forKey: .endDate)
+
+        // Progression (optional with defaults for backward compatibility)
+        // Decode as String-keyed dictionary and convert to UUID-keyed
+        if let stringKeyedRules = try container.decodeIfPresent([String: ProgressionRule].self, forKey: .progressionRules) {
+            progressionRules = Dictionary(uniqueKeysWithValues: stringKeyedRules.compactMap { key, value in
+                guard let uuid = UUID(uuidString: key) else { return nil }
+                return (uuid, value)
+            })
+        } else {
+            progressionRules = [:]
+        }
+        defaultProgressionRule = try container.decodeIfPresent(ProgressionRule.self, forKey: .defaultProgressionRule)
+        progressionEnabled = try container.decodeIfPresent(Bool.self, forKey: .progressionEnabled) ?? false
     }
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion
+        case progressionRules, defaultProgressionRule, progressionEnabled
         case id, name, programDescription, durationWeeks, startDate, endDate, isActive, createdAt, updatedAt, syncStatus, workoutSlots, moduleSlots
+    }
+
+    // MARK: - Progression
+
+    /// Get the progression rule for a specific exercise template
+    /// Falls back to defaultProgressionRule if no specific rule exists
+    func progressionRule(for templateId: UUID?) -> ProgressionRule? {
+        guard progressionEnabled else { return nil }
+        if let id = templateId, let rule = progressionRules[id] {
+            return rule
+        }
+        return defaultProgressionRule
     }
 
     // MARK: - Computed Properties

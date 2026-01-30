@@ -25,6 +25,10 @@ struct ProgramFormView: View {
     @State private var workoutSlots: [ProgramWorkoutSlot]
     @State private var moduleSlots: [ProgramSlot]
 
+    // Progression state
+    @State private var progressionEnabled: Bool
+    @State private var defaultProgressionRule: ProgressionRule?
+
     // UI state
     @State private var showingAddSlotSheet = false
     @State private var selectedDayOfWeek: Int?
@@ -57,6 +61,8 @@ struct ProgramFormView: View {
         _durationWeeks = State(initialValue: program?.durationWeeks ?? 4)
         _workoutSlots = State(initialValue: program?.workoutSlots ?? [])
         _moduleSlots = State(initialValue: program?.moduleSlots ?? [])
+        _progressionEnabled = State(initialValue: program?.progressionEnabled ?? false)
+        _defaultProgressionRule = State(initialValue: program?.defaultProgressionRule)
     }
 
     var body: some View {
@@ -67,6 +73,9 @@ struct ProgramFormView: View {
 
                 // Program Info Section
                 programInfoSection
+
+                // Progression Section
+                progressionSection
 
                 // Weekly Schedule Section
                 weeklyScheduleSection
@@ -258,6 +267,108 @@ struct ProgramFormView: View {
                     )
             )
         }
+    }
+
+    // MARK: - Progression Section
+
+    private var progressionSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            sectionHeader(title: "Auto-Progression", icon: "chart.line.uptrend.xyaxis")
+
+            VStack(spacing: AppSpacing.md) {
+                // Enable toggle
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Enable Auto-Progression")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(AppColors.textPrimary)
+
+                        Text("Automatically suggest increased weights based on previous sessions")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+
+                    Spacer()
+
+                    Toggle("", isOn: $progressionEnabled)
+                        .labelsHidden()
+                        .tint(AppColors.dominant)
+                }
+
+                // Progression rule picker (only when enabled)
+                if progressionEnabled {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Progression Rate")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(AppColors.textSecondary)
+
+                        HStack(spacing: AppSpacing.sm) {
+                            progressionRuleButton(
+                                title: "Conservative",
+                                subtitle: "+2.5%, 5lb steps",
+                                rule: .conservative,
+                                isSelected: isRuleSelected(.conservative)
+                            )
+
+                            progressionRuleButton(
+                                title: "Moderate",
+                                subtitle: "+5%, 5lb steps",
+                                rule: .moderate,
+                                isSelected: isRuleSelected(.moderate)
+                            )
+
+                            progressionRuleButton(
+                                title: "Fine-Grained",
+                                subtitle: "+2.5%, 2.5lb steps",
+                                rule: .fineGrained,
+                                isSelected: isRuleSelected(.fineGrained)
+                            )
+                        }
+                    }
+                }
+            }
+            .padding(AppSpacing.cardPadding)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppColors.surfacePrimary)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppCorners.large)
+                            .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 0.5)
+                    )
+            )
+        }
+    }
+
+    private func isRuleSelected(_ rule: ProgressionRule) -> Bool {
+        guard let currentRule = defaultProgressionRule else { return false }
+        return currentRule.percentageIncrease == rule.percentageIncrease &&
+               currentRule.roundingIncrement == rule.roundingIncrement
+    }
+
+    private func progressionRuleButton(title: String, subtitle: String, rule: ProgressionRule, isSelected: Bool) -> some View {
+        Button {
+            withAnimation(AppAnimation.quick) {
+                defaultProgressionRule = rule
+            }
+        } label: {
+            VStack(spacing: 4) {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(isSelected ? .white : AppColors.textPrimary)
+
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundColor(isSelected ? .white.opacity(0.8) : AppColors.textTertiary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, AppSpacing.sm)
+            .padding(.horizontal, AppSpacing.xs)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .fill(isSelected ? AppColors.dominant : AppColors.surfaceTertiary)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Weekly Schedule Section
@@ -519,6 +630,8 @@ struct ProgramFormView: View {
             updatedProgram.durationWeeks = durationWeeks
             updatedProgram.workoutSlots = workoutSlots
             updatedProgram.moduleSlots = moduleSlots
+            updatedProgram.progressionEnabled = progressionEnabled
+            updatedProgram.defaultProgressionRule = defaultProgressionRule
 
             // Recalculate end date if active and duration changed
             if updatedProgram.isActive, let startDate = updatedProgram.startDate, durationChanged {
@@ -547,6 +660,10 @@ struct ProgramFormView: View {
             for slot in moduleSlots {
                 newProgram.addModuleSlot(slot)
             }
+
+            // Set progression settings
+            newProgram.progressionEnabled = progressionEnabled
+            newProgram.defaultProgressionRule = defaultProgressionRule
 
             programViewModel.saveProgram(newProgram)
             onSave?(newProgram)

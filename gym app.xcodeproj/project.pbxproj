@@ -100,6 +100,8 @@
 		PRGLST002BUILD002 /* ProgramsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGLST001FILE001 /* ProgramsListView.swift */; };
 		PRGWKL002BUILD002 /* ProgramWeeklyGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGWKL001FILE001 /* ProgramWeeklyGridView.swift */; };
 		PROGAM002BUILD002 /* Program.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROGAM001FILE001 /* Program.swift */; };
+		PRGRLE002BUILD002 /* ProgressionRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGRLE001FILE001 /* ProgressionRule.swift */; };
+		PRGSVC002BUILD002 /* ProgressionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGSVC001FILE001 /* ProgressionService.swift */; };
 		PROGVM002BUILD002 /* ProgramViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROGVM001FILE001 /* ProgramViewModel.swift */; };
 		RESOLV002BUILD002 /* ResolvedExercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = RESOLV001FILE001 /* ResolvedExercise.swift */; };
 		SCHMAV02BUILD002 /* SchemaVersions.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCHMAV01FILE001 /* SchemaVersions.swift */; };
@@ -248,6 +250,8 @@
 		PRGLST001FILE001 /* ProgramsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramsListView.swift; sourceTree = "<group>"; };
 		PRGWKL001FILE001 /* ProgramWeeklyGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramWeeklyGridView.swift; sourceTree = "<group>"; };
 		PROGAM001FILE001 /* Program.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Program.swift; sourceTree = "<group>"; };
+		PRGRLE001FILE001 /* ProgressionRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionRule.swift; sourceTree = "<group>"; };
+		PRGSVC001FILE001 /* ProgressionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionService.swift; sourceTree = "<group>"; };
 		PROGVM001FILE001 /* ProgramViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramViewModel.swift; sourceTree = "<group>"; };
 		RESOLV001FILE001 /* ResolvedExercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolvedExercise.swift; sourceTree = "<group>"; };
 		SCHMAV01FILE001 /* SchemaVersions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaVersions.swift; sourceTree = "<group>"; };
@@ -416,6 +420,7 @@
 				B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */,
 				B63EBEED2F15E73700D8C22D /* Module.swift */,
 				PROGAM001FILE001 /* Program.swift */,
+				PRGRLE001FILE001 /* ProgressionRule.swift */,
 				RESOLV001FILE001 /* ResolvedExercise.swift */,
 				SCHMAV01FILE001 /* SchemaVersions.swift */,
 				B63EBEEE2F15E73700D8C22D /* Session.swift */,
@@ -542,6 +547,7 @@
 				HAPTIC001FILE001 /* HapticManager.swift */,
 				LOGGER01FILE001 /* Logger.swift */,
 				B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */,
+				PRGSVC001FILE001 /* ProgressionService.swift */,
 				DELTRC01FILE001 /* DeletionTracker.swift */,
 				SYNCLOG01FILE001 /* SyncLogger.swift */,
 				B63EBF0D2F15E73700D8C22D /* SyncManager.swift */,
@@ -896,6 +902,8 @@
 				HOMESC002BUILD002 /* HomeScheduleSheets.swift in Sources */,
 				EQUIPL002BUILD002 /* EquipmentLibraryView.swift in Sources */,
 				PROGAM002BUILD002 /* Program.swift in Sources */,
+				PRGRLE002BUILD002 /* ProgressionRule.swift in Sources */,
+				PRGSVC002BUILD002 /* ProgressionService.swift in Sources */,
 				PROGVM002BUILD002 /* ProgramViewModel.swift in Sources */,
 				PRGLST002BUILD002 /* ProgramsListView.swift in Sources */,
 				PRGCRE002BUILD002 /* CreateProgramSheet.swift in Sources */,

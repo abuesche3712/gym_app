@@ -26,7 +26,7 @@ struct SessionDetailView: View {
 
     // Computed stats
     private var totalVolume: Double {
-        session.completedModules.reduce(0) { moduleTotal, module in
+        session.completedModules.filter { !$0.skipped }.reduce(0) { moduleTotal, module in
             moduleTotal + module.completedExercises.reduce(0) { $0 + $1.totalVolume }
         }
     }
@@ -314,11 +314,19 @@ struct SessionDetailView: View {
     private func exerciseSummaryText(_ exercise: SessionExercise) -> String? {
         switch exercise.exerciseType {
         case .strength:
-            if let topSet = exercise.topSet, let weight = topSet.weight, let reps = topSet.reps {
-                if exercise.isBodyweight && weight == 0 {
-                    return "BW × \(reps)"
+            if let topSet = exercise.topSet, let reps = topSet.reps {
+                if exercise.isBodyweight {
+                    if let weight = topSet.weight, weight > 0 {
+                        return "BW + \(formatWeight(weight)) × \(reps)"
+                    } else {
+                        return "BW × \(reps)"
+                    }
+                } else if let band = topSet.bandColor, !band.isEmpty {
+                    // Band exercise - show color instead of weight
+                    return "\(band) × \(reps)"
+                } else if let weight = topSet.weight {
+                    return "\(formatWeight(weight)) × \(reps)"
                 }
-                return "\(formatWeight(weight)) × \(reps)"
             }
         case .cardio:
             let allSets = exercise.completedSetGroups.flatMap { $0.sets }
@@ -476,11 +484,18 @@ struct SessionModuleCard: View {
     private func exerciseBriefSummary(_ exercise: SessionExercise) -> String? {
         switch exercise.exerciseType {
         case .strength:
-            if let topSet = exercise.topSet, let weight = topSet.weight, let reps = topSet.reps {
-                if exercise.isBodyweight && weight == 0 {
-                    return "BW × \(reps)"
+            if let topSet = exercise.topSet, let reps = topSet.reps {
+                if exercise.isBodyweight {
+                    if let weight = topSet.weight, weight > 0 {
+                        return "BW + \(formatWeight(weight)) × \(reps)"
+                    } else {
+                        return "BW × \(reps)"
+                    }
+                } else if let band = topSet.bandColor, !band.isEmpty {
+                    return "\(band) × \(reps)"
+                } else if let weight = topSet.weight {
+                    return "\(formatWeight(weight)) × \(reps)"
                 }
-                return "\(formatWeight(weight)) × \(reps)"
             }
         default:
             return nil
@@ -602,6 +617,13 @@ struct SessionExerciseCard: View {
                         return "Best: BW × \(maxReps)"
                     }
                 }
+            } else if let topSet = exercise.topSet, let band = topSet.bandColor, !band.isEmpty, let reps = topSet.reps {
+                // Band exercise - show color instead of weight
+                var result = "Top: \(band) × \(reps)"
+                if let rpe = topSet.rpe {
+                    result += " @ \(rpe)"
+                }
+                return result
             } else if let topSet = exercise.topSet, let weight = topSet.weight, let reps = topSet.reps {
                 var result = "Top: \(formatWeight(weight)) × \(reps)"
                 if let rpe = topSet.rpe {
@@ -726,6 +748,13 @@ struct SessionExerciseCard: View {
                         return "BW × \(reps)"
                     }
                 }
+            } else if let band = set.bandColor, !band.isEmpty, let reps = set.reps {
+                // Band exercise - show color instead of weight
+                var result = "\(band) × \(reps)"
+                if let rpe = set.rpe {
+                    result += " @ \(rpe)"
+                }
+                return result
             } else if let weight = set.weight, let reps = set.reps {
                 var result = "\(formatWeight(weight)) × \(reps)"
                 if let rpe = set.rpe {
@@ -847,6 +876,11 @@ struct SessionSetRow: View {
                         return result
                     }
                 }
+            } else if let band = set.bandColor, !band.isEmpty, let reps = set.reps {
+                // Band exercise - show color instead of weight
+                var result = "\(band) × \(reps)"
+                if let rpe = set.rpe { result += " @ \(rpe)" }
+                return result
             } else if let weight = set.weight, let reps = set.reps {
                 var result = "\(formatWeight(weight)) × \(reps)"
                 if let rpe = set.rpe { result += " @ \(rpe)" }

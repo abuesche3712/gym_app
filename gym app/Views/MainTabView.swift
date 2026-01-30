@@ -126,15 +126,15 @@ struct MainTabView: View {
     }
 
     private var swipeGesture: some Gesture {
-        DragGesture(minimumDistance: 30, coordinateSpace: .local)
+        DragGesture(minimumDistance: 50, coordinateSpace: .local)
             .onEnded { value in
                 let horizontalAmount = value.translation.width
                 let verticalAmount = value.translation.height
 
-                // Only trigger on clearly horizontal swipes (2:1 ratio)
-                // and require significant horizontal movement
-                guard abs(horizontalAmount) > abs(verticalAmount) * 2,
-                      abs(horizontalAmount) > 80 else { return }
+                // Only trigger on clearly horizontal swipes (3:1 ratio)
+                // and require significant horizontal movement to avoid conflicts with scroll gestures
+                guard abs(horizontalAmount) > abs(verticalAmount) * 3,
+                      abs(horizontalAmount) > 120 else { return }
 
                 // Use spring animation for smooth, natural feel
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.5)) {

@@ -85,7 +85,7 @@ struct HistoryView: View {
         let sessions = filteredSessions
         let sets = sessions.reduce(0) { $0 + $1.totalSetsCompleted }
         let volume = sessions.reduce(0.0) { total, session in
-            total + session.completedModules.reduce(0.0) { moduleTotal, module in
+            total + session.completedModules.filter { !$0.skipped }.reduce(0.0) { moduleTotal, module in
                 moduleTotal + module.completedExercises.reduce(0.0) { $0 + $1.totalVolume }
             }
         }
@@ -378,7 +378,7 @@ struct HistorySessionRow: View {
     let session: Session
 
     private var totalVolume: Double {
-        session.completedModules.reduce(0.0) { total, module in
+        session.completedModules.filter { !$0.skipped }.reduce(0.0) { total, module in
             total + module.completedExercises.reduce(0.0) { $0 + $1.totalVolume }
         }
     }

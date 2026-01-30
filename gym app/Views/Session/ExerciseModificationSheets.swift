@@ -290,14 +290,17 @@ struct EditExerciseSheet: View {
     }
 
     private func setGroupRow(_ setGroup: EditableSetGroup, index: Int) -> some View {
-        HStack {
+        // For unilateral, show logical completed count (half of actual SetData count)
+        let completedLogical = setGroup.isUnilateral ? setGroup.completedSetsCount / 2 : setGroup.completedSetsCount
+
+        return HStack {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 4) {
                     Text("Group \(index + 1)")
                         .subheadline()
                         .fontWeight(.medium)
-                    if setGroup.completedSetsCount > 0 {
-                        Text("(\(setGroup.completedSetsCount) done)")
+                    if completedLogical > 0 {
+                        Text("(\(completedLogical) done)")
                             .caption(color: AppColors.success)
                     }
                 }
@@ -463,9 +466,14 @@ struct EditExerciseSheet: View {
             let completedSets = group.sets.filter { $0.completed }
             let firstSet = group.sets.first
 
+            // For unilateral exercises, the logical set count is half the SetData count
+            // (since each logical set has left + right)
+            let logicalSetCount = group.isUnilateral ? group.sets.count / 2 : group.sets.count
+            let completedLogicalSetsCount = group.isUnilateral ? completedSets.count / 2 : completedSets.count
+
             return EditableSetGroup(
                 id: group.setGroupId,
-                sets: group.sets.count,
+                sets: logicalSetCount,
                 targetWeight: firstSet?.weight,
                 targetReps: firstSet?.reps,
                 targetDuration: firstSet?.duration,
@@ -474,7 +482,7 @@ struct EditExerciseSheet: View {
                 restPeriod: group.restPeriod ?? 90,
                 isUnilateral: group.isUnilateral,
                 trackRPE: group.trackRPE,
-                completedSetsCount: completedSets.count,
+                completedSetsCount: completedSets.count,  // Keep actual count for preserving completed sets
                 completedSets: completedSets,
                 allSets: group.sets  // Store all sets for history editing
             )
@@ -542,19 +550,52 @@ struct EditExerciseSheet: View {
                 // First, add any completed sets (preserve them exactly)
                 sets.append(contentsOf: editableGroup.completedSets)
 
+                // Calculate remaining sets based on whether it's unilateral
+                // For unilateral: completedSetsCount is actual SetData count (2 per logical set)
+                // editableGroup.sets is the LOGICAL set count (user facing)
+                let completedLogicalSets = editableGroup.isUnilateral
+                    ? editableGroup.completedSetsCount / 2
+                    : editableGroup.completedSetsCount
+                let remainingLogicalSets = editableGroup.sets - completedLogicalSets
+
                 // Then add remaining incomplete sets with targets
-                let remainingSets = editableGroup.sets - editableGroup.completedSetsCount
-                for i in 0..<remainingSets {
-                    let setNumber = editableGroup.completedSetsCount + i + 1
-                    sets.append(SetData(
-                        setNumber: setNumber,
-                        weight: editableGroup.targetWeight,
-                        reps: editableGroup.targetReps,
-                        completed: false,
-                        duration: editableGroup.targetDuration,
-                        distance: editableGroup.targetDistance,
-                        holdTime: editableGroup.targetHoldTime
-                    ))
+                for i in 0..<remainingLogicalSets {
+                    let setNumber = completedLogicalSets + i + 1
+
+                    if editableGroup.isUnilateral {
+                        // For unilateral, create left and right pairs
+                        sets.append(SetData(
+                            setNumber: setNumber,
+                            weight: editableGroup.targetWeight,
+                            reps: editableGroup.targetReps,
+                            completed: false,
+                            duration: editableGroup.targetDuration,
+                            distance: editableGroup.targetDistance,
+                            holdTime: editableGroup.targetHoldTime,
+                            side: .left
+                        ))
+                        sets.append(SetData(
+                            setNumber: setNumber,
+                            weight: editableGroup.targetWeight,
+                            reps: editableGroup.targetReps,
+                            completed: false,
+                            duration: editableGroup.targetDuration,
+                            distance: editableGroup.targetDistance,
+                            holdTime: editableGroup.targetHoldTime,
+                            side: .right
+                        ))
+                    } else {
+                        // Normal bilateral set
+                        sets.append(SetData(
+                            setNumber: setNumber,
+                            weight: editableGroup.targetWeight,
+                            reps: editableGroup.targetReps,
+                            completed: false,
+                            duration: editableGroup.targetDuration,
+                            distance: editableGroup.targetDistance,
+                            holdTime: editableGroup.targetHoldTime
+                        ))
+                    }
                 }
             }
 
@@ -607,17 +648,22 @@ struct EditSetGroupSheet: View {
         !setGroup.allSets.isEmpty
     }
 
+    /// Minimum sets based on completed logical sets (accounting for unilateral pairs)
+    private var completedLogicalSetsMin: Int {
+        setGroup.isUnilateral ? setGroup.completedSetsCount / 2 : setGroup.completedSetsCount
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 Section("Sets") {
-                    Stepper("Total Sets: \(sets)", value: $sets, in: max(1, setGroup.completedSetsCount)...20)
+                    Stepper("Total Sets: \(sets)", value: $sets, in: max(1, completedLogicalSetsMin)...20)
 
                     if setGroup.completedSetsCount > 0 {
                         HStack {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundColor(AppColors.success)
-                            Text("\(setGroup.completedSetsCount) sets already completed")
+                            Text("\(completedLogicalSetsMin) sets already completed")
                                 .caption(color: .secondary)
                         }
                     }

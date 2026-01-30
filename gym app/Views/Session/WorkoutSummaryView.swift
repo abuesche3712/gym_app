@@ -22,7 +22,7 @@ struct WorkoutSummaryView: View {
 
     // Computed stats
     private var totalVolume: Double {
-        session.completedModules.reduce(0) { moduleTotal, module in
+        session.completedModules.filter { !$0.skipped }.reduce(0) { moduleTotal, module in
             moduleTotal + module.completedExercises.reduce(0) { $0 + $1.totalVolume }
         }
     }
@@ -196,7 +196,7 @@ struct WorkoutSummaryView: View {
     private var exerciseHighlights: [ExerciseHighlight] {
         var highlights: [ExerciseHighlight] = []
 
-        for module in session.completedModules {
+        for module in session.completedModules where !module.skipped {
             for exercise in module.completedExercises {
                 // Only include strength exercises with meaningful top sets
                 guard exercise.exerciseType == .strength,

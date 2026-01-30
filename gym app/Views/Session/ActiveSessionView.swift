@@ -554,7 +554,6 @@ struct ActiveSessionView: View {
                         let lastSessionExercise = sessionViewModel.getLastSessionData(for: exercise.exerciseName)
                         ForEach(flattenedSetsForGroup(exercise: exercise, groupIndex: groupIndex), id: \.id) { flatSet in
                             let isFirstIncomplete = isFirstIncompleteSet(flatSet, in: exercise)
-                            let previousSet = getPreviousCompletedSet(for: flatSet, in: exercise)
                             SetRowView(
                                 flatSet: flatSet,
                                 exercise: exercise,
@@ -589,7 +588,6 @@ struct ActiveSessionView: View {
                                     }
                                 },
                                 lastSessionExercise: lastSessionExercise,
-                                previousCompletedSet: previousSet,
                                 contentWidth: width - (AppSpacing.cardPadding * 2)
                             )
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -627,6 +625,11 @@ struct ActiveSessionView: View {
                     )
                 }
                 .buttonStyle(.plain)
+
+                // Progression buttons (show when all sets completed)
+                if allSetsCompleted(exercise) && exercise.exerciseType == .strength {
+                    progressionButtonsSection(exercise: exercise, width: width)
+                }
 
                 // Next Exercise button
                 Button {
@@ -864,6 +867,56 @@ struct ActiveSessionView: View {
         }
     }
 
+    // MARK: - Progression Buttons
+
+    private func progressionButtonsSection(exercise: SessionExercise, width: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("Next session:")
+                .caption(color: AppColors.textSecondary)
+
+            HStack(spacing: AppSpacing.sm) {
+                ForEach(ProgressionRecommendation.allCases) { recommendation in
+                    progressionButton(recommendation, exercise: exercise)
+                }
+            }
+            .frame(width: width - (AppSpacing.cardPadding * 2))
+        }
+        .padding(.top, AppSpacing.sm)
+    }
+
+    private func progressionButton(_ recommendation: ProgressionRecommendation, exercise: SessionExercise) -> some View {
+        let isSelected = exercise.progressionRecommendation == recommendation
+        let color = recommendation.color
+
+        return Button {
+            updateExerciseProgression(exercise: exercise, recommendation: recommendation)
+            HapticManager.shared.selectionChanged()
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: recommendation.icon)
+                    .caption(color: isSelected ? .white : color)
+                Text(recommendation.displayName)
+                    .caption(color: isSelected ? .white : color)
+                    .fontWeight(.medium)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, AppSpacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.small)
+                    .fill(isSelected ? color : color.opacity(0.12))
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func updateExerciseProgression(exercise: SessionExercise, recommendation: ProgressionRecommendation) {
+        sessionViewModel.updateExerciseProgression(
+            moduleIndex: sessionViewModel.currentModuleIndex,
+            exerciseIndex: sessionViewModel.currentExerciseIndex,
+            recommendation: exercise.progressionRecommendation == recommendation ? nil : recommendation
+        )
+    }
+
     private func isFirstIncompleteSet(_ flatSet: FlatSet, in exercise: SessionExercise) -> Bool {
         // Find the first incomplete set in the exercise
         for setGroup in exercise.completedSetGroups {
@@ -875,28 +928,6 @@ struct ActiveSessionView: View {
             }
         }
         return false
-    }
-
-    /// Gets the previous completed set before the given flatSet (for "same as last" button)
-    private func getPreviousCompletedSet(for flatSet: FlatSet, in exercise: SessionExercise) -> SetData? {
-        var allSets: [SetData] = []
-        for setGroup in exercise.completedSetGroups {
-            allSets.append(contentsOf: setGroup.sets)
-        }
-
-        // Find the index of our current set
-        guard let currentIndex = allSets.firstIndex(where: { $0.id == flatSet.setData.id }) else {
-            return nil
-        }
-
-        // Look backwards for the most recent completed set
-        for i in stride(from: currentIndex - 1, through: 0, by: -1) {
-            if allSets[i].completed {
-                return allSets[i]
-            }
-        }
-
-        return nil
     }
 
     private var isLastExercise: Bool {
@@ -1590,9 +1621,11 @@ struct ActiveSessionView: View {
                         .stroke(isUrgent ? AppColors.warning : AppColors.accent1, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                         .frame(width: 36, height: 36)
                         .rotationEffect(.degrees(-90))
+                        .animation(.linear(duration: 0.3), value: sessionViewModel.restTimerSeconds)
 
                     Text("\(sessionViewModel.restTimerSeconds)")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .monospacedDigit()
                         .foregroundColor(AppColors.textPrimary)
                 }
 
@@ -1603,6 +1636,7 @@ struct ActiveSessionView: View {
                         .fontWeight(.medium)
                     Text("\(sessionViewModel.restTimerSeconds)s remaining")
                         .caption(color: AppColors.textTertiary)
+                        .monospacedDigit()
                 }
 
                 Spacer()

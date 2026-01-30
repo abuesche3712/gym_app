@@ -202,8 +202,8 @@ struct CompletedProgram: Identifiable, Codable, Hashable {
         totalSetsCompleted += session.totalSetsCompleted
         totalDurationMinutes += session.duration ?? 0
 
-        // Calculate volume from session
-        let sessionVolume = session.completedModules.reduce(0.0) { moduleTotal, module in
+        // Calculate volume from session (excluding skipped modules)
+        let sessionVolume = session.completedModules.filter { !$0.skipped }.reduce(0.0) { moduleTotal, module in
             moduleTotal + module.completedExercises.reduce(0.0) { $0 + $1.totalVolume }
         }
         totalVolume += sessionVolume

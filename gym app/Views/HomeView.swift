@@ -765,7 +765,7 @@ struct HomeView: View {
 
         var totalSeconds = 0
         for session in weekSessions {
-            for module in session.completedModules {
+            for module in session.completedModules where !module.skipped {
                 for exercise in module.completedExercises where exercise.exerciseType == .cardio {
                     for setGroup in exercise.completedSetGroups {
                         for set in setGroup.sets where set.completed {

@@ -67,8 +67,6 @@ struct SetRowView: View {
 
     // Smart friction reduction: last session data for auto-fill hints
     var lastSessionExercise: SessionExercise? = nil
-    // Smart friction reduction: previous completed set in current session for "same as last"
-    var previousCompletedSet: SetData? = nil
 
     // Explicit width to prevent layout expansion issues
     var contentWidth: CGFloat? = nil
@@ -146,13 +144,6 @@ struct SetRowView: View {
                         .layoutPriority(-1) // Allow compression if needed
 
                     Spacer(minLength: 0) // Can compress to 0
-
-                    // Same as last set button (friction reduction)
-                    if previousCompletedSet != nil {
-                        sameAsLastButton
-                            .layoutPriority(1) // Keep visible
-                            .fixedSize() // Prevent button from shrinking
-                    }
 
                     // Log button (delete via swipe only to reduce clutter)
                     logButton
@@ -464,6 +455,15 @@ struct SetRowView: View {
                     Text("lbs")
                         .caption2(color: AppColors.textTertiary)
                         .fontWeight(.medium)
+
+                    // Progression suggestion hint
+                    if let suggestion = exercise.progressionSuggestion,
+                       suggestion.metric == .weight,
+                       !flatSet.setData.completed {
+                        Text("▲ \(suggestion.formattedValue)")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(AppColors.success)
+                    }
                 }
                 .fixedSize(horizontal: true, vertical: false)
             }
@@ -902,57 +902,6 @@ struct SetRowView: View {
 
     // MARK: - Log Button
 
-    // MARK: - Same as Last Set Button (Friction Reduction)
-    private var sameAsLastButton: some View {
-        Button {
-            guard let prevSet = previousCompletedSet else { return }
-            // Copy values from previous completed set
-            if let weight = prevSet.weight {
-                inputWeight = formatWeight(weight)
-            }
-            if let reps = prevSet.reps {
-                inputReps = "\(reps)"
-            }
-            if let duration = prevSet.duration {
-                inputDuration = duration
-                durationManuallySet = true
-            }
-            if let holdTime = prevSet.holdTime {
-                inputHoldTime = holdTime
-            }
-            if let distance = prevSet.distance {
-                inputDistance = formatDistanceValue(distance)
-            }
-            if let band = prevSet.bandColor {
-                inputBandColor = band
-            }
-            // Copy multi-measurable values
-            for measurable in flatSet.implementMeasurables {
-                if let value = prevSet.implementMeasurableValues[measurable.measurableName] {
-                    if let numericValue = value.numericValue {
-                        inputMeasurableValues[measurable.measurableName] = formatMeasurableValue(numericValue)
-                    } else if let stringValue = value.stringValue {
-                        inputMeasurableValues[measurable.measurableName] = stringValue
-                    }
-                }
-            }
-            // Light haptic to confirm action
-            HapticManager.shared.soft()
-        } label: {
-            Image(systemName: "arrow.uturn.backward")
-                .subheadline(color: AppColors.dominant)
-                .fontWeight(.semibold)
-                .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
-                .background(
-                    Circle()
-                        .fill(AppColors.dominant.opacity(0.15))
-                )
-        }
-        .buttonStyle(.bouncy)
-        .accessibilityLabel("Copy previous set")
-        .accessibilityHint("Fills in values from the last completed set")
-    }
-
     private var logButton: some View {
         Button {
             // Dismiss keyboard explicitly (focusedField = nil doesn't always work for number pads)
@@ -1256,7 +1205,8 @@ struct SetRowView: View {
         let lastHoldTime = lastSessionSet?.holdTime
         let lastDistance = lastSessionSet?.distance
         let lastHeight = lastSessionSet?.height
-        let lastBandColor = lastSessionSet?.bandColor
+        // Check both bandColor field and implementMeasurableValues["Color"] for backwards compatibility
+        let lastBandColor = lastSessionSet?.bandColor ?? lastSessionSet?.implementMeasurableValues["Color"]?.stringValue
 
         // If set was previously logged, load logged values for editing
         // Otherwise auto-fill with: last session values > target values > empty
@@ -1302,7 +1252,11 @@ struct SetRowView: View {
             ?? ""
         inputIntensity = setData.intensity ?? 0
         inputTemperature = setData.temperature.map { "\($0)" } ?? ""
-        inputBandColor = setData.bandColor ?? lastBandColor ?? ""
+        // Check both bandColor field and implementMeasurableValues["Color"] for backwards compatibility
+        inputBandColor = setData.bandColor
+            ?? setData.implementMeasurableValues["Color"]?.stringValue
+            ?? lastBandColor
+            ?? ""
 
         // Multi-measurable values: logged value > last session value > target value > empty
         inputMeasurableValues = [:]

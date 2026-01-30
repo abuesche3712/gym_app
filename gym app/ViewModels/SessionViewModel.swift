@@ -298,6 +298,37 @@ class SessionViewModel: ObservableObject {
             completedModules.append(standaloneModule)
         }
 
+        // Calculate and apply progression suggestions if program has progression enabled
+        if let programId = scheduledWorkout?.programId,
+           let program = repository.getProgram(id: programId),
+           program.progressionEnabled {
+
+            // Get all exercises from all modules
+            let allExercises = completedModules.flatMap { $0.completedExercises }
+
+            // Get session history for this workout (already sorted by date descending)
+            let workoutHistory = sessions.filter { $0.workoutId == workout.id }
+
+            // Calculate suggestions
+            let progressionService = ProgressionService()
+            let suggestions = progressionService.calculateSuggestions(
+                for: allExercises,
+                workoutId: workout.id,
+                program: program,
+                sessionHistory: workoutHistory
+            )
+
+            // Apply suggestions to exercises
+            for moduleIdx in completedModules.indices {
+                for exerciseIdx in completedModules[moduleIdx].completedExercises.indices {
+                    let exerciseId = completedModules[moduleIdx].completedExercises[exerciseIdx].id
+                    if let suggestion = suggestions[exerciseId] {
+                        completedModules[moduleIdx].completedExercises[exerciseIdx].progressionSuggestion = suggestion
+                    }
+                }
+            }
+        }
+
         currentSession = Session(
             id: sessionId,
             workoutId: workout.id,
@@ -682,6 +713,19 @@ class SessionViewModel: ObservableObject {
                 }
             }
         }
+
+        // Auto-save for crash recovery
+        autoSaveInProgressSession()
+    }
+
+    /// Update the progression recommendation for an exercise during the active session
+    func updateExerciseProgression(moduleIndex: Int, exerciseIndex: Int, recommendation: ProgressionRecommendation?) {
+        guard var session = currentSession,
+              moduleIndex < session.completedModules.count,
+              exerciseIndex < session.completedModules[moduleIndex].completedExercises.count else { return }
+
+        session.completedModules[moduleIndex].completedExercises[exerciseIndex].progressionRecommendation = recommendation
+        currentSession = session
 
         // Auto-save for crash recovery
         autoSaveInProgressSession()

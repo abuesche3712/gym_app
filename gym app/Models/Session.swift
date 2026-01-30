@@ -104,14 +104,14 @@ struct Session: Identifiable, Codable, Hashable {
     }
 
     var totalExercisesCompleted: Int {
-        completedModules.reduce(0) { $0 + $1.completedExercises.count }
+        completedModules.filter { !$0.skipped }.reduce(0) { $0 + $1.completedExercises.count }
     }
 
     var totalSetsCompleted: Int {
-        completedModules.reduce(0) { module, completed in
+        completedModules.filter { !$0.skipped }.reduce(0) { module, completed in
             module + completed.completedExercises.reduce(0) { exercise, completedExercise in
-                exercise + completedExercise.completedSetGroups.reduce(0) { setGroup, completed in
-                    setGroup + completed.sets.count
+                exercise + completedExercise.completedSetGroups.reduce(0) { setGroup, completedGroup in
+                    setGroup + completedGroup.sets.filter { $0.completed }.count
                 }
             }
         }
@@ -226,6 +226,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
 
     // Progression tracking
     var progressionRecommendation: ProgressionRecommendation? // User's recommendation for next session
+    var progressionSuggestion: ProgressionSuggestion?         // System-calculated suggestion
 
     // Sharing context (denormalized for standalone sharing)
     var sessionId: UUID?
@@ -255,6 +256,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         originalExerciseName: String? = nil,
         isAdHoc: Bool = false,
         progressionRecommendation: ProgressionRecommendation? = nil,
+        progressionSuggestion: ProgressionSuggestion? = nil,
         sessionId: UUID? = nil,
         moduleId: UUID? = nil,
         moduleName: String? = nil,
@@ -281,6 +283,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         self.originalExerciseName = originalExerciseName
         self.isAdHoc = isAdHoc
         self.progressionRecommendation = progressionRecommendation
+        self.progressionSuggestion = progressionSuggestion
         self.sessionId = sessionId
         self.moduleId = moduleId
         self.moduleName = moduleName
@@ -316,6 +319,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         recoveryActivityType = try container.decodeIfPresent(RecoveryActivityType.self, forKey: .recoveryActivityType)
         originalExerciseName = try container.decodeIfPresent(String.self, forKey: .originalExerciseName)
         progressionRecommendation = try container.decodeIfPresent(ProgressionRecommendation.self, forKey: .progressionRecommendation)
+        progressionSuggestion = try container.decodeIfPresent(ProgressionSuggestion.self, forKey: .progressionSuggestion)
 
         // Sharing context (optional - populated when needed for sharing)
         sessionId = try container.decodeIfPresent(UUID.self, forKey: .sessionId)
@@ -330,7 +334,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         case id, exerciseId, exerciseName, exerciseType, cardioMetric, mobilityTracking, distanceUnit
         case supersetGroupId, completedSetGroups, notes, isBodyweight, recoveryActivityType, implementIds
         case primaryMuscles, secondaryMuscles
-        case isSubstitution, originalExerciseName, isAdHoc, progressionRecommendation
+        case isSubstitution, originalExerciseName, isAdHoc, progressionRecommendation, progressionSuggestion
         case sessionId, moduleId, moduleName, workoutId, workoutName, date
     }
 
@@ -349,6 +353,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
     var topSet: SetData? {
         completedSetGroups
             .flatMap { $0.sets }
+            .filter { $0.completed }
             .max { ($0.weight ?? 0) < ($1.weight ?? 0) }
     }
 
