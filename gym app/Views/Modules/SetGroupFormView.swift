@@ -139,62 +139,66 @@ struct SetGroupFormView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: AppSpacing.xl) {
-                // Mode Selection
-                FormSection(title: "Mode", icon: "timer", iconColor: (isInterval || isAMRAP) ? AppColors.dominant : AppColors.textTertiary) {
-                    VStack(spacing: AppSpacing.sm) {
-                        // Interval Mode Toggle
-                        HStack(spacing: AppSpacing.md) {
-                            Image(systemName: "repeat")
-                                .font(.body)
-                                .foregroundColor(AppColors.textTertiary)
-                                .frame(width: 24)
+                // Mode Selection - only show for exercise types where it makes sense
+                if exerciseType == .strength || exerciseType == .explosive || exerciseType == .cardio {
+                    FormSection(title: "Mode", icon: "timer", iconColor: (isInterval || isAMRAP) ? AppColors.dominant : AppColors.textTertiary) {
+                        VStack(spacing: AppSpacing.sm) {
+                            // Interval Mode Toggle - available for cardio and strength
+                            HStack(spacing: AppSpacing.md) {
+                                Image(systemName: "repeat")
+                                    .font(.body)
+                                    .foregroundColor(AppColors.textTertiary)
+                                    .frame(width: 24)
 
-                            Toggle("Interval Mode", isOn: Binding(
-                                get: { isInterval },
-                                set: { newValue in
-                                    isInterval = newValue
-                                    if newValue { isAMRAP = false }
-                                }
-                            ))
-                            .tint(AppColors.dominant)
-                        }
-                        .padding(.horizontal, AppSpacing.cardPadding)
-                        .padding(.vertical, AppSpacing.md)
-                        .background(AppColors.surfacePrimary)
-
-                        // AMRAP Mode Toggle
-                        HStack(spacing: AppSpacing.md) {
-                            Image(systemName: "figure.strengthtraining.traditional")
-                                .font(.body)
-                                .foregroundColor(AppColors.textTertiary)
-                                .frame(width: 24)
-
-                            Toggle("AMRAP Mode", isOn: Binding(
-                                get: { isAMRAP },
-                                set: { newValue in
-                                    isAMRAP = newValue
-                                    if newValue { isInterval = false }
-                                }
-                            ))
-                            .tint(AppColors.accent2)
-                        }
-                        .padding(.horizontal, AppSpacing.cardPadding)
-                        .padding(.vertical, AppSpacing.md)
-                        .background(AppColors.surfacePrimary)
-                    }
-
-                    if isInterval {
-                        Text("Timer will auto-run through all rounds with work/rest periods")
-                            .font(.caption)
-                            .foregroundColor(AppColors.dominant)
+                                Toggle("Interval Mode", isOn: Binding(
+                                    get: { isInterval },
+                                    set: { newValue in
+                                        isInterval = newValue
+                                        if newValue { isAMRAP = false }
+                                    }
+                                ))
+                                .tint(AppColors.dominant)
+                            }
                             .padding(.horizontal, AppSpacing.cardPadding)
-                            .padding(.bottom, AppSpacing.sm)
-                    } else if isAMRAP {
-                        Text("As Many Reps As Possible - log max reps achieved per set")
-                            .font(.caption)
-                            .foregroundColor(AppColors.accent2)
-                            .padding(.horizontal, AppSpacing.cardPadding)
-                            .padding(.bottom, AppSpacing.sm)
+                            .padding(.vertical, AppSpacing.md)
+                            .background(AppColors.surfacePrimary)
+
+                            // AMRAP Mode Toggle - only for strength and explosive exercises
+                            if exerciseType == .strength || exerciseType == .explosive {
+                                HStack(spacing: AppSpacing.md) {
+                                    Image(systemName: "figure.strengthtraining.traditional")
+                                        .font(.body)
+                                        .foregroundColor(AppColors.textTertiary)
+                                        .frame(width: 24)
+
+                                    Toggle("AMRAP Mode", isOn: Binding(
+                                        get: { isAMRAP },
+                                        set: { newValue in
+                                            isAMRAP = newValue
+                                            if newValue { isInterval = false }
+                                        }
+                                    ))
+                                    .tint(AppColors.accent2)
+                                }
+                                .padding(.horizontal, AppSpacing.cardPadding)
+                                .padding(.vertical, AppSpacing.md)
+                                .background(AppColors.surfacePrimary)
+                            }
+                        }
+
+                        if isInterval {
+                            Text("Timer will auto-run through all rounds with work/rest periods")
+                                .font(.caption)
+                                .foregroundColor(AppColors.dominant)
+                                .padding(.horizontal, AppSpacing.cardPadding)
+                                .padding(.bottom, AppSpacing.sm)
+                        } else if isAMRAP {
+                            Text("As Many Reps As Possible - log max reps achieved per set")
+                                .font(.caption)
+                                .foregroundColor(AppColors.accent2)
+                                .padding(.horizontal, AppSpacing.cardPadding)
+                                .padding(.bottom, AppSpacing.sm)
+                        }
                     }
                 }
 
@@ -839,13 +843,6 @@ struct SetGroupFormView: View {
     }
 
     // MARK: - Formatting Helpers
-
-    private func formatWeight(_ value: Double) -> String {
-        if value == floor(value) {
-            return "\(Int(value))"
-        }
-        return String(format: "%.1f", value)
-    }
 
     private func formatTotalDuration() -> String {
         let total = (workDuration * sets) + (intervalRestDuration * max(0, sets - 1))

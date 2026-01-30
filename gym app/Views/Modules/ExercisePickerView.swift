@@ -2,7 +2,7 @@
 //  ExercisePickerView.swift
 //  gym app
 //
-//  Picker for selecting an exercise from the library or creating a custom one
+//  Unified picker for selecting exercises - supports single and multi-select modes
 //
 
 import SwiftUI
@@ -12,14 +12,40 @@ struct ExercisePickerView: View {
     @StateObject private var resolver = ExerciseResolver.shared
     @StateObject private var customLibrary = CustomExerciseLibrary.shared
     @StateObject private var libraryService = LibraryService.shared
+
+    // MARK: - Configuration
+
+    /// When true, allows selecting multiple exercises with an "Add" button
+    let allowsMultipleSelection: Bool
+
+    /// Shows the "New Exercise" section for creating custom exercises
+    let showCreateNewSection: Bool
+
+    // MARK: - Single-select mode (used when allowsMultipleSelection = false)
+
+    /// Binding to track currently selected template (single-select only)
     @Binding var selectedTemplate: ExerciseTemplate?
+
+    /// Binding for custom exercise name input (single-select only)
     @Binding var customName: String
-    let onSelect: (ExerciseTemplate?) -> Void
+
+    /// Callback when an exercise is selected (single-select only)
+    let onSelect: ((ExerciseTemplate?) -> Void)?
+
+    // MARK: - Multi-select mode (used when allowsMultipleSelection = true)
+
+    /// Callback when exercises are confirmed (multi-select only)
+    let onSelectMultiple: (([ExerciseTemplate]) -> Void)?
+
+    // MARK: - State
 
     @State private var searchText = ""
     @State private var selectedType: ExerciseType?
     @State private var selectedExerciseType: ExerciseType = .strength
     @State private var saveToLibrary = true
+
+    // Multi-select state
+    @State private var selectedTemplates: [ExerciseTemplate] = []
 
     // Muscle group selection for custom exercises
     @State private var selectedPrimaryMuscles: [MuscleGroup] = []
@@ -28,6 +54,38 @@ struct ExercisePickerView: View {
     // Edit exercise state
     @State private var editingTemplate: ExerciseTemplate?
     @State private var editingIsCustom: Bool = false
+
+    // MARK: - Convenience Initializers
+
+    /// Single-select mode initializer
+    init(
+        selectedTemplate: Binding<ExerciseTemplate?>,
+        customName: Binding<String>,
+        onSelect: @escaping (ExerciseTemplate?) -> Void
+    ) {
+        self.allowsMultipleSelection = false
+        self.showCreateNewSection = true
+        self._selectedTemplate = selectedTemplate
+        self._customName = customName
+        self.onSelect = onSelect
+        self.onSelectMultiple = nil
+    }
+
+    /// Multi-select mode initializer
+    init(
+        allowsMultipleSelection: Bool = true,
+        showCreateNewSection: Bool = false,
+        onSelectMultiple: @escaping ([ExerciseTemplate]) -> Void
+    ) {
+        self.allowsMultipleSelection = allowsMultipleSelection
+        self.showCreateNewSection = showCreateNewSection
+        self._selectedTemplate = .constant(nil)
+        self._customName = .constant("")
+        self.onSelect = nil
+        self.onSelectMultiple = onSelectMultiple
+    }
+
+    // MARK: - Computed Properties
 
     private var filteredLibraryExercises: [ExerciseTemplate] {
         var exercises = resolver.builtInExercises
@@ -62,18 +120,33 @@ struct ExercisePickerView: View {
         return resolver.findTemplate(named: name) != nil
     }
 
+    private func isSelected(_ template: ExerciseTemplate) -> Bool {
+        if allowsMultipleSelection {
+            return selectedTemplates.contains { $0.id == template.id }
+        } else {
+            return selectedTemplate?.id == template.id
+        }
+    }
+
+    // MARK: - Body
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 typeFilterBar
                 exerciseList
+
+                // Multi-select: Add button at bottom
+                if allowsMultipleSelection && !selectedTemplates.isEmpty {
+                    addSelectedButton
+                }
             }
             .navigationTitle("Select Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $searchText, prompt: "Search exercises...")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button(allowsMultipleSelection ? "Done" : "Cancel") {
                         dismiss()
                     }
                 }
@@ -112,7 +185,9 @@ struct ExercisePickerView: View {
 
     private var exerciseList: some View {
         List {
-            customExerciseSection
+            if showCreateNewSection {
+                customExerciseSection
+            }
 
             if !filteredCustomExercises.isEmpty {
                 myExercisesSection
@@ -123,8 +198,9 @@ struct ExercisePickerView: View {
         .listStyle(.insetGrouped)
     }
 
-    // MARK: - Custom Exercise Section
+    // MARK: - Custom Exercise Section (Single-select only)
 
+    @ViewBuilder
     private var customExerciseSection: some View {
         Section {
             // Exercise name input
@@ -215,7 +291,7 @@ struct ExercisePickerView: View {
 
     private func exerciseRow(template: ExerciseTemplate, isCustom: Bool) -> some View {
         Button {
-            selectExercise(template)
+            handleExerciseSelection(template)
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -251,7 +327,12 @@ struct ExercisePickerView: View {
 
                 Spacer()
 
-                if selectedTemplate?.id == template.id {
+                // Selection indicator
+                if allowsMultipleSelection {
+                    Image(systemName: isSelected(template) ? "checkmark.circle.fill" : "circle")
+                        .font(.title3)
+                        .foregroundColor(isSelected(template) ? AppColors.success : AppColors.textTertiary)
+                } else if isSelected(template) {
                     Image(systemName: "checkmark")
                         .body(color: AppColors.dominant)
                 }
@@ -277,7 +358,43 @@ struct ExercisePickerView: View {
         }
     }
 
+    // MARK: - Add Selected Button (Multi-select)
+
+    private var addSelectedButton: some View {
+        Button {
+            onSelectMultiple?(selectedTemplates)
+            dismiss()
+        } label: {
+            HStack {
+                Image(systemName: "plus.circle.fill")
+                Text("Add \(selectedTemplates.count) Exercise\(selectedTemplates.count == 1 ? "" : "s")")
+                    .fontWeight(.semibold)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, AppSpacing.md)
+            .background(AppColors.dominant)
+            .foregroundColor(.white)
+            .cornerRadius(AppCorners.medium)
+        }
+        .padding(AppSpacing.screenPadding)
+        .background(AppColors.background)
+    }
+
     // MARK: - Actions
+
+    private func handleExerciseSelection(_ template: ExerciseTemplate) {
+        if allowsMultipleSelection {
+            // Toggle selection for multi-select
+            if let index = selectedTemplates.firstIndex(where: { $0.id == template.id }) {
+                selectedTemplates.remove(at: index)
+            } else {
+                selectedTemplates.append(template)
+            }
+        } else {
+            // Immediate selection for single-select
+            selectExercise(template)
+        }
+    }
 
     private func addCustomExercise() {
         let trimmedName = customName.trimmingCharacters(in: .whitespaces)
@@ -303,13 +420,13 @@ struct ExercisePickerView: View {
             )
 
         selectedTemplate = template
-        onSelect(template)
+        onSelect?(template)
         dismiss()
     }
 
     private func selectExercise(_ template: ExerciseTemplate) {
         customName = template.name
-        onSelect(template)
+        onSelect?(template)
         dismiss()
     }
 }

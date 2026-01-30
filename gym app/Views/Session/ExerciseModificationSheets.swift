@@ -155,7 +155,8 @@ struct EditExerciseSheet: View {
                 exerciseType: exerciseType,
                 cardioMetric: cardioMetric,
                 mobilityTracking: mobilityTracking,
-                distanceUnit: distanceUnit
+                distanceUnit: distanceUnit,
+                implementIds: selectedImplementIds
             )
 
         case .equipment:
@@ -624,12 +625,14 @@ struct EditExerciseSheet: View {
 
 struct EditSetGroupSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var libraryService = LibraryService.shared
     @Binding var setGroup: EditExerciseSheet.EditableSetGroup
 
     let exerciseType: ExerciseType
     let cardioMetric: CardioTracking
     let mobilityTracking: MobilityTracking
     let distanceUnit: DistanceUnit
+    let implementIds: Set<UUID>
 
     @State private var sets: Int = 3
     @State private var targetWeight: String = ""
@@ -643,6 +646,52 @@ struct EditSetGroupSheet: View {
     @State private var editingSetIndex: Int? = nil
     @State private var isUnilateral: Bool = false
     @State private var trackRPE: Bool = true
+
+    // Equipment-specific measurable values
+    @State private var implementMeasurableValues: [String: MeasurableValue] = [:]
+
+    struct MeasurableValue {
+        var numericValue: String = ""
+        var stringValue: String = ""
+        let isStringBased: Bool
+        let unit: String
+        let implementName: String
+    }
+
+    /// Returns implement-specific measurables to display
+    private var implementSpecificMeasurables: [(key: String, value: MeasurableValue)] {
+        var result: [String: MeasurableValue] = [:]
+
+        for id in implementIds {
+            guard let implement = libraryService.getImplement(id: id) else { continue }
+            for measurable in implement.measurableArray {
+                let key = "\(implement.name)_\(measurable.name)"
+                if implementMeasurableValues[key] == nil {
+                    result[key] = MeasurableValue(
+                        numericValue: "",
+                        stringValue: "",
+                        isStringBased: measurable.isStringBased,
+                        unit: measurable.unit,
+                        implementName: implement.name
+                    )
+                }
+            }
+        }
+
+        var merged = implementMeasurableValues
+        for (key, value) in result {
+            if merged[key] == nil {
+                merged[key] = value
+            }
+        }
+
+        let validKeys = result.keys
+        return merged.filter { validKeys.contains($0.key) }.sorted { $0.key < $1.key }
+    }
+
+    private func extractMeasurableName(from key: String) -> String {
+        key.components(separatedBy: "_").last ?? key
+    }
 
     private var hasIndividualSets: Bool {
         !setGroup.allSets.isEmpty
@@ -700,6 +749,50 @@ struct EditSetGroupSheet: View {
                     .pickerStyle(.segmented)
                 }
 
+                // Equipment Attributes (if any)
+                if !implementSpecificMeasurables.isEmpty && exerciseType == .strength {
+                    Section("Equipment Attributes") {
+                        ForEach(Array(implementSpecificMeasurables.enumerated()), id: \.element.key) { index, item in
+                            let measurable = item.value
+                            let displayLabel = "\(measurable.implementName) - \(extractMeasurableName(from: item.key))"
+
+                            HStack {
+                                Text(displayLabel)
+                                Spacer()
+                                if measurable.isStringBased {
+                                    TextField("Enter value", text: Binding(
+                                        get: { implementMeasurableValues[item.key]?.stringValue ?? "" },
+                                        set: { newValue in
+                                            var updated = implementMeasurableValues[item.key] ?? measurable
+                                            updated.stringValue = newValue
+                                            implementMeasurableValues[item.key] = updated
+                                        }
+                                    ))
+                                    .multilineTextAlignment(.trailing)
+                                    .frame(width: 100)
+                                } else {
+                                    HStack(spacing: 4) {
+                                        TextField("0", text: Binding(
+                                            get: { implementMeasurableValues[item.key]?.numericValue ?? "" },
+                                            set: { newValue in
+                                                var updated = implementMeasurableValues[item.key] ?? measurable
+                                                updated.numericValue = newValue
+                                                implementMeasurableValues[item.key] = updated
+                                            }
+                                        ))
+                                        .keyboardType(.decimalPad)
+                                        .multilineTextAlignment(.trailing)
+                                        .frame(width: 60)
+
+                                        Text(measurable.unit)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Options (unilateral, RPE tracking)
                 Section("Options") {
                     if exerciseType != .cardio {
@@ -742,7 +835,7 @@ struct EditSetGroupSheet: View {
                 )
             }
         }
-        .presentationDetents([hasIndividualSets ? .large : .medium])
+        .presentationDetents([(hasIndividualSets || !implementSpecificMeasurables.isEmpty) ? .large : .medium])
     }
 
     @ViewBuilder

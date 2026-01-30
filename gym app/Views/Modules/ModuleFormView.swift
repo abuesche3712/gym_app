@@ -24,6 +24,7 @@ struct ModuleFormView: View {
     // Exercises
     @State private var exercises: [ExerciseInstance] = []
     @State private var showingExercisePicker = false
+    @State private var showingCreateExercise = false
     @State private var editingExercise: ExerciseInstance?
     @State private var searchText = ""
     @State private var isSearchFocused = false
@@ -80,13 +81,11 @@ struct ModuleFormView: View {
             }
         }
         .sheet(isPresented: $showingExercisePicker) {
-            NavigationStack {
-                ExercisePickerSheet(onSelect: { templates in
-                    for template in templates {
-                        addExerciseFromTemplate(template)
-                    }
-                })
-            }
+            ExercisePickerView(onSelectMultiple: { templates in
+                for template in templates {
+                    addExerciseFromTemplate(template)
+                }
+            })
         }
         .sheet(item: $editingExercise) { exercise in
             NavigationStack {
@@ -103,6 +102,11 @@ struct ModuleFormView: View {
                     }
                 )
             }
+        }
+        .sheet(isPresented: $showingCreateExercise) {
+            AddExerciseSheet(onExerciseCreated: { newTemplate in
+                addExerciseFromTemplate(newTemplate)
+            })
         }
         .onAppear {
             loadModule()
@@ -330,29 +334,57 @@ struct ModuleFormView: View {
     }
 
     private var browseLibraryButton: some View {
-        Button {
-            showingExercisePicker = true
-        } label: {
-            HStack(spacing: AppSpacing.md) {
-                Image(systemName: "books.vertical")
-                    .body(color: moduleColor)
-                    .frame(width: 24)
+        VStack(spacing: 0) {
+            Button {
+                showingExercisePicker = true
+            } label: {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "books.vertical")
+                        .body(color: moduleColor)
+                        .frame(width: 24)
 
-                Text("Browse Exercise Library")
-                    .body(color: moduleColor)
-                    .fontWeight(.medium)
+                    Text("Browse Exercise Library")
+                        .body(color: moduleColor)
+                        .fontWeight(.medium)
 
-                Spacer()
+                    Spacer()
 
-                Image(systemName: "chevron.right")
-                    .caption(color: AppColors.textTertiary)
-                    .fontWeight(.semibold)
+                    Image(systemName: "chevron.right")
+                        .caption(color: AppColors.textTertiary)
+                        .fontWeight(.semibold)
+                }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, AppSpacing.md)
+                .background(AppColors.surfacePrimary)
             }
-            .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.vertical, AppSpacing.md)
-            .background(AppColors.surfacePrimary)
+            .buttonStyle(.plain)
+
+            FormDivider()
+
+            Button {
+                showingCreateExercise = true
+            } label: {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "plus.circle")
+                        .body(color: AppColors.accent1)
+                        .frame(width: 24)
+
+                    Text("Create New Exercise")
+                        .body(color: AppColors.accent1)
+                        .fontWeight(.medium)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .caption(color: AppColors.textTertiary)
+                        .fontWeight(.semibold)
+                }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, AppSpacing.md)
+                .background(AppColors.surfacePrimary)
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Notes Section
@@ -692,153 +724,6 @@ struct InlineExerciseEditor: View {
         updated.notes = notes.trimmingCharacters(in: .whitespaces).isEmpty ? nil : notes.trimmingCharacters(in: .whitespaces)
         updated.updatedAt = Date()
         onSave(updated)
-    }
-}
-
-// MARK: - Exercise Picker Sheet (Simplified)
-
-struct ExercisePickerSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @StateObject private var resolver = ExerciseResolver.shared
-
-    let onSelect: ([ExerciseTemplate]) -> Void
-
-    @State private var searchText = ""
-    @State private var selectedType: ExerciseType?
-    @State private var selectedTemplates: [ExerciseTemplate] = []
-
-    private var filteredExercises: [ExerciseTemplate] {
-        var exercises = resolver.builtInExercises + resolver.customExercises
-
-        if let type = selectedType {
-            exercises = exercises.filter { $0.exerciseType == type }
-        }
-
-        if !searchText.isEmpty {
-            exercises = exercises.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-        }
-
-        return exercises.sorted { $0.name < $1.name }
-    }
-
-    private func isSelected(_ template: ExerciseTemplate) -> Bool {
-        selectedTemplates.contains { $0.id == template.id }
-    }
-
-    private func toggleSelection(_ template: ExerciseTemplate) {
-        if let index = selectedTemplates.firstIndex(where: { $0.id == template.id }) {
-            selectedTemplates.remove(at: index)
-        } else {
-            selectedTemplates.append(template)
-        }
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            // Type filter
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: AppSpacing.sm) {
-                    FilterChip(title: "All", isSelected: selectedType == nil) {
-                        selectedType = nil
-                    }
-
-                    ForEach(ExerciseType.allCases) { type in
-                        FilterChip(title: type.displayName, isSelected: selectedType == type) {
-                            selectedType = type
-                        }
-                    }
-                }
-                .padding(.horizontal, AppSpacing.screenPadding)
-                .padding(.vertical, AppSpacing.md)
-            }
-            .background(AppColors.surfaceTertiary)
-
-            // Exercise list
-            List {
-                ForEach(filteredExercises) { template in
-                    Button {
-                        toggleSelection(template)
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(template.name)
-                                    .body(color: AppColors.textPrimary)
-
-                                Text(template.exerciseType.displayName)
-                                    .caption(color: AppColors.textSecondary)
-                            }
-
-                            Spacer()
-
-                            if isSelected(template) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .displaySmall(color: AppColors.success)
-                            } else {
-                                Image(systemName: "circle")
-                                    .displaySmall(color: AppColors.textTertiary)
-                            }
-                        }
-                    }
-                }
-            }
-            .listStyle(.plain)
-
-            // Add button when exercises are selected
-            if !selectedTemplates.isEmpty {
-                Button {
-                    onSelect(selectedTemplates)
-                    dismiss()
-                } label: {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                        Text("Add \(selectedTemplates.count) Exercise\(selectedTemplates.count == 1 ? "" : "s")")
-                            .fontWeight(.semibold)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, AppSpacing.md)
-                    .background(AppColors.dominant)
-                    .foregroundColor(.white)
-                    .cornerRadius(AppCorners.medium)
-                }
-                .padding(AppSpacing.screenPadding)
-                .background(AppColors.background)
-            }
-        }
-        .background(AppColors.background.ignoresSafeArea())
-        .navigationTitle("Exercise Library")
-        .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, prompt: "Search exercises...")
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Done") {
-                    dismiss()
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Filter Chip
-
-private struct FilterChip: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .subheadline(color: isSelected ? .white : AppColors.textPrimary)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(isSelected ? AppColors.dominant : AppColors.surfacePrimary)
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule()
-                        .stroke(isSelected ? Color.clear : AppColors.surfaceTertiary, lineWidth: 1)
-                )
-        }
     }
 }
 

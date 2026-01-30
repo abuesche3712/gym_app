@@ -105,13 +105,11 @@ struct WorkoutFormView: View {
             }
         }
         .sheet(isPresented: $showingExercisePicker) {
-            NavigationStack {
-                WorkoutExercisePickerSheet(onSelect: { templates in
-                    for template in templates {
-                        addExerciseFromTemplate(template)
-                    }
-                })
-            }
+            ExercisePickerView(onSelectMultiple: { templates in
+                for template in templates {
+                    addExerciseFromTemplate(template)
+                }
+            })
         }
         .sheet(item: $editingExercise) { exercise in
             NavigationStack {
@@ -361,6 +359,15 @@ struct WorkoutFormView: View {
             ForEach(Array(selectedModuleIds.enumerated()), id: \.element) { index, moduleId in
                 if let module = moduleViewModel.getModule(id: moduleId) {
                     moduleRow(module: module, index: index)
+                        .onDrag {
+                            draggedModuleId = moduleId
+                            return NSItemProvider(object: moduleId.uuidString as NSString)
+                        }
+                        .onDrop(of: [.text], delegate: ModuleDropDelegate(
+                            item: moduleId,
+                            items: $selectedModuleIds,
+                            draggedItem: $draggedModuleId
+                        ))
 
                     if index < selectedModuleIds.count - 1 {
                         FormDivider()
@@ -372,6 +379,12 @@ struct WorkoutFormView: View {
 
     private func moduleRow(module: Module, index: Int) -> some View {
         HStack(spacing: AppSpacing.md) {
+            // Drag handle
+            Image(systemName: "line.3.horizontal")
+                .font(.subheadline.weight(.medium))
+                .foregroundColor(AppColors.textTertiary)
+                .frame(width: 20)
+
             ZStack {
                 Circle()
                     .fill(AppColors.moduleColor(module.type).opacity(0.12))
@@ -594,6 +607,7 @@ struct WorkoutFormView: View {
     }
 
     @State private var draggedExercise: ExerciseInstance?
+    @State private var draggedModuleId: UUID?
 
     private var supersetToolbar: some View {
         HStack(spacing: AppSpacing.md) {
@@ -952,12 +966,12 @@ struct ModulePickerSheet: View {
             // Type filter
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: AppSpacing.sm) {
-                    ModuleFilterChip(title: "All", isSelected: selectedType == nil) {
+                    CategoryPill(title: "All", isSelected: selectedType == nil) {
                         selectedType = nil
                     }
 
                     ForEach(ModuleType.allCases) { type in
-                        ModuleFilterChip(title: type.displayName, isSelected: selectedType == type, color: type.color) {
+                        CategoryPill(title: type.displayName, isSelected: selectedType == type) {
                             selectedType = type
                         }
                     }
@@ -1067,156 +1081,6 @@ struct ModulePickerSheet: View {
     }
 }
 
-// MARK: - Exercise Picker for Workouts (Multi-select)
-
-struct WorkoutExercisePickerSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @StateObject private var resolver = ExerciseResolver.shared
-
-    let onSelect: ([ExerciseTemplate]) -> Void
-
-    @State private var searchText = ""
-    @State private var selectedType: ExerciseType?
-    @State private var selectedTemplates: [ExerciseTemplate] = []
-
-    private var filteredExercises: [ExerciseTemplate] {
-        var exercises = resolver.builtInExercises + resolver.customExercises
-
-        if let type = selectedType {
-            exercises = exercises.filter { $0.exerciseType == type }
-        }
-
-        if !searchText.isEmpty {
-            exercises = exercises.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-        }
-
-        return exercises.sorted { $0.name < $1.name }
-    }
-
-    private func isSelected(_ template: ExerciseTemplate) -> Bool {
-        selectedTemplates.contains { $0.id == template.id }
-    }
-
-    private func toggleSelection(_ template: ExerciseTemplate) {
-        if let index = selectedTemplates.firstIndex(where: { $0.id == template.id }) {
-            selectedTemplates.remove(at: index)
-        } else {
-            selectedTemplates.append(template)
-        }
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            // Type filter
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: AppSpacing.sm) {
-                    ModuleFilterChip(title: "All", isSelected: selectedType == nil) {
-                        selectedType = nil
-                    }
-
-                    ForEach(ExerciseType.allCases) { type in
-                        ModuleFilterChip(title: type.displayName, isSelected: selectedType == type) {
-                            selectedType = type
-                        }
-                    }
-                }
-                .padding(.horizontal, AppSpacing.screenPadding)
-                .padding(.vertical, AppSpacing.md)
-            }
-            .background(AppColors.surfaceTertiary)
-
-            // Exercise list
-            List {
-                ForEach(filteredExercises) { template in
-                    Button {
-                        toggleSelection(template)
-                    } label: {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(template.name)
-                                    .foregroundColor(AppColors.textPrimary)
-                                Text(template.exerciseType.displayName)
-                                    .font(.caption)
-                                    .foregroundColor(AppColors.textSecondary)
-                            }
-
-                            Spacer()
-
-                            if isSelected(template) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(AppColors.success)
-                                    .font(.title3)
-                            } else {
-                                Image(systemName: "circle")
-                                    .foregroundColor(AppColors.textTertiary)
-                                    .font(.title3)
-                            }
-                        }
-                    }
-                }
-            }
-            .listStyle(.plain)
-
-            // Add button
-            if !selectedTemplates.isEmpty {
-                Button {
-                    onSelect(selectedTemplates)
-                    dismiss()
-                } label: {
-                    HStack {
-                        Image(systemName: "plus.circle.fill")
-                        Text("Add \(selectedTemplates.count) Exercise\(selectedTemplates.count == 1 ? "" : "s")")
-                            .fontWeight(.semibold)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, AppSpacing.md)
-                    .background(AppColors.dominant)
-                    .foregroundColor(.white)
-                    .cornerRadius(AppCorners.medium)
-                }
-                .padding(AppSpacing.screenPadding)
-                .background(AppColors.background)
-            }
-        }
-        .background(AppColors.background.ignoresSafeArea())
-        .navigationTitle("Exercise Library")
-        .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, prompt: "Search exercises...")
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Done") {
-                    dismiss()
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Module Filter Chip
-
-private struct ModuleFilterChip: View {
-    let title: String
-    let isSelected: Bool
-    var color: Color = AppColors.dominant
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .subheadline(color: isSelected ? .white : AppColors.textPrimary)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(isSelected ? color : AppColors.surfacePrimary)
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule()
-                        .stroke(isSelected ? Color.clear : AppColors.surfaceTertiary, lineWidth: 1)
-                )
-        }
-    }
-}
-
 // MARK: - Exercise Drop Delegate
 
 struct ExerciseDropDelegate: DropDelegate {
@@ -1234,6 +1098,36 @@ struct ExerciseDropDelegate: DropDelegate {
               draggedItem.id != item.id,
               let fromIndex = items.firstIndex(where: { $0.id == draggedItem.id }),
               let toIndex = items.firstIndex(where: { $0.id == item.id }) else {
+            return
+        }
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            items.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
+        }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+}
+
+// MARK: - Module Drop Delegate
+
+struct ModuleDropDelegate: DropDelegate {
+    let item: UUID
+    @Binding var items: [UUID]
+    @Binding var draggedItem: UUID?
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggedItem = nil
+        return true
+    }
+
+    func dropEntered(info: DropInfo) {
+        guard let draggedItem = draggedItem,
+              draggedItem != item,
+              let fromIndex = items.firstIndex(of: draggedItem),
+              let toIndex = items.firstIndex(of: item) else {
             return
         }
 
