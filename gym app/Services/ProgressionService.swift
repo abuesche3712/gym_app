@@ -14,10 +14,69 @@ struct ProgressionService {
     /// Calculate progression suggestions for all exercises in a workout
     /// - Parameters:
     ///   - exercises: SessionExercises being started
+    ///   - exerciseInstanceIds: Map of SessionExercise.id to ExerciseInstance.id (for progression lookup)
     ///   - workoutId: Current workout ID for history lookup
     ///   - program: Optional program with progression rules
     ///   - sessionHistory: Historical sessions (sorted by date descending)
     /// - Returns: Dictionary mapping exercise ID to suggestion
+    func calculateSuggestions(
+        for exercises: [SessionExercise],
+        exerciseInstanceIds: [UUID: UUID],  // SessionExercise.id -> ExerciseInstance.id
+        workoutId: UUID,
+        program: Program?,
+        sessionHistory: [Session]
+    ) -> [UUID: ProgressionSuggestion] {
+
+        var suggestions: [UUID: ProgressionSuggestion] = [:]
+
+        // Check if progression is enabled globally
+        guard program?.progressionEnabled ?? false else {
+            return suggestions
+        }
+
+        for exercise in exercises {
+            // Only strength exercises get progression suggestions
+            guard exercise.exerciseType == .strength else { continue }
+
+            // Get the exercise instance ID for this session exercise
+            guard let exerciseInstanceId = exerciseInstanceIds[exercise.id] else {
+                continue
+            }
+
+            // Check if this specific exercise has progression enabled
+            guard let program = program,
+                  program.isProgressionEnabled(for: exerciseInstanceId) else {
+                continue
+            }
+
+            // Get the progression rule for this exercise (override or default)
+            guard let rule = program.progressionRuleForExercise(exerciseInstanceId) else {
+                continue
+            }
+
+            // Find last session data for this exercise within this workout
+            guard let lastExerciseData = findLastSessionData(
+                exerciseName: exercise.exerciseName,
+                workoutId: workoutId,
+                history: sessionHistory
+            ) else {
+                // No history = baseline session, no suggestion
+                continue
+            }
+
+            // Calculate suggestion based on rule
+            if let suggestion = calculateSuggestion(
+                from: lastExerciseData,
+                rule: rule
+            ) {
+                suggestions[exercise.id] = suggestion
+            }
+        }
+
+        return suggestions
+    }
+
+    /// Legacy method for backward compatibility - applies default rule to all exercises
     func calculateSuggestions(
         for exercises: [SessionExercise],
         workoutId: UUID,
@@ -36,8 +95,7 @@ struct ProgressionService {
             // Only strength exercises get progression suggestions
             guard exercise.exerciseType == .strength else { continue }
 
-            // Get the progression rule for this exercise
-            // For now, use the default rule since we don't have templateId on SessionExercise
+            // Get the default progression rule
             guard let rule = program?.defaultProgressionRule else {
                 continue
             }

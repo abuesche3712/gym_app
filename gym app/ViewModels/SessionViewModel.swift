@@ -946,9 +946,9 @@ class SessionViewModel: ObservableObject {
             // Countdown mode
             let remaining = exerciseTimerDuration - elapsed
             if remaining > 0 {
-                // Haptic for last 3 seconds countdown
-                if remaining <= 3 && exerciseTimerSeconds > 3 {
-                    HapticManager.shared.tap()
+                // Sound and haptic for last 3 seconds countdown
+                if remaining <= 3 && exerciseTimerSeconds != remaining {
+                    HapticManager.shared.countdownBeep()
                 }
                 exerciseTimerSeconds = remaining
             } else {

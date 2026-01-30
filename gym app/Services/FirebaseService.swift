@@ -257,11 +257,24 @@ class FirestoreService: ObservableObject {
 
     func fetchPrograms() async throws -> [Program] {
         let snapshot = try await userRef().collection("programs").getDocuments()
+        Logger.debug("fetchPrograms: Found \(snapshot.documents.count) program documents in Firebase")
+
         return snapshot.documents.compactMap { doc in
             do {
-                return try decodeProgram(from: doc.data())
+                let program = try decodeProgram(from: doc.data())
+                Logger.debug("fetchPrograms: Successfully decoded program '\(program.name)' (id: \(program.id))")
+                return program
             } catch {
+                // Log detailed error info to help diagnose
                 Logger.error(error, context: "Failed to decode program \(doc.documentID)")
+                Logger.debug("fetchPrograms: Document keys: \(doc.data().keys.sorted().joined(separator: ", "))")
+
+                // Log specific field values to identify mismatches
+                let data = doc.data()
+                Logger.debug("fetchPrograms: Raw field check - id: \(data["id"] ?? "nil"), name: \(data["name"] ?? "nil")")
+                Logger.debug("fetchPrograms: Raw field check - createdAt: \(data["createdAt"] ?? "nil"), created: \(data["created"] ?? "nil")")
+                Logger.debug("fetchPrograms: Raw field check - durationWeeks: \(data["durationWeeks"] ?? "nil"), duration: \(data["duration"] ?? "nil")")
+                Logger.debug("fetchPrograms: Decode error details: \(String(describing: error))")
                 return nil
             }
         }

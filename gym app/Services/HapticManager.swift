@@ -2,12 +2,13 @@
 //  HapticManager.swift
 //  gym app
 //
-//  Centralized haptic feedback for delightful interactions
+//  Centralized haptic feedback and sound for delightful interactions
 //
 
 import UIKit
 import SwiftUI
 import AVFoundation
+import AudioToolbox
 
 final class HapticManager: @unchecked Sendable {
     static let shared = HapticManager()
@@ -20,9 +21,48 @@ final class HapticManager: @unchecked Sendable {
     private let selection = UISelectionFeedbackGenerator()
     private let notification = UINotificationFeedbackGenerator()
 
+    // Audio players for timer sounds
+    private var timerCompletePlayer: AVAudioPlayer?
+    private var countdownBeepPlayer: AVAudioPlayer?
+    private var phaseTransitionPlayer: AVAudioPlayer?
+
     private init() {
         // Pre-warm the generators for faster response
         prepareAll()
+        // Configure audio session for playback even on silent mode
+        configureAudioSession()
+        // Pre-load sound files
+        prepareSounds()
+    }
+
+    private func configureAudioSession() {
+        do {
+            // Use playback category to play sounds even when silent switch is on
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Failed to configure audio session: \(error)")
+        }
+    }
+
+    private func prepareSounds() {
+        // Timer complete sound - use system sound file
+        if let soundURL = Bundle.main.url(forResource: "timer_complete", withExtension: "wav") {
+            timerCompletePlayer = try? AVAudioPlayer(contentsOf: soundURL)
+            timerCompletePlayer?.prepareToPlay()
+        }
+
+        // Countdown beep - use system sound file
+        if let soundURL = Bundle.main.url(forResource: "countdown_beep", withExtension: "wav") {
+            countdownBeepPlayer = try? AVAudioPlayer(contentsOf: soundURL)
+            countdownBeepPlayer?.prepareToPlay()
+        }
+
+        // Phase transition sound
+        if let soundURL = Bundle.main.url(forResource: "phase_transition", withExtension: "wav") {
+            phaseTransitionPlayer = try? AVAudioPlayer(contentsOf: soundURL)
+            phaseTransitionPlayer?.prepareToPlay()
+        }
     }
 
     func prepareAll() {
@@ -99,23 +139,64 @@ final class HapticManager: @unchecked Sendable {
     /// Timer finished (with sound)
     func timerComplete() {
         notification.notificationOccurred(.success)
-        playTimerSound()
+        playTimerCompleteSound()
     }
 
     /// Rest timer finished (with sound)
     func restTimerComplete() {
         notification.notificationOccurred(.success)
-        playTimerSound()
+        playTimerCompleteSound()
+    }
+
+    /// Countdown beep for last 3 seconds
+    func countdownBeep() {
+        tap()
+        playCountdownBeepSound()
+    }
+
+    /// Phase transition (work -> rest, rest -> work in interval timer)
+    func phaseTransition(isWorkPhase: Bool) {
+        if isWorkPhase {
+            notification.notificationOccurred(.warning)
+        } else {
+            notification.notificationOccurred(.success)
+        }
+        playPhaseTransitionSound()
     }
 
     /// Play timer completion sound
-    private func playTimerSound() {
-        // Use system sound 1005 - a pleasant notification sound
-        // Alternative sounds:
-        // 1103 - SMS Received (more attention-grabbing)
-        // 1005 - New Mail (gentle but noticeable)
-        // 1013 - Anticipate (gentle rising tone)
-        AudioServicesPlaySystemSound(1005)
+    private func playTimerCompleteSound() {
+        // Try custom sound first, fall back to system sound
+        if let player = timerCompletePlayer {
+            player.currentTime = 0
+            player.play()
+        } else {
+            // Fallback: Use system sound that plays even on silent
+            // Sound ID 1304 is a tri-tone alert
+            AudioServicesPlayAlertSound(SystemSoundID(1304))
+        }
+    }
+
+    /// Play countdown beep sound
+    private func playCountdownBeepSound() {
+        if let player = countdownBeepPlayer {
+            player.currentTime = 0
+            player.play()
+        } else {
+            // Fallback: Short click sound
+            AudioServicesPlayAlertSound(SystemSoundID(1057))
+        }
+    }
+
+    /// Play phase transition sound
+    private func playPhaseTransitionSound() {
+        if let player = phaseTransitionPlayer {
+            player.currentTime = 0
+            player.play()
+        } else {
+            // Fallback: Alert tone
+            AudioServicesPlayAlertSound(SystemSoundID(1322))
+        }
     }
 
     /// Error or warning

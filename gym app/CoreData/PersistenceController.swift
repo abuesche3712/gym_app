@@ -642,7 +642,14 @@ struct PersistenceController {
             createAttribute("createdAt", type: .dateAttributeType, optional: true),
             createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true),
-            createAttribute("syncStatusRaw", type: .stringAttributeType)
+            createAttribute("syncStatusRaw", type: .stringAttributeType),
+            // Progression configuration
+            createAttribute("progressionEnabled", type: .booleanAttributeType, optional: true, defaultValue: false),
+            createAttribute("defaultProgressionRuleData", type: .binaryDataAttributeType, optional: true),
+            createAttribute("progressionEnabledExercisesData", type: .binaryDataAttributeType, optional: true),
+            createAttribute("exerciseProgressionOverridesData", type: .binaryDataAttributeType, optional: true),
+            // Module slots (for standalone modules in program)
+            createAttribute("moduleSlotsData", type: .binaryDataAttributeType, optional: true)
         ]
 
         return entity

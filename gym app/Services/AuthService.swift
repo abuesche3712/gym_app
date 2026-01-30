@@ -134,6 +134,19 @@ class AuthService: NSObject, ObservableObject {
 
         let authResult = try await Auth.auth().signIn(with: credential)
 
+        // Save displayName to Firebase Auth user profile (Apple only provides name on first sign-in)
+        if let fullName = appleIDCredential.fullName,
+           authResult.user.displayName == nil || authResult.user.displayName?.isEmpty == true {
+            let formatter = PersonNameComponentsFormatter()
+            let displayName = formatter.string(from: fullName)
+            if !displayName.isEmpty {
+                let changeRequest = authResult.user.createProfileChangeRequest()
+                changeRequest.displayName = displayName
+                try? await changeRequest.commitChanges()
+                Logger.debug("Saved displayName to Firebase Auth user profile")
+            }
+        }
+
         // Create user document on first sign-in
         await createUserDocumentIfNeeded(
             uid: authResult.user.uid,

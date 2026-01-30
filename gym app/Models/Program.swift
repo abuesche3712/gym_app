@@ -27,9 +27,11 @@ struct Program: Identifiable, Codable, Hashable {
     var moduleSlots: [ProgramSlot]           // Unified slots (workouts and modules)
 
     // Progression configuration
-    var progressionRules: [UUID: ProgressionRule]  // Keyed by ExerciseTemplate.id
+    var progressionRules: [UUID: ProgressionRule]  // Keyed by ExerciseTemplate.id (legacy)
     var defaultProgressionRule: ProgressionRule?   // Fallback for exercises without specific rules
     var progressionEnabled: Bool                   // Global toggle for auto-progression
+    var progressionEnabledExercises: Set<UUID>     // ExerciseInstance IDs that get progression
+    var exerciseProgressionOverrides: [UUID: ProgressionRule]  // Per-exercise custom rules
 
     init(
         id: UUID = UUID(),
@@ -46,7 +48,9 @@ struct Program: Identifiable, Codable, Hashable {
         moduleSlots: [ProgramSlot] = [],
         progressionRules: [UUID: ProgressionRule] = [:],
         defaultProgressionRule: ProgressionRule? = nil,
-        progressionEnabled: Bool = false
+        progressionEnabled: Bool = false,
+        progressionEnabledExercises: Set<UUID> = [],
+        exerciseProgressionOverrides: [UUID: ProgressionRule] = [:]
     ) {
         self.id = id
         self.name = name
@@ -63,6 +67,8 @@ struct Program: Identifiable, Codable, Hashable {
         self.progressionRules = progressionRules
         self.defaultProgressionRule = defaultProgressionRule
         self.progressionEnabled = progressionEnabled
+        self.progressionEnabledExercises = progressionEnabledExercises
+        self.exerciseProgressionOverrides = exerciseProgressionOverrides
     }
 
     init(from decoder: Decoder) throws {
@@ -73,12 +79,35 @@ struct Program: Identifiable, Codable, Hashable {
         // Required fields
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
-        createdAt = try container.decode(Date.self, forKey: .createdAt)
-        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
-        syncStatus = try container.decode(SyncStatus.self, forKey: .syncStatus)
 
-        // Optional with defaults
-        durationWeeks = try container.decodeIfPresent(Int.self, forKey: .durationWeeks) ?? 4
+        // Handle legacy field names: "created" -> "createdAt", "updated" -> "updatedAt"
+        if let date = try container.decodeIfPresent(Date.self, forKey: .createdAt) {
+            createdAt = date
+        } else if let date = try container.decodeIfPresent(Date.self, forKey: .legacyCreated) {
+            createdAt = date
+        } else {
+            createdAt = Date() // Fallback
+        }
+
+        if let date = try container.decodeIfPresent(Date.self, forKey: .updatedAt) {
+            updatedAt = date
+        } else if let date = try container.decodeIfPresent(Date.self, forKey: .legacyUpdated) {
+            updatedAt = date
+        } else {
+            updatedAt = Date() // Fallback
+        }
+
+        syncStatus = try container.decodeIfPresent(SyncStatus.self, forKey: .syncStatus) ?? .pendingSync
+
+        // Handle legacy field name: "duration" -> "durationWeeks"
+        if let weeks = try container.decodeIfPresent(Int.self, forKey: .durationWeeks) {
+            durationWeeks = weeks
+        } else if let weeks = try container.decodeIfPresent(Int.self, forKey: .legacyDuration) {
+            durationWeeks = weeks
+        } else {
+            durationWeeks = 4 // Default
+        }
+
         isActive = try container.decodeIfPresent(Bool.self, forKey: .isActive) ?? false
         workoutSlots = try container.decodeIfPresent([ProgramWorkoutSlot].self, forKey: .workoutSlots) ?? []
         moduleSlots = try container.decodeIfPresent([ProgramSlot].self, forKey: .moduleSlots) ?? []
@@ -89,8 +118,9 @@ struct Program: Identifiable, Codable, Hashable {
         endDate = try container.decodeIfPresent(Date.self, forKey: .endDate)
 
         // Progression (optional with defaults for backward compatibility)
-        // Decode as String-keyed dictionary and convert to UUID-keyed
-        if let stringKeyedRules = try container.decodeIfPresent([String: ProgressionRule].self, forKey: .progressionRules) {
+        // progressionRules can be either a dictionary [String: ProgressionRule] or an empty array []
+        // Firebase may store empty dict as empty array, so handle both cases
+        if let stringKeyedRules = try? container.decodeIfPresent([String: ProgressionRule].self, forKey: .progressionRules) {
             progressionRules = Dictionary(uniqueKeysWithValues: stringKeyedRules.compactMap { key, value in
                 guard let uuid = UUID(uuidString: key) else { return nil }
                 return (uuid, value)
@@ -100,17 +130,71 @@ struct Program: Identifiable, Codable, Hashable {
         }
         defaultProgressionRule = try container.decodeIfPresent(ProgressionRule.self, forKey: .defaultProgressionRule)
         progressionEnabled = try container.decodeIfPresent(Bool.self, forKey: .progressionEnabled) ?? false
+
+        // Per-exercise progression configuration (new fields with defaults for backward compatibility)
+        if let enabledArray = try container.decodeIfPresent([String].self, forKey: .progressionEnabledExercises) {
+            progressionEnabledExercises = Set(enabledArray.compactMap { UUID(uuidString: $0) })
+        } else {
+            progressionEnabledExercises = []
+        }
+
+        if let stringKeyedOverrides = try container.decodeIfPresent([String: ProgressionRule].self, forKey: .exerciseProgressionOverrides) {
+            exerciseProgressionOverrides = Dictionary(uniqueKeysWithValues: stringKeyedOverrides.compactMap { key, value in
+                guard let uuid = UUID(uuidString: key) else { return nil }
+                return (uuid, value)
+            })
+        } else {
+            exerciseProgressionOverrides = [:]
+        }
     }
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion
         case progressionRules, defaultProgressionRule, progressionEnabled
+        case progressionEnabledExercises, exerciseProgressionOverrides
         case id, name, programDescription, durationWeeks, startDate, endDate, isActive, createdAt, updatedAt, syncStatus, workoutSlots, moduleSlots
+        // Legacy field names (for backward compatibility with old Firebase data)
+        case legacyCreated = "created"
+        case legacyDuration = "duration"
+        case legacyUpdated = "updated"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(schemaVersion, forKey: .schemaVersion)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encodeIfPresent(programDescription, forKey: .programDescription)
+        try container.encode(durationWeeks, forKey: .durationWeeks)
+        try container.encodeIfPresent(startDate, forKey: .startDate)
+        try container.encodeIfPresent(endDate, forKey: .endDate)
+        try container.encode(isActive, forKey: .isActive)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(updatedAt, forKey: .updatedAt)
+        try container.encode(syncStatus, forKey: .syncStatus)
+        try container.encode(workoutSlots, forKey: .workoutSlots)
+        try container.encode(moduleSlots, forKey: .moduleSlots)
+
+        // Encode UUID-keyed progressionRules as String-keyed
+        let stringKeyedRules = Dictionary(uniqueKeysWithValues: progressionRules.map { ($0.key.uuidString, $0.value) })
+        try container.encode(stringKeyedRules, forKey: .progressionRules)
+
+        try container.encodeIfPresent(defaultProgressionRule, forKey: .defaultProgressionRule)
+        try container.encode(progressionEnabled, forKey: .progressionEnabled)
+
+        // Encode progressionEnabledExercises as array of UUID strings
+        let enabledArray = progressionEnabledExercises.map { $0.uuidString }
+        try container.encode(enabledArray, forKey: .progressionEnabledExercises)
+
+        // Encode UUID-keyed exerciseProgressionOverrides as String-keyed
+        let stringKeyedOverrides = Dictionary(uniqueKeysWithValues: exerciseProgressionOverrides.map { ($0.key.uuidString, $0.value) })
+        try container.encode(stringKeyedOverrides, forKey: .exerciseProgressionOverrides)
     }
 
     // MARK: - Progression
 
-    /// Get the progression rule for a specific exercise template
+    /// Get the progression rule for a specific exercise template (legacy)
     /// Falls back to defaultProgressionRule if no specific rule exists
     func progressionRule(for templateId: UUID?) -> ProgressionRule? {
         guard progressionEnabled else { return nil }
@@ -118,6 +202,42 @@ struct Program: Identifiable, Codable, Hashable {
             return rule
         }
         return defaultProgressionRule
+    }
+
+    /// Check if an exercise instance has progression enabled
+    func isProgressionEnabled(for exerciseInstanceId: UUID) -> Bool {
+        guard progressionEnabled else { return false }
+        return progressionEnabledExercises.contains(exerciseInstanceId)
+    }
+
+    /// Get the progression rule for a specific exercise instance
+    /// Returns override if present, otherwise returns default rule
+    func progressionRuleForExercise(_ exerciseInstanceId: UUID) -> ProgressionRule? {
+        guard progressionEnabled, progressionEnabledExercises.contains(exerciseInstanceId) else {
+            return nil
+        }
+        return exerciseProgressionOverrides[exerciseInstanceId] ?? defaultProgressionRule
+    }
+
+    /// Enable or disable progression for an exercise instance
+    mutating func setProgressionEnabled(_ enabled: Bool, for exerciseInstanceId: UUID) {
+        if enabled {
+            progressionEnabledExercises.insert(exerciseInstanceId)
+        } else {
+            progressionEnabledExercises.remove(exerciseInstanceId)
+            exerciseProgressionOverrides.removeValue(forKey: exerciseInstanceId)
+        }
+        updatedAt = Date()
+    }
+
+    /// Set a custom progression rule for an exercise instance
+    mutating func setProgressionOverride(_ rule: ProgressionRule?, for exerciseInstanceId: UUID) {
+        if let rule = rule {
+            exerciseProgressionOverrides[exerciseInstanceId] = rule
+        } else {
+            exerciseProgressionOverrides.removeValue(forKey: exerciseInstanceId)
+        }
+        updatedAt = Date()
     }
 
     // MARK: - Computed Properties

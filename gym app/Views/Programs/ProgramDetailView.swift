@@ -18,6 +18,7 @@ struct ProgramDetailView: View {
     @State private var showingDeleteAlert = false
     @State private var showingAddSlotSheet = false
     @State private var showingEditSheet = false
+    @State private var showingProgressionConfig = false
     @State private var selectedDayOfWeek: Int?
 
     private var currentProgram: Program {
@@ -76,6 +77,9 @@ struct ProgramDetailView: View {
         }
         .sheet(isPresented: $showingEditSheet) {
             EditProgramSheet(program: currentProgram)
+        }
+        .sheet(isPresented: $showingProgressionConfig) {
+            ProgressionConfigurationView(program: currentProgram)
         }
         .alert("Deactivate Program?", isPresented: $showingDeactivateAlert) {
             Button("Keep Schedule") {
@@ -250,6 +254,31 @@ struct ProgramDetailView: View {
 
     private var actionButtonsSection: some View {
         VStack(spacing: 12) {
+            // Progression configuration (only show if progression is enabled)
+            if currentProgram.progressionEnabled {
+                Button {
+                    showingProgressionConfig = true
+                } label: {
+                    HStack {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                        Text("Configure Progression")
+                        Spacer()
+
+                        // Show count of exercises with progression
+                        let count = currentProgram.progressionEnabledExercises.count
+                        Text("\(count) exercise\(count == 1 ? "" : "s")")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+
             if currentProgram.isActive {
                 Button {
                     showingDeactivateAlert = true

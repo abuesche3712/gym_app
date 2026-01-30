@@ -1607,26 +1607,31 @@ struct ActiveSessionView: View {
 
     private var restTimerBar: some View {
         let isUrgent = sessionViewModel.restTimerSeconds <= 10
+        let isLongTimer = sessionViewModel.restTimerTotal >= 60
+        let timeDisplay = isLongTimer ? formatTime(sessionViewModel.restTimerSeconds) : "\(sessionViewModel.restTimerSeconds)"
+        let ringSize: CGFloat = isLongTimer ? 44 : 36
+        let fontSize: CGFloat = isLongTimer ? 11 : 12
 
         return VStack(spacing: AppSpacing.sm) {
             HStack(spacing: AppSpacing.md) {
-                // Progress ring (small)
+                // Progress ring
                 ZStack {
                     Circle()
                         .stroke(AppColors.surfaceTertiary, lineWidth: 3)
-                        .frame(width: 36, height: 36)
+                        .frame(width: ringSize, height: ringSize)
 
                     Circle()
                         .trim(from: 0, to: CGFloat(sessionViewModel.restTimerSeconds) / CGFloat(max(sessionViewModel.restTimerTotal, 1)))
                         .stroke(isUrgent ? AppColors.warning : AppColors.accent1, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                        .frame(width: 36, height: 36)
+                        .frame(width: ringSize, height: ringSize)
                         .rotationEffect(.degrees(-90))
                         .animation(.linear(duration: 0.3), value: sessionViewModel.restTimerSeconds)
 
-                    Text("\(sessionViewModel.restTimerSeconds)")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                    Text(timeDisplay)
+                        .font(.system(size: fontSize, weight: .bold, design: .rounded))
                         .monospacedDigit()
                         .foregroundColor(AppColors.textPrimary)
+                        .minimumScaleFactor(0.7)
                 }
 
                 // Label
@@ -1634,7 +1639,7 @@ struct ActiveSessionView: View {
                     Text("Rest")
                         .subheadline(color: AppColors.textPrimary)
                         .fontWeight(.medium)
-                    Text("\(sessionViewModel.restTimerSeconds)s remaining")
+                    Text("\(timeDisplay) remaining")
                         .caption(color: AppColors.textTertiary)
                         .monospacedDigit()
                 }

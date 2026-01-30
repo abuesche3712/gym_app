@@ -278,13 +278,14 @@ struct IntervalTimerView: View {
 
         updateFromStartTime()
 
-        // Create timer with proper configuration for accurate timing
-        let newTimer = Timer(timeInterval: 1.0, repeats: true) { [self] _ in
+        // Create timer with faster interval for smooth visual updates
+        // Using 0.25s interval prevents frame skipping while staying battery-efficient
+        let newTimer = Timer(timeInterval: 0.25, repeats: true) { [self] _ in
             guard !self.isPaused else { return }
             self.updateFromStartTime()
         }
-        // Set tolerance for balance between accuracy and battery life
-        newTimer.tolerance = 0.05  // 50ms tolerance
+        // Set small tolerance for smoother updates
+        newTimer.tolerance = 0.02  // 20ms tolerance
         // Add to common mode so timer continues during UI interactions
         RunLoop.current.add(newTimer, forMode: .common)
         timer = newTimer
@@ -350,6 +351,10 @@ struct IntervalTimerView: View {
         }
 
         if remaining > 0 {
+            // Countdown beeps for last 3 seconds (except during getReady)
+            if phase != .getReady && remaining <= 3 && secondsRemaining != remaining {
+                HapticManager.shared.countdownBeep()
+            }
             secondsRemaining = remaining
         } else {
             transitionPhase()
@@ -357,9 +362,6 @@ struct IntervalTimerView: View {
     }
 
     private func transitionPhase() {
-        // Haptic on transition
-        let generator = UINotificationFeedbackGenerator()
-
         switch phase {
         case .getReady:
             // Lead-in complete, start first work interval
@@ -367,7 +369,8 @@ struct IntervalTimerView: View {
             secondsRemaining = workDuration
             phaseStartTime = Date()
             pausedTimeAccumulated = 0
-            generator.notificationOccurred(.warning)
+            // Sound + haptic for work phase start
+            HapticManager.shared.phaseTransition(isWorkPhase: true)
 
         case .work:
             // Save work duration for this round
@@ -381,11 +384,13 @@ struct IntervalTimerView: View {
                 // Reset timing for new phase
                 phaseStartTime = Date()
                 pausedTimeAccumulated = 0
-                generator.notificationOccurred(.success)
+                // Sound + haptic for rest phase
+                HapticManager.shared.phaseTransition(isWorkPhase: false)
             } else {
                 // Last round complete
                 phase = .complete
-                generator.notificationOccurred(.success)
+                // Final completion sound
+                HapticManager.shared.timerComplete()
                 stopTimer()
             }
 
@@ -397,7 +402,8 @@ struct IntervalTimerView: View {
             // Reset timing for new phase
             phaseStartTime = Date()
             pausedTimeAccumulated = 0
-            generator.notificationOccurred(.warning)
+            // Sound + haptic for work phase start
+            HapticManager.shared.phaseTransition(isWorkPhase: true)
 
         case .complete:
             break

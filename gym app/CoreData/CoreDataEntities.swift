@@ -1080,6 +1080,12 @@ public class ProgramEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var syncStatusRaw: String
     @NSManaged public var workoutSlots: NSOrderedSet?
 
+    // Progression configuration (stored as JSON Data)
+    @NSManaged public var progressionEnabled: Bool
+    @NSManaged public var defaultProgressionRuleData: Data?
+    @NSManaged public var progressionEnabledExercisesData: Data?  // JSON array of UUID strings
+    @NSManaged public var exerciseProgressionOverridesData: Data?  // JSON dict [String: ProgressionRule]
+
     public override func willSave() {
         super.willSave()
         updateTimestampsOnSave()
@@ -1092,6 +1098,53 @@ public class ProgramEntity: NSManagedObject, SyncableEntity {
 
     var workoutSlotArray: [ProgramWorkoutSlotEntity] {
         workoutSlots?.array as? [ProgramWorkoutSlotEntity] ?? []
+    }
+
+    // MARK: - Progression Accessors
+
+    var defaultProgressionRule: ProgressionRule? {
+        get {
+            guard let data = defaultProgressionRuleData else { return nil }
+            return try? JSONDecoder().decode(ProgressionRule.self, from: data)
+        }
+        set {
+            if let rule = newValue {
+                defaultProgressionRuleData = try? JSONEncoder().encode(rule)
+            } else {
+                defaultProgressionRuleData = nil
+            }
+        }
+    }
+
+    var progressionEnabledExercises: Set<UUID> {
+        get {
+            guard let data = progressionEnabledExercisesData,
+                  let uuidStrings = try? JSONDecoder().decode([String].self, from: data) else {
+                return []
+            }
+            return Set(uuidStrings.compactMap { UUID(uuidString: $0) })
+        }
+        set {
+            let uuidStrings = newValue.map { $0.uuidString }
+            progressionEnabledExercisesData = try? JSONEncoder().encode(uuidStrings)
+        }
+    }
+
+    var exerciseProgressionOverrides: [UUID: ProgressionRule] {
+        get {
+            guard let data = exerciseProgressionOverridesData,
+                  let stringKeyed = try? JSONDecoder().decode([String: ProgressionRule].self, from: data) else {
+                return [:]
+            }
+            return Dictionary(uniqueKeysWithValues: stringKeyed.compactMap { key, value in
+                guard let uuid = UUID(uuidString: key) else { return nil }
+                return (uuid, value)
+            })
+        }
+        set {
+            let stringKeyed = Dictionary(uniqueKeysWithValues: newValue.map { ($0.key.uuidString, $0.value) })
+            exerciseProgressionOverridesData = try? JSONEncoder().encode(stringKeyed)
+        }
     }
 }
 
