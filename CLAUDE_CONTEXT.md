@@ -1,13 +1,140 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2025-01-29
+> **Last updated:** 2026-01-30
 
 ## Project Overview
 
 iOS workout tracking app built with SwiftUI. Offline-first with CoreData, Firebase for cloud sync.
 
-**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete (all 30 view files converted). Focus remains on UX refinement and infrastructure hardening.
+**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete. Major refactoring completed (DataRepository split, Session model split, AppTheme split). Per-exercise progression system implemented. Comprehensive DataRepository tests added.
+
+## Major Refactoring (Jan 29, 2026)
+
+### DataRepository Split
+
+Split monolithic `DataRepository.swift` into entity-specific repositories for better maintainability:
+
+```
+Services/
+├── DataRepository.swift      (Coordinator - delegates to sub-repositories)
+├── ModuleRepository.swift    (Module CRUD, CoreData <-> Model conversion)
+├── WorkoutRepository.swift   (Workout CRUD)
+├── SessionRepository.swift   (Session CRUD, pagination)
+└── ProgramRepository.swift   (Program CRUD, progression fields)
+```
+
+Each repository handles:
+- CoreData entity management
+- Model ↔ Entity conversion
+- Collection-specific queries
+- Sync support
+
+### Session Model Split
+
+Split 729-line `Session.swift` into focused model files:
+
+```
+Models/
+├── Session.swift            (Session struct only, ~100 lines)
+├── CompletedModule.swift    (Module completion data)
+├── SessionExercise.swift    (Exercise logging data)
+├── CompletedSetGroup.swift  (Set group completion)
+├── SetData.swift            (Individual set data)
+└── MeasurableValue.swift    (Equipment measurable values)
+```
+
+### AppTheme Split (Jan 30, 2026)
+
+Split monolithic `AppTheme.swift` (1085 lines) into focused, single-responsibility files:
+
+```
+Theme/
+├── AppTheme.swift        (~620 lines - view modifiers, card styles, buttons, form components)
+├── AppColors.swift       (91 lines - color palette, module colors, hex extension)
+├── AppGradients.swift    (110 lines - gradient definitions, module gradients)
+├── AppSpacing.swift      (26 lines - spacing constants)
+├── AppCorners.swift      (18 lines - corner radius values)
+├── AppShadows.swift      (27 lines - shadow styles)
+└── AppAnimations.swift   (23 lines - animation definitions)
+```
+
+**Benefits:**
+- Each file has single responsibility
+- Easier to find and modify specific design tokens
+- Reduced cognitive load when working with theme
+- Better git diffs for design changes
+
+### DataRepository Unit Tests (Jan 30, 2026)
+
+Added comprehensive unit tests for all repository CRUD operations:
+
+```
+gym appTests/
+└── DataRepositoryTests.swift  (878 lines)
+    ├── Test Fixtures (Module, Workout, Session, Program, etc.)
+    ├── ModuleRepositoryTests (7 tests)
+    ├── WorkoutRepositoryTests (5 tests)
+    ├── SessionRepositoryTests (9 tests - includes pagination & in-progress)
+    ├── ProgramRepositoryTests (6 tests - includes active program constraint)
+    └── DataRepositoryIntegrationTests (2 tests - cross-repository workflows)
+```
+
+**Test Setup:**
+- All tests use `PersistenceController(inMemory: true)` for isolation
+- Tests are `@MainActor` to match repository thread safety
+- Fixtures use default parameters for easy test creation
+
+### Per-Exercise Progression Configuration
+
+Added granular control over which exercises get automatic progression suggestions.
+
+**New Program Fields:**
+```swift
+var progressionEnabledExercises: Set<UUID>           // ExerciseInstance IDs enabled for progression
+var exerciseProgressionOverrides: [UUID: ProgressionRule]  // Per-exercise custom rules
+```
+
+**New Program Methods:**
+```swift
+func isProgressionEnabled(for exerciseInstanceId: UUID) -> Bool
+func progressionRuleForExercise(_ exerciseInstanceId: UUID) -> ProgressionRule?
+mutating func setProgressionEnabled(_ enabled: Bool, for exerciseInstanceId: UUID)
+mutating func setProgressionOverride(_ rule: ProgressionRule?, for exerciseInstanceId: UUID)
+```
+
+**New UI - ProgressionConfigurationView:**
+- Accessible from ProgramDetailView → "Configure Progression" button
+- Hierarchical display: Workout → Module → Exercise
+- Smart defaults based on module type (skip warmup/recovery/prehab) and exercise type (strength only)
+- Per-exercise toggle and customize button
+- Bulk selection: "Select All", "Select None", "Smart Select" per module
+- Exercise-level progression rule overrides
+
+**Smart Default Logic:**
+```swift
+// Skip these module types entirely
+if [.warmup, .recovery, .prehab].contains(moduleType) { return false }
+// Only progress strength-type exercises
+if exercise.exerciseType != .strength { return false }
+return true
+```
+
+**CoreData Persistence:**
+- `progressionEnabledExercisesData: Data?` - JSON-encoded Set<UUID>
+- `exerciseProgressionOverridesData: Data?` - JSON-encoded [UUID: ProgressionRule]
+
+**ProgressionService Updates:**
+```swift
+// New signature accepting exercise instance ID mapping
+func calculateSuggestions(
+    for exercises: [SessionExercise],
+    exerciseInstanceIds: [UUID: UUID],  // SessionExercise.id -> ExerciseInstance.id
+    workoutId: UUID,
+    program: Program?,
+    sessionHistory: [Session]
+) -> [UUID: ProgressionSuggestion]
+```
 
 ## Design System Implementation (Jan 28-29, 2025)
 
@@ -86,7 +213,26 @@ Text("TODAY")
 
 ### Implementation Locations
 
-**Typography (`AppTheme.swift` lines 1002+):**
+**Theme Files (split for maintainability):**
+```swift
+// AppColors.swift - Color definitions
+struct AppColors {
+    static let dominant = Color(hex: "00CED1")
+    static let background = Color(hex: "0A0A0B")
+    // ... module colors, semantic colors
+}
+
+// AppGradients.swift - Gradient definitions
+struct AppGradients {
+    static let cardGradient = LinearGradient(...)
+    static func moduleGradient(_ type: ModuleType) -> LinearGradient
+}
+
+// AppSpacing.swift, AppCorners.swift, AppShadows.swift, AppAnimations.swift
+// - Single-purpose design token files
+```
+
+**Typography (`AppTheme.swift`):**
 ```swift
 extension Font {
     static var displayLarge: Font      // .largeTitle, rounded, bold
@@ -239,10 +385,11 @@ gym app/                          (90+ Swift files)
 │   │   ├── IntervalTimerView.swift
 │   │   └── SessionModels.swift
 │   │
-│   ├── Programs/                 (8 files)
+│   ├── Programs/                 (9 files)
 │   │   ├── ProgramsListView.swift
 │   │   ├── ProgramFormView.swift       (~1050 lines)
 │   │   ├── ProgramDetailView.swift
+│   │   ├── ProgressionConfigurationView.swift  (~530 lines)
 │   │   └── [program management sheets]
 │   │
 │   ├── Modules/                  (6+ files)
@@ -264,13 +411,19 @@ gym app/                          (90+ Swift files)
 │   ├── HomeScheduleSheets.swift  (29KB)
 │   └── MainTabView.swift
 │
-├── Models/                       (15+ files)
+├── Models/                       (20+ files)
 │   ├── ExerciseInstance.swift
 │   ├── Module.swift
 │   ├── Workout.swift
 │   ├── Program.swift
 │   ├── ScheduledWorkout.swift
-│   ├── Session.swift
+│   ├── Session.swift             (Session struct only)
+│   ├── SessionExercise.swift     (Exercise logging data)
+│   ├── CompletedModule.swift     (Module completion data)
+│   ├── CompletedSetGroup.swift   (Set group completion)
+│   ├── SetData.swift             (Individual set data)
+│   ├── MeasurableValue.swift     (Equipment measurable values)
+│   ├── ProgressionRule.swift     (Progression rules & suggestions)
 │   ├── SetGroup.swift
 │   ├── UserProfile.swift
 │   ├── ExerciseLibrary.swift
@@ -280,11 +433,16 @@ gym app/                          (90+ Swift files)
 │   ├── SchemaVersions.swift
 │   └── Enums.swift
 │
-├── Services/                     (15 files)
+├── Services/                     (19 files)
 │   ├── FirebaseService.swift     (34KB)
 │   ├── AuthService.swift
 │   ├── SyncManager.swift         (25KB)
-│   ├── DataRepository.swift
+│   ├── DataRepository.swift      (Coordinator)
+│   ├── ModuleRepository.swift    (Module CRUD)
+│   ├── WorkoutRepository.swift   (Workout CRUD)
+│   ├── SessionRepository.swift   (Session CRUD)
+│   ├── ProgramRepository.swift   (Program CRUD + progression)
+│   ├── ProgressionService.swift  (Progression calculations)
 │   ├── ExerciseResolver.swift
 │   ├── SyncLogger.swift
 │   ├── Logger.swift
@@ -293,15 +451,27 @@ gym app/                          (90+ Swift files)
 │   └── [supporting services]
 │
 ├── CoreData/                     (3 files)
-├── Theme/                        (3 files)
-│   ├── AppTheme.swift            (Typography + Color system)
+├── Theme/                        (8 files)
+│   ├── AppTheme.swift            (~620 lines - view modifiers, cards, buttons, forms)
+│   ├── AppColors.swift           (Color palette, module colors, hex extension)
+│   ├── AppGradients.swift        (Gradient definitions)
+│   ├── AppSpacing.swift          (Spacing constants)
+│   ├── AppCorners.swift          (Corner radius values)
+│   ├── AppShadows.swift          (Shadow styles)
+│   ├── AppAnimations.swift       (Animation definitions)
 │   ├── Components.swift
 │   └── Font+Extensions.swift     (Standalone, also in AppTheme)
 ├── Utilities/                    (3 files)
 └── gym_appApp.swift
 
 TodayWorkoutWidget/               (iOS widget extension)
-Tests/                            (6 test files)
+Tests/                            (7 test files)
+├── DataRepositoryTests.swift     (Comprehensive CRUD tests)
+├── ModuleMergeTests.swift
+├── ExerciseInstanceTests.swift
+├── SessionNavigatorTests.swift
+├── ProgressionServiceTests.swift
+└── gym_appTests.swift
 ```
 
 ## Architecture
@@ -405,6 +575,7 @@ SessionExercise (Logged Data)
 - [x] Recent sets quick-edit sheet
 - [x] Workout overview with jump-to-exercise
 - [x] Last session excludes exercises with no logged data (skipped exercises filtered)
+- [x] Progressive overload suggestions (per-exercise configuration, smart defaults, custom rules)
 
 ### UI/UX
 - [x] Dark theme with custom palette
@@ -429,7 +600,7 @@ SessionExercise (Logged Data)
 ## Planned Features
 
 ### Smart Features (Next Priority)
-- [ ] Progressive overload suggestions ("Nice! Try 140 lbs next time?")
+- [x] Progressive overload suggestions (per-exercise configuration, automatic calculations)
 - [ ] Plate calculator (visual plate loading guide)
 - [ ] Rest timer auto-start with haptic
 - [ ] Personal records detection with celebration
@@ -534,12 +705,14 @@ Logger.redactEmail(email)   // "ab***@example.com"
 
 ## Code Style
 
-**Theme System:**
-- Colors: `AppColors.dominant`, `AppColors.textPrimary`, etc.
-- Typography: `.displayLarge()`, `.monoMedium()`, `.elegantLabel()`, `.statLabel()`
-- Spacing: `AppSpacing.sm`, `AppSpacing.md`, `AppSpacing.lg`
-- Corners: `AppCorners.small`, `AppCorners.medium`, `AppCorners.large`
-- Animation: `AppAnimation.quick`, `AppAnimation.standard`, `AppAnimation.bounce`
+**Theme System (split into focused files):**
+- Colors: `AppColors.dominant`, `AppColors.textPrimary`, etc. (`Theme/AppColors.swift`)
+- Gradients: `AppGradients.cardGradient`, `AppGradients.moduleGradient()` (`Theme/AppGradients.swift`)
+- Typography: `.displayLarge()`, `.monoMedium()`, `.elegantLabel()`, `.statLabel()` (`Theme/AppTheme.swift`)
+- Spacing: `AppSpacing.sm`, `AppSpacing.md`, `AppSpacing.lg` (`Theme/AppSpacing.swift`)
+- Corners: `AppCorners.small`, `AppCorners.medium`, `AppCorners.large` (`Theme/AppCorners.swift`)
+- Shadows: `AppShadows.soft`, `AppShadows.glow` (`Theme/AppShadows.swift`)
+- Animation: `AppAnimation.quick`, `AppAnimation.standard`, `AppAnimation.bounce` (`Theme/AppAnimations.swift`)
 
 **Typography Guidelines:**
 - Timers/counters → `.monoLarge()` / `.monoMedium()` (prevents layout shift)
@@ -567,16 +740,23 @@ Logger.redactEmail(email)   // "ab***@example.com"
 - **Session end flow**: `EndSessionSheet.swift` - workout summary, feeling rating, progression notes
 
 ### Data Models
-- **Session data structure**: `Session.swift` - SessionExercise, CompletedSetGroup, SetData
+- **Session data structure**: `Session.swift`, `SessionExercise.swift`, `CompletedSetGroup.swift`, `SetData.swift`
 - **Module/Workout planning**: `Module.swift`, `Workout.swift`, `ExerciseInstance.swift`
-- **Programs**: `Program.swift` - training blocks with scheduled workouts
+- **Programs**: `Program.swift` - training blocks with scheduled workouts + progression config
+- **Progression rules**: `ProgressionRule.swift` - ProgressionMetric, ProgressionRule, ProgressionSuggestion
 - **Scheduled workouts**: `ScheduledWorkout.swift` - workout slots on calendar
 - **Exercise library**: `ExerciseLibrary.swift` (built-in), `CustomExerciseLibrary.swift` (user)
+
+### Progression System
+- **Progression configuration UI**: `ProgressionConfigurationView.swift` - per-exercise toggle + rule editing
+- **Progression calculations**: `ProgressionService.swift` - weight/reps progression based on history
+- **Program progression fields**: `Program.swift` - progressionEnabledExercises, exerciseProgressionOverrides
+- **CoreData persistence**: `ProgramRepository.swift` - progression field encoding/decoding
 
 ### Formatting & Utilities
 - **Number/time formatting**: `FormattingHelpers.swift` - distance, weight, duration, pace
 - **Exercise resolution**: `ExerciseResolver.swift` - template + instance → resolved exercise
-- **Theme constants**: `Theme/AppTheme.swift`
+- **Theme system**: `Theme/` folder - AppColors, AppGradients, AppSpacing, AppCorners, AppShadows, AppAnimations, AppTheme
 - **Logging**: `Logger.swift`, `SyncLogger.swift`
 
 ### Home & Scheduling
@@ -585,7 +765,8 @@ Logger.redactEmail(email)   // "ab***@example.com"
 - **Workout scheduling**: `WorkoutViewModel.swift` - schedule/unschedule, get current name
 
 ### Sync & Persistence
-- **Local storage**: `DataRepository.swift` - CoreData operations, session pagination
+- **Local storage coordinator**: `DataRepository.swift` - delegates to entity-specific repositories
+- **Entity repositories**: `ModuleRepository.swift`, `WorkoutRepository.swift`, `SessionRepository.swift`, `ProgramRepository.swift`
 - **Cloud sync**: `FirebaseService.swift` (34KB) - Firestore CRUD
 - **Sync coordination**: `SyncManager.swift` (25KB) - queue, retry, conflict resolution
 - **Merge logic**: Deep merge in `Module.swift:mergedWith()`, `Workout.swift:mergedWith()`
