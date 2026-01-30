@@ -43,6 +43,11 @@
 		B63EBF132F15E73700D8C22D /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEB2F15E73700D8C22D /* Enums.swift */; };
 		B63EBF152F15E73700D8C22D /* Module.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEED2F15E73700D8C22D /* Module.swift */; };
 		B63EBF162F15E73700D8C22D /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEE2F15E73700D8C22D /* Session.swift */; };
+		MEASVAL02BUILD002 /* MeasurableValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = MEASVAL01FILE001 /* MeasurableValue.swift */; };
+		SETDATA02BUILD002 /* SetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = SETDATA01FILE001 /* SetData.swift */; };
+		COMPSTG02BUILD002 /* CompletedSetGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = COMPSTG01FILE001 /* CompletedSetGroup.swift */; };
+		SESSEXR02BUILD002 /* SessionExercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = SESSEXR01FILE001 /* SessionExercise.swift */; };
+		COMPMOD02BUILD002 /* CompletedModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = COMPMOD01FILE001 /* CompletedModule.swift */; };
 		35C7751756E7434DA4FF3882 /* CompletedProgram.swift in Sources */ = {isa = PBXBuildFile; fileRef = 387043A6FC4F49ABB2403548 /* CompletedProgram.swift */; };
 		B63EBF172F15E73700D8C22D /* SetGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEF2F15E73700D8C22D /* SetGroup.swift */; };
 		B63EBF182F15E73700D8C22D /* Workout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF02F15E73700D8C22D /* Workout.swift */; };
@@ -63,6 +68,10 @@
 		B63EBF272F15E73700D8C22D /* CoreDataEntities.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF062F15E73700D8C22D /* CoreDataEntities.swift */; };
 		B63EBF282F15E73700D8C22D /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF072F15E73700D8C22D /* PersistenceController.swift */; };
 		B63EBF292F15E73700D8C22D /* DataRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF092F15E73700D8C22D /* DataRepository.swift */; };
+		MODREP002BUILD002 /* ModuleRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = MODREP001FILE001 /* ModuleRepository.swift */; };
+		WKREP002BUILD002 /* WorkoutRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = WKREP001FILE001 /* WorkoutRepository.swift */; };
+		SESREP002BUILD002 /* SessionRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = SESREP001FILE001 /* SessionRepository.swift */; };
+		PRGREP002BUILD002 /* ProgramRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGREP001FILE001 /* ProgramRepository.swift */; };
 		B63EBF2A2F15E73700D8C22D /* FirebaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF0B2F15E73700D8C22D /* FirebaseService.swift */; };
 		B63EBF2B2F15E73700D8C22D /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */; };
 		B63EBF2C2F15E73700D8C22D /* SyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF0D2F15E73700D8C22D /* SyncManager.swift */; };
@@ -97,6 +106,7 @@
 		PRGCRE002BUILD002 /* CreateProgramSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGCRE001FILE001 /* CreateProgramSheet.swift */; };
 		PRGDET002BUILD002 /* ProgramDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGDET001FILE001 /* ProgramDetailView.swift */; };
 		PRGFRM002BUILD002 /* ProgramFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGFRM001FILE001 /* ProgramFormView.swift */; };
+		PRGCFG002BUILD002 /* ProgressionConfigurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGCFG001FILE001 /* ProgressionConfigurationView.swift */; };
 		PRGLST002BUILD002 /* ProgramsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGLST001FILE001 /* ProgramsListView.swift */; };
 		PRGWKL002BUILD002 /* ProgramWeeklyGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGWKL001FILE001 /* ProgramWeeklyGridView.swift */; };
 		PROGAM002BUILD002 /* Program.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROGAM001FILE001 /* Program.swift */; };
@@ -115,6 +125,14 @@
 		USRPFL002BUILD002 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = USRPFL001FILE001 /* UserProfile.swift */; };
 		WDGSVC02BUILD002 /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = WDGSVC01FILE001 /* WidgetData.swift */; };
 		WKBLD002BUILD002 /* WorkoutBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WKBLD001FILE001 /* WorkoutBuilderView.swift */; };
+		THEMECOLORS1BUILD /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = THEMECOLORS1FILE01 /* AppColors.swift */; };
+		THEMEGRAD01BUILD /* AppGradients.swift in Sources */ = {isa = PBXBuildFile; fileRef = THEMEGRAD01FILE01 /* AppGradients.swift */; };
+		THEMESP01BUILD01 /* AppSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = THEMESP01FILE0001 /* AppSpacing.swift */; };
+		THEMECORN01BUILD /* AppCorners.swift in Sources */ = {isa = PBXBuildFile; fileRef = THEMECORN01FILE01 /* AppCorners.swift */; };
+		THEMESHAD01BUILD /* AppShadows.swift in Sources */ = {isa = PBXBuildFile; fileRef = THEMESHAD01FILE01 /* AppShadows.swift */; };
+		THEMEANIM01BUILD /* AppAnimations.swift in Sources */ = {isa = PBXBuildFile; fileRef = THEMEANIM01FILE01 /* AppAnimations.swift */; };
+		FONTEXTENS1BUILD /* Font+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FONTEXTENS1FILE01 /* Font+Extensions.swift */; };
+		DATAREPO02BUILD01 /* DataRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DATAREPO01FILE01 /* DataRepositoryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -191,6 +209,11 @@
 		B63EBEEB2F15E73700D8C22D /* Enums.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
 		B63EBEED2F15E73700D8C22D /* Module.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Module.swift; sourceTree = "<group>"; };
 		B63EBEEE2F15E73700D8C22D /* Session.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
+		MEASVAL01FILE001 /* MeasurableValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasurableValue.swift; sourceTree = "<group>"; };
+		SETDATA01FILE001 /* SetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetData.swift; sourceTree = "<group>"; };
+		COMPSTG01FILE001 /* CompletedSetGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedSetGroup.swift; sourceTree = "<group>"; };
+		SESSEXR01FILE001 /* SessionExercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionExercise.swift; sourceTree = "<group>"; };
+		COMPMOD01FILE001 /* CompletedModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedModule.swift; sourceTree = "<group>"; };
 		387043A6FC4F49ABB2403548 /* CompletedProgram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedProgram.swift; sourceTree = "<group>"; };
 		B63EBEEF2F15E73700D8C22D /* SetGroup.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetGroup.swift; sourceTree = "<group>"; };
 		B63EBEF02F15E73700D8C22D /* Workout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Workout.swift; sourceTree = "<group>"; };
@@ -211,6 +234,10 @@
 		B63EBF062F15E73700D8C22D /* CoreDataEntities.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreDataEntities.swift; sourceTree = "<group>"; };
 		B63EBF072F15E73700D8C22D /* PersistenceController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		B63EBF092F15E73700D8C22D /* DataRepository.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataRepository.swift; sourceTree = "<group>"; };
+		MODREP001FILE001 /* ModuleRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModuleRepository.swift; sourceTree = "<group>"; };
+		WKREP001FILE001 /* WorkoutRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRepository.swift; sourceTree = "<group>"; };
+		SESREP001FILE001 /* SessionRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRepository.swift; sourceTree = "<group>"; };
+		PRGREP001FILE001 /* ProgramRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramRepository.swift; sourceTree = "<group>"; };
 		B63EBF0B2F15E73700D8C22D /* FirebaseService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FirebaseService.swift; sourceTree = "<group>"; };
 		B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		B63EBF0D2F15E73700D8C22D /* SyncManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncManager.swift; sourceTree = "<group>"; };
@@ -218,6 +245,13 @@
 		B63FFF502F22DFB200090EA5 /* TodayWorkoutWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TodayWorkoutWidgetExtension.entitlements; sourceTree = "<group>"; };
 		B658B09B2F16903C00B2F84E /* AppTheme.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		B658B09C2F16903C00B2F84E /* Components.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		THEMECOLORS1FILE01 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
+		THEMEGRAD01FILE01 /* AppGradients.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGradients.swift; sourceTree = "<group>"; };
+		THEMESP01FILE0001 /* AppSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSpacing.swift; sourceTree = "<group>"; };
+		THEMECORN01FILE01 /* AppCorners.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCorners.swift; sourceTree = "<group>"; };
+		THEMESHAD01FILE01 /* AppShadows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShadows.swift; sourceTree = "<group>"; };
+		THEMEANIM01FILE01 /* AppAnimations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAnimations.swift; sourceTree = "<group>"; };
+		FONTEXTENS1FILE01 /* Font+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+Extensions.swift"; sourceTree = "<group>"; };
 		B6EXERC012F15E73700D8C22D /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
 		B6FFC4A12F22DC220007E03E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		B6FFC4A32F22DC220007E03E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -247,6 +281,7 @@
 		PRGCRE001FILE001 /* CreateProgramSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateProgramSheet.swift; sourceTree = "<group>"; };
 		PRGDET001FILE001 /* ProgramDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramDetailView.swift; sourceTree = "<group>"; };
 		PRGFRM001FILE001 /* ProgramFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramFormView.swift; sourceTree = "<group>"; };
+		PRGCFG001FILE001 /* ProgressionConfigurationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionConfigurationView.swift; sourceTree = "<group>"; };
 		PRGLST001FILE001 /* ProgramsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramsListView.swift; sourceTree = "<group>"; };
 		PRGWKL001FILE001 /* ProgramWeeklyGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramWeeklyGridView.swift; sourceTree = "<group>"; };
 		PROGAM001FILE001 /* Program.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Program.swift; sourceTree = "<group>"; };
@@ -265,6 +300,7 @@
 		USRPFL001FILE001 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		WDGSVC01FILE001 /* WidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetData.swift; sourceTree = "<group>"; };
 		WKBLD001FILE001 /* WorkoutBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutBuilderView.swift; sourceTree = "<group>"; };
+		DATAREPO01FILE01 /* DataRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataRepositoryTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -385,6 +421,7 @@
 				B610AC132F15B4DE008B2C15 /* gym_appTests.swift */,
 				SSNVTST01FILE001 /* SessionNavigatorTests.swift */,
 				EXINSTST01FILE /* ExerciseInstanceTests.swift */,
+				DATAREPO01FILE01 /* DataRepositoryTests.swift */,
 			);
 			path = "gym appTests";
 			sourceTree = "<group>";
@@ -424,6 +461,11 @@
 				RESOLV001FILE001 /* ResolvedExercise.swift */,
 				SCHMAV01FILE001 /* SchemaVersions.swift */,
 				B63EBEEE2F15E73700D8C22D /* Session.swift */,
+				MEASVAL01FILE001 /* MeasurableValue.swift */,
+				SETDATA01FILE001 /* SetData.swift */,
+				COMPSTG01FILE001 /* CompletedSetGroup.swift */,
+				SESSEXR01FILE001 /* SessionExercise.swift */,
+				COMPMOD01FILE001 /* CompletedModule.swift */,
 				387043A6FC4F49ABB2403548 /* CompletedProgram.swift */,
 				B6SCHED00DE514440E0A348 /* ScheduledWorkout.swift */,
 				B63EBEEF2F15E73700D8C22D /* SetGroup.swift */,
@@ -532,6 +574,10 @@
 			isa = PBXGroup;
 			children = (
 				B63EBF092F15E73700D8C22D /* DataRepository.swift */,
+				MODREP001FILE001 /* ModuleRepository.swift */,
+				WKREP001FILE001 /* WorkoutRepository.swift */,
+				SESREP001FILE001 /* SessionRepository.swift */,
+				PRGREP001FILE001 /* ProgramRepository.swift */,
 			);
 			path = Repositories;
 			sourceTree = "<group>";
@@ -560,6 +606,13 @@
 			isa = PBXGroup;
 			children = (
 				B658B09B2F16903C00B2F84E /* AppTheme.swift */,
+				THEMECOLORS1FILE01 /* AppColors.swift */,
+				THEMEGRAD01FILE01 /* AppGradients.swift */,
+				THEMESP01FILE0001 /* AppSpacing.swift */,
+				THEMECORN01FILE01 /* AppCorners.swift */,
+				THEMESHAD01FILE01 /* AppShadows.swift */,
+				THEMEANIM01FILE01 /* AppAnimations.swift */,
+				FONTEXTENS1FILE01 /* Font+Extensions.swift */,
 				B658B09C2F16903C00B2F84E /* Components.swift */,
 			);
 			path = Theme;
@@ -628,6 +681,7 @@
 				PRGWKL001FILE001 /* ProgramWeeklyGridView.swift */,
 				PRGADD001FILE001 /* AddWorkoutSlotSheet.swift */,
 				PRGACT001FILE001 /* ActivateProgramSheet.swift */,
+				PRGCFG001FILE001 /* ProgressionConfigurationView.swift */,
 			);
 			path = Programs;
 			sourceTree = "<group>";
@@ -841,6 +895,11 @@
 				B63EBF252F15E73700D8C22D /* HomeView.swift in Sources */,
 				B63EBF1B2F15E73700D8C22D /* ExerciseDetailView.swift in Sources */,
 				B63EBF162F15E73700D8C22D /* Session.swift in Sources */,
+				MEASVAL02BUILD002 /* MeasurableValue.swift in Sources */,
+				SETDATA02BUILD002 /* SetData.swift in Sources */,
+				COMPSTG02BUILD002 /* CompletedSetGroup.swift in Sources */,
+				SESSEXR02BUILD002 /* SessionExercise.swift in Sources */,
+				COMPMOD02BUILD002 /* CompletedModule.swift in Sources */,
 				35C7751756E7434DA4FF3882 /* CompletedProgram.swift in Sources */,
 				B6SCHED010A526CF876534C /* ScheduledWorkout.swift in Sources */,
 				B63EBF232F15E73700D8C22D /* WorkoutFormView.swift in Sources */,
@@ -849,6 +908,13 @@
 				B63EBF302F15E73700D8C22D /* ExerciseLibrary.swift in Sources */,
 				A0B1C2D3E4F5067890123457 /* CustomExerciseLibrary.swift in Sources */,
 				B658B09E2F16903C00B2F84E /* AppTheme.swift in Sources */,
+				THEMECOLORS1BUILD /* AppColors.swift in Sources */,
+				THEMEGRAD01BUILD /* AppGradients.swift in Sources */,
+				THEMESP01BUILD01 /* AppSpacing.swift in Sources */,
+				THEMECORN01BUILD /* AppCorners.swift in Sources */,
+				THEMESHAD01BUILD /* AppShadows.swift in Sources */,
+				THEMEANIM01BUILD /* AppAnimations.swift in Sources */,
+				FONTEXTENS1BUILD /* Font+Extensions.swift in Sources */,
 				B63EBF1A2F15E73700D8C22D /* SessionDetailView.swift in Sources */,
 				AC0ED3886796C115F34301E5 /* EditSessionView.swift in Sources */,
 				B63EBF192F15E73700D8C22D /* HistoryView.swift in Sources */,
@@ -872,6 +938,10 @@
 				B63EBF1E2F15E73700D8C22D /* ModuleFormView.swift in Sources */,
 				B63EBF122F15E73700D8C22D /* WorkoutViewModel.swift in Sources */,
 				B63EBF292F15E73700D8C22D /* DataRepository.swift in Sources */,
+				MODREP002BUILD002 /* ModuleRepository.swift in Sources */,
+				WKREP002BUILD002 /* WorkoutRepository.swift in Sources */,
+				SESREP002BUILD002 /* SessionRepository.swift in Sources */,
+				PRGREP002BUILD002 /* ProgramRepository.swift in Sources */,
 				B610AC032F15B4DD008B2C15 /* gym_appApp.swift in Sources */,
 				B63EBF242F15E73700D8C22D /* WorkoutsListView.swift in Sources */,
 				B63EBF182F15E73700D8C22D /* Workout.swift in Sources */,
@@ -912,6 +982,7 @@
 				PRGWKL002BUILD002 /* ProgramWeeklyGridView.swift in Sources */,
 				PRGADD002BUILD002 /* AddWorkoutSlotSheet.swift in Sources */,
 				PRGACT002BUILD002 /* ActivateProgramSheet.swift in Sources */,
+				PRGCFG002BUILD002 /* ProgressionConfigurationView.swift in Sources */,
 				WKBLD002BUILD002 /* WorkoutBuilderView.swift in Sources */,
 				SOCAL002BUILD002 /* SocialView.swift in Sources */,
 				ANLYT002BUILD002 /* AnalyticsView.swift in Sources */,
@@ -936,6 +1007,7 @@
 				B610AC142F15B4DE008B2C15 /* gym_appTests.swift in Sources */,
 				SSNVTST02BUILD002 /* SessionNavigatorTests.swift in Sources */,
 				EXINSTST02BUILD /* ExerciseInstanceTests.swift in Sources */,
+				DATAREPO02BUILD01 /* DataRepositoryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
