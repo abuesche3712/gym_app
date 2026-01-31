@@ -77,6 +77,9 @@ class SessionViewModel: ObservableObject {
     // Auto-save debouncer for crash recovery (saves at most every 2 seconds)
     private let autoSaveDebouncer = Debouncer(delay: 2.0)
 
+    // Timer constants
+    private let countdownBeepThreshold = 3  // Play beep sound in last N seconds
+
     init(repository: DataRepository? = nil) {
         self.repository = repository ?? DataRepository.shared
         loadSessions()
@@ -94,8 +97,9 @@ class SessionViewModel: ObservableObject {
         libraryChangeCancellable = libraryService.$implements
             .dropFirst() // Skip initial value
             .sink { [weak self] _ in
-                guard let self = self else { return }
-                Task { @MainActor in
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+
                     // Only propagate changes if there's an active session
                     guard self.isSessionActive,
                           let session = self.currentSession else { return }
@@ -461,7 +465,7 @@ class SessionViewModel: ObservableObject {
                 let setsData: [SetData]
                 if resolved.isUnilateral {
                     // For unilateral, create left and right for each set number
-                    setsData = (1...max(setGroup.sets, 1)).flatMap { setNum -> [SetData] in
+                    setsData = (1...setGroup.sets).flatMap { setNum -> [SetData] in
                         [
                             SetData(
                                 setNumber: setNum,
@@ -497,7 +501,7 @@ class SessionViewModel: ObservableObject {
                     }
                 } else {
                     // Normal bilateral sets
-                    setsData = (1...max(setGroup.sets, 1)).map { setNum in
+                    setsData = (1...setGroup.sets).map { setNum in
                         SetData(
                             setNumber: setNum,
                             weight: setGroup.targetWeight,
@@ -761,7 +765,7 @@ class SessionViewModel: ObservableObject {
                     if let eIndex = module.exercises.firstIndex(where: { $0.id == exerciseId }) {
                         module.exercises[eIndex].distanceUnit = unit
                         repository.saveModule(module)
-                        Logger.debug("Updated exercise distance unit to \\(unit.rawValue) in module")
+                        Logger.debug("Updated exercise distance unit to \(unit.rawValue) in module")
                         break
                     }
                 }
@@ -1000,8 +1004,8 @@ class SessionViewModel: ObservableObject {
             // Countdown mode
             let remaining = exerciseTimerDuration - elapsed
             if remaining > 0 {
-                // Sound and haptic for last 3 seconds countdown
-                if remaining <= 3 && exerciseTimerSeconds != remaining {
+                // Sound and haptic for countdown
+                if remaining <= countdownBeepThreshold && exerciseTimerSeconds != remaining {
                     HapticManager.shared.countdownBeep()
                 }
                 exerciseTimerSeconds = remaining
@@ -1098,7 +1102,7 @@ class SessionViewModel: ObservableObject {
                         $0.exerciseName == exerciseName &&
                         $0.completedSetGroups.contains { setGroup in
                             setGroup.sets.contains { set in
-                                set.completed && hasAnyMetricData(set)
+                                set.completed && set.hasAnyMetricData
                             }
                         }
                     }) {
@@ -1110,21 +1114,5 @@ class SessionViewModel: ObservableObject {
 
         // No fallback - if this workout has never been done before, return nil
         return nil
-    }
-
-    /// Returns true if the set has any logged metric data
-    private func hasAnyMetricData(_ set: SetData) -> Bool {
-        return set.weight != nil ||
-               set.reps != nil ||
-               set.duration != nil ||
-               set.distance != nil ||
-               set.rpe != nil ||
-               set.bandColor != nil ||
-               set.holdTime != nil ||
-               set.intensity != nil ||
-               set.height != nil ||
-               set.quality != nil ||
-               set.temperature != nil ||
-               !set.implementMeasurableValues.isEmpty
     }
 }

@@ -212,68 +212,38 @@ struct SettingsView: View {
 
     private var accountSection: some View {
         SettingsSection(title: "Account") {
-            if authService.isAuthenticated {
-                // Signed in state
-                SettingsRow(icon: "person.circle.fill", title: "Signed In") {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        if let user = authService.currentUser {
-                            Text(user.displayName ?? user.email ?? "Apple ID")
-                                .subheadline(color: AppColors.textSecondary)
+            NavigationLink {
+                AccountProfileView()
+            } label: {
+                if authService.isAuthenticated {
+                    SettingsRow(icon: "person.circle.fill", title: "Account & Profile") {
+                        HStack(spacing: AppSpacing.xs) {
+                            if let profile = dataRepository.profileRepo.currentProfile,
+                               !profile.username.isEmpty {
+                                Text("@\(profile.username)")
+                                    .caption(color: AppColors.textSecondary)
+                            } else {
+                                Text("Set up profile")
+                                    .caption(color: AppColors.textTertiary)
+                            }
+                            Image(systemName: "chevron.right")
+                                .caption(color: AppColors.textTertiary)
+                                .fontWeight(.semibold)
                         }
-                        Text("via Apple")
-                            .caption2(color: AppColors.textTertiary)
+                    }
+                } else {
+                    SettingsRow(icon: "person.circle", title: "Account") {
+                        HStack(spacing: AppSpacing.xs) {
+                            Text("Sign in")
+                                .caption(color: AppColors.textSecondary)
+                            Image(systemName: "chevron.right")
+                                .caption(color: AppColors.textTertiary)
+                                .fontWeight(.semibold)
+                        }
                     }
                 }
-
-                Button(role: .destructive) {
-                    try? authService.signOut()
-                } label: {
-                    HStack {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .foregroundColor(AppColors.error)
-                            .frame(width: 28)
-                        Text("Sign Out")
-                            .foregroundColor(AppColors.error)
-                        Spacer()
-                    }
-                }
-                .padding(.vertical, AppSpacing.sm)
-
-                Button(role: .destructive) {
-                    showingDeleteConfirmation = true
-                } label: {
-                    HStack {
-                        Image(systemName: "trash")
-                            .foregroundColor(AppColors.error)
-                            .frame(width: 28)
-                        Text("Delete Account")
-                            .foregroundColor(AppColors.error)
-                        Spacer()
-                    }
-                }
-                .padding(.vertical, AppSpacing.sm)
-            } else {
-                // Not signed in state
-                SettingsRow(icon: "person.circle", title: "Not Signed In") {
-                    Text("Local Only")
-                        .subheadline(color: AppColors.textSecondary)
-                }
-
-                Button {
-                    showingSignIn = true
-                } label: {
-                    HStack {
-                        Image(systemName: "apple.logo")
-                            .frame(width: 28)
-                        Text("Sign in with Apple")
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .caption(color: AppColors.textTertiary)
-                            .fontWeight(.semibold)
-                    }
-                }
-                .padding(.vertical, AppSpacing.sm)
             }
+            .buttonStyle(.plain)
         }
     }
 

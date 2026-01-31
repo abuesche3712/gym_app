@@ -1411,6 +1411,269 @@ enum DeletionEntityType: String, Codable, CaseIterable {
     }
 }
 
+// MARK: - User Profile Entity
+
+@objc(UserProfileEntity)
+public class UserProfileEntity: NSManagedObject, SyncableEntity {
+    @NSManaged public var id: UUID
+    @NSManaged public var username: String
+    @NSManaged public var displayName: String?
+    @NSManaged public var bio: String?
+    @NSManaged public var isPublic: Bool
+    @NSManaged public var weightUnitRaw: String
+    @NSManaged public var distanceUnitRaw: String
+    @NSManaged public var defaultRestTime: Int32
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
+    @NSManaged public var syncStatusRaw: String
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
+
+    var weightUnit: WeightUnit {
+        get { WeightUnit(rawValue: weightUnitRaw) ?? .lbs }
+        set { weightUnitRaw = newValue.rawValue }
+    }
+
+    var distanceUnit: DistanceUnit {
+        get { DistanceUnit(rawValue: distanceUnitRaw) ?? .miles }
+        set { distanceUnitRaw = newValue.rawValue }
+    }
+
+    var syncStatus: SyncStatus {
+        get { SyncStatus(rawValue: syncStatusRaw) ?? .pendingSync }
+        set { syncStatusRaw = newValue.rawValue }
+    }
+
+    /// Convert to domain model
+    func toModel() -> UserProfile {
+        UserProfile(
+            id: id,
+            username: username,
+            displayName: displayName,
+            bio: bio,
+            isPublic: isPublic,
+            weightUnit: weightUnit,
+            distanceUnit: distanceUnit,
+            defaultRestTime: Int(defaultRestTime),
+            createdAt: createdAt ?? Date(),
+            updatedAt: updatedAt ?? Date(),
+            syncStatus: syncStatus
+        )
+    }
+
+    /// Update entity from domain model
+    func update(from profile: UserProfile) {
+        self.id = profile.id
+        self.username = profile.username
+        self.displayName = profile.displayName
+        self.bio = profile.bio
+        self.isPublic = profile.isPublic
+        self.weightUnit = profile.weightUnit
+        self.distanceUnit = profile.distanceUnit
+        self.defaultRestTime = Int32(profile.defaultRestTime)
+        self.syncStatus = profile.syncStatus
+    }
+}
+
+// MARK: - Friendship Entity
+
+@objc(FriendshipEntity)
+public class FriendshipEntity: NSManagedObject, SyncableEntity {
+    @NSManaged public var id: UUID
+    @NSManaged public var requesterId: String
+    @NSManaged public var addresseeId: String
+    @NSManaged public var statusRaw: String
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
+    @NSManaged public var syncStatusRaw: String
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
+
+    var status: FriendshipStatus {
+        get { FriendshipStatus(rawValue: statusRaw) ?? .pending }
+        set { statusRaw = newValue.rawValue }
+    }
+
+    var syncStatus: SyncStatus {
+        get { SyncStatus(rawValue: syncStatusRaw) ?? .pendingSync }
+        set { syncStatusRaw = newValue.rawValue }
+    }
+
+    /// Convert to domain model
+    func toModel() -> Friendship {
+        Friendship(
+            id: id,
+            requesterId: requesterId,
+            addresseeId: addresseeId,
+            status: status,
+            createdAt: createdAt ?? Date(),
+            updatedAt: updatedAt ?? Date(),
+            syncStatus: syncStatus
+        )
+    }
+
+    /// Update entity from domain model
+    func update(from friendship: Friendship) {
+        self.id = friendship.id
+        self.requesterId = friendship.requesterId
+        self.addresseeId = friendship.addresseeId
+        self.status = friendship.status
+        self.syncStatus = friendship.syncStatus
+    }
+}
+
+// MARK: - Conversation Entity
+
+@objc(ConversationEntity)
+public class ConversationEntity: NSManagedObject, SyncableEntity {
+    @NSManaged public var id: UUID
+    @NSManaged public var participantIdsData: Data?  // JSON encoded [String]
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
+    @NSManaged public var lastMessageAt: Date?
+    @NSManaged public var lastMessagePreview: String?
+    @NSManaged public var syncStatusRaw: String
+    @NSManaged public var unreadCount: Int32
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
+
+    var participantIds: [String] {
+        get {
+            guard let data = participantIdsData else { return [] }
+            return (try? JSONDecoder().decode([String].self, from: data)) ?? []
+        }
+        set {
+            participantIdsData = try? JSONEncoder().encode(newValue)
+        }
+    }
+
+    var syncStatus: SyncStatus {
+        get { SyncStatus(rawValue: syncStatusRaw) ?? .pendingSync }
+        set { syncStatusRaw = newValue.rawValue }
+    }
+
+    /// Convert to domain model
+    func toModel() -> Conversation {
+        Conversation(
+            id: id,
+            participantIds: participantIds,
+            createdAt: createdAt ?? Date(),
+            lastMessageAt: lastMessageAt,
+            lastMessagePreview: lastMessagePreview,
+            syncStatus: syncStatus,
+            unreadCount: Int(unreadCount)
+        )
+    }
+
+    /// Update entity from domain model
+    func update(from conversation: Conversation) {
+        self.id = conversation.id
+        self.participantIds = conversation.participantIds
+        self.lastMessageAt = conversation.lastMessageAt
+        self.lastMessagePreview = conversation.lastMessagePreview
+        self.syncStatus = conversation.syncStatus
+        self.unreadCount = Int32(conversation.unreadCount)
+    }
+}
+
+// MARK: - Message Entity
+
+@objc(MessageEntity)
+public class MessageEntity: NSManagedObject, SyncableEntity {
+    @NSManaged public var id: UUID
+    @NSManaged public var conversationId: UUID
+    @NSManaged public var senderId: String
+    @NSManaged public var contentData: Data?  // JSON encoded MessageContent
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
+    @NSManaged public var readAt: Date?
+    @NSManaged public var syncStatusRaw: String
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
+
+    var content: MessageContent {
+        get {
+            guard let data = contentData else { return .text("") }
+            return (try? JSONDecoder().decode(MessageContent.self, from: data)) ?? .text("")
+        }
+        set {
+            contentData = try? JSONEncoder().encode(newValue)
+        }
+    }
+
+    var syncStatus: SyncStatus {
+        get { SyncStatus(rawValue: syncStatusRaw) ?? .pendingSync }
+        set { syncStatusRaw = newValue.rawValue }
+    }
+
+    /// Convert to domain model
+    func toModel() -> Message {
+        Message(
+            id: id,
+            conversationId: conversationId,
+            senderId: senderId,
+            content: content,
+            createdAt: createdAt ?? Date(),
+            readAt: readAt,
+            syncStatus: syncStatus
+        )
+    }
+
+    /// Update entity from domain model
+    func update(from message: Message) {
+        self.id = message.id
+        self.conversationId = message.conversationId
+        self.senderId = message.senderId
+        self.content = message.content
+        self.readAt = message.readAt
+        self.syncStatus = message.syncStatus
+    }
+}
+
 // MARK: - In-Progress Session Entity
 
 /// Stores a JSON-encoded Session for crash recovery

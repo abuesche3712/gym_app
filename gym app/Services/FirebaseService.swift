@@ -21,6 +21,14 @@ struct DecodeFailure: Identifiable {
     }
 }
 
+/// Search result pairing a user profile with their Firebase UID
+struct UserSearchResult: Identifiable {
+    let firebaseUserId: String
+    let profile: UserProfile
+
+    var id: String { firebaseUserId }
+}
+
 @preconcurrency @MainActor
 class FirestoreService: ObservableObject {
     static let shared = FirestoreService()
@@ -332,6 +340,444 @@ class FirestoreService: ObservableObject {
         return decodeUserProfile(from: data)
     }
 
+    /// Check if a username is available globally
+    /// Uses a global usernames collection for uniqueness enforcement
+    func isUsernameAvailable(_ username: String) async throws -> Bool {
+        let normalized = UsernameValidator.normalize(username)
+        let doc = try await db.collection("usernames").document(normalized).getDocument()
+        return !doc.exists
+    }
+
+    /// Claim a username for the current user
+    /// This creates an entry in the global usernames collection
+    func claimUsername(_ username: String) async throws {
+        guard let uid = userId else {
+            throw FirestoreError.notAuthenticated
+        }
+
+        let normalized = UsernameValidator.normalize(username)
+
+        // First check if username is available
+        guard try await isUsernameAvailable(normalized) else {
+            throw ProfileError.usernameTaken
+        }
+
+        // Claim the username atomically
+        let usernameRef = db.collection("usernames").document(normalized)
+        try await usernameRef.setData([
+            "userId": uid,
+            "claimedAt": FieldValue.serverTimestamp()
+        ])
+    }
+
+    /// Release the current user's username (for username changes)
+    func releaseUsername(_ username: String) async throws {
+        guard let uid = userId else {
+            throw FirestoreError.notAuthenticated
+        }
+
+        let normalized = UsernameValidator.normalize(username)
+        let usernameRef = db.collection("usernames").document(normalized)
+
+        // Only delete if owned by current user
+        let doc = try await usernameRef.getDocument()
+        if let data = doc.data(), data["userId"] as? String == uid {
+            try await usernameRef.delete()
+        }
+    }
+
+    // MARK: - Friendship Operations
+
+    /// Save a friendship to Firestore (global collection)
+    func saveFriendship(_ friendship: Friendship) async throws {
+        let ref = db.collection("friendships").document(friendship.id.uuidString)
+        let data = encodeFriendship(friendship)
+        try await ref.setData(data, merge: true)
+    }
+
+    /// Delete a friendship from Firestore
+    func deleteFriendship(id: UUID) async throws {
+        try await db.collection("friendships").document(id.uuidString).delete()
+    }
+
+    /// Fetch all friendships involving the current user
+    func fetchFriendships(for userId: String) async throws -> [Friendship] {
+        // Query where user is requester
+        let requesterSnapshot = try await db.collection("friendships")
+            .whereField("requesterId", isEqualTo: userId)
+            .getDocuments()
+
+        // Query where user is addressee
+        let addresseeSnapshot = try await db.collection("friendships")
+            .whereField("addresseeId", isEqualTo: userId)
+            .getDocuments()
+
+        var friendships: [Friendship] = []
+
+        for doc in requesterSnapshot.documents {
+            if let friendship = decodeFriendship(from: doc.data()) {
+                friendships.append(friendship)
+            }
+        }
+
+        for doc in addresseeSnapshot.documents {
+            if let friendship = decodeFriendship(from: doc.data()) {
+                // Avoid duplicates
+                if !friendships.contains(where: { $0.id == friendship.id }) {
+                    friendships.append(friendship)
+                }
+            }
+        }
+
+        return friendships
+    }
+
+    /// Listen to friendship changes in real-time
+    func listenToFriendships(for userId: String, onChange: @escaping ([Friendship]) -> Void) -> ListenerRegistration {
+        // We need two listeners - one for each direction
+        var allFriendships: [UUID: Friendship] = [:]
+        let lock = NSLock()
+
+        let requesterListener = db.collection("friendships")
+            .whereField("requesterId", isEqualTo: userId)
+            .addSnapshotListener { snapshot, error in
+                guard let documents = snapshot?.documents else { return }
+                lock.lock()
+                // Remove old requester friendships
+                allFriendships = allFriendships.filter { _, f in f.addresseeId == userId }
+                // Add new ones
+                for doc in documents {
+                    if let friendship = self.decodeFriendship(from: doc.data()) {
+                        allFriendships[friendship.id] = friendship
+                    }
+                }
+                let result = Array(allFriendships.values)
+                lock.unlock()
+                onChange(result)
+            }
+
+        let addresseeListener = db.collection("friendships")
+            .whereField("addresseeId", isEqualTo: userId)
+            .addSnapshotListener { snapshot, error in
+                guard let documents = snapshot?.documents else { return }
+                lock.lock()
+                // Remove old addressee friendships
+                allFriendships = allFriendships.filter { _, f in f.requesterId == userId }
+                // Add new ones
+                for doc in documents {
+                    if let friendship = self.decodeFriendship(from: doc.data()) {
+                        allFriendships[friendship.id] = friendship
+                    }
+                }
+                let result = Array(allFriendships.values)
+                lock.unlock()
+                onChange(result)
+            }
+
+        // Return a composite listener that removes both
+        return CompositeListenerRegistration(listeners: [requesterListener, addresseeListener])
+    }
+
+    /// Search for users by username prefix
+    func searchUsersByUsername(prefix: String, limit: Int = 20) async throws -> [UserSearchResult] {
+        guard !prefix.isEmpty else { return [] }
+
+        let normalized = prefix.lowercased()
+        let endPrefix = normalized + "\u{f8ff}" // Unicode character after all normal chars
+
+        let snapshot = try await db.collection("usernames")
+            .whereField(FieldPath.documentID(), isGreaterThanOrEqualTo: normalized)
+            .whereField(FieldPath.documentID(), isLessThan: endPrefix)
+            .limit(to: limit)
+            .getDocuments()
+
+        var results: [UserSearchResult] = []
+
+        for doc in snapshot.documents {
+            guard let firebaseUserId = doc.data()["userId"] as? String else { continue }
+
+            // Fetch the user's profile
+            let profileDoc = try await db.collection("users").document(firebaseUserId)
+                .collection("profile").document("settings").getDocument()
+
+            if let data = profileDoc.data(),
+               let profile = decodeUserProfile(from: data) {
+                results.append(UserSearchResult(firebaseUserId: firebaseUserId, profile: profile))
+            }
+        }
+
+        return results
+    }
+
+    /// Fetch a user's public profile by their Firebase UID
+    func fetchPublicProfile(userId: String) async throws -> UserProfile? {
+        let doc = try await db.collection("users").document(userId)
+            .collection("profile").document("settings").getDocument()
+
+        guard let data = doc.data() else { return nil }
+        return decodeUserProfile(from: data)
+    }
+
+    // MARK: - Friendship Encoding/Decoding
+
+    private func encodeFriendship(_ friendship: Friendship) -> [String: Any] {
+        [
+            "id": friendship.id.uuidString,
+            "requesterId": friendship.requesterId,
+            "addresseeId": friendship.addresseeId,
+            "status": friendship.status.rawValue,
+            "createdAt": Timestamp(date: friendship.createdAt),
+            "updatedAt": FieldValue.serverTimestamp()
+        ]
+    }
+
+    private func decodeFriendship(from data: [String: Any]) -> Friendship? {
+        guard let idString = data["id"] as? String,
+              let id = UUID(uuidString: idString),
+              let requesterId = data["requesterId"] as? String,
+              let addresseeId = data["addresseeId"] as? String,
+              let statusRaw = data["status"] as? String,
+              let status = FriendshipStatus(rawValue: statusRaw) else {
+            return nil
+        }
+
+        let createdAt: Date
+        if let timestamp = data["createdAt"] as? Timestamp {
+            createdAt = timestamp.dateValue()
+        } else {
+            createdAt = Date()
+        }
+
+        let updatedAt: Date
+        if let timestamp = data["updatedAt"] as? Timestamp {
+            updatedAt = timestamp.dateValue()
+        } else {
+            updatedAt = Date()
+        }
+
+        return Friendship(
+            id: id,
+            requesterId: requesterId,
+            addresseeId: addresseeId,
+            status: status,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            syncStatus: .synced
+        )
+    }
+
+    // MARK: - Conversation Operations
+
+    /// Save a conversation to Firestore
+    func saveConversation(_ conversation: Conversation) async throws {
+        let ref = db.collection("conversations").document(conversation.id.uuidString)
+        let data = encodeConversation(conversation)
+        try await ref.setData(data, merge: true)
+    }
+
+    /// Fetch conversations for a user
+    func fetchConversations(for userId: String) async throws -> [Conversation] {
+        let snapshot = try await db.collection("conversations")
+            .whereField("participantIds", arrayContains: userId)
+            .order(by: "lastMessageAt", descending: true)
+            .getDocuments()
+
+        return snapshot.documents.compactMap { doc in
+            decodeConversation(from: doc.data())
+        }
+    }
+
+    /// Listen to conversation changes in real-time
+    func listenToConversations(for userId: String, onChange: @escaping ([Conversation]) -> Void) -> ListenerRegistration {
+        db.collection("conversations")
+            .whereField("participantIds", arrayContains: userId)
+            .order(by: "lastMessageAt", descending: true)
+            .addSnapshotListener { snapshot, error in
+                guard let documents = snapshot?.documents else { return }
+                let conversations = documents.compactMap { doc in
+                    self.decodeConversation(from: doc.data())
+                }
+                onChange(conversations)
+            }
+    }
+
+    /// Delete a conversation
+    func deleteConversation(id: UUID) async throws {
+        try await db.collection("conversations").document(id.uuidString).delete()
+    }
+
+    // MARK: - Message Operations
+
+    /// Save a message to Firestore
+    func saveMessage(_ message: Message) async throws {
+        let ref = db.collection("conversations")
+            .document(message.conversationId.uuidString)
+            .collection("messages")
+            .document(message.id.uuidString)
+        let data = encodeMessage(message)
+        try await ref.setData(data, merge: true)
+    }
+
+    /// Fetch messages for a conversation with pagination
+    func fetchMessages(conversationId: UUID, limit: Int = 50, before: Date? = nil) async throws -> [Message] {
+        var query = db.collection("conversations")
+            .document(conversationId.uuidString)
+            .collection("messages")
+            .order(by: "createdAt", descending: true)
+            .limit(to: limit)
+
+        if let beforeDate = before {
+            query = query.whereField("createdAt", isLessThan: Timestamp(date: beforeDate))
+        }
+
+        let snapshot = try await query.getDocuments()
+
+        return snapshot.documents.compactMap { doc in
+            self.decodeMessage(from: doc.data(), conversationId: conversationId)
+        }
+    }
+
+    /// Listen to messages in real-time
+    func listenToMessages(conversationId: UUID, limit: Int = 100, onChange: @escaping ([Message]) -> Void) -> ListenerRegistration {
+        db.collection("conversations")
+            .document(conversationId.uuidString)
+            .collection("messages")
+            .order(by: "createdAt", descending: false)
+            .limit(toLast: limit)
+            .addSnapshotListener { snapshot, error in
+                guard let documents = snapshot?.documents else { return }
+                let messages = documents.compactMap { doc in
+                    self.decodeMessage(from: doc.data(), conversationId: conversationId)
+                }
+                onChange(messages)
+            }
+    }
+
+    /// Mark a message as read
+    func markMessageRead(conversationId: UUID, messageId: UUID, at date: Date = Date()) async throws {
+        let ref = db.collection("conversations")
+            .document(conversationId.uuidString)
+            .collection("messages")
+            .document(messageId.uuidString)
+        try await ref.updateData(["readAt": Timestamp(date: date)])
+    }
+
+    // MARK: - Conversation Encoding/Decoding
+
+    private func encodeConversation(_ conversation: Conversation) -> [String: Any] {
+        var data: [String: Any] = [
+            "id": conversation.id.uuidString,
+            "participantIds": conversation.participantIds,
+            "createdAt": Timestamp(date: conversation.createdAt)
+        ]
+
+        if let lastMessageAt = conversation.lastMessageAt {
+            data["lastMessageAt"] = Timestamp(date: lastMessageAt)
+        }
+        if let preview = conversation.lastMessagePreview {
+            data["lastMessagePreview"] = preview
+        }
+
+        return data
+    }
+
+    private func decodeConversation(from data: [String: Any]) -> Conversation? {
+        guard let idString = data["id"] as? String,
+              let id = UUID(uuidString: idString),
+              let participantIds = data["participantIds"] as? [String] else {
+            return nil
+        }
+
+        let createdAt: Date
+        if let timestamp = data["createdAt"] as? Timestamp {
+            createdAt = timestamp.dateValue()
+        } else {
+            createdAt = Date()
+        }
+
+        let lastMessageAt: Date?
+        if let timestamp = data["lastMessageAt"] as? Timestamp {
+            lastMessageAt = timestamp.dateValue()
+        } else {
+            lastMessageAt = nil
+        }
+
+        let lastMessagePreview = data["lastMessagePreview"] as? String
+
+        return Conversation(
+            id: id,
+            participantIds: participantIds,
+            createdAt: createdAt,
+            lastMessageAt: lastMessageAt,
+            lastMessagePreview: lastMessagePreview,
+            syncStatus: .synced
+        )
+    }
+
+    // MARK: - Message Encoding/Decoding
+
+    private func encodeMessage(_ message: Message) -> [String: Any] {
+        var data: [String: Any] = [
+            "id": message.id.uuidString,
+            "senderId": message.senderId,
+            "createdAt": Timestamp(date: message.createdAt)
+        ]
+
+        // Encode content as JSON data
+        if let contentData = try? JSONEncoder().encode(message.content),
+           let contentDict = try? JSONSerialization.jsonObject(with: contentData) as? [String: Any] {
+            data["content"] = contentDict
+        }
+
+        if let readAt = message.readAt {
+            data["readAt"] = Timestamp(date: readAt)
+        }
+
+        return data
+    }
+
+    private func decodeMessage(from data: [String: Any], conversationId: UUID) -> Message? {
+        guard let idString = data["id"] as? String,
+              let id = UUID(uuidString: idString),
+              let senderId = data["senderId"] as? String else {
+            return nil
+        }
+
+        let createdAt: Date
+        if let timestamp = data["createdAt"] as? Timestamp {
+            createdAt = timestamp.dateValue()
+        } else {
+            createdAt = Date()
+        }
+
+        let readAt: Date?
+        if let timestamp = data["readAt"] as? Timestamp {
+            readAt = timestamp.dateValue()
+        } else {
+            readAt = nil
+        }
+
+        // Decode content
+        let content: MessageContent
+        if let contentDict = data["content"] as? [String: Any],
+           let contentData = try? JSONSerialization.data(withJSONObject: contentDict),
+           let decoded = try? JSONDecoder().decode(MessageContent.self, from: contentData) {
+            content = decoded
+        } else {
+            content = .text("")
+        }
+
+        return Message(
+            id: id,
+            conversationId: conversationId,
+            senderId: senderId,
+            content: content,
+            createdAt: createdAt,
+            readAt: readAt,
+            syncStatus: .synced
+        )
+    }
+
     // MARK: - Fetch All User Data
 
     func fetchAllUserData() async throws -> (
@@ -539,28 +985,80 @@ class FirestoreService: ObservableObject {
     // MARK: - User Profile Encoding/Decoding
 
     private func encodeUserProfile(_ profile: UserProfile) -> [String: Any] {
-        return [
+        var data: [String: Any] = [
+            "id": profile.id.uuidString,
+            "username": profile.username,
+            "isPublic": profile.isPublic,
             "weightUnit": profile.weightUnit.rawValue,
             "distanceUnit": profile.distanceUnit.rawValue,
             "defaultRestTime": profile.defaultRestTime,
+            "createdAt": profile.createdAt,
             "updatedAt": FieldValue.serverTimestamp()
         ]
+
+        if let displayName = profile.displayName {
+            data["displayName"] = displayName
+        }
+        if let bio = profile.bio {
+            data["bio"] = bio
+        }
+
+        return data
     }
 
     private func decodeUserProfile(from data: [String: Any]) -> UserProfile? {
-        guard let weightUnitRaw = data["weightUnit"] as? String,
-              let weightUnit = WeightUnit(rawValue: weightUnitRaw),
-              let distanceUnitRaw = data["distanceUnit"] as? String,
-              let distanceUnit = DistanceUnit(rawValue: distanceUnitRaw) else {
-            return nil
-        }
+        // Username is required for new profiles, but optional for legacy migration
+        let username = data["username"] as? String ?? ""
 
+        // Weight and distance units with defaults
+        let weightUnit = (data["weightUnit"] as? String).flatMap { WeightUnit(rawValue: $0) } ?? .lbs
+        let distanceUnit = (data["distanceUnit"] as? String).flatMap { DistanceUnit(rawValue: $0) } ?? .miles
         let defaultRestTime = data["defaultRestTime"] as? Int ?? 90
 
+        // Social fields
+        let displayName = data["displayName"] as? String
+        let bio = data["bio"] as? String
+        let isPublic = data["isPublic"] as? Bool ?? false
+
+        // Timestamps
+        let createdAt: Date
+        if let timestamp = data["createdAt"] as? Timestamp {
+            createdAt = timestamp.dateValue()
+        } else if let date = data["createdAt"] as? Date {
+            createdAt = date
+        } else {
+            createdAt = Date()
+        }
+
+        let updatedAt: Date
+        if let timestamp = data["updatedAt"] as? Timestamp {
+            updatedAt = timestamp.dateValue()
+        } else if let date = data["updatedAt"] as? Date {
+            updatedAt = date
+        } else {
+            updatedAt = Date()
+        }
+
+        // ID with fallback to new UUID for migration
+        let id: UUID
+        if let idString = data["id"] as? String, let parsedId = UUID(uuidString: idString) {
+            id = parsedId
+        } else {
+            id = UUID()
+        }
+
         return UserProfile(
+            id: id,
+            username: username,
+            displayName: displayName,
+            bio: bio,
+            isPublic: isPublic,
             weightUnit: weightUnit,
             distanceUnit: distanceUnit,
-            defaultRestTime: defaultRestTime
+            defaultRestTime: defaultRestTime,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            syncStatus: .synced
         )
     }
 
@@ -920,5 +1418,43 @@ enum FirestoreError: LocalizedError {
         case .syncFailed(let message):
             return "Sync failed: \(message)"
         }
+    }
+}
+
+// MARK: - Profile Errors
+
+enum ProfileError: LocalizedError {
+    case usernameTaken
+    case invalidUsername(UsernameError)
+    case profileNotFound
+
+    var errorDescription: String? {
+        switch self {
+        case .usernameTaken:
+            return "This username is already taken"
+        case .invalidUsername(let error):
+            return error.localizedDescription
+        case .profileNotFound:
+            return "Profile not found"
+        }
+    }
+}
+
+// MARK: - Composite Listener Registration
+
+/// Allows managing multiple Firestore listeners as one
+class CompositeListenerRegistration: NSObject, ListenerRegistration {
+    private var listeners: [ListenerRegistration]
+
+    init(listeners: [ListenerRegistration]) {
+        self.listeners = listeners
+        super.init()
+    }
+
+    func remove() {
+        for listener in listeners {
+            listener.remove()
+        }
+        listeners.removeAll()
     }
 }

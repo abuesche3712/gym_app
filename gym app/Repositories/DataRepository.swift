@@ -18,6 +18,10 @@ class DataRepository: ObservableObject {
     private let workoutRepo: WorkoutRepository
     private let sessionRepo: SessionRepository
     private let programRepo: ProgramRepository
+    let profileRepo: ProfileRepository
+    let friendshipRepo: FriendshipRepository
+    let conversationRepo: ConversationRepository
+    let messageRepo: MessageRepository
 
     // Services
     private let persistence = PersistenceController.shared
@@ -42,6 +46,10 @@ class DataRepository: ObservableObject {
         workoutRepo = WorkoutRepository()
         sessionRepo = SessionRepository()
         programRepo = ProgramRepository()
+        profileRepo = ProfileRepository()
+        friendshipRepo = FriendshipRepository()
+        conversationRepo = ConversationRepository()
+        messageRepo = MessageRepository()
         loadAllData()
     }
 
@@ -319,10 +327,7 @@ class DataRepository: ObservableObject {
 
             // Merge user profile
             if let cloudProfile = cloudData.profile {
-                NotificationCenter.default.post(
-                    name: .userProfileSyncedFromCloud,
-                    object: cloudProfile
-                )
+                profileRepo.updateFromCloud(cloudProfile)
             }
 
             // Reload all data after merge
@@ -377,10 +382,7 @@ class DataRepository: ObservableObject {
         )
 
         if let cloudProfile = cloudData.profile {
-            NotificationCenter.default.post(
-                name: .userProfileSyncedFromCloud,
-                object: cloudProfile
-            )
+            profileRepo.updateFromCloud(cloudProfile)
         }
 
         loadAllData()
@@ -425,7 +427,11 @@ class DataRepository: ObservableObject {
             }
 
             NotificationCenter.default.post(name: .requestScheduledWorkoutsForSync, object: nil)
-            NotificationCenter.default.post(name: .requestUserProfileForSync, object: nil)
+
+            // Push user profile
+            if let profile = profileRepo.currentProfile {
+                try await firestoreService.saveUserProfile(profile)
+            }
 
             Logger.debug("pushAllToCloud: Completed successfully")
         } catch {
@@ -474,7 +480,11 @@ class DataRepository: ObservableObject {
         }
 
         NotificationCenter.default.post(name: .requestScheduledWorkoutsForSync, object: nil)
-        NotificationCenter.default.post(name: .requestUserProfileForSync, object: nil)
+
+        // Push user profile
+        if let profile = profileRepo.currentProfile {
+            try await firestoreService.saveUserProfile(profile)
+        }
 
         Logger.debug("pushAllToCloudThrowing: Completed successfully")
     }

@@ -216,4 +216,20 @@ struct SetData: Identifiable, Codable, Hashable {
         }
         return result
     }
+
+    /// Returns true if any metric data has been logged for this set
+    var hasAnyMetricData: Bool {
+        weight != nil ||
+        reps != nil ||
+        duration != nil ||
+        distance != nil ||
+        rpe != nil ||
+        bandColor != nil ||
+        holdTime != nil ||
+        intensity != nil ||
+        height != nil ||
+        quality != nil ||
+        temperature != nil ||
+        !implementMeasurableValues.isEmpty
+    }
 }

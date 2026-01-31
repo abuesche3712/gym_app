@@ -7,7 +7,7 @@
 
 iOS workout tracking app built with SwiftUI. Offline-first with CoreData, Firebase for cloud sync.
 
-**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete. Major refactoring completed (DataRepository split, Session model split, AppTheme split, Session views split). Per-exercise progression system implemented. Comprehensive DataRepository tests added.
+**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete. Major refactoring completed (DataRepository split, Session model split, AppTheme split, Session views split). Per-exercise progression system implemented. Comprehensive DataRepository tests added. **Social features Phase 1-3 implemented** (Profiles, Friendships, Messaging).
 
 ## Major Refactoring (Jan 29, 2026)
 
@@ -462,13 +462,16 @@ HStack {
 
 ```
 gym app/                          (90+ Swift files)
-├── ViewModels/                   (6 files, ~76KB)
+├── ViewModels/                   (9 files)
 │   ├── AppState.swift
 │   ├── SessionViewModel.swift    (35KB - largest)
 │   ├── SessionNavigator.swift
 │   ├── WorkoutViewModel.swift
 │   ├── ProgramViewModel.swift
-│   └── ModuleViewModel.swift
+│   ├── ModuleViewModel.swift
+│   ├── FriendsViewModel.swift    (Social - friendships)
+│   ├── ConversationsViewModel.swift (Social - message list)
+│   └── ChatViewModel.swift       (Social - individual chat)
 │
 ├── Views/                        (40+ files)
 │   ├── Session/                  (17 files - workout session UI)
@@ -512,12 +515,20 @@ gym app/                          (90+ Swift files)
 │   ├── Auth/                     (1 file)
 │   ├── Analytics/                (1 file)
 │   ├── Components/               (2 files)
-│   ├── Social/                   (1 file)
+│   ├── Social/                   (8 files - social features)
+│   │   ├── SocialView.swift
+│   │   ├── AccountProfileView.swift
+│   │   ├── UserSearchView.swift
+│   │   ├── FriendsListView.swift
+│   │   ├── FriendRequestsView.swift
+│   │   ├── ConversationsListView.swift
+│   │   ├── ChatView.swift
+│   │   └── NewConversationSheet.swift
 │   ├── HomeView.swift            (~800 lines)
 │   ├── HomeScheduleSheets.swift  (29KB)
 │   └── MainTabView.swift
 │
-├── Models/                       (20+ files)
+├── Models/                       (23 files)
 │   ├── ExerciseInstance.swift
 │   ├── Module.swift
 │   ├── Workout.swift
@@ -531,7 +542,10 @@ gym app/                          (90+ Swift files)
 │   ├── MeasurableValue.swift     (Equipment measurable values)
 │   ├── ProgressionRule.swift     (Progression rules & suggestions)
 │   ├── SetGroup.swift
-│   ├── UserProfile.swift
+│   ├── UserProfile.swift         (Social - user profile)
+│   ├── Friendship.swift          (Social - friend relationships)
+│   ├── Conversation.swift        (Social - messaging)
+│   ├── Message.swift             (Social - messages with MessageContent enum)
 │   ├── ExerciseLibrary.swift
 │   ├── CustomExerciseLibrary.swift
 │   ├── ResolvedExercise.swift
@@ -539,8 +553,8 @@ gym app/                          (90+ Swift files)
 │   ├── SchemaVersions.swift
 │   └── Enums.swift
 │
-├── Services/                     (19 files)
-│   ├── FirebaseService.swift     (34KB)
+├── Services/                     (23 files)
+│   ├── FirebaseService.swift     (38KB - includes social operations)
 │   ├── AuthService.swift
 │   ├── SyncManager.swift         (25KB)
 │   ├── DataRepository.swift      (Coordinator)
@@ -548,6 +562,10 @@ gym app/                          (90+ Swift files)
 │   ├── WorkoutRepository.swift   (Workout CRUD)
 │   ├── SessionRepository.swift   (Session CRUD)
 │   ├── ProgramRepository.swift   (Program CRUD + progression)
+│   ├── ProfileRepository.swift   (Social - user profiles)
+│   ├── FriendshipRepository.swift (Social - friendships)
+│   ├── ConversationRepository.swift (Social - conversations)
+│   ├── MessageRepository.swift   (Social - messages)
 │   ├── ProgressionService.swift  (Progression calculations)
 │   ├── ExerciseResolver.swift
 │   ├── SyncLogger.swift
@@ -703,6 +721,126 @@ SessionExercise (Logged Data)
 - [x] Decode failure tracking
 - [x] Schema versioning
 
+## Social Features (Jan 31, 2026)
+
+Implemented in 4 phases: Profile → Friendships → Messaging → Sharing (Phase 4 pending).
+
+### Phase 1: User Profiles
+- `UserProfile` model with username, displayName, bio, avatarURL
+- `ProfileRepository` for CoreData persistence
+- `AccountProfileView` for profile editing
+- Username uniqueness validation via Firestore
+- Firebase sync for public profile data
+
+### Phase 2: Friendships
+- `Friendship` model with status enum (pending, accepted, blocked)
+- `FriendshipRepository` for local CRUD + queries
+- `FriendsViewModel` managing friends list, requests, blocked users
+- Real-time Firestore listener for friendship changes
+- Views: `FriendsListView`, `FriendRequestsView`, `UserSearchView`
+- Features: Send/accept/decline requests, block/unblock users
+- Debounced username search with block filtering
+
+### Phase 3: Messaging
+- `Conversation` model with participant IDs, last message preview, unread count
+- `Message` model with polymorphic `MessageContent` enum
+- `ConversationRepository` and `MessageRepository` for local persistence
+- `ConversationsViewModel` managing conversation list with real-time sync
+- `ChatViewModel` managing individual chat with message sending
+- Views: `ConversationsListView`, `ChatView`, `NewConversationSheet`
+- Features:
+  - Real-time messaging via Firestore listeners
+  - Offline-first with pendingSync status
+  - Block filtering (conversations with blocked users hidden)
+  - Unread message badges on conversation list and Social tab
+  - Message types: text (now), sharing types prepared for Phase 4
+
+### MessageContent Enum (Phase 4 Ready)
+```swift
+enum MessageContent: Codable {
+    case text(String)
+    case sharedProgram(id: UUID, name: String, snapshot: Data)
+    case sharedWorkout(id: UUID, name: String, snapshot: Data)
+    case sharedModule(id: UUID, name: String, snapshot: Data)
+    case sharedSession(id: UUID, workoutName: String, date: Date, snapshot: Data)
+    case sharedExercise(snapshot: Data)
+    case sharedSet(snapshot: Data)
+}
+```
+
+### Social File Structure
+```
+Models/
+├── UserProfile.swift
+├── Friendship.swift
+├── Conversation.swift
+└── Message.swift
+
+Repositories/
+├── ProfileRepository.swift
+├── FriendshipRepository.swift
+├── ConversationRepository.swift
+└── MessageRepository.swift
+
+ViewModels/
+├── FriendsViewModel.swift
+├── ConversationsViewModel.swift
+└── ChatViewModel.swift
+
+Views/Social/
+├── SocialView.swift           (Main social tab)
+├── AccountProfileView.swift   (Profile editing)
+├── UserSearchView.swift       (Find friends)
+├── FriendsListView.swift      (Friends management)
+├── FriendRequestsView.swift   (Pending requests)
+├── ConversationsListView.swift (Message list)
+├── ChatView.swift             (Individual chat)
+└── NewConversationSheet.swift (Start new chat)
+```
+
+### Firestore Collections
+```
+users/{userId}/
+├── profile (public profile data)
+├── modules, workouts, sessions, programs (existing)
+└── customExercises (existing)
+
+friendships/{friendshipId} (indexed by participantIds)
+conversations/{conversationId}/
+├── (conversation metadata)
+└── messages/{messageId}
+
+usernames/{username} → userId (uniqueness enforcement)
+```
+
+### Required Firestore Security Rules
+```javascript
+// Usernames collection (public read for search, write only for own username)
+match /usernames/{username} {
+    allow read: if true;
+    allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+}
+
+// Friendships (read/write if participant)
+match /friendships/{friendshipId} {
+    allow read, write: if request.auth != null &&
+        (request.auth.uid in resource.data.participantIds ||
+         request.auth.uid in request.resource.data.participantIds);
+}
+
+// Conversations (read/write if participant)
+match /conversations/{conversationId} {
+    allow read, write: if request.auth != null &&
+        request.auth.uid in resource.data.participantIds;
+
+    match /messages/{messageId} {
+        allow read, write: if request.auth != null &&
+            request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+    }
+}
+```
+
 ## Planned Features
 
 ### Smart Features (Next Priority)
@@ -713,7 +851,8 @@ SessionExercise (Logged Data)
 
 ### Future
 - [ ] Analytics dashboard (PRs, volume tracking, trends)
-- [ ] Social features (shared workouts, friends, leaderboards)
+- [x] Social features Phase 1-3 (profiles, friendships, messaging)
+- [ ] Social features Phase 4 (sharing programs, workouts, sessions, exercises)
 
 ## Code Modularization Opportunities
 

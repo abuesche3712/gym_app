@@ -130,6 +130,12 @@
 		SCHMAV02BUILD002 /* SchemaVersions.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCHMAV01FILE001 /* SchemaVersions.swift */; };
 		SESSNAV02BUILD002 /* SessionNavigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = SESSNAV01FILE001 /* SessionNavigator.swift */; };
 		SOCAL002BUILD002 /* SocialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SOCAL001FILE001 /* SocialView.swift */; };
+		FRNDSRCH02BUILD /* UserSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDSRCH01FILE /* UserSearchView.swift */; };
+		FRNDSLST02BUILD /* FriendsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDSLST01FILE /* FriendsListView.swift */; };
+		FRNDRQST02BUILD /* FriendRequestsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDRQST01FILE /* FriendRequestsView.swift */; };
+		FRNDSHP002BUILD /* Friendship.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDSHP001FILE /* Friendship.swift */; };
+		FRNDREPO02BUILD /* FriendshipRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDREPO01FILE /* FriendshipRepository.swift */; };
+		FRNDSVMM02BUILD /* FriendsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDSVMM01FILE /* FriendsViewModel.swift */; };
 		SSNVTST02BUILD002 /* SessionNavigatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SSNVTST01FILE001 /* SessionNavigatorTests.swift */; };
 		SUPERSET002HELPER002 /* SupersetHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = SUPERSET001HELPER001 /* SupersetHelper.swift */; };
 		SYCERR002BUILD002 /* SyncErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = SYCERR001FILE001 /* SyncErrorBanner.swift */; };
@@ -146,6 +152,20 @@
 		THEMEANIM01BUILD /* AppAnimations.swift in Sources */ = {isa = PBXBuildFile; fileRef = THEMEANIM01FILE01 /* AppAnimations.swift */; };
 		FONTEXTENS1BUILD /* Font+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FONTEXTENS1FILE01 /* Font+Extensions.swift */; };
 		DATAREPO02BUILD01 /* DataRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DATAREPO01FILE01 /* DataRepositoryTests.swift */; };
+		USNMVAL02BUILD01 /* UsernameValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = USNMVAL01FILE001 /* UsernameValidation.swift */; };
+		PRFLREP02BUILD01 /* ProfileRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRFLREP01FILE001 /* ProfileRepository.swift */; };
+		PRFLEDT02BUILD01 /* ProfileEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRFLEDT01FILE001 /* ProfileEditView.swift */; };
+		PRFLVIW02BUILD01 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRFLVIW01FILE001 /* ProfileView.swift */; };
+		ACCPRVWBUILD001 /* AccountProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCPRVWFILE0001 /* AccountProfileView.swift */; };
+		CONVMDL002BUILD /* Conversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CONVMDL001FILE /* Conversation.swift */; };
+		MSGMDL002BUILD /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = MSGMDL001FILE /* Message.swift */; };
+		CONVREP002BUILD /* ConversationRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CONVREP001FILE /* ConversationRepository.swift */; };
+		MSGREP002BUILD /* MessageRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = MSGREP001FILE /* MessageRepository.swift */; };
+		CONVVM002BUILD /* ConversationsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CONVVM001FILE /* ConversationsViewModel.swift */; };
+		CHATVM002BUILD /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATVM001FILE /* ChatViewModel.swift */; };
+		CONVLST002BUILD /* ConversationsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CONVLST001FILE /* ConversationsListView.swift */; };
+		CHATVW002BUILD /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATVW001FILE /* ChatView.swift */; };
+		NEWCNV002BUILD /* NewConversationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = NEWCNV001FILE /* NewConversationSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -318,6 +338,12 @@
 		SCHMAV01FILE001 /* SchemaVersions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaVersions.swift; sourceTree = "<group>"; };
 		SESSNAV01FILE001 /* SessionNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNavigator.swift; sourceTree = "<group>"; };
 		SOCAL001FILE001 /* SocialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialView.swift; sourceTree = "<group>"; };
+		FRNDSRCH01FILE /* UserSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSearchView.swift; sourceTree = "<group>"; };
+		FRNDSLST01FILE /* FriendsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsListView.swift; sourceTree = "<group>"; };
+		FRNDRQST01FILE /* FriendRequestsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendRequestsView.swift; sourceTree = "<group>"; };
+		FRNDSHP001FILE /* Friendship.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Friendship.swift; sourceTree = "<group>"; };
+		FRNDREPO01FILE /* FriendshipRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendshipRepository.swift; sourceTree = "<group>"; };
+		FRNDSVMM01FILE /* FriendsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsViewModel.swift; sourceTree = "<group>"; };
 		SSNVTST01FILE001 /* SessionNavigatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNavigatorTests.swift; sourceTree = "<group>"; };
 		SUPERSET001HELPER001 /* SupersetHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SupersetHelper.swift; sourceTree = "<group>"; };
 		SYCERR001FILE001 /* SyncErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorBanner.swift; sourceTree = "<group>"; };
@@ -327,6 +353,20 @@
 		WDGSVC01FILE001 /* WidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetData.swift; sourceTree = "<group>"; };
 		WKBLD001FILE001 /* WorkoutBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutBuilderView.swift; sourceTree = "<group>"; };
 		DATAREPO01FILE01 /* DataRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataRepositoryTests.swift; sourceTree = "<group>"; };
+		USNMVAL01FILE001 /* UsernameValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsernameValidation.swift; sourceTree = "<group>"; };
+		PRFLREP01FILE001 /* ProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRepository.swift; sourceTree = "<group>"; };
+		PRFLEDT01FILE001 /* ProfileEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileEditView.swift; sourceTree = "<group>"; };
+		PRFLVIW01FILE001 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		ACCPRVWFILE0001 /* AccountProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountProfileView.swift; sourceTree = "<group>"; };
+		CONVMDL001FILE /* Conversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Conversation.swift; sourceTree = "<group>"; };
+		MSGMDL001FILE /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
+		CONVREP001FILE /* ConversationRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationRepository.swift; sourceTree = "<group>"; };
+		MSGREP001FILE /* MessageRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRepository.swift; sourceTree = "<group>"; };
+		CONVVM001FILE /* ConversationsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsViewModel.swift; sourceTree = "<group>"; };
+		CHATVM001FILE /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
+		CONVLST001FILE /* ConversationsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsListView.swift; sourceTree = "<group>"; };
+		CHATVW001FILE /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		NEWCNV001FILE /* NewConversationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewConversationSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -470,6 +510,9 @@
 				SESSNAV01FILE001 /* SessionNavigator.swift */,
 				B63EBEE82F15E73700D8C22D /* SessionViewModel.swift */,
 				B63EBEE92F15E73700D8C22D /* WorkoutViewModel.swift */,
+				FRNDSVMM01FILE /* FriendsViewModel.swift */,
+				CONVVM001FILE /* ConversationsViewModel.swift */,
+				CHATVM001FILE /* ChatViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -498,7 +541,11 @@
 				B63EBEEF2F15E73700D8C22D /* SetGroup.swift */,
 				SYNCQU001FILE001 /* SyncQueue.swift */,
 				USRPFL001FILE001 /* UserProfile.swift */,
+				USNMVAL01FILE001 /* UsernameValidation.swift */,
 				B63EBEF02F15E73700D8C22D /* Workout.swift */,
+				FRNDSHP001FILE /* Friendship.swift */,
+				CONVMDL001FILE /* Conversation.swift */,
+				MSGMDL001FILE /* Message.swift */,
 				E3A1B2C3D4E5F60000000003 /* Protocols */,
 			);
 			path = Models;
@@ -584,6 +631,7 @@
 				B63EBEF42F15E73700D8C22D /* History */,
 				B63EBEFA2F15E73700D8C22D /* Modules */,
 				MOREVGRP001GROUP001 /* More */,
+				PRFLGRP001GROUP001 /* Profile */,
 				PRGGRP001GROUP001 /* Programs */,
 				B63EBEFC2F15E73700D8C22D /* Session */,
 				B63EBEFE2F15E73700D8C22D /* Settings */,
@@ -616,6 +664,10 @@
 				WKREP001FILE001 /* WorkoutRepository.swift */,
 				SESREP001FILE001 /* SessionRepository.swift */,
 				PRGREP001FILE001 /* ProgramRepository.swift */,
+				PRFLREP01FILE001 /* ProfileRepository.swift */,
+				FRNDREPO01FILE /* FriendshipRepository.swift */,
+				CONVREP001FILE /* ConversationRepository.swift */,
+				MSGREP001FILE /* MessageRepository.swift */,
 			);
 			path = Repositories;
 			sourceTree = "<group>";
@@ -710,6 +762,16 @@
 			path = More;
 			sourceTree = "<group>";
 		};
+		PRFLGRP001GROUP001 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				ACCPRVWFILE0001 /* AccountProfileView.swift */,
+				PRFLEDT01FILE001 /* ProfileEditView.swift */,
+				PRFLVIW01FILE001 /* ProfileView.swift */,
+			);
+			path = Profile;
+			sourceTree = "<group>";
+		};
 		PRGGRP001GROUP001 /* Programs */ = {
 			isa = PBXGroup;
 			children = (
@@ -729,6 +791,12 @@
 			isa = PBXGroup;
 			children = (
 				SOCAL001FILE001 /* SocialView.swift */,
+				CONVLST001FILE /* ConversationsListView.swift */,
+				CHATVW001FILE /* ChatView.swift */,
+				NEWCNV001FILE /* NewConversationSheet.swift */,
+				FRNDSRCH01FILE /* UserSearchView.swift */,
+				FRNDSLST01FILE /* FriendsListView.swift */,
+				FRNDRQST01FILE /* FriendRequestsView.swift */,
 			);
 			path = Social;
 			sourceTree = "<group>";
@@ -1037,9 +1105,29 @@
 				PRGCFG002BUILD002 /* ProgressionConfigurationView.swift in Sources */,
 				WKBLD002BUILD002 /* WorkoutBuilderView.swift in Sources */,
 				SOCAL002BUILD002 /* SocialView.swift in Sources */,
+				FRNDSRCH02BUILD /* UserSearchView.swift in Sources */,
+				FRNDSLST02BUILD /* FriendsListView.swift in Sources */,
+				FRNDRQST02BUILD /* FriendRequestsView.swift in Sources */,
+				FRNDSHP002BUILD /* Friendship.swift in Sources */,
+				FRNDREPO02BUILD /* FriendshipRepository.swift in Sources */,
+				FRNDSVMM02BUILD /* FriendsViewModel.swift in Sources */,
+				CONVMDL002BUILD /* Conversation.swift in Sources */,
+				MSGMDL002BUILD /* Message.swift in Sources */,
+				CONVREP002BUILD /* ConversationRepository.swift in Sources */,
+				MSGREP002BUILD /* MessageRepository.swift in Sources */,
+				CONVVM002BUILD /* ConversationsViewModel.swift in Sources */,
+				CHATVM002BUILD /* ChatViewModel.swift in Sources */,
+				CONVLST002BUILD /* ConversationsListView.swift in Sources */,
+				CHATVW002BUILD /* ChatView.swift in Sources */,
+				NEWCNV002BUILD /* NewConversationSheet.swift in Sources */,
 				ANLYT002BUILD002 /* AnalyticsView.swift in Sources */,
 				MOREV002BUILD002 /* MoreView.swift in Sources */,
 				USRPFL002BUILD002 /* UserProfile.swift in Sources */,
+				USNMVAL02BUILD01 /* UsernameValidation.swift in Sources */,
+				PRFLREP02BUILD01 /* ProfileRepository.swift in Sources */,
+				PRFLEDT02BUILD01 /* ProfileEditView.swift in Sources */,
+				PRFLVIW02BUILD01 /* ProfileView.swift in Sources */,
+				ACCPRVWBUILD001 /* AccountProfileView.swift in Sources */,
 				SYNCQU002BUILD002 /* SyncQueue.swift in Sources */,
 				SYNCLOG02BUILD002 /* SyncLogger.swift in Sources */,
 				DBGSYN02BUILD002 /* DebugSyncLogsView.swift in Sources */,

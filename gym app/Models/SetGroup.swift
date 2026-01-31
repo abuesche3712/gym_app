@@ -70,7 +70,7 @@ struct SetGroup: Identifiable, Codable, Hashable {
         implementMeasurableStringValue: String? = nil
     ) {
         self.id = id
-        self.sets = sets
+        self.sets = max(sets, 1)  // Ensure at least 1 set
         self.targetReps = targetReps
         self.targetWeight = targetWeight
         self.targetRPE = targetRPE
@@ -99,7 +99,8 @@ struct SetGroup: Identifiable, Codable, Hashable {
 
         // Required fields
         id = try container.decode(UUID.self, forKey: .id)
-        sets = try container.decode(Int.self, forKey: .sets)
+        let decodedSets = try container.decode(Int.self, forKey: .sets)
+        sets = max(decodedSets, 1)  // Ensure at least 1 set
 
         // Optional with defaults
         isInterval = try container.decodeIfPresent(Bool.self, forKey: .isInterval) ?? false

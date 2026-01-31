@@ -33,4 +33,8 @@ enum SchemaVersions {
     static let setGroup = 1
     static let scheduledWorkout = 1
     static let completedProgram = 1
+    static let userProfile = 1
+    static let friendship = 1
+    static let conversation = 1
+    static let message = 1
 }

@@ -129,6 +129,16 @@ struct PersistenceController {
         // Create in-progress session entity (for crash recovery)
         let inProgressSessionEntity = createInProgressSessionEntity()
 
+        // Create user profile entity (for social features)
+        let userProfileEntity = createUserProfileEntity()
+
+        // Create friendship entity (for social features)
+        let friendshipEntity = createFriendshipEntity()
+
+        // Create conversation and message entities (for messaging)
+        let conversationEntity = createConversationEntity()
+        let messageEntity = createMessageEntity()
+
         // Set up relationships
         setupRelationships(
             moduleEntity: moduleEntity,
@@ -186,7 +196,14 @@ struct PersistenceController {
             // Deletion tracking entity
             deletionRecordEntity,
             // In-progress session entity (crash recovery)
-            inProgressSessionEntity
+            inProgressSessionEntity,
+            // User profile entity (social features)
+            userProfileEntity,
+            // Friendship entity (social features)
+            friendshipEntity,
+            // Messaging entities
+            conversationEntity,
+            messageEntity
         ]
 
         return model
@@ -741,6 +758,88 @@ struct PersistenceController {
             createAttribute("workoutId", type: .UUIDAttributeType),
             createAttribute("workoutName", type: .stringAttributeType, optional: true),
             createAttribute("startTime", type: .dateAttributeType, optional: true)
+        ]
+
+        return entity
+    }
+
+    private static func createUserProfileEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "UserProfileEntity"
+        entity.managedObjectClassName = "UserProfileEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("username", type: .stringAttributeType),
+            createAttribute("displayName", type: .stringAttributeType, optional: true),
+            createAttribute("bio", type: .stringAttributeType, optional: true),
+            createAttribute("isPublic", type: .booleanAttributeType, defaultValue: false),
+            createAttribute("weightUnitRaw", type: .stringAttributeType),
+            createAttribute("distanceUnitRaw", type: .stringAttributeType),
+            createAttribute("defaultRestTime", type: .integer32AttributeType, defaultValue: 90),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncStatusRaw", type: .stringAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createFriendshipEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "FriendshipEntity"
+        entity.managedObjectClassName = "FriendshipEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("requesterId", type: .stringAttributeType),
+            createAttribute("addresseeId", type: .stringAttributeType),
+            createAttribute("statusRaw", type: .stringAttributeType),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncStatusRaw", type: .stringAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createConversationEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "ConversationEntity"
+        entity.managedObjectClassName = "ConversationEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("participantIdsData", type: .binaryDataAttributeType, optional: true),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
+            createAttribute("lastMessageAt", type: .dateAttributeType, optional: true),
+            createAttribute("lastMessagePreview", type: .stringAttributeType, optional: true),
+            createAttribute("syncStatusRaw", type: .stringAttributeType),
+            createAttribute("unreadCount", type: .integer32AttributeType, defaultValue: 0)
+        ]
+
+        return entity
+    }
+
+    private static func createMessageEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "MessageEntity"
+        entity.managedObjectClassName = "MessageEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("conversationId", type: .UUIDAttributeType),
+            createAttribute("senderId", type: .stringAttributeType),
+            createAttribute("contentData", type: .binaryDataAttributeType, optional: true),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
+            createAttribute("readAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncStatusRaw", type: .stringAttributeType)
         ]
 
         return entity
