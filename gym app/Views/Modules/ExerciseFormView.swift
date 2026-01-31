@@ -769,6 +769,7 @@ struct MuscleGroupEnumPickerView: View {
             }
             .padding()
         }
+        .background(AppColors.background)
     }
 
     private func togglePrimary(_ muscle: MuscleGroup) {

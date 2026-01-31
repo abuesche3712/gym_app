@@ -306,9 +306,6 @@ struct EndSessionSheet: View {
             if let height = set.height {
                 parts.append("@ \(formatHeight(height))")
             }
-            if let quality = set.quality {
-                parts.append("(\(quality)/5)")
-            }
             return parts.isEmpty ? "–" : parts.joined(separator: " ")
 
         case .mobility:
@@ -530,7 +527,6 @@ struct SetEditSheet: View {
     @State private var holdTime: Int = 0
     @State private var distance: String = ""
     @State private var height: String = ""
-    @State private var quality: Int = 0
     @State private var intensity: Int = 0
     @State private var temperature: String = ""
 
@@ -571,10 +567,6 @@ struct SetEditSheet: View {
                         .keyboardType(.numberPad)
                     TextField("Height (inches)", text: $height)
                         .keyboardType(.decimalPad)
-                    Picker("Quality", selection: $quality) {
-                        Text("None").tag(0)
-                        ForEach(1...5, id: \.self) { Text("\($0)/5").tag($0) }
-                    }
 
                 case .mobility:
                     TextField("Reps", text: $reps)
@@ -615,7 +607,6 @@ struct SetEditSheet: View {
         holdTime = setData.holdTime ?? 0
         distance = setData.distance.map { formatDistanceValue($0) } ?? ""
         height = setData.height.map { String(format: "%.1f", $0) } ?? ""
-        quality = setData.quality ?? 0
         intensity = setData.intensity ?? 0
         temperature = setData.temperature.map { "\($0)" } ?? ""
     }
@@ -628,7 +619,6 @@ struct SetEditSheet: View {
         setData.holdTime = holdTime > 0 ? holdTime : nil
         setData.distance = Double(distance)
         setData.height = Double(height)
-        setData.quality = quality > 0 ? quality : nil
         setData.intensity = intensity > 0 ? intensity : nil
         setData.temperature = Int(temperature)
     }

@@ -37,11 +37,27 @@ final class HapticManager: @unchecked Sendable {
 
     private func configureAudioSession() {
         do {
-            // Use playback category to play sounds even when silent switch is on
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            // Use playback category with duckOthers to:
+            // 1. Play sounds even when silent switch is on
+            // 2. Temporarily lower music volume when playing alerts
+            // 3. Mix with other audio so music resumes after
+            try AVAudioSession.sharedInstance().setCategory(
+                .playback,
+                mode: .default,
+                options: [.mixWithOthers, .duckOthers]
+            )
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
-            print("Failed to configure audio session: \(error)")
+            Logger.error(error, context: "Failed to configure audio session")
+        }
+    }
+
+    /// Re-activate audio session before playing sounds (needed after other apps take over audio)
+    private func ensureAudioSessionActive() {
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            Logger.debug("Audio session activation failed: \(error.localizedDescription)")
         }
     }
 
@@ -166,36 +182,45 @@ final class HapticManager: @unchecked Sendable {
 
     /// Play timer completion sound
     private func playTimerCompleteSound() {
+        ensureAudioSessionActive()
+
         // Try custom sound first, fall back to system sound
         if let player = timerCompletePlayer {
+            player.volume = 1.0
             player.currentTime = 0
             player.play()
         } else {
-            // Fallback: Use system sound that plays even on silent
-            // Sound ID 1304 is a tri-tone alert
-            AudioServicesPlayAlertSound(SystemSoundID(1304))
+            // Fallback: Use system sound
+            // Note: AudioServicesPlaySystemSound ignores silent switch when audio session is .playback
+            AudioServicesPlaySystemSound(SystemSoundID(1304))
         }
     }
 
     /// Play countdown beep sound
     private func playCountdownBeepSound() {
+        ensureAudioSessionActive()
+
         if let player = countdownBeepPlayer {
+            player.volume = 0.7
             player.currentTime = 0
             player.play()
         } else {
             // Fallback: Short click sound
-            AudioServicesPlayAlertSound(SystemSoundID(1057))
+            AudioServicesPlaySystemSound(SystemSoundID(1057))
         }
     }
 
     /// Play phase transition sound
     private func playPhaseTransitionSound() {
+        ensureAudioSessionActive()
+
         if let player = phaseTransitionPlayer {
+            player.volume = 1.0
             player.currentTime = 0
             player.play()
         } else {
             // Fallback: Alert tone
-            AudioServicesPlayAlertSound(SystemSoundID(1322))
+            AudioServicesPlaySystemSound(SystemSoundID(1322))
         }
     }
 

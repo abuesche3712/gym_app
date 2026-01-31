@@ -1,13 +1,13 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2026-01-30
+> **Last updated:** 2026-01-31
 
 ## Project Overview
 
 iOS workout tracking app built with SwiftUI. Offline-first with CoreData, Firebase for cloud sync.
 
-**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete. Major refactoring completed (DataRepository split, Session model split, AppTheme split). Per-exercise progression system implemented. Comprehensive DataRepository tests added.
+**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete. Major refactoring completed (DataRepository split, Session model split, AppTheme split, Session views split). Per-exercise progression system implemented. Comprehensive DataRepository tests added.
 
 ## Major Refactoring (Jan 29, 2026)
 
@@ -134,6 +134,102 @@ func calculateSuggestions(
     program: Program?,
     sessionHistory: [Session]
 ) -> [UUID: ProgressionSuggestion]
+```
+
+## Session Views Refactoring (Jan 31, 2026)
+
+Split large session-related files into focused, single-responsibility components:
+
+### SessionComponents.swift Split
+Split 1,379-line file into focused view files:
+```
+Views/Session/
+├── SetRowView.swift           (Main set input row - strength, cardio, etc.)
+├── StrengthInputsView.swift   (Weight/reps input fields)
+├── CardioInputsView.swift     (Duration/distance input fields)
+└── TimeInputPickers.swift     (Time picker sheets, set indicators)
+```
+
+### ExerciseModificationSheets.swift Split
+Split 1,306-line file into focused sheet files:
+```
+Views/Session/
+├── EditExerciseSheet.swift    (Edit exercise during session - name, type, muscles, equipment)
+├── EditSetGroupSheet.swift    (Edit set group configuration)
+└── AddExerciseSheet.swift     (Add exercise to module sheet)
+```
+
+### ActiveSessionView.swift Partial Split
+Extracted key components (~1,874 → ~1,400 lines):
+```
+Views/Session/
+├── SessionHeaderView.swift      (Header with progress ring)
+├── RestTimerBar.swift           (Inline rest timer display)
+├── SessionCompleteOverlay.swift (Workout complete animation)
+├── PreviousPerformanceSection.swift (Previous workout data display)
+└── SetListSection.swift         (All sets display)
+```
+
+### New View Modifiers (AppTheme.swift)
+```swift
+// Convenience modifiers for common patterns
+extension View {
+    func cardBackground(_ corners: AppCorners.Size = .medium, color: Color = AppColors.surfacePrimary) -> some View
+    func screenPadded(_ edges: Edge.Set = .horizontal) -> some View
+}
+```
+
+### Logger Integration
+Replaced `print()` statements with `Logger` utility in:
+- `HapticManager.swift` - Audio session and haptic feedback logging
+- `WidgetData.swift` - Widget data encoding/decoding errors
+
+## Bug Fixes (Jan 31, 2026)
+
+### Timer Sounds Not Playing Over Music
+**Problem:** Rest timer completion sounds wouldn't play when music was playing
+**Solution:** Enhanced audio session configuration in `HapticManager.swift`:
+```swift
+// Added .duckOthers to temporarily lower music volume
+try AVAudioSession.sharedInstance().setCategory(
+    .playback,
+    mode: .default,
+    options: [.mixWithOthers, .duckOthers]
+)
+
+// Ensure session is active before each sound
+private func ensureAudioSessionActive() {
+    try AVAudioSession.sharedInstance().setActive(true)
+}
+
+// Use system sound instead of alert sound
+AudioServicesPlaySystemSound(soundID)  // Not AudioServicesPlayAlertSound
+```
+
+### Sheet Layout Issues from Active Session
+**Problem:** Picker sheets (muscle group, equipment, add exercise) displayed with incorrect sizing
+**Solution:** Added proper presentation configuration:
+```swift
+// EditExerciseSheet.swift - Equipment picker
+.presentationDetents([.medium, .large])
+.presentationDragIndicator(.visible)
+
+// EditExerciseSheet.swift - Muscle group picker
+.presentationDetents([.large])
+
+// AddExerciseSheet.swift - Exercise picker
+.presentationDetents([.large])
+.presentationDragIndicator(.visible)
+
+// ImplementPickerView.swift - Added ScrollView wrapper
+ScrollView {
+    VStack(alignment: .leading, spacing: AppSpacing.md) { /* content */ }
+    .padding()
+}
+.background(AppColors.background)
+
+// MuscleGroupEnumPickerView - Added background
+.background(AppColors.background)
 ```
 
 ## Design System Implementation (Jan 28-29, 2025)
@@ -375,13 +471,23 @@ gym app/                          (90+ Swift files)
 │   └── ModuleViewModel.swift
 │
 ├── Views/                        (40+ files)
-│   ├── Session/                  (8 files - workout session UI)
-│   │   ├── ActiveSessionView.swift     (~1700 lines)
-│   │   ├── SessionComponents.swift     (~1200 lines)
+│   ├── Session/                  (17 files - workout session UI)
+│   │   ├── ActiveSessionView.swift     (~1400 lines, refactored)
+│   │   ├── SessionHeaderView.swift     (Header with progress ring)
+│   │   ├── RestTimerBar.swift          (Inline rest timer)
+│   │   ├── SessionCompleteOverlay.swift (Workout complete animation)
+│   │   ├── PreviousPerformanceSection.swift (Previous workout data)
+│   │   ├── SetListSection.swift        (All sets display)
+│   │   ├── SetRowView.swift            (Main set input row)
+│   │   ├── StrengthInputsView.swift    (Weight/reps inputs)
+│   │   ├── CardioInputsView.swift      (Duration/distance inputs)
+│   │   ├── TimeInputPickers.swift      (Time picker sheets)
+│   │   ├── EditExerciseSheet.swift     (Edit exercise during session)
+│   │   ├── EditSetGroupSheet.swift     (Edit set group config)
+│   │   ├── AddExerciseSheet.swift      (Add exercise to module)
 │   │   ├── EndSessionSheet.swift
 │   │   ├── WorkoutOverviewSheet.swift
 │   │   ├── RecentSetsSheet.swift
-│   │   ├── ExerciseModificationSheets.swift
 │   │   ├── IntervalTimerView.swift
 │   │   └── SessionModels.swift
 │   │
@@ -611,13 +717,14 @@ SessionExercise (Logged Data)
 
 ## Code Modularization Opportunities
 
-### High Priority (Large Files)
-1. **ActiveSessionView.swift (~1700 lines)** - Extract ExerciseCardView, SupersetBanner
-2. **HomeView.swift (~800 lines)** - Extract CalendarView, ScheduleWorkoutSheet
-3. **SessionComponents.swift (~1200 lines)** - Split input views by exercise type
+### Completed (Jan 31, 2026)
+- ✅ **SessionComponents.swift** - Split into SetRowView, StrengthInputsView, CardioInputsView, TimeInputPickers
+- ✅ **ExerciseModificationSheets.swift** - Split into EditExerciseSheet, EditSetGroupSheet, AddExerciseSheet
+- ✅ **ActiveSessionView.swift** - Extracted SessionHeaderView, RestTimerBar, SessionCompleteOverlay, PreviousPerformanceSection, SetListSection
 
-### Medium Priority
-4. **EndSessionSheet.swift (~636 lines)** - Extract ExerciseCard subview
+### Remaining Opportunities
+1. **HomeView.swift (~800 lines)** - Extract CalendarView, ScheduleWorkoutSheet
+2. **EndSessionSheet.swift (~636 lines)** - Extract ExerciseCard subview
 
 ## Development Phases
 
@@ -723,21 +830,34 @@ Logger.redactEmail(email)   // "ab***@example.com"
 - See `design docs/TYPOGRAPHY.md` for complete guide
 
 **UI Patterns:**
-- Sheets: `.presentationDetents([.medium])`
+- Sheets: `.presentationDetents([.medium])` or `.presentationDetents([.large])`
 - Exercise types have `.icon` property for SF Symbols
-- Cards use `.gradientCard()` modifier for consistent styling
+- Cards use `.gradientCard()` or `.cardBackground()` modifier for consistent styling
 - Buttons use `.buttonStyle(.bouncy)` for tactile feedback
+- Screen padding: `.screenPadded()` for consistent horizontal margins
+- Sheet backgrounds: Always include `.background(AppColors.background)` for proper dark mode
 
 ## Key Code Locations
 
 ### Session/Workout Flow
-- **Active session UI**: `ActiveSessionView.swift` (~1700 lines)
-- **Set input components**: `SessionComponents.swift` (~1200 lines) - SetRowView with exercise-type-specific inputs
+- **Active session UI**: `ActiveSessionView.swift` (~1400 lines, refactored)
+- **Session header**: `SessionHeaderView.swift` - Progress ring and workout info
+- **Rest timer display**: `RestTimerBar.swift` - Inline rest timer with skip button
+- **Session complete**: `SessionCompleteOverlay.swift` - Workout completion animation
+- **Previous performance**: `PreviousPerformanceSection.swift` - Last workout data display
+- **Set list**: `SetListSection.swift` - All sets display
+- **Set input row**: `SetRowView.swift` - Main input component dispatching to type-specific inputs
+- **Strength inputs**: `StrengthInputsView.swift` - Weight/reps input fields
+- **Cardio inputs**: `CardioInputsView.swift` - Duration/distance input fields
+- **Time pickers**: `TimeInputPickers.swift` - Time picker sheets, set indicators
 - **Session state management**: `SessionViewModel.swift` (35KB)
-- **Exercise editing during session**: `ExerciseModificationSheets.swift` - EditExerciseSheet, EditSetGroupSheet
+- **Exercise editing**: `EditExerciseSheet.swift` - Edit exercise during session
+- **Set group editing**: `EditSetGroupSheet.swift` - Edit set group configuration
+- **Add exercise**: `AddExerciseSheet.swift` - Add exercise to module
 - **Last session data lookup**: `SessionViewModel.swift:896` - `getLastSessionData()`
 - **Interval timer**: `IntervalTimerView.swift` - full-screen timer with pause/skip
 - **Session end flow**: `EndSessionSheet.swift` - workout summary, feeling rating, progression notes
+- **Haptic/sound feedback**: `HapticManager.swift` - Timer sounds with music ducking
 
 ### Data Models
 - **Session data structure**: `Session.swift`, `SessionExercise.swift`, `CompletedSetGroup.swift`, `SetData.swift`
@@ -873,4 +993,28 @@ func getCurrentWorkoutName(for scheduled: ScheduledWorkout) -> String {
     }
     return workout.name  // Current name
 }
+```
+
+### Audio Playback Over Music
+**Pattern:** Play notification sounds while music is playing
+```swift
+import AVFoundation
+import AudioToolbox
+
+// Configure audio session to duck (lower volume of) other audio
+try AVAudioSession.sharedInstance().setCategory(
+    .playback,
+    mode: .default,
+    options: [.mixWithOthers, .duckOthers]
+)
+try AVAudioSession.sharedInstance().setActive(true)
+
+// Ensure session is active before each sound play
+func ensureAudioSessionActive() {
+    try? AVAudioSession.sharedInstance().setActive(true)
+}
+
+// Play sound using system sound (not alert sound)
+ensureAudioSessionActive()
+AudioServicesPlaySystemSound(soundID)  // Works even when ringer is silent
 ```

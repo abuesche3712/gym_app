@@ -20,37 +20,41 @@ struct ImplementPickerView: View {
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            // Header
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text(title)
-                    .headline()
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                // Header
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text(title)
+                        .headline()
 
-                if let subtitle = subtitle {
-                    Text(subtitle)
-                        .caption()
+                    if let subtitle = subtitle {
+                        Text(subtitle)
+                            .caption()
+                    }
+                }
+
+                // Grid of implements
+                LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
+                    ForEach(libraryService.implements, id: \.id) { implement in
+                        ImplementChip(
+                            name: implement.name,
+                            isSelected: selectedIds.contains(implement.id),
+                            action: {
+                                toggleSelection(implement.id)
+                            }
+                        )
+                    }
+                }
+
+                // Selected count
+                if !selectedIds.isEmpty {
+                    Text("\(selectedIds.count) selected")
+                        .caption(color: AppColors.dominant)
                 }
             }
-
-            // Grid of implements
-            LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
-                ForEach(libraryService.implements, id: \.id) { implement in
-                    ImplementChip(
-                        name: implement.name,
-                        isSelected: selectedIds.contains(implement.id),
-                        action: {
-                            toggleSelection(implement.id)
-                        }
-                    )
-                }
-            }
-
-            // Selected count
-            if !selectedIds.isEmpty {
-                Text("\(selectedIds.count) selected")
-                    .caption(color: AppColors.dominant)
-            }
+            .padding()
         }
+        .background(AppColors.background)
     }
 
     private func toggleSelection(_ id: UUID) {

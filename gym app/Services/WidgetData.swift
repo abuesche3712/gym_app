@@ -49,22 +49,16 @@ enum WidgetDataService {
     /// Write today's workout data for the widget
     static func writeTodayWorkout(_ data: TodayWorkoutData) {
         guard let defaults = sharedDefaults else {
-            #if DEBUG
-            print("[Widget] Failed to access App Group UserDefaults")
-            #endif
+            Logger.warning("Failed to access App Group UserDefaults")
             return
         }
 
         do {
             let encoded = try JSONEncoder().encode(data)
             defaults.set(encoded, forKey: widgetDataKey)
-            #if DEBUG
-            print("[Widget] Data updated: \(data.workoutName ?? "Rest/None")")
-            #endif
+            Logger.debug("Widget data updated: \(data.workoutName ?? "Rest/None")")
         } catch {
-            #if DEBUG
-            print("[Widget] Failed to encode data: \(error)")
-            #endif
+            Logger.error(error, context: "Widget failed to encode data")
         }
     }
 

@@ -19,6 +19,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
     var completedSetGroups: [CompletedSetGroup]
     var notes: String?
     var isBodyweight: Bool // True for bodyweight exercises (pull-ups, dips) - shows "BW + X" format
+    var tracksAddedWeight: Bool // For bodyweight exercises - whether to show added weight input
     var recoveryActivityType: RecoveryActivityType? // For recovery exercises
 
     // Equipment - determines input fields (e.g., band shows color instead of weight)
@@ -32,6 +33,9 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
     var isSubstitution: Bool
     var originalExerciseName: String? // Original name if substituted
     var isAdHoc: Bool // True if added during session
+
+    /// The original ExerciseInstance ID this came from (nil if added mid-session)
+    var sourceExerciseInstanceId: UUID?
 
     // Progression tracking
     var progressionRecommendation: ProgressionRecommendation? // User's recommendation for next session
@@ -57,6 +61,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         completedSetGroups: [CompletedSetGroup] = [],
         notes: String? = nil,
         isBodyweight: Bool = false,
+        tracksAddedWeight: Bool = true,
         recoveryActivityType: RecoveryActivityType? = nil,
         implementIds: Set<UUID> = [],
         primaryMuscles: [MuscleGroup] = [],
@@ -64,6 +69,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         isSubstitution: Bool = false,
         originalExerciseName: String? = nil,
         isAdHoc: Bool = false,
+        sourceExerciseInstanceId: UUID? = nil,
         progressionRecommendation: ProgressionRecommendation? = nil,
         progressionSuggestion: ProgressionSuggestion? = nil,
         sessionId: UUID? = nil,
@@ -84,6 +90,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         self.completedSetGroups = completedSetGroups
         self.notes = notes
         self.isBodyweight = isBodyweight
+        self.tracksAddedWeight = tracksAddedWeight
         self.recoveryActivityType = recoveryActivityType
         self.implementIds = implementIds
         self.primaryMuscles = primaryMuscles
@@ -91,6 +98,7 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         self.isSubstitution = isSubstitution
         self.originalExerciseName = originalExerciseName
         self.isAdHoc = isAdHoc
+        self.sourceExerciseInstanceId = sourceExerciseInstanceId
         self.progressionRecommendation = progressionRecommendation
         self.progressionSuggestion = progressionSuggestion
         self.sessionId = sessionId
@@ -116,11 +124,13 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
         distanceUnit = try container.decodeIfPresent(DistanceUnit.self, forKey: .distanceUnit) ?? .meters
         completedSetGroups = try container.decodeIfPresent([CompletedSetGroup].self, forKey: .completedSetGroups) ?? []
         isBodyweight = try container.decodeIfPresent(Bool.self, forKey: .isBodyweight) ?? false
+        tracksAddedWeight = try container.decodeIfPresent(Bool.self, forKey: .tracksAddedWeight) ?? true
         implementIds = try container.decodeIfPresent(Set<UUID>.self, forKey: .implementIds) ?? []
         primaryMuscles = try container.decodeIfPresent([MuscleGroup].self, forKey: .primaryMuscles) ?? []
         secondaryMuscles = try container.decodeIfPresent([MuscleGroup].self, forKey: .secondaryMuscles) ?? []
         isSubstitution = try container.decodeIfPresent(Bool.self, forKey: .isSubstitution) ?? false
         isAdHoc = try container.decodeIfPresent(Bool.self, forKey: .isAdHoc) ?? false
+        sourceExerciseInstanceId = try container.decodeIfPresent(UUID.self, forKey: .sourceExerciseInstanceId)
 
         // Truly optional
         supersetGroupId = try container.decodeIfPresent(UUID.self, forKey: .supersetGroupId)
@@ -141,9 +151,9 @@ struct SessionExercise: Identifiable, Codable, Hashable, ExerciseMetrics {
 
     private enum CodingKeys: String, CodingKey {
         case id, exerciseId, exerciseName, exerciseType, cardioMetric, mobilityTracking, distanceUnit
-        case supersetGroupId, completedSetGroups, notes, isBodyweight, recoveryActivityType, implementIds
+        case supersetGroupId, completedSetGroups, notes, isBodyweight, tracksAddedWeight, recoveryActivityType, implementIds
         case primaryMuscles, secondaryMuscles
-        case isSubstitution, originalExerciseName, isAdHoc, progressionRecommendation, progressionSuggestion
+        case isSubstitution, originalExerciseName, isAdHoc, sourceExerciseInstanceId, progressionRecommendation, progressionSuggestion
         case sessionId, moduleId, moduleName, workoutId, workoutName, date
     }
 

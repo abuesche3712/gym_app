@@ -24,6 +24,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
     var distanceUnit: DistanceUnit
     var mobilityTracking: MobilityTracking
     var isBodyweight: Bool
+    var tracksAddedWeight: Bool  // For bodyweight exercises - whether to show added weight input
     var isUnilateral: Bool  // If true, sets are done left then right (single-arm/leg exercises)
     var recoveryActivityType: RecoveryActivityType?
     var primaryMuscles: [MuscleGroup]
@@ -48,6 +49,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         distanceUnit: DistanceUnit = .meters,
         mobilityTracking: MobilityTracking = .repsOnly,
         isBodyweight: Bool = false,
+        tracksAddedWeight: Bool = true,
         isUnilateral: Bool = false,
         recoveryActivityType: RecoveryActivityType? = nil,
         primaryMuscles: [MuscleGroup] = [],
@@ -68,6 +70,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         self.distanceUnit = distanceUnit
         self.mobilityTracking = mobilityTracking
         self.isBodyweight = isBodyweight
+        self.tracksAddedWeight = tracksAddedWeight
         self.isUnilateral = isUnilateral
         self.recoveryActivityType = recoveryActivityType
         self.primaryMuscles = primaryMuscles
@@ -138,6 +141,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         }
 
         isBodyweight = try container.decodeIfPresent(Bool.self, forKey: .isBodyweight) ?? false
+        tracksAddedWeight = try container.decodeIfPresent(Bool.self, forKey: .tracksAddedWeight) ?? true
         recoveryActivityType = try container.decodeIfPresent(RecoveryActivityType.self, forKey: .recoveryActivityType)
         primaryMuscles = try container.decodeIfPresent([MuscleGroup].self, forKey: .primaryMuscles) ?? []
         secondaryMuscles = try container.decodeIfPresent([MuscleGroup].self, forKey: .secondaryMuscles) ?? []
@@ -179,7 +183,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
     enum CodingKeys: String, CodingKey {
         case schemaVersion
         case id, templateId, name, exerciseType, cardioMetric, distanceUnit, mobilityTracking
-        case isBodyweight, isUnilateral, recoveryActivityType, primaryMuscles, secondaryMuscles, implementIds
+        case isBodyweight, tracksAddedWeight, isUnilateral, recoveryActivityType, primaryMuscles, secondaryMuscles, implementIds
         case setGroups, supersetGroupId, order, notes
         case createdAt, updatedAt
         // Legacy keys for migration
@@ -199,6 +203,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
         try container.encode(distanceUnit, forKey: .distanceUnit)
         try container.encode(mobilityTracking, forKey: .mobilityTracking)
         try container.encode(isBodyweight, forKey: .isBodyweight)
+        try container.encode(tracksAddedWeight, forKey: .tracksAddedWeight)
         try container.encode(isUnilateral, forKey: .isUnilateral)
         try container.encodeIfPresent(recoveryActivityType, forKey: .recoveryActivityType)
         try container.encode(primaryMuscles, forKey: .primaryMuscles)
@@ -240,6 +245,7 @@ struct ExerciseInstance: Identifiable, Codable, Hashable {
             distanceUnit: template.distanceUnit,
             mobilityTracking: template.mobilityTracking,
             isBodyweight: template.isBodyweight,
+            tracksAddedWeight: true,  // Default to showing added weight for bodyweight exercises
             isUnilateral: template.isUnilateral,  // Copy from template
             recoveryActivityType: template.recoveryActivityType,
             primaryMuscles: template.primaryMuscles,

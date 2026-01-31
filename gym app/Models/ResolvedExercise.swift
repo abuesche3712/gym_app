@@ -26,6 +26,7 @@ struct ResolvedExercise: Identifiable, Hashable, ExerciseMetrics {
     var mobilityTracking: MobilityTracking { instance.mobilityTracking }
     var distanceUnit: DistanceUnit { instance.distanceUnit }
     var isBodyweight: Bool { instance.isBodyweight }
+    var tracksAddedWeight: Bool { instance.tracksAddedWeight }
     var recoveryActivityType: RecoveryActivityType? { instance.recoveryActivityType }
 
     // Dynamic property - prefer template (source of truth) over instance snapshot

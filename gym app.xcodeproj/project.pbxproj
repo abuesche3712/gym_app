@@ -14,13 +14,23 @@
 		3065561983B445E59E349151 /* gym app/Views/Library/MuscleGroupPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD6911EEDEB4BB9B215AFBD /* gym app/Views/Library/MuscleGroupPickerView.swift */; };
 		39DB3468001A45CEA0E01B1F /* EndSessionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C0101650AF44AEA8A6F8A1 /* EndSessionSheet.swift */; };
 		1C651C6390424CC3A0E14293 /* WorkoutSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96AA7ABE49544DD3B54CEF8B /* WorkoutSummaryView.swift */; };
-		7C388C9A41484932BBDDF97C /* SessionComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 831F4BF6DCA940DF8F46BD55 /* SessionComponents.swift */; };
+		SESSHDR02BUILD002 /* SessionHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SESSHDR01FILE001 /* SessionHeaderView.swift */; };
+		RSTBAR002BUILD002 /* RestTimerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = RSTBAR001FILE001 /* RestTimerBar.swift */; };
+		SESCOMP2BUILD002 /* SessionCompleteOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = SESCOMP1FILE001 /* SessionCompleteOverlay.swift */; };
+		PREVPER2BUILD002 /* PreviousPerformanceSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = PREVPER1FILE001 /* PreviousPerformanceSection.swift */; };
+		SETLIST2BUILD002 /* SetListSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = SETLIST1FILE001 /* SetListSection.swift */; };
+		SETROW02BUILD002 /* SetRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SETROW01FILE001 /* SetRowView.swift */; };
+		STRINP02BUILD002 /* StrengthInputsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = STRINP01FILE001 /* StrengthInputsView.swift */; };
+		CARDIN02BUILD002 /* CardioInputsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CARDIN01FILE001 /* CardioInputsView.swift */; };
+		TIMPIK02BUILD002 /* TimeInputPickers.swift in Sources */ = {isa = PBXBuildFile; fileRef = TIMPIK01FILE001 /* TimeInputPickers.swift */; };
 		7E3A26543EA449B5824C3A63 /* WorkoutOverviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */; };
 		809C1B452DCD4B8AB156DBCE /* RecentSetsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41BC86B3BCEE40829E96B24B /* RecentSetsSheet.swift */; };
 		827E4547CA7D42C1BCD2A93B /* SessionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7892D49050054B958D767C66 /* SessionModels.swift */; };
 		8D91368656994D20964FF8D1 /* gym app/Services/LibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F384AAD9014FF9A582680C /* gym app/Services/LibraryService.swift */; };
 		9245BCBAC81C4E3C9670553C /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C36DDB57BAA44FEF866BE090 /* AuthService.swift */; };
-		9A12E7530EDF4ADE85E5FEA3 /* ExerciseModificationSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA5B70D29F142CF8BE80E2D /* ExerciseModificationSheets.swift */; };
+		EDTEXR02BUILD002 /* EditExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDTEXR01FILE001 /* EditExerciseSheet.swift */; };
+		EDTSET02BUILD002 /* EditSetGroupSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDTSET01FILE001 /* EditSetGroupSheet.swift */; };
+		ADDEXR02BUILD002 /* AddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDEXR01FILE001 /* AddExerciseSheet.swift */; };
 		A0B1C2D3E4F5067890123457 /* CustomExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */; };
 		AB8059E04FED4CAC94B1D5DB /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D9B5EAEA83B489586ACDC15 /* SignInView.swift */; };
 		AC0ED3886796C115F34301E5 /* EditSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E042C6DBCCF889BD355F6AC1 /* EditSessionView.swift */; };
@@ -48,6 +58,9 @@
 		COMPSTG02BUILD002 /* CompletedSetGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = COMPSTG01FILE001 /* CompletedSetGroup.swift */; };
 		SESSEXR02BUILD002 /* SessionExercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = SESSEXR01FILE001 /* SessionExercise.swift */; };
 		COMPMOD02BUILD002 /* CompletedModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = COMPMOD01FILE001 /* CompletedModule.swift */; };
+		STRCHG02BUILD002 /* StructuralChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = STRCHG01FILE001 /* StructuralChange.swift */; };
+		WKDIFF02BUILD002 /* WorkoutDiffService.swift in Sources */ = {isa = PBXBuildFile; fileRef = WKDIFF01FILE001 /* WorkoutDiffService.swift */; };
+		RVWCHG02BUILD002 /* ReviewChangesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RVWCHG01FILE001 /* ReviewChangesView.swift */; };
 		35C7751756E7434DA4FF3882 /* CompletedProgram.swift in Sources */ = {isa = PBXBuildFile; fileRef = 387043A6FC4F49ABB2403548 /* CompletedProgram.swift */; };
 		B63EBF172F15E73700D8C22D /* SetGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEEF2F15E73700D8C22D /* SetGroup.swift */; };
 		B63EBF182F15E73700D8C22D /* Workout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF02F15E73700D8C22D /* Workout.swift */; };
@@ -179,11 +192,21 @@
 		196485332F25516E00078F82 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		197B16182F2569D8006135E4 /* BackgroundSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundSessionManager.swift; sourceTree = "<group>"; };
 		41BC86B3BCEE40829E96B24B /* RecentSetsSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecentSetsSheet.swift; sourceTree = "<group>"; };
-		4EA5B70D29F142CF8BE80E2D /* ExerciseModificationSheets.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseModificationSheets.swift; sourceTree = "<group>"; };
+		EDTEXR01FILE001 /* EditExerciseSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EditExerciseSheet.swift; sourceTree = "<group>"; };
+		EDTSET01FILE001 /* EditSetGroupSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EditSetGroupSheet.swift; sourceTree = "<group>"; };
+		ADDEXR01FILE001 /* AddExerciseSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddExerciseSheet.swift; sourceTree = "<group>"; };
 		67FA42E2E5A4400DBB4D6761 /* gym app/Views/Library/ImplementPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Views/Library/ImplementPickerView.swift"; sourceTree = SOURCE_ROOT; };
 		7892D49050054B958D767C66 /* SessionModels.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionModels.swift; sourceTree = "<group>"; };
 		819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WorkoutOverviewSheet.swift; sourceTree = "<group>"; };
-		831F4BF6DCA940DF8F46BD55 /* SessionComponents.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionComponents.swift; sourceTree = "<group>"; };
+		SESSHDR01FILE001 /* SessionHeaderView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionHeaderView.swift; sourceTree = "<group>"; };
+		RSTBAR001FILE001 /* RestTimerBar.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RestTimerBar.swift; sourceTree = "<group>"; };
+		SESCOMP1FILE001 /* SessionCompleteOverlay.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionCompleteOverlay.swift; sourceTree = "<group>"; };
+		PREVPER1FILE001 /* PreviousPerformanceSection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreviousPerformanceSection.swift; sourceTree = "<group>"; };
+		SETLIST1FILE001 /* SetListSection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetListSection.swift; sourceTree = "<group>"; };
+		SETROW01FILE001 /* SetRowView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetRowView.swift; sourceTree = "<group>"; };
+		STRINP01FILE001 /* StrengthInputsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StrengthInputsView.swift; sourceTree = "<group>"; };
+		CARDIN01FILE001 /* CardioInputsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CardioInputsView.swift; sourceTree = "<group>"; };
+		TIMPIK01FILE001 /* TimeInputPickers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeInputPickers.swift; sourceTree = "<group>"; };
 		8D9B5EAEA83B489586ACDC15 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CustomExerciseLibrary.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F647890123456A /* IntervalTimerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IntervalTimerView.swift; sourceTree = "<group>"; };
@@ -214,6 +237,9 @@
 		COMPSTG01FILE001 /* CompletedSetGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedSetGroup.swift; sourceTree = "<group>"; };
 		SESSEXR01FILE001 /* SessionExercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionExercise.swift; sourceTree = "<group>"; };
 		COMPMOD01FILE001 /* CompletedModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedModule.swift; sourceTree = "<group>"; };
+		STRCHG01FILE001 /* StructuralChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructuralChange.swift; sourceTree = "<group>"; };
+		WKDIFF01FILE001 /* WorkoutDiffService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDiffService.swift; sourceTree = "<group>"; };
+		RVWCHG01FILE001 /* ReviewChangesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewChangesView.swift; sourceTree = "<group>"; };
 		387043A6FC4F49ABB2403548 /* CompletedProgram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedProgram.swift; sourceTree = "<group>"; };
 		B63EBEEF2F15E73700D8C22D /* SetGroup.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetGroup.swift; sourceTree = "<group>"; };
 		B63EBEF02F15E73700D8C22D /* Workout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Workout.swift; sourceTree = "<group>"; };
@@ -466,6 +492,7 @@
 				COMPSTG01FILE001 /* CompletedSetGroup.swift */,
 				SESSEXR01FILE001 /* SessionExercise.swift */,
 				COMPMOD01FILE001 /* CompletedModule.swift */,
+				STRCHG01FILE001 /* StructuralChange.swift */,
 				387043A6FC4F49ABB2403548 /* CompletedProgram.swift */,
 				B6SCHED00DE514440E0A348 /* ScheduledWorkout.swift */,
 				B63EBEEF2F15E73700D8C22D /* SetGroup.swift */,
@@ -506,13 +533,24 @@
 			children = (
 				B63EBEFB2F15E73700D8C22D /* ActiveSessionView.swift */,
 				7892D49050054B958D767C66 /* SessionModels.swift */,
-				831F4BF6DCA940DF8F46BD55 /* SessionComponents.swift */,
+				SESSHDR01FILE001 /* SessionHeaderView.swift */,
+				RSTBAR001FILE001 /* RestTimerBar.swift */,
+				SESCOMP1FILE001 /* SessionCompleteOverlay.swift */,
+				PREVPER1FILE001 /* PreviousPerformanceSection.swift */,
+				SETLIST1FILE001 /* SetListSection.swift */,
+				SETROW01FILE001 /* SetRowView.swift */,
+				STRINP01FILE001 /* StrengthInputsView.swift */,
+				CARDIN01FILE001 /* CardioInputsView.swift */,
+				TIMPIK01FILE001 /* TimeInputPickers.swift */,
+				EDTEXR01FILE001 /* EditExerciseSheet.swift */,
+				EDTSET01FILE001 /* EditSetGroupSheet.swift */,
+				ADDEXR01FILE001 /* AddExerciseSheet.swift */,
 				A1B2C3D4E5F647890123456A /* IntervalTimerView.swift */,
 				C8C0101650AF44AEA8A6F8A1 /* EndSessionSheet.swift */,
 				96AA7ABE49544DD3B54CEF8B /* WorkoutSummaryView.swift */,
 				41BC86B3BCEE40829E96B24B /* RecentSetsSheet.swift */,
 				819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */,
-				4EA5B70D29F142CF8BE80E2D /* ExerciseModificationSheets.swift */,
+				RVWCHG01FILE001 /* ReviewChangesView.swift */,
 			);
 			path = Session;
 			sourceTree = "<group>";
@@ -598,6 +636,7 @@
 				SYNCLOG01FILE001 /* SyncLogger.swift */,
 				B63EBF0D2F15E73700D8C22D /* SyncManager.swift */,
 				WDGSVC01FILE001 /* WidgetData.swift */,
+				WKDIFF01FILE001 /* WorkoutDiffService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -900,6 +939,9 @@
 				COMPSTG02BUILD002 /* CompletedSetGroup.swift in Sources */,
 				SESSEXR02BUILD002 /* SessionExercise.swift in Sources */,
 				COMPMOD02BUILD002 /* CompletedModule.swift in Sources */,
+				STRCHG02BUILD002 /* StructuralChange.swift in Sources */,
+				WKDIFF02BUILD002 /* WorkoutDiffService.swift in Sources */,
+				RVWCHG02BUILD002 /* ReviewChangesView.swift in Sources */,
 				35C7751756E7434DA4FF3882 /* CompletedProgram.swift in Sources */,
 				B6SCHED010A526CF876534C /* ScheduledWorkout.swift in Sources */,
 				B63EBF232F15E73700D8C22D /* WorkoutFormView.swift in Sources */,
@@ -947,13 +989,23 @@
 				B63EBF182F15E73700D8C22D /* Workout.swift in Sources */,
 				B658B09F2F16903C00B2F84E /* Components.swift in Sources */,
 				827E4547CA7D42C1BCD2A93B /* SessionModels.swift in Sources */,
-				7C388C9A41484932BBDDF97C /* SessionComponents.swift in Sources */,
+				SESSHDR02BUILD002 /* SessionHeaderView.swift in Sources */,
+				RSTBAR002BUILD002 /* RestTimerBar.swift in Sources */,
+				SESCOMP2BUILD002 /* SessionCompleteOverlay.swift in Sources */,
+				PREVPER2BUILD002 /* PreviousPerformanceSection.swift in Sources */,
+				SETLIST2BUILD002 /* SetListSection.swift in Sources */,
+				SETROW02BUILD002 /* SetRowView.swift in Sources */,
+				STRINP02BUILD002 /* StrengthInputsView.swift in Sources */,
+				CARDIN02BUILD002 /* CardioInputsView.swift in Sources */,
+				TIMPIK02BUILD002 /* TimeInputPickers.swift in Sources */,
+				EDTEXR02BUILD002 /* EditExerciseSheet.swift in Sources */,
+				EDTSET02BUILD002 /* EditSetGroupSheet.swift in Sources */,
+				ADDEXR02BUILD002 /* AddExerciseSheet.swift in Sources */,
 				F9E8D7C6B5A443218765432B /* IntervalTimerView.swift in Sources */,
 				39DB3468001A45CEA0E01B1F /* EndSessionSheet.swift in Sources */,
 				1C651C6390424CC3A0E14293 /* WorkoutSummaryView.swift in Sources */,
 				809C1B452DCD4B8AB156DBCE /* RecentSetsSheet.swift in Sources */,
 				7E3A26543EA449B5824C3A63 /* WorkoutOverviewSheet.swift in Sources */,
-				9A12E7530EDF4ADE85E5FEA3 /* ExerciseModificationSheets.swift in Sources */,
 				8D91368656994D20964FF8D1 /* gym app/Services/LibraryService.swift in Sources */,
 				3065561983B445E59E349151 /* gym app/Views/Library/MuscleGroupPickerView.swift in Sources */,
 				00FCCDDAC9AD41A7AAD9E386 /* gym app/Views/Library/ImplementPickerView.swift in Sources */,

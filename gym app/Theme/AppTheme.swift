@@ -209,6 +209,40 @@ extension View {
     func formFieldStyle() -> some View {
         modifier(FormFieldModifier())
     }
+
+    /// Simple card background with rounded corners - for inline input fields and small cards
+    /// Usage: `.cardBackground()` or `.cardBackground(.large)` or `.cardBackground(.small, color: .surfaceSecondary)`
+    func cardBackground(
+        _ corners: AppCorners.Size = .medium,
+        color: Color = AppColors.surfacePrimary
+    ) -> some View {
+        self.background(
+            RoundedRectangle(cornerRadius: corners.value)
+                .fill(color)
+        )
+    }
+
+    /// Standard screen padding for consistent edge insets
+    /// Usage: `.screenPadded()` for horizontal only, `.screenPadded(.all)` for full padding
+    func screenPadded(_ edges: Edge.Set = .horizontal) -> some View {
+        self.padding(edges, AppSpacing.screenPadding)
+    }
+}
+
+// MARK: - Corner Size Helper
+
+extension AppCorners {
+    enum Size {
+        case small, medium, large
+
+        var value: CGFloat {
+            switch self {
+            case .small: return AppCorners.small
+            case .medium: return AppCorners.medium
+            case .large: return AppCorners.large
+            }
+        }
+    }
 }
 
 // MARK: - Form Field Modifier

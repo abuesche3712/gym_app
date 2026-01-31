@@ -37,6 +37,9 @@ class SessionViewModel: ObservableObject {
     @Published var currentSession: Session?
     @Published var isSessionActive = false
 
+    // Original module templates for structural change detection
+    private var originalModules: [Module] = []
+
     // Navigation state (published for UI binding)
     @Published private(set) var navigator: SessionNavigator?
 
@@ -241,6 +244,20 @@ class SessionViewModel: ObservableObject {
         let sessionId = UUID()
         let sessionDate = Date()
 
+        // Look up program info if this session is from a scheduled program workout
+        var programName: String? = nil
+        var programWeekNumber: Int? = nil
+        if let programId = scheduledWorkout?.programId,
+           let program = repository.getProgram(id: programId) {
+            programName = program.name
+            // Calculate week number from program start date
+            if let startDate = program.startDate {
+                let calendar = Calendar.current
+                let weeks = calendar.dateComponents([.weekOfYear], from: startDate, to: sessionDate).weekOfYear ?? 0
+                programWeekNumber = weeks + 1  // 1-indexed week number
+            }
+        }
+
         // Create sharing context for all nested entities
         let context = SessionSharingContext(
             sessionId: sessionId,
@@ -248,8 +265,8 @@ class SessionViewModel: ObservableObject {
             workoutName: workout.name,
             date: sessionDate,
             programId: scheduledWorkout?.programId,
-            programName: nil, // TODO: Look up program name if programId exists
-            programWeekNumber: nil // TODO: Calculate week number from program start date
+            programName: programName,
+            programWeekNumber: programWeekNumber
         )
 
         // Resolve exercises through ExerciseResolver and convert to session format
@@ -343,6 +360,9 @@ class SessionViewModel: ObservableObject {
         // Create navigator with the modules
         navigator = SessionNavigator(modules: completedModules)
 
+        // Store original modules for structural change detection at session end
+        originalModules = modules
+
         sessionStartTime = sessionDate
         isSessionActive = true
 
@@ -411,14 +431,17 @@ class SessionViewModel: ObservableObject {
         // Re-sync implementIds from current template if available (picks up library changes)
         let currentImplementIds: Set<UUID>
         let currentIsBodyweight: Bool
+        let currentTracksAddedWeight: Bool
         if let templateId = resolved.templateId,
            let currentTemplate = ExerciseResolver.shared.getTemplate(id: templateId) {
             currentImplementIds = currentTemplate.implementIds
             currentIsBodyweight = currentTemplate.isBodyweight
+            currentTracksAddedWeight = resolved.tracksAddedWeight  // Use instance value (configurable)
         } else {
             // Fall back to instance data if template not found
             currentImplementIds = resolved.implementIds
             currentIsBodyweight = resolved.isBodyweight
+            currentTracksAddedWeight = resolved.tracksAddedWeight
         }
 
         // Use the distance unit from the first set group if specified, otherwise fall back to exercise default
@@ -507,10 +530,12 @@ class SessionViewModel: ObservableObject {
                 )
             },
             isBodyweight: currentIsBodyweight,
+            tracksAddedWeight: currentTracksAddedWeight,
             recoveryActivityType: resolved.recoveryActivityType,
             implementIds: currentImplementIds,
             primaryMuscles: resolved.primaryMuscles,
             secondaryMuscles: resolved.secondaryMuscles,
+            sourceExerciseInstanceId: resolved.instance.id,  // Track source for structural change detection
             sessionId: context.sessionContext.sessionId,
             moduleId: context.moduleId,
             moduleName: context.moduleName,
@@ -539,6 +564,7 @@ class SessionViewModel: ObservableObject {
 
         currentSession = nil
         navigator = nil
+        originalModules = []
         isSessionActive = false
 
         // Update widget to show completed status
@@ -555,7 +581,35 @@ class SessionViewModel: ObservableObject {
 
         currentSession = nil
         navigator = nil
+        originalModules = []
         isSessionActive = false
+    }
+
+    // MARK: - Structural Change Detection
+
+    /// Detect structural changes made during this session compared to original templates
+    func detectStructuralChanges() -> [StructuralChange] {
+        guard let session = currentSession else { return [] }
+        return WorkoutDiffService.shared.detectChanges(
+            session: session,
+            originalModules: originalModules
+        )
+    }
+
+    /// Commit selected structural changes back to module templates
+    func commitStructuralChanges(_ selectedChanges: [StructuralChange]) {
+        guard !selectedChanges.isEmpty else { return }
+
+        // Get current modules from repository
+        let moduleIds = Set(selectedChanges.map { $0.moduleId })
+        let modules = moduleIds.compactMap { repository.getModule(id: $0) }
+
+        // Apply changes
+        WorkoutDiffService.shared.commitChanges(
+            selectedChanges,
+            to: modules,
+            repository: repository
+        )
     }
 
     // MARK: - Set Logging
