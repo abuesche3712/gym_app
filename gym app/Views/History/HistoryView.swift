@@ -14,6 +14,7 @@ struct HistoryView: View {
     @State private var selectedFilter: HistoryFilter = .all
     @State private var sessionToDelete: Session?
     @State private var showingDeleteConfirmation = false
+    @State private var sessionToShare: Session?
     @State private var animateIn = false
 
     enum HistoryFilter: String, CaseIterable {
@@ -151,6 +152,17 @@ struct HistoryView: View {
                     animateIn = true
                 }
             }
+            .sheet(item: $sessionToShare) { session in
+                ShareWithFriendSheet(content: session) { conversationWithProfile in
+                    let chatViewModel = ChatViewModel(
+                        conversation: conversationWithProfile.conversation,
+                        otherParticipant: conversationWithProfile.otherParticipant,
+                        otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+                    )
+                    let content = try session.createMessageContent()
+                    try await chatViewModel.sendSharedContent(content)
+                }
+            }
         }
     }
 
@@ -286,6 +298,12 @@ struct HistoryView: View {
                             }
                             .buttonStyle(.plain)
                             .contextMenu {
+                                Button {
+                                    sessionToShare = session
+                                } label: {
+                                    Label("Share with Friend", systemImage: "paperplane")
+                                }
+
                                 Button(role: .destructive) {
                                     sessionToDelete = session
                                     showingDeleteConfirmation = true

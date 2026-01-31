@@ -12,6 +12,14 @@ struct ChatView: View {
     @State private var messageText = ""
     @FocusState private var isInputFocused: Bool
 
+    // Import state
+    @State private var selectedMessageForImport: Message?
+    @State private var showingImportConfirmation = false
+    @State private var showingImportConflicts = false
+    @State private var importConflicts: [ImportConflict] = []
+    @State private var importResult: ImportResult?
+    @State private var showingImportResult = false
+
     init(conversation: Conversation, otherParticipant: UserProfile, otherParticipantFirebaseId: String) {
         _viewModel = StateObject(wrappedValue: ChatViewModel(
             conversation: conversation,
@@ -41,6 +49,33 @@ struct ChatView: View {
         .onDisappear {
             viewModel.stopListening()
         }
+        .sheet(isPresented: $showingImportConflicts) {
+            if let message = selectedMessageForImport {
+                ImportConflictSheet(
+                    conflicts: importConflicts,
+                    contentName: message.content.previewText,
+                    onConfirm: { options in
+                        let result = viewModel.importContent(from: message, options: options)
+                        importResult = result
+                        showingImportConflicts = false
+                        showingImportResult = true
+                    },
+                    onCancel: {
+                        showingImportConflicts = false
+                        selectedMessageForImport = nil
+                    }
+                )
+            }
+        }
+        .alert("Import Complete", isPresented: $showingImportResult) {
+            Button("OK") {
+                selectedMessageForImport = nil
+            }
+        } message: {
+            if let result = importResult {
+                Text(result.message)
+            }
+        }
     }
 
     // MARK: - Messages Scroll View
@@ -53,7 +88,10 @@ struct ChatView: View {
                         MessageBubble(
                             message: message,
                             isFromCurrentUser: message.senderId == viewModel.currentUserId,
-                            otherUserProfile: viewModel.otherParticipant
+                            otherUserProfile: viewModel.otherParticipant,
+                            onImport: message.content.isImportable && message.senderId != viewModel.currentUserId ? {
+                                handleImport(message: message)
+                            } : nil
                         )
                         .id(message.id)
                     }
@@ -138,6 +176,24 @@ struct ChatView: View {
             }
         }
     }
+
+    private func handleImport(message: Message) {
+        selectedMessageForImport = message
+
+        // Check for conflicts
+        let conflicts = viewModel.detectConflicts(for: message)
+
+        if conflicts.isEmpty {
+            // No conflicts, import directly
+            let result = viewModel.importContent(from: message)
+            importResult = result
+            showingImportResult = true
+        } else {
+            // Show conflict resolution sheet
+            importConflicts = conflicts
+            showingImportConflicts = true
+        }
+    }
 }
 
 // MARK: - Message Bubble
@@ -146,6 +202,7 @@ struct MessageBubble: View {
     let message: Message
     let isFromCurrentUser: Bool
     let otherUserProfile: UserProfile
+    var onImport: (() -> Void)?
 
     var body: some View {
         HStack(alignment: .bottom, spacing: AppSpacing.xs) {
@@ -158,11 +215,19 @@ struct MessageBubble: View {
 
             VStack(alignment: isFromCurrentUser ? .trailing : .leading, spacing: 2) {
                 // Message content
-                contentView
-                    .padding(.horizontal, AppSpacing.md)
-                    .padding(.vertical, AppSpacing.sm)
-                    .background(bubbleBackground)
-                    .foregroundColor(isFromCurrentUser ? .white : AppColors.textPrimary)
+                if message.content.isSharedContent {
+                    SharedContentCard(
+                        content: message.content,
+                        isFromCurrentUser: isFromCurrentUser,
+                        onImport: onImport
+                    )
+                } else {
+                    contentView
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.sm)
+                        .background(bubbleBackground)
+                        .foregroundColor(isFromCurrentUser ? .white : AppColors.textPrimary)
+                }
 
                 // Timestamp
                 Text(message.createdAt.messageTimeString)

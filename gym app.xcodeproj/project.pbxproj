@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		SHRBND02BUILD002 /* ShareBundles.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRBND01FILE001 /* ShareBundles.swift */; };
+		IMPCON02BUILD002 /* ImportConflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMPCON01FILE001 /* ImportConflict.swift */; };
+		SHRSER02BUILD002 /* SharingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRSER01FILE001 /* SharingService.swift */; };
+		SHRFRN02BUILD002 /* ShareWithFriendSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRFRN01FILE001 /* ShareWithFriendSheet.swift */; };
+		SHRCRD02BUILD002 /* SharedContentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRCRD01FILE001 /* SharedContentCard.swift */; };
+		IMPCSHT02BUILD002 /* ImportConflictSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMPCSHT01FILE001 /* ImportConflictSheet.swift */; };
 		00FCCDDAC9AD41A7AAD9E386 /* gym app/Views/Library/ImplementPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67FA42E2E5A4400DBB4D6761 /* gym app/Views/Library/ImplementPickerView.swift */; };
 		0DE55B310BEE4A628944C240 /* gym app/Views/Library/LibraryExerciseEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05D2B6AD67E44647BABA141E /* gym app/Views/Library/LibraryExerciseEditView.swift */; };
 		196485342F25516E00078F82 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 196485332F25516E00078F82 /* GoogleService-Info.plist */; };
@@ -207,6 +213,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		SHRBND01FILE001 /* ShareBundles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShareBundles.swift; path = "gym app/Models/ShareBundles.swift"; sourceTree = "<group>"; };
+		IMPCON01FILE001 /* ImportConflict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ImportConflict.swift; path = "gym app/Models/ImportConflict.swift"; sourceTree = "<group>"; };
+		SHRSER01FILE001 /* SharingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SharingService.swift; path = "gym app/Services/SharingService.swift"; sourceTree = "<group>"; };
+		SHRFRN01FILE001 /* ShareWithFriendSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShareWithFriendSheet.swift; path = "gym app/Views/Social/ShareWithFriendSheet.swift"; sourceTree = "<group>"; };
+		SHRCRD01FILE001 /* SharedContentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SharedContentCard.swift; path = "gym app/Views/Social/SharedContentCard.swift"; sourceTree = "<group>"; };
+		IMPCSHT01FILE001 /* ImportConflictSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ImportConflictSheet.swift; path = "gym app/Views/Social/ImportConflictSheet.swift"; sourceTree = "<group>"; };
 		05D2B6AD67E44647BABA141E /* gym app/Views/Library/LibraryExerciseEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Views/Library/LibraryExerciseEditView.swift"; sourceTree = SOURCE_ROOT; };
 		09F384AAD9014FF9A582680C /* gym app/Services/LibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Services/LibraryService.swift"; sourceTree = SOURCE_ROOT; };
 		196485332F25516E00078F82 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -993,6 +1005,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				SHRBND02BUILD002 /* ShareBundles.swift in Sources */,
+				IMPCON02BUILD002 /* ImportConflict.swift in Sources */,
+				SHRSER02BUILD002 /* SharingService.swift in Sources */,
+				SHRFRN02BUILD002 /* ShareWithFriendSheet.swift in Sources */,
+				SHRCRD02BUILD002 /* SharedContentCard.swift in Sources */,
+				IMPCSHT02BUILD002 /* ImportConflictSheet.swift in Sources */,
 				B63EBF212F15E73700D8C22D /* SettingsView.swift in Sources */,
 				B6EXERC022F15E73700D8C22D /* ExerciseLibraryView.swift in Sources */,
 				B63EBF1D2F15E73700D8C22D /* ModuleDetailView.swift in Sources */,
@@ -1143,8 +1161,7 @@
 		B610AC0B2F15B4DE008B2C15 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
-			files = (
-				B610AC142F15B4DE008B2C15 /* gym_appTests.swift in Sources */,
+			files = (				B610AC142F15B4DE008B2C15 /* gym_appTests.swift in Sources */,
 				SSNVTST02BUILD002 /* SessionNavigatorTests.swift in Sources */,
 				EXINSTST02BUILD /* ExerciseInstanceTests.swift in Sources */,
 				DATAREPO02BUILD01 /* DataRepositoryTests.swift in Sources */,
@@ -1155,6 +1172,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				SHRBND02BUILD002 /* ShareBundles.swift in Sources */,
+				IMPCON02BUILD002 /* ImportConflict.swift in Sources */,
+				SHRSER02BUILD002 /* SharingService.swift in Sources */,
+				SHRFRN02BUILD002 /* ShareWithFriendSheet.swift in Sources */,
+				SHRCRD02BUILD002 /* SharedContentCard.swift in Sources */,
+				IMPCSHT02BUILD002 /* ImportConflictSheet.swift in Sources */,
 				B610AC202F15B4DF008B2C15 /* gym_appUITestsLaunchTests.swift in Sources */,
 				B610AC1E2F15B4DF008B2C15 /* gym_appUITests.swift in Sources */,
 			);
@@ -1164,7 +1187,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
+							);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */

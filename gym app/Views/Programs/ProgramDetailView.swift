@@ -20,6 +20,7 @@ struct ProgramDetailView: View {
     @State private var showingEditSheet = false
     @State private var showingProgressionConfig = false
     @State private var selectedDayOfWeek: Int?
+    @State private var showingShareSheet = false
 
     private var currentProgram: Program {
         programViewModel.getProgram(id: program.id) ?? program
@@ -53,6 +54,12 @@ struct ProgramDetailView: View {
                         showingEditSheet = true
                     } label: {
                         Label("Edit Details", systemImage: "pencil")
+                    }
+
+                    Button {
+                        showingShareSheet = true
+                    } label: {
+                        Label("Share with Friend", systemImage: "paperplane")
                     }
 
                     Divider()
@@ -100,6 +107,17 @@ struct ProgramDetailView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This will permanently delete the program. Scheduled workouts will be kept.")
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            ShareWithFriendSheet(content: currentProgram) { conversationWithProfile in
+                let chatViewModel = ChatViewModel(
+                    conversation: conversationWithProfile.conversation,
+                    otherParticipant: conversationWithProfile.otherParticipant,
+                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+                )
+                let content = try currentProgram.createMessageContent()
+                try await chatViewModel.sendSharedContent(content)
+            }
         }
     }
 

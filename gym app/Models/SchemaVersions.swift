@@ -37,4 +37,12 @@ enum SchemaVersions {
     static let friendship = 1
     static let conversation = 1
     static let message = 1
+
+    // Share bundles
+    static let programShareBundle = 1
+    static let workoutShareBundle = 1
+    static let moduleShareBundle = 1
+    static let sessionShareBundle = 1
+    static let exerciseShareBundle = 1
+    static let setShareBundle = 1
 }

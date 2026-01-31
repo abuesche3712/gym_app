@@ -17,8 +17,11 @@ struct SessionDetailView: View {
     @State private var showingDeleteConfirmation = false
     @State private var showingEditSession = false
     @State private var showingShareSheet = false
+    @State private var showingShareWithFriend = false
     @State private var shareContent: String = ""
     @State private var animateIn = false
+    @State private var exerciseToShare: ShareableExercisePerformance?
+    @State private var setToShare: ShareableSetPerformance?
 
     private var currentSession: Session {
         sessionViewModel.sessions.first { $0.id == session.id } ?? session
@@ -56,10 +59,20 @@ struct SessionDetailView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: AppSpacing.md) {
-                    // Share button
-                    Button {
-                        shareContent = generateSessionShareText()
-                        showingShareSheet = true
+                    // Share menu
+                    Menu {
+                        Button {
+                            showingShareWithFriend = true
+                        } label: {
+                            Label("Share with Friend", systemImage: "paperplane")
+                        }
+
+                        Button {
+                            shareContent = generateSessionShareText()
+                            showingShareSheet = true
+                        } label: {
+                            Label("Share via...", systemImage: "square.and.arrow.up")
+                        }
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                             .font(.body.weight(.medium))
@@ -93,6 +106,39 @@ struct SessionDetailView: View {
         }
         .sheet(isPresented: $showingShareSheet) {
             SessionShareSheet(items: [shareContent])
+        }
+        .sheet(isPresented: $showingShareWithFriend) {
+            ShareWithFriendSheet(content: currentSession) { conversationWithProfile in
+                let chatViewModel = ChatViewModel(
+                    conversation: conversationWithProfile.conversation,
+                    otherParticipant: conversationWithProfile.otherParticipant,
+                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+                )
+                let content = try currentSession.createMessageContent()
+                try await chatViewModel.sendSharedContent(content)
+            }
+        }
+        .sheet(item: $exerciseToShare) { exercise in
+            ShareWithFriendSheet(content: exercise) { conversationWithProfile in
+                let chatViewModel = ChatViewModel(
+                    conversation: conversationWithProfile.conversation,
+                    otherParticipant: conversationWithProfile.otherParticipant,
+                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+                )
+                let content = try exercise.createMessageContent()
+                try await chatViewModel.sendSharedContent(content)
+            }
+        }
+        .sheet(item: $setToShare) { setPerformance in
+            ShareWithFriendSheet(content: setPerformance) { conversationWithProfile in
+                let chatViewModel = ChatViewModel(
+                    conversation: conversationWithProfile.conversation,
+                    otherParticipant: conversationWithProfile.otherParticipant,
+                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+                )
+                let content = try setPerformance.createMessageContent()
+                try await chatViewModel.sendSharedContent(content)
+            }
         }
         .confirmationDialog(
             "Delete Workout?",
@@ -251,9 +297,27 @@ struct SessionDetailView: View {
                     module: module,
                     sessionViewModel: sessionViewModel,
                     workoutId: session.workoutId,
-                    onShare: { content in
+                    workoutName: session.workoutName,
+                    sessionDate: session.date,
+                    onShareText: { content in
                         shareContent = content
                         showingShareSheet = true
+                    },
+                    onShareExerciseWithFriend: { exercise in
+                        exerciseToShare = ShareableExercisePerformance(
+                            exercise: exercise,
+                            workoutName: session.workoutName,
+                            date: session.date
+                        )
+                    },
+                    onShareSetWithFriend: { set, exerciseName, exerciseType in
+                        setToShare = ShareableSetPerformance(
+                            set: set,
+                            exerciseName: exerciseName,
+                            exerciseType: exerciseType,
+                            workoutName: session.workoutName,
+                            date: session.date
+                        )
                     }
                 )
                 .opacity(animateIn ? 1 : 0)
@@ -355,7 +419,11 @@ struct SessionModuleCard: View {
     let module: CompletedModule
     let sessionViewModel: SessionViewModel
     let workoutId: UUID
-    let onShare: (String) -> Void
+    let workoutName: String
+    let sessionDate: Date
+    let onShareText: (String) -> Void
+    let onShareExerciseWithFriend: (SessionExercise) -> Void
+    let onShareSetWithFriend: (SetData, String, ExerciseType) -> Void
 
     @State private var isExpanded = true
 
@@ -405,8 +473,12 @@ struct SessionModuleCard: View {
                     }
 
                     // Share button
-                    Button {
-                        onShare(generateModuleShareText())
+                    Menu {
+                        Button {
+                            onShareText(generateModuleShareText())
+                        } label: {
+                            Label("Share via...", systemImage: "square.and.arrow.up")
+                        }
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                             .caption(color: AppColors.textTertiary)
@@ -417,7 +489,6 @@ struct SessionModuleCard: View {
                                     .fill(AppColors.surfaceTertiary.opacity(0.5))
                             )
                     }
-                    .buttonStyle(.plain)
 
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .caption(color: AppColors.textTertiary)
@@ -439,7 +510,11 @@ struct SessionModuleCard: View {
                             sessionViewModel: sessionViewModel,
                             workoutId: workoutId,
                             moduleColor: moduleColor,
-                            onShare: onShare
+                            onShareText: onShareText,
+                            onShareWithFriend: { onShareExerciseWithFriend(exercise) },
+                            onShareSetWithFriend: { set in
+                                onShareSetWithFriend(set, exercise.exerciseName, exercise.exerciseType)
+                            }
                         )
 
                         if exercise.id != module.completedExercises.last?.id {
@@ -511,7 +586,9 @@ struct SessionExerciseCard: View {
     let sessionViewModel: SessionViewModel
     let workoutId: UUID
     let moduleColor: Color
-    let onShare: (String) -> Void
+    let onShareText: (String) -> Void
+    let onShareWithFriend: () -> Void
+    let onShareSetWithFriend: (SetData) -> Void
 
     @State private var isExpanded = false
 
@@ -549,8 +626,18 @@ struct SessionExerciseCard: View {
                     Spacer()
 
                     // Share exercise button
-                    Button {
-                        onShare(generateExerciseShareText())
+                    Menu {
+                        Button {
+                            onShareWithFriend()
+                        } label: {
+                            Label("Share with Friend", systemImage: "paperplane")
+                        }
+
+                        Button {
+                            onShareText(generateExerciseShareText())
+                        } label: {
+                            Label("Share via...", systemImage: "square.and.arrow.up")
+                        }
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                             .font(.system(size: 10, weight: .medium))
@@ -585,7 +672,8 @@ struct SessionExerciseCard: View {
                                     set: set,
                                     exercise: exercise,
                                     moduleColor: moduleColor,
-                                    onShare: onShare
+                                    onShareText: onShareText,
+                                    onShareWithFriend: { onShareSetWithFriend(set) }
                                 )
                             }
                         }
@@ -809,7 +897,8 @@ struct SessionSetRow: View {
     let set: SetData
     let exercise: SessionExercise
     let moduleColor: Color
-    let onShare: (String) -> Void
+    let onShareText: (String) -> Void
+    let onShareWithFriend: () -> Void
 
     var body: some View {
         HStack(spacing: AppSpacing.md) {
@@ -841,14 +930,23 @@ struct SessionSetRow: View {
 
             // Share single set
             if set.completed {
-                Button {
-                    onShare(generateSetShareText())
+                Menu {
+                    Button {
+                        onShareWithFriend()
+                    } label: {
+                        Label("Share with Friend", systemImage: "paperplane")
+                    }
+
+                    Button {
+                        onShareText(generateSetShareText())
+                    } label: {
+                        Label("Share via...", systemImage: "square.and.arrow.up")
+                    }
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 8, weight: .medium))
                         .foregroundColor(AppColors.textTertiary.opacity(0.6))
                 }
-                .buttonStyle(.plain)
             }
 
             // Completion indicator

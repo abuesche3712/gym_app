@@ -203,6 +203,106 @@ class ChatViewModel: ObservableObject {
         messageListener?.remove()
         messageListener = nil
     }
+
+    // MARK: - Import Shared Content
+
+    /// Imports a program from a shared message
+    func importProgram(from message: Message) -> ImportResult {
+        guard case .sharedProgram(_, _, let snapshot) = message.content else {
+            return .failure("Not a shared program")
+        }
+
+        do {
+            let bundle = try ProgramShareBundle.decode(from: snapshot)
+            let sharingService = SharingService.shared
+            return sharingService.importProgram(from: bundle)
+        } catch {
+            Logger.error(error, context: "ChatViewModel.importProgram")
+            return .failure("Failed to import program: \(error.localizedDescription)")
+        }
+    }
+
+    /// Imports a workout from a shared message
+    func importWorkout(from message: Message) -> ImportResult {
+        guard case .sharedWorkout(_, _, let snapshot) = message.content else {
+            return .failure("Not a shared workout")
+        }
+
+        do {
+            let bundle = try WorkoutShareBundle.decode(from: snapshot)
+            let sharingService = SharingService.shared
+            return sharingService.importWorkout(from: bundle)
+        } catch {
+            Logger.error(error, context: "ChatViewModel.importWorkout")
+            return .failure("Failed to import workout: \(error.localizedDescription)")
+        }
+    }
+
+    /// Imports a module from a shared message
+    func importModule(from message: Message) -> ImportResult {
+        guard case .sharedModule(_, _, let snapshot) = message.content else {
+            return .failure("Not a shared module")
+        }
+
+        do {
+            let bundle = try ModuleShareBundle.decode(from: snapshot)
+            let sharingService = SharingService.shared
+            return sharingService.importModule(from: bundle)
+        } catch {
+            Logger.error(error, context: "ChatViewModel.importModule")
+            return .failure("Failed to import module: \(error.localizedDescription)")
+        }
+    }
+
+    /// Detects conflicts before importing
+    func detectConflicts(for message: Message) -> [ImportConflict] {
+        let sharingService = SharingService.shared
+
+        switch message.content {
+        case .sharedProgram(_, _, let snapshot):
+            guard let bundle = try? ProgramShareBundle.decode(from: snapshot) else { return [] }
+            return sharingService.detectConflicts(from: bundle)
+
+        case .sharedWorkout(_, _, let snapshot):
+            guard let bundle = try? WorkoutShareBundle.decode(from: snapshot) else { return [] }
+            return sharingService.detectConflicts(from: bundle)
+
+        case .sharedModule(_, _, let snapshot):
+            guard let bundle = try? ModuleShareBundle.decode(from: snapshot) else { return [] }
+            return sharingService.detectConflicts(from: bundle)
+
+        default:
+            return []
+        }
+    }
+
+    /// Imports content from a message with options for conflict resolution
+    func importContent(from message: Message, options: ImportOptions = ImportOptions()) -> ImportResult {
+        let sharingService = SharingService.shared
+
+        switch message.content {
+        case .sharedProgram(_, _, let snapshot):
+            guard let bundle = try? ProgramShareBundle.decode(from: snapshot) else {
+                return .failure("Invalid program data")
+            }
+            return sharingService.importProgram(from: bundle, options: options)
+
+        case .sharedWorkout(_, _, let snapshot):
+            guard let bundle = try? WorkoutShareBundle.decode(from: snapshot) else {
+                return .failure("Invalid workout data")
+            }
+            return sharingService.importWorkout(from: bundle, options: options)
+
+        case .sharedModule(_, _, let snapshot):
+            guard let bundle = try? ModuleShareBundle.decode(from: snapshot) else {
+                return .failure("Invalid module data")
+            }
+            return sharingService.importModule(from: bundle, options: options)
+
+        default:
+            return .failure("Content cannot be imported")
+        }
+    }
 }
 
 // MARK: - Errors

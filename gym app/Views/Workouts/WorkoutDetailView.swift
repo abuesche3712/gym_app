@@ -17,6 +17,7 @@ struct WorkoutDetailView: View {
 
     @State private var showingEditWorkout = false
     @State private var showingDeleteConfirmation = false
+    @State private var showingShareSheet = false
 
     private var currentWorkout: Workout {
         workoutViewModel.getWorkout(id: workout.id) ?? workout
@@ -122,6 +123,12 @@ struct WorkoutDetailView: View {
                         Label("Edit Workout", systemImage: "pencil")
                     }
 
+                    Button {
+                        showingShareSheet = true
+                    } label: {
+                        Label("Share with Friend", systemImage: "paperplane")
+                    }
+
                     Divider()
 
                     Button(role: .destructive) {
@@ -150,6 +157,17 @@ struct WorkoutDetailView: View {
             }
         } message: {
             Text("Are you sure you want to delete \"\(currentWorkout.name)\"? This action cannot be undone.")
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            ShareWithFriendSheet(content: currentWorkout) { conversationWithProfile in
+                let chatViewModel = ChatViewModel(
+                    conversation: conversationWithProfile.conversation,
+                    otherParticipant: conversationWithProfile.otherParticipant,
+                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+                )
+                let content = try currentWorkout.createMessageContent()
+                try await chatViewModel.sendSharedContent(content)
+            }
         }
     }
 

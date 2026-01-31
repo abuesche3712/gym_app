@@ -18,6 +18,7 @@ struct ModuleDetailView: View {
     @State private var showingDeleteConfirmation = false
     @State private var isSelectingForSuperset = false
     @State private var selectedExerciseIds: Set<UUID> = []
+    @State private var showingShareSheet = false
 
     private var currentModule: Module {
         moduleViewModel.getModule(id: module.id) ?? module
@@ -147,6 +148,12 @@ struct ModuleDetailView: View {
                         Label("Add Exercise", systemImage: "plus")
                     }
 
+                    Button {
+                        showingShareSheet = true
+                    } label: {
+                        Label("Share with Friend", systemImage: "paperplane")
+                    }
+
                     if currentModule.exerciseCount >= 2 {
                         Divider()
 
@@ -191,6 +198,17 @@ struct ModuleDetailView: View {
             }
         } message: {
             Text("Are you sure you want to delete \"\(currentModule.name)\"? This action cannot be undone.")
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            ShareWithFriendSheet(content: currentModule) { conversationWithProfile in
+                let chatViewModel = ChatViewModel(
+                    conversation: conversationWithProfile.conversation,
+                    otherParticipant: conversationWithProfile.otherParticipant,
+                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+                )
+                let content = try currentModule.createMessageContent()
+                try await chatViewModel.sendSharedContent(content)
+            }
         }
     }
 

@@ -7,7 +7,7 @@
 
 iOS workout tracking app built with SwiftUI. Offline-first with CoreData, Firebase for cloud sync.
 
-**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete. Major refactoring completed (DataRepository split, Session model split, AppTheme split, Session views split). Per-exercise progression system implemented. Comprehensive DataRepository tests added. **Social features Phase 1-3 implemented** (Profiles, Friendships, Messaging).
+**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete. Major refactoring completed (DataRepository split, Session model split, AppTheme split, Session views split). Per-exercise progression system implemented. Comprehensive DataRepository tests added. **Social features Phase 1-4 complete** (Profiles, Friendships, Messaging, Sharing).
 
 ## Major Refactoring (Jan 29, 2026)
 
@@ -515,7 +515,7 @@ gym app/                          (90+ Swift files)
 │   ├── Auth/                     (1 file)
 │   ├── Analytics/                (1 file)
 │   ├── Components/               (2 files)
-│   ├── Social/                   (8 files - social features)
+│   ├── Social/                   (11 files - social features)
 │   │   ├── SocialView.swift
 │   │   ├── AccountProfileView.swift
 │   │   ├── UserSearchView.swift
@@ -523,12 +523,15 @@ gym app/                          (90+ Swift files)
 │   │   ├── FriendRequestsView.swift
 │   │   ├── ConversationsListView.swift
 │   │   ├── ChatView.swift
-│   │   └── NewConversationSheet.swift
+│   │   ├── NewConversationSheet.swift
+│   │   ├── ShareWithFriendSheet.swift  (Share content with friends)
+│   │   ├── SharedContentCard.swift     (Display shared content)
+│   │   └── ImportConflictSheet.swift   (Resolve import conflicts)
 │   ├── HomeView.swift            (~800 lines)
 │   ├── HomeScheduleSheets.swift  (29KB)
 │   └── MainTabView.swift
 │
-├── Models/                       (23 files)
+├── Models/                       (25 files)
 │   ├── ExerciseInstance.swift
 │   ├── Module.swift
 │   ├── Workout.swift
@@ -546,6 +549,8 @@ gym app/                          (90+ Swift files)
 │   ├── Friendship.swift          (Social - friend relationships)
 │   ├── Conversation.swift        (Social - messaging)
 │   ├── Message.swift             (Social - messages with MessageContent enum)
+│   ├── ShareBundles.swift        (Social - share bundle models)
+│   ├── ImportConflict.swift      (Social - import conflict handling)
 │   ├── ExerciseLibrary.swift
 │   ├── CustomExerciseLibrary.swift
 │   ├── ResolvedExercise.swift
@@ -553,7 +558,7 @@ gym app/                          (90+ Swift files)
 │   ├── SchemaVersions.swift
 │   └── Enums.swift
 │
-├── Services/                     (23 files)
+├── Services/                     (24 files)
 │   ├── FirebaseService.swift     (38KB - includes social operations)
 │   ├── AuthService.swift
 │   ├── SyncManager.swift         (25KB)
@@ -566,6 +571,7 @@ gym app/                          (90+ Swift files)
 │   ├── FriendshipRepository.swift (Social - friendships)
 │   ├── ConversationRepository.swift (Social - conversations)
 │   ├── MessageRepository.swift   (Social - messages)
+│   ├── SharingService.swift      (Social - share bundles & import)
 │   ├── ProgressionService.swift  (Progression calculations)
 │   ├── ExerciseResolver.swift
 │   ├── SyncLogger.swift
@@ -755,7 +761,26 @@ Implemented in 4 phases: Profile → Friendships → Messaging → Sharing (Phas
   - Unread message badges on conversation list and Social tab
   - Message types: text (now), sharing types prepared for Phase 4
 
-### MessageContent Enum (Phase 4 Ready)
+### Phase 4: Sharing (Unified)
+- Share bundles: `ProgramShareBundle`, `WorkoutShareBundle`, `ModuleShareBundle`, `SessionShareBundle`, `ExerciseShareBundle`, `SetShareBundle`
+- Self-contained snapshots with all dependencies (exercises, templates, implements)
+- UUID remapping during import to avoid conflicts
+- `SharingService` for creating bundles and importing content
+- `ShareableContent` protocol for:
+  - **Templates:** Programs, Workouts, Modules (importable)
+  - **Performance:** Sessions, Exercises, Sets (view-only)
+- Wrapper types for performance sharing: `ShareableExercisePerformance`, `ShareableSetPerformance`
+- Import conflict detection with resolution options (use existing, import as copy)
+- Views:
+  - `ShareWithFriendSheet` - Unified friend picker for all shareable content
+  - `SharedContentCard` - Display shared content in chat messages
+  - `ImportConflictSheet` - Resolve conflicts during import
+- Share buttons added to:
+  - ProgramDetailView, WorkoutDetailView, ModuleDetailView (templates)
+  - SessionDetailView (whole session, exercises, individual sets)
+  - HistoryView (via context menu on sessions)
+
+### MessageContent Enum
 ```swift
 enum MessageContent: Codable {
     case text(String)
@@ -774,7 +799,9 @@ Models/
 ├── UserProfile.swift
 ├── Friendship.swift
 ├── Conversation.swift
-└── Message.swift
+├── Message.swift
+├── ShareBundles.swift         (Program/Workout/Module share bundles)
+└── ImportConflict.swift       (Conflict types and resolution)
 
 Repositories/
 ├── ProfileRepository.swift
@@ -782,10 +809,13 @@ Repositories/
 ├── ConversationRepository.swift
 └── MessageRepository.swift
 
+Services/
+└── SharingService.swift       (Create bundles, import with UUID remapping)
+
 ViewModels/
 ├── FriendsViewModel.swift
 ├── ConversationsViewModel.swift
-└── ChatViewModel.swift
+└── ChatViewModel.swift        (+ import methods for shared content)
 
 Views/Social/
 ├── SocialView.swift           (Main social tab)
@@ -795,7 +825,10 @@ Views/Social/
 ├── FriendRequestsView.swift   (Pending requests)
 ├── ConversationsListView.swift (Message list)
 ├── ChatView.swift             (Individual chat)
-└── NewConversationSheet.swift (Start new chat)
+├── NewConversationSheet.swift (Start new chat)
+├── ShareWithFriendSheet.swift (Share content picker)
+├── SharedContentCard.swift    (Shared content display)
+└── ImportConflictSheet.swift  (Resolve import conflicts)
 ```
 
 ### Firestore Collections
@@ -851,8 +884,7 @@ match /conversations/{conversationId} {
 
 ### Future
 - [ ] Analytics dashboard (PRs, volume tracking, trends)
-- [x] Social features Phase 1-3 (profiles, friendships, messaging)
-- [ ] Social features Phase 4 (sharing programs, workouts, sessions, exercises)
+- [x] Social features Phase 1-4 (profiles, friendships, messaging, sharing)
 
 ## Code Modularization Opportunities
 
