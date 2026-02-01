@@ -112,6 +112,8 @@ struct SharedContentCard: View {
             return "dumbbell.fill"
         case .sharedSet:
             return "flame.fill"
+        case .sharedCompletedModule:
+            return "square.stack.3d.up.fill"
         case .text:
             return "text.bubble"
         }
@@ -131,6 +133,8 @@ struct SharedContentCard: View {
             return "EXERCISE"
         case .sharedSet:
             return "PERSONAL BEST"
+        case .sharedCompletedModule:
+            return "COMPLETED MODULE"
         case .text:
             return "MESSAGE"
         }
@@ -156,6 +160,11 @@ struct SharedContentCard: View {
                 return bundle.exerciseName
             }
             return "Set"
+        case .sharedCompletedModule(let snapshot):
+            if let bundle = try? CompletedModuleShareBundle.decode(from: snapshot) {
+                return bundle.module.moduleName
+            }
+            return "Module"
         case .text(let text):
             return text
         }
@@ -191,6 +200,12 @@ struct SharedContentCard: View {
         case .sharedSet(let snapshot):
             if let bundle = try? SetShareBundle.decode(from: snapshot) {
                 return formatSetData(bundle.setData)
+            }
+            return nil
+        case .sharedCompletedModule(let snapshot):
+            if let bundle = try? CompletedModuleShareBundle.decode(from: snapshot) {
+                let exerciseCount = bundle.module.completedExercises.count
+                return "\(exerciseCount) exercise\(exerciseCount == 1 ? "" : "s")"
             }
             return nil
         case .text:

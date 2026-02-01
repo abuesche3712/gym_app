@@ -153,6 +153,44 @@ struct ShareableExercisePerformance: ShareableContent, Identifiable {
     }
 }
 
+// MARK: - Module Performance Wrapper
+
+/// Wrapper for sharing a completed module with all its exercises
+struct ShareableModulePerformance: ShareableContent, Identifiable {
+    let id: UUID
+    let module: CompletedModule
+    let workoutName: String
+    let date: Date
+
+    init(module: CompletedModule, workoutName: String, date: Date) {
+        self.id = module.id
+        self.module = module
+        self.workoutName = workoutName
+        self.date = date
+    }
+
+    var shareTitle: String { module.moduleName }
+    var shareSubtitle: String? {
+        let exerciseCount = module.completedExercises.count
+        let setCount = module.completedExercises.reduce(0) { sum, ex in
+            sum + ex.completedSetGroups.reduce(0) { $0 + $1.sets.filter(\.completed).count }
+        }
+        return "\(exerciseCount) exercises · \(setCount) sets"
+    }
+    var shareIcon: String { module.moduleType.icon }
+
+    func createMessageContent() throws -> MessageContent {
+        // Create a snapshot of the completed module performance
+        let bundle = CompletedModuleShareBundle(
+            module: module,
+            workoutName: workoutName,
+            date: date
+        )
+        let data = try bundle.encode()
+        return .sharedCompletedModule(snapshot: data)
+    }
+}
+
 // MARK: - Set Performance Wrapper
 
 /// Wrapper for sharing a single set (typically a PR)

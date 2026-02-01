@@ -18,6 +18,7 @@ struct WorkoutDetailView: View {
     @State private var showingEditWorkout = false
     @State private var showingDeleteConfirmation = false
     @State private var showingShareSheet = false
+    @State private var showingPostToFeed = false
 
     private var currentWorkout: Workout {
         workoutViewModel.getWorkout(id: workout.id) ?? workout
@@ -124,6 +125,12 @@ struct WorkoutDetailView: View {
                     }
 
                     Button {
+                        showingPostToFeed = true
+                    } label: {
+                        Label("Post to Feed", systemImage: "rectangle.stack")
+                    }
+
+                    Button {
                         showingShareSheet = true
                     } label: {
                         Label("Share with Friend", systemImage: "paperplane")
@@ -168,6 +175,9 @@ struct WorkoutDetailView: View {
                 let content = try currentWorkout.createMessageContent()
                 try await chatViewModel.sendSharedContent(content)
             }
+        }
+        .sheet(isPresented: $showingPostToFeed) {
+            ComposePostSheet(content: currentWorkout)
         }
     }
 

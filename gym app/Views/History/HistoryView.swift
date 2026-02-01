@@ -15,6 +15,7 @@ struct HistoryView: View {
     @State private var sessionToDelete: Session?
     @State private var showingDeleteConfirmation = false
     @State private var sessionToShare: Session?
+    @State private var sessionToPost: Session?
     @State private var animateIn = false
 
     enum HistoryFilter: String, CaseIterable {
@@ -163,6 +164,9 @@ struct HistoryView: View {
                     try await chatViewModel.sendSharedContent(content)
                 }
             }
+            .sheet(item: $sessionToPost) { session in
+                ComposePostSheet(content: session)
+            }
         }
     }
 
@@ -299,10 +303,18 @@ struct HistoryView: View {
                             .buttonStyle(.plain)
                             .contextMenu {
                                 Button {
+                                    sessionToPost = session
+                                } label: {
+                                    Label("Post to Feed", systemImage: "rectangle.stack")
+                                }
+
+                                Button {
                                     sessionToShare = session
                                 } label: {
                                     Label("Share with Friend", systemImage: "paperplane")
                                 }
+
+                                Divider()
 
                                 Button(role: .destructive) {
                                     sessionToDelete = session

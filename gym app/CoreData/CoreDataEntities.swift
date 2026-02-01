@@ -1702,6 +1702,177 @@ public class InProgressSessionEntity: NSManagedObject {
     }
 }
 
+// MARK: - Post Entity
+
+@objc(PostEntity)
+public class PostEntity: NSManagedObject, SyncableEntity {
+    @NSManaged public var id: UUID
+    @NSManaged public var authorId: String
+    @NSManaged public var contentData: Data?  // JSON encoded PostContent
+    @NSManaged public var caption: String?
+    @NSManaged public var likeCount: Int32
+    @NSManaged public var commentCount: Int32
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
+    @NSManaged public var syncStatusRaw: String
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
+
+    var content: PostContent {
+        get {
+            guard let data = contentData else { return .text("") }
+            return (try? JSONDecoder().decode(PostContent.self, from: data)) ?? .text("")
+        }
+        set {
+            contentData = try? JSONEncoder().encode(newValue)
+        }
+    }
+
+    var syncStatus: SyncStatus {
+        get { SyncStatus(rawValue: syncStatusRaw) ?? .pendingSync }
+        set { syncStatusRaw = newValue.rawValue }
+    }
+
+    /// Convert to domain model
+    func toModel() -> Post {
+        Post(
+            id: id,
+            authorId: authorId,
+            content: content,
+            caption: caption,
+            createdAt: createdAt ?? Date(),
+            updatedAt: updatedAt,
+            likeCount: Int(likeCount),
+            commentCount: Int(commentCount),
+            syncStatus: syncStatus
+        )
+    }
+
+    /// Update entity from domain model
+    func update(from post: Post) {
+        self.id = post.id
+        self.authorId = post.authorId
+        self.content = post.content
+        self.caption = post.caption
+        self.likeCount = Int32(post.likeCount)
+        self.commentCount = Int32(post.commentCount)
+        self.syncStatus = post.syncStatus
+    }
+}
+
+// MARK: - Post Like Entity
+
+@objc(PostLikeEntity)
+public class PostLikeEntity: NSManagedObject, SyncableEntity {
+    @NSManaged public var id: UUID
+    @NSManaged public var postId: UUID
+    @NSManaged public var userId: String
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
+    @NSManaged public var syncStatusRaw: String
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
+
+    var syncStatus: SyncStatus {
+        get { SyncStatus(rawValue: syncStatusRaw) ?? .pendingSync }
+        set { syncStatusRaw = newValue.rawValue }
+    }
+
+    /// Convert to domain model
+    func toModel() -> PostLike {
+        PostLike(
+            id: id,
+            postId: postId,
+            userId: userId,
+            createdAt: createdAt ?? Date(),
+            syncStatus: syncStatus
+        )
+    }
+
+    /// Update entity from domain model
+    func update(from like: PostLike) {
+        self.id = like.id
+        self.postId = like.postId
+        self.userId = like.userId
+        self.syncStatus = like.syncStatus
+    }
+}
+
+// MARK: - Post Comment Entity
+
+@objc(PostCommentEntity)
+public class PostCommentEntity: NSManagedObject, SyncableEntity {
+    @NSManaged public var id: UUID
+    @NSManaged public var postId: UUID
+    @NSManaged public var authorId: String
+    @NSManaged public var text: String
+    @NSManaged public var createdAt: Date?
+    @NSManaged public var updatedAt: Date?
+    @NSManaged public var syncedAt: Date?
+    @NSManaged public var syncStatusRaw: String
+
+    public override func awakeFromInsert() {
+        super.awakeFromInsert()
+        let now = Date()
+        setPrimitiveValue(now, forKey: "createdAt")
+        setPrimitiveValue(now, forKey: "updatedAt")
+    }
+
+    public override func willSave() {
+        super.willSave()
+        updateTimestampsOnSave()
+    }
+
+    var syncStatus: SyncStatus {
+        get { SyncStatus(rawValue: syncStatusRaw) ?? .pendingSync }
+        set { syncStatusRaw = newValue.rawValue }
+    }
+
+    /// Convert to domain model
+    func toModel() -> PostComment {
+        PostComment(
+            id: id,
+            postId: postId,
+            authorId: authorId,
+            text: text,
+            createdAt: createdAt ?? Date(),
+            updatedAt: updatedAt,
+            syncStatus: syncStatus
+        )
+    }
+
+    /// Update entity from domain model
+    func update(from comment: PostComment) {
+        self.id = comment.id
+        self.postId = comment.postId
+        self.authorId = comment.authorId
+        self.text = comment.text
+        self.syncStatus = comment.syncStatus
+    }
+}
+
 /// Model representation of a deletion record
 struct DeletionRecord: Identifiable, Codable {
     let id: UUID

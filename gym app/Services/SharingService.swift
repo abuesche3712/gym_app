@@ -531,7 +531,7 @@ extension MessageContent {
         switch self {
         case .sharedProgram, .sharedWorkout, .sharedModule:
             return true
-        case .text, .sharedSession, .sharedExercise, .sharedSet:
+        case .text, .sharedSession, .sharedExercise, .sharedSet, .sharedCompletedModule:
             return false
         }
     }

@@ -340,6 +340,13 @@ class FirestoreService: ObservableObject {
         return decodeUserProfile(from: data)
     }
 
+    /// Fetch another user's profile by their Firebase user ID
+    func fetchUserProfile(firebaseUserId: String) async throws -> UserProfile? {
+        let doc = try await db.collection("users").document(firebaseUserId).collection("profile").document("settings").getDocument()
+        guard let data = doc.data() else { return nil }
+        return decodeUserProfile(from: data)
+    }
+
     /// Check if a username is available globally
     /// Uses a global usernames collection for uniqueness enforcement
     func isUsernameAvailable(_ username: String) async throws -> Bool {
@@ -1327,6 +1334,316 @@ class FirestoreService: ObservableObject {
         }
 
         return SyncResult(pushedCount: pushedCount, cloudNewerItems: cloudNewerItems, errors: errors)
+    }
+
+    // MARK: - Post Operations
+
+    /// Save a post to the global posts collection (public feed)
+    func savePost(_ post: Post) async throws {
+        let ref = db.collection("posts").document(post.id.uuidString)
+        let data = encodePost(post)
+        try await ref.setData(data, merge: true)
+    }
+
+    /// Fetch posts from friends for the feed
+    func fetchFeedPosts(friendIds: [String], limit: Int = 50, before: Date? = nil) async throws -> [Post] {
+        var query = db.collection("posts")
+            .whereField("authorId", in: friendIds.isEmpty ? ["__none__"] : friendIds)
+            .order(by: "createdAt", descending: true)
+            .limit(to: limit)
+
+        if let beforeDate = before {
+            query = query.whereField("createdAt", isLessThan: Timestamp(date: beforeDate))
+        }
+
+        let snapshot = try await query.getDocuments()
+        return snapshot.documents.compactMap { doc in
+            decodePost(from: doc.data())
+        }
+    }
+
+    /// Fetch posts by a specific user
+    func fetchPostsByUser(userId: String, limit: Int = 50, before: Date? = nil) async throws -> [Post] {
+        var query = db.collection("posts")
+            .whereField("authorId", isEqualTo: userId)
+            .order(by: "createdAt", descending: true)
+            .limit(to: limit)
+
+        if let beforeDate = before {
+            query = query.whereField("createdAt", isLessThan: Timestamp(date: beforeDate))
+        }
+
+        let snapshot = try await query.getDocuments()
+        return snapshot.documents.compactMap { doc in
+            decodePost(from: doc.data())
+        }
+    }
+
+    /// Listen to feed posts in real-time
+    func listenToFeedPosts(friendIds: [String], limit: Int = 50, onChange: @escaping ([Post]) -> Void, onError: ((Error) -> Void)? = nil) -> ListenerRegistration {
+        let effectiveIds = friendIds.isEmpty ? ["__none__"] : friendIds
+        return db.collection("posts")
+            .whereField("authorId", in: effectiveIds)
+            .order(by: "createdAt", descending: true)
+            .limit(to: limit)
+            .addSnapshotListener { snapshot, error in
+                if let error = error {
+                    Logger.error(error, context: "listenToFeedPosts")
+                    onError?(error)
+                    // Still call onChange with empty array so UI updates
+                    onChange([])
+                    return
+                }
+
+                let posts = snapshot?.documents.compactMap { doc in
+                    self.decodePost(from: doc.data())
+                } ?? []
+                onChange(posts)
+            }
+    }
+
+    /// Delete a post
+    func deletePost(_ postId: UUID) async throws {
+        // Delete the post document
+        try await db.collection("posts").document(postId.uuidString).delete()
+
+        // Also delete associated likes and comments (cleanup)
+        let likesSnapshot = try await db.collection("posts").document(postId.uuidString).collection("likes").getDocuments()
+        let commentsSnapshot = try await db.collection("posts").document(postId.uuidString).collection("comments").getDocuments()
+
+        let batch = db.batch()
+        for doc in likesSnapshot.documents {
+            batch.deleteDocument(doc.reference)
+        }
+        for doc in commentsSnapshot.documents {
+            batch.deleteDocument(doc.reference)
+        }
+        try await batch.commit()
+    }
+
+    // MARK: - Post Like Operations
+
+    /// Like a post
+    func likePost(postId: UUID, userId: String) async throws {
+        let like = PostLike(postId: postId, userId: userId)
+        let ref = db.collection("posts").document(postId.uuidString).collection("likes").document(userId)
+        try await ref.setData(encodeLike(like))
+
+        // Increment like count atomically
+        let postRef = db.collection("posts").document(postId.uuidString)
+        try await postRef.updateData(["likeCount": FieldValue.increment(Int64(1))])
+    }
+
+    /// Unlike a post
+    func unlikePost(postId: UUID, userId: String) async throws {
+        let ref = db.collection("posts").document(postId.uuidString).collection("likes").document(userId)
+        try await ref.delete()
+
+        // Decrement like count atomically
+        let postRef = db.collection("posts").document(postId.uuidString)
+        try await postRef.updateData(["likeCount": FieldValue.increment(Int64(-1))])
+    }
+
+    /// Check if user has liked a post
+    func isPostLiked(postId: UUID, userId: String) async throws -> Bool {
+        let doc = try await db.collection("posts").document(postId.uuidString).collection("likes").document(userId).getDocument()
+        return doc.exists
+    }
+
+    /// Listen to like status for a post
+    func listenToPostLikeStatus(postId: UUID, userId: String, onChange: @escaping (Bool) -> Void) -> ListenerRegistration {
+        db.collection("posts").document(postId.uuidString).collection("likes").document(userId)
+            .addSnapshotListener { snapshot, _ in
+                onChange(snapshot?.exists ?? false)
+            }
+    }
+
+    // MARK: - Post Comment Operations
+
+    /// Add a comment to a post
+    func addComment(_ comment: PostComment) async throws {
+        let ref = db.collection("posts").document(comment.postId.uuidString).collection("comments").document(comment.id.uuidString)
+        try await ref.setData(encodeComment(comment))
+
+        // Increment comment count atomically
+        let postRef = db.collection("posts").document(comment.postId.uuidString)
+        try await postRef.updateData(["commentCount": FieldValue.increment(Int64(1))])
+    }
+
+    /// Delete a comment
+    func deleteComment(postId: UUID, commentId: UUID) async throws {
+        let ref = db.collection("posts").document(postId.uuidString).collection("comments").document(commentId.uuidString)
+        try await ref.delete()
+
+        // Decrement comment count atomically
+        let postRef = db.collection("posts").document(postId.uuidString)
+        try await postRef.updateData(["commentCount": FieldValue.increment(Int64(-1))])
+    }
+
+    /// Fetch comments for a post
+    func fetchComments(postId: UUID, limit: Int = 100) async throws -> [PostComment] {
+        let snapshot = try await db.collection("posts").document(postId.uuidString)
+            .collection("comments")
+            .order(by: "createdAt", descending: false)
+            .limit(to: limit)
+            .getDocuments()
+
+        return snapshot.documents.compactMap { doc in
+            decodeComment(from: doc.data(), postId: postId)
+        }
+    }
+
+    /// Listen to comments for a post
+    func listenToComments(postId: UUID, limit: Int = 100, onChange: @escaping ([PostComment]) -> Void) -> ListenerRegistration {
+        db.collection("posts").document(postId.uuidString)
+            .collection("comments")
+            .order(by: "createdAt", descending: false)
+            .limit(to: limit)
+            .addSnapshotListener { snapshot, error in
+                if let error = error {
+                    Logger.error(error, context: "listenToComments")
+                    return
+                }
+
+                let comments = snapshot?.documents.compactMap { doc in
+                    self.decodeComment(from: doc.data(), postId: postId)
+                } ?? []
+                onChange(comments)
+            }
+    }
+
+    // MARK: - Post Encoding/Decoding
+
+    private func encodePost(_ post: Post) -> [String: Any] {
+        var data: [String: Any] = [
+            "id": post.id.uuidString,
+            "authorId": post.authorId,
+            "likeCount": post.likeCount,
+            "commentCount": post.commentCount,
+            "createdAt": Timestamp(date: post.createdAt)
+        ]
+
+        // Encode content as JSON
+        if let contentData = try? JSONEncoder().encode(post.content),
+           let contentDict = try? JSONSerialization.jsonObject(with: contentData) as? [String: Any] {
+            data["content"] = contentDict
+        }
+
+        if let caption = post.caption {
+            data["caption"] = caption
+        }
+
+        if let updatedAt = post.updatedAt {
+            data["updatedAt"] = Timestamp(date: updatedAt)
+        }
+
+        return data
+    }
+
+    private func decodePost(from data: [String: Any]) -> Post? {
+        guard let idString = data["id"] as? String,
+              let id = UUID(uuidString: idString),
+              let authorId = data["authorId"] as? String else {
+            return nil
+        }
+
+        let createdAt: Date
+        if let timestamp = data["createdAt"] as? Timestamp {
+            createdAt = timestamp.dateValue()
+        } else {
+            createdAt = Date()
+        }
+
+        let updatedAt: Date?
+        if let timestamp = data["updatedAt"] as? Timestamp {
+            updatedAt = timestamp.dateValue()
+        } else {
+            updatedAt = nil
+        }
+
+        // Decode content
+        let content: PostContent
+        if let contentDict = data["content"] as? [String: Any],
+           let contentData = try? JSONSerialization.data(withJSONObject: contentDict),
+           let decoded = try? JSONDecoder().decode(PostContent.self, from: contentData) {
+            content = decoded
+        } else {
+            content = .text("")
+        }
+
+        let caption = data["caption"] as? String
+        let likeCount = data["likeCount"] as? Int ?? 0
+        let commentCount = data["commentCount"] as? Int ?? 0
+
+        return Post(
+            id: id,
+            authorId: authorId,
+            content: content,
+            caption: caption,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            likeCount: likeCount,
+            commentCount: commentCount,
+            syncStatus: .synced
+        )
+    }
+
+    private func encodeLike(_ like: PostLike) -> [String: Any] {
+        [
+            "id": like.id.uuidString,
+            "postId": like.postId.uuidString,
+            "userId": like.userId,
+            "createdAt": Timestamp(date: like.createdAt)
+        ]
+    }
+
+    private func encodeComment(_ comment: PostComment) -> [String: Any] {
+        var data: [String: Any] = [
+            "id": comment.id.uuidString,
+            "postId": comment.postId.uuidString,
+            "authorId": comment.authorId,
+            "text": comment.text,
+            "createdAt": Timestamp(date: comment.createdAt)
+        ]
+
+        if let updatedAt = comment.updatedAt {
+            data["updatedAt"] = Timestamp(date: updatedAt)
+        }
+
+        return data
+    }
+
+    private func decodeComment(from data: [String: Any], postId: UUID) -> PostComment? {
+        guard let idString = data["id"] as? String,
+              let id = UUID(uuidString: idString),
+              let authorId = data["authorId"] as? String,
+              let text = data["text"] as? String else {
+            return nil
+        }
+
+        let createdAt: Date
+        if let timestamp = data["createdAt"] as? Timestamp {
+            createdAt = timestamp.dateValue()
+        } else {
+            createdAt = Date()
+        }
+
+        let updatedAt: Date?
+        if let timestamp = data["updatedAt"] as? Timestamp {
+            updatedAt = timestamp.dateValue()
+        } else {
+            updatedAt = nil
+        }
+
+        return PostComment(
+            id: id,
+            postId: postId,
+            authorId: authorId,
+            text: text,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            syncStatus: .synced
+        )
     }
 
     // MARK: - Deletion Records Sync

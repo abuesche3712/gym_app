@@ -83,6 +83,7 @@ enum MessageContent: Codable, Equatable, Hashable {
     case sharedSession(id: UUID, workoutName: String, date: Date, snapshot: Data)
     case sharedExercise(snapshot: Data)  // SessionExercise with all sets
     case sharedSet(snapshot: Data)       // Single SetData (PR brag)
+    case sharedCompletedModule(snapshot: Data)  // CompletedModule from a session
 
     // MARK: - Coding
 
@@ -91,7 +92,7 @@ enum MessageContent: Codable, Equatable, Hashable {
     }
 
     private enum ContentType: String, Codable {
-        case text, sharedProgram, sharedWorkout, sharedModule, sharedSession, sharedExercise, sharedSet
+        case text, sharedProgram, sharedWorkout, sharedModule, sharedSession, sharedExercise, sharedSet, sharedCompletedModule
     }
 
     init(from decoder: Decoder) throws {
@@ -129,6 +130,9 @@ enum MessageContent: Codable, Equatable, Hashable {
         case .sharedSet:
             let snapshot = try container.decode(Data.self, forKey: .snapshot)
             self = .sharedSet(snapshot: snapshot)
+        case .sharedCompletedModule:
+            let snapshot = try container.decode(Data.self, forKey: .snapshot)
+            self = .sharedCompletedModule(snapshot: snapshot)
         }
     }
 
@@ -166,6 +170,9 @@ enum MessageContent: Codable, Equatable, Hashable {
         case .sharedSet(let snapshot):
             try container.encode(ContentType.sharedSet, forKey: .type)
             try container.encode(snapshot, forKey: .snapshot)
+        case .sharedCompletedModule(let snapshot):
+            try container.encode(ContentType.sharedCompletedModule, forKey: .type)
+            try container.encode(snapshot, forKey: .snapshot)
         }
     }
 }
@@ -190,6 +197,8 @@ extension MessageContent {
             return "Shared exercise"
         case .sharedSet:
             return "Shared set"
+        case .sharedCompletedModule:
+            return "Shared module results"
         }
     }
 

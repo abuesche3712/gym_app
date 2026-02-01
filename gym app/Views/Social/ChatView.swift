@@ -291,6 +291,9 @@ struct MessageBubble: View {
 
         case .sharedSet:
             sharedContentView(icon: "flame.fill", label: "Personal Best", name: "Shared set")
+
+        case .sharedCompletedModule:
+            sharedContentView(icon: "square.stack.3d.up.fill", label: "Module Results", name: "Completed module")
         }
     }
 

@@ -92,6 +92,13 @@ struct AppGradients {
         )
     }
 
+    // MARK: - Social Gradient (Rose for social features)
+    static let socialGradient = LinearGradient(
+        colors: [AppColors.accent2, Color(hex: "E879B9")],  // Rose → lighter rose
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
     // MARK: - Program Gradient (Hot pink personality!)
     static let programGradient = LinearGradient(
         colors: [

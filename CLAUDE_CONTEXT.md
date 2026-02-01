@@ -7,7 +7,7 @@
 
 iOS workout tracking app built with SwiftUI. Offline-first with CoreData, Firebase for cloud sync.
 
-**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete. Major refactoring completed (DataRepository split, Session model split, AppTheme split, Session views split). Per-exercise progression system implemented. Comprehensive DataRepository tests added. **Social features Phase 1-4 complete** (Profiles, Friendships, Messaging, Sharing).
+**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete. Major refactoring completed (DataRepository split, Session model split, AppTheme split, Session views split). Per-exercise progression system implemented. Comprehensive DataRepository tests added. **Social features Phase 1-5 complete** (Profiles, Friendships, Messaging, Sharing, Feed).
 
 ## Major Refactoring (Jan 29, 2026)
 
@@ -729,7 +729,7 @@ SessionExercise (Logged Data)
 
 ## Social Features (Jan 31, 2026)
 
-Implemented in 4 phases: Profile → Friendships → Messaging → Sharing (Phase 4 pending).
+Implemented in 5 phases: Profile → Friendships → Messaging → Sharing → Feed.
 
 ### Phase 1: User Profiles
 - `UserProfile` model with username, displayName, bio, avatarURL
@@ -777,8 +777,43 @@ Implemented in 4 phases: Profile → Friendships → Messaging → Sharing (Phas
   - `ImportConflictSheet` - Resolve conflicts during import
 - Share buttons added to:
   - ProgramDetailView, WorkoutDetailView, ModuleDetailView (templates)
-  - SessionDetailView (whole session, exercises, individual sets)
+  - SessionDetailView (whole session, modules, exercises, individual sets)
   - HistoryView (via context menu on sessions)
+- Module-level sharing: "Post to Feed" and "Share with Friend" options on each completed module in SessionDetailView
+
+### Phase 5: Social Feed (Strava/Twitter Hybrid)
+- Redesigned `PostCard` component with sleek, professional appearance
+- Content-type-specific cards for each shareable type
+- Components extracted for maintainability:
+  - `PostHeaderView` - Avatar, username, time, content type badge
+  - `PostAvatarView` - User avatar with gradient border
+  - `PostContentView` - Routes to type-specific content views
+  - `PostFooterView` - Like/comment buttons (animated)
+- Type-specific content views with workout statistics:
+  - `SessionPostContent` - Duration, volume, sets with exercise breakdown
+  - `ExercisePostContent` - Sets, volume, top set for shared exercises
+  - `SetPostContent` - PR display with weight/reps, exercise context
+  - `CompletedModulePostContent` - Module name, exercise/set counts
+  - `ProgramPostContent`, `WorkoutPostContent`, `ModulePostContent` - Template previews
+- `StatBox` component for consistent stat display
+- Module-level sharing from `SessionDetailView`:
+  - Added "Post to Feed" and "Share with Friend" to module share menus
+  - `ShareableModulePerformance` wrapper for completed modules
+  - `CompletedModuleShareBundle` for serialization
+
+### PostContent Enum (Post.swift)
+```swift
+enum PostContent: Codable {
+    case session(id: UUID, workoutName: String, date: Date, snapshot: Data)
+    case exercise(snapshot: Data)
+    case set(snapshot: Data)
+    case program(id: UUID, name: String, snapshot: Data)
+    case workout(id: UUID, name: String, snapshot: Data)
+    case module(id: UUID, name: String, snapshot: Data)
+    case completedModule(snapshot: Data)  // New: completed module from session
+    case text(String)
+}
+```
 
 ### MessageContent Enum
 ```swift
@@ -790,6 +825,7 @@ enum MessageContent: Codable {
     case sharedSession(id: UUID, workoutName: String, date: Date, snapshot: Data)
     case sharedExercise(snapshot: Data)
     case sharedSet(snapshot: Data)
+    case sharedCompletedModule(snapshot: Data)  // New: module from completed session
 }
 ```
 
@@ -799,8 +835,9 @@ Models/
 ├── UserProfile.swift
 ├── Friendship.swift
 ├── Conversation.swift
-├── Message.swift
-├── ShareBundles.swift         (Program/Workout/Module share bundles)
+├── Message.swift              (MessageContent enum with sharedCompletedModule)
+├── Post.swift                 (PostContent enum with completedModule)
+├── ShareBundles.swift         (All share bundles including CompletedModuleShareBundle)
 └── ImportConflict.swift       (Conflict types and resolution)
 
 Repositories/
@@ -815,10 +852,14 @@ Services/
 ViewModels/
 ├── FriendsViewModel.swift
 ├── ConversationsViewModel.swift
-└── ChatViewModel.swift        (+ import methods for shared content)
+├── ChatViewModel.swift        (+ import methods for shared content)
+└── ComposePostViewModel.swift (Create posts from shareable content)
 
 Views/Social/
-├── SocialView.swift           (Main social tab)
+├── SocialView.swift           (Main social tab with feed)
+├── FeedView.swift             (Social feed display)
+├── PostCard.swift             (Strava/Twitter hybrid post card)
+├── ComposePostSheet.swift     (Create new posts)
 ├── AccountProfileView.swift   (Profile editing)
 ├── UserSearchView.swift       (Find friends)
 ├── FriendsListView.swift      (Friends management)
@@ -826,8 +867,8 @@ Views/Social/
 ├── ConversationsListView.swift (Message list)
 ├── ChatView.swift             (Individual chat)
 ├── NewConversationSheet.swift (Start new chat)
-├── ShareWithFriendSheet.swift (Share content picker)
-├── SharedContentCard.swift    (Shared content display)
+├── ShareWithFriendSheet.swift (Share content picker + ShareableModulePerformance)
+├── SharedContentCard.swift    (Shared content display in chat)
 └── ImportConflictSheet.swift  (Resolve import conflicts)
 ```
 
@@ -884,7 +925,7 @@ match /conversations/{conversationId} {
 
 ### Future
 - [ ] Analytics dashboard (PRs, volume tracking, trends)
-- [x] Social features Phase 1-4 (profiles, friendships, messaging, sharing)
+- [x] Social features Phase 1-5 (profiles, friendships, messaging, sharing, feed)
 
 ## Code Modularization Opportunities
 

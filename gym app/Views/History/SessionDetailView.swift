@@ -18,10 +18,15 @@ struct SessionDetailView: View {
     @State private var showingEditSession = false
     @State private var showingShareSheet = false
     @State private var showingShareWithFriend = false
+    @State private var showingPostToFeed = false
     @State private var shareContent: String = ""
     @State private var animateIn = false
+    @State private var moduleToShare: ShareableModulePerformance?
+    @State private var moduleToPost: ShareableModulePerformance?
     @State private var exerciseToShare: ShareableExercisePerformance?
     @State private var setToShare: ShareableSetPerformance?
+    @State private var exerciseToPost: ShareableExercisePerformance?
+    @State private var setToPost: ShareableSetPerformance?
 
     private var currentSession: Session {
         sessionViewModel.sessions.first { $0.id == session.id } ?? session
@@ -62,10 +67,18 @@ struct SessionDetailView: View {
                     // Share menu
                     Menu {
                         Button {
+                            showingPostToFeed = true
+                        } label: {
+                            Label("Post to Feed", systemImage: "rectangle.stack")
+                        }
+
+                        Button {
                             showingShareWithFriend = true
                         } label: {
                             Label("Share with Friend", systemImage: "paperplane")
                         }
+
+                        Divider()
 
                         Button {
                             shareContent = generateSessionShareText()
@@ -139,6 +152,29 @@ struct SessionDetailView: View {
                 let content = try setPerformance.createMessageContent()
                 try await chatViewModel.sendSharedContent(content)
             }
+        }
+        .sheet(isPresented: $showingPostToFeed) {
+            ComposePostSheet(content: currentSession)
+        }
+        .sheet(item: $moduleToShare) { modulePerformance in
+            ShareWithFriendSheet(content: modulePerformance) { conversationWithProfile in
+                let chatViewModel = ChatViewModel(
+                    conversation: conversationWithProfile.conversation,
+                    otherParticipant: conversationWithProfile.otherParticipant,
+                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+                )
+                let content = try modulePerformance.createMessageContent()
+                try await chatViewModel.sendSharedContent(content)
+            }
+        }
+        .sheet(item: $moduleToPost) { modulePerformance in
+            ComposePostSheet(content: modulePerformance)
+        }
+        .sheet(item: $exerciseToPost) { exercise in
+            ComposePostSheet(content: exercise)
+        }
+        .sheet(item: $setToPost) { setPerformance in
+            ComposePostSheet(content: setPerformance)
         }
         .confirmationDialog(
             "Delete Workout?",
@@ -303,6 +339,20 @@ struct SessionDetailView: View {
                         shareContent = content
                         showingShareSheet = true
                     },
+                    onShareModuleWithFriend: { completedModule in
+                        moduleToShare = ShareableModulePerformance(
+                            module: completedModule,
+                            workoutName: session.workoutName,
+                            date: session.date
+                        )
+                    },
+                    onPostModuleToFeed: { completedModule in
+                        moduleToPost = ShareableModulePerformance(
+                            module: completedModule,
+                            workoutName: session.workoutName,
+                            date: session.date
+                        )
+                    },
                     onShareExerciseWithFriend: { exercise in
                         exerciseToShare = ShareableExercisePerformance(
                             exercise: exercise,
@@ -312,6 +362,22 @@ struct SessionDetailView: View {
                     },
                     onShareSetWithFriend: { set, exerciseName, exerciseType in
                         setToShare = ShareableSetPerformance(
+                            set: set,
+                            exerciseName: exerciseName,
+                            exerciseType: exerciseType,
+                            workoutName: session.workoutName,
+                            date: session.date
+                        )
+                    },
+                    onPostExerciseToFeed: { exercise in
+                        exerciseToPost = ShareableExercisePerformance(
+                            exercise: exercise,
+                            workoutName: session.workoutName,
+                            date: session.date
+                        )
+                    },
+                    onPostSetToFeed: { set, exerciseName, exerciseType in
+                        setToPost = ShareableSetPerformance(
                             set: set,
                             exerciseName: exerciseName,
                             exerciseType: exerciseType,
@@ -422,8 +488,12 @@ struct SessionModuleCard: View {
     let workoutName: String
     let sessionDate: Date
     let onShareText: (String) -> Void
+    let onShareModuleWithFriend: (CompletedModule) -> Void
+    let onPostModuleToFeed: (CompletedModule) -> Void
     let onShareExerciseWithFriend: (SessionExercise) -> Void
     let onShareSetWithFriend: (SetData, String, ExerciseType) -> Void
+    let onPostExerciseToFeed: (SessionExercise) -> Void
+    let onPostSetToFeed: (SetData, String, ExerciseType) -> Void
 
     @State private var isExpanded = true
 
@@ -475,6 +545,20 @@ struct SessionModuleCard: View {
                     // Share button
                     Menu {
                         Button {
+                            onPostModuleToFeed(module)
+                        } label: {
+                            Label("Post to Feed", systemImage: "rectangle.stack")
+                        }
+
+                        Button {
+                            onShareModuleWithFriend(module)
+                        } label: {
+                            Label("Share with Friend", systemImage: "paperplane")
+                        }
+
+                        Divider()
+
+                        Button {
                             onShareText(generateModuleShareText())
                         } label: {
                             Label("Share via...", systemImage: "square.and.arrow.up")
@@ -514,6 +598,10 @@ struct SessionModuleCard: View {
                             onShareWithFriend: { onShareExerciseWithFriend(exercise) },
                             onShareSetWithFriend: { set in
                                 onShareSetWithFriend(set, exercise.exerciseName, exercise.exerciseType)
+                            },
+                            onPostToFeed: { onPostExerciseToFeed(exercise) },
+                            onPostSetToFeed: { set in
+                                onPostSetToFeed(set, exercise.exerciseName, exercise.exerciseType)
                             }
                         )
 
@@ -589,6 +677,8 @@ struct SessionExerciseCard: View {
     let onShareText: (String) -> Void
     let onShareWithFriend: () -> Void
     let onShareSetWithFriend: (SetData) -> Void
+    let onPostToFeed: () -> Void
+    let onPostSetToFeed: (SetData) -> Void
 
     @State private var isExpanded = false
 
@@ -628,10 +718,18 @@ struct SessionExerciseCard: View {
                     // Share exercise button
                     Menu {
                         Button {
+                            onPostToFeed()
+                        } label: {
+                            Label("Post to Feed", systemImage: "rectangle.stack")
+                        }
+
+                        Button {
                             onShareWithFriend()
                         } label: {
                             Label("Share with Friend", systemImage: "paperplane")
                         }
+
+                        Divider()
 
                         Button {
                             onShareText(generateExerciseShareText())
@@ -673,7 +771,8 @@ struct SessionExerciseCard: View {
                                     exercise: exercise,
                                     moduleColor: moduleColor,
                                     onShareText: onShareText,
-                                    onShareWithFriend: { onShareSetWithFriend(set) }
+                                    onShareWithFriend: { onShareSetWithFriend(set) },
+                                    onPostToFeed: { onPostSetToFeed(set) }
                                 )
                             }
                         }
@@ -899,6 +998,7 @@ struct SessionSetRow: View {
     let moduleColor: Color
     let onShareText: (String) -> Void
     let onShareWithFriend: () -> Void
+    let onPostToFeed: () -> Void
 
     var body: some View {
         HStack(spacing: AppSpacing.md) {
@@ -932,10 +1032,18 @@ struct SessionSetRow: View {
             if set.completed {
                 Menu {
                     Button {
+                        onPostToFeed()
+                    } label: {
+                        Label("Post to Feed", systemImage: "rectangle.stack")
+                    }
+
+                    Button {
                         onShareWithFriend()
                     } label: {
                         Label("Share with Friend", systemImage: "paperplane")
                     }
+
+                    Divider()
 
                     Button {
                         onShareText(generateSetShareText())

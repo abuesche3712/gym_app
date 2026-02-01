@@ -19,6 +19,7 @@ struct ModuleDetailView: View {
     @State private var isSelectingForSuperset = false
     @State private var selectedExerciseIds: Set<UUID> = []
     @State private var showingShareSheet = false
+    @State private var showingPostToFeed = false
 
     private var currentModule: Module {
         moduleViewModel.getModule(id: module.id) ?? module
@@ -149,6 +150,12 @@ struct ModuleDetailView: View {
                     }
 
                     Button {
+                        showingPostToFeed = true
+                    } label: {
+                        Label("Post to Feed", systemImage: "rectangle.stack")
+                    }
+
+                    Button {
                         showingShareSheet = true
                     } label: {
                         Label("Share with Friend", systemImage: "paperplane")
@@ -209,6 +216,9 @@ struct ModuleDetailView: View {
                 let content = try currentModule.createMessageContent()
                 try await chatViewModel.sendSharedContent(content)
             }
+        }
+        .sheet(isPresented: $showingPostToFeed) {
+            ComposePostSheet(content: currentModule)
         }
     }
 

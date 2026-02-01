@@ -19,6 +19,8 @@ struct WorkoutSummaryView: View {
 
     @State private var animateIn = false
     @State private var showShareSheet = false
+    @State private var showPostToFeed = false
+    @State private var showShareWithFriend = false
 
     // Computed stats
     private var totalVolume: Double {
@@ -70,8 +72,26 @@ struct WorkoutSummaryView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showShareSheet = true
+                    Menu {
+                        Button {
+                            showPostToFeed = true
+                        } label: {
+                            Label("Post to Feed", systemImage: "rectangle.stack")
+                        }
+
+                        Button {
+                            showShareWithFriend = true
+                        } label: {
+                            Label("Share with Friend", systemImage: "paperplane")
+                        }
+
+                        Divider()
+
+                        Button {
+                            showShareSheet = true
+                        } label: {
+                            Label("Share via...", systemImage: "square.and.arrow.up")
+                        }
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                             .body(color: AppColors.textSecondary)
@@ -81,6 +101,20 @@ struct WorkoutSummaryView: View {
             }
             .sheet(isPresented: $showShareSheet) {
                 WorkoutShareSheet(items: [generateShareText()])
+            }
+            .sheet(isPresented: $showPostToFeed) {
+                ComposePostSheet(content: session)
+            }
+            .sheet(isPresented: $showShareWithFriend) {
+                ShareWithFriendSheet(content: session) { conversationWithProfile in
+                    let chatViewModel = ChatViewModel(
+                        conversation: conversationWithProfile.conversation,
+                        otherParticipant: conversationWithProfile.otherParticipant,
+                        otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+                    )
+                    let content = try session.createMessageContent()
+                    try await chatViewModel.sendSharedContent(content)
+                }
             }
         }
         .onAppear {

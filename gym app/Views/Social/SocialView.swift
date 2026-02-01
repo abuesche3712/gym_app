@@ -2,7 +2,7 @@
 //  SocialView.swift
 //  gym app
 //
-//  Social tab - friends, profile, and social features
+//  Social tab - feed-first social experience
 //
 
 import SwiftUI
@@ -10,10 +10,13 @@ import SwiftUI
 struct SocialView: View {
     @ObservedObject private var authService = AuthService.shared
     @ObservedObject private var dataRepository = DataRepository.shared
+    @StateObject private var feedViewModel = FeedViewModel()
     @StateObject private var friendsViewModel = FriendsViewModel()
     @StateObject private var conversationsViewModel = ConversationsViewModel()
 
     @State private var showingSignIn = false
+    @State private var showingComposeSheet = false
+    @State private var selectedPost: PostWithAuthor?
 
     private var profileRepo: ProfileRepository {
         dataRepository.profileRepo
@@ -22,7 +25,7 @@ struct SocialView: View {
     var body: some View {
         NavigationStack {
             if authService.isAuthenticated {
-                authenticatedView
+                authenticatedFeedView
             } else {
                 signInPromptView
             }
@@ -30,361 +33,373 @@ struct SocialView: View {
         .sheet(isPresented: $showingSignIn) {
             SignInView()
         }
+        .sheet(isPresented: $showingComposeSheet) {
+            ComposePostSheet()
+        }
+        .sheet(item: $selectedPost) { post in
+            PostDetailView(post: post)
+        }
         .onAppear {
             if authService.isAuthenticated {
+                feedViewModel.loadFeed()
                 friendsViewModel.loadFriendships()
                 conversationsViewModel.loadConversations()
             }
         }
     }
 
-    // MARK: - Authenticated View
+    // MARK: - Authenticated Feed View
 
-    private var authenticatedView: some View {
-        ScrollView {
-            VStack(spacing: AppSpacing.lg) {
-                // My Profile Section
-                myProfileSection
-
-                // Messages Section
-                messagesSection
-
-                // Friends Section
-                friendsSection
-
-                // Search for Friends
-                searchSection
-            }
-            .padding(AppSpacing.screenPadding)
-        }
-        .background(AppColors.background.ignoresSafeArea())
-        .navigationTitle("Social")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                NavigationLink {
-                    AccountProfileView()
-                } label: {
-                    Image(systemName: "gearshape")
+    private var authenticatedFeedView: some View {
+        ZStack(alignment: .bottomTrailing) {
+            // Main feed content
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    // Feed content
+                    if feedViewModel.isLoading && feedViewModel.posts.isEmpty {
+                        loadingView
+                    } else if feedViewModel.posts.isEmpty {
+                        emptyFeedState
+                    } else {
+                        feedList
+                    }
                 }
             }
+            .refreshable {
+                await feedViewModel.refreshFeed()
+                friendsViewModel.loadFriendships()
+                conversationsViewModel.loadConversations()
+            }
+
+            // Floating compose button
+            composeButton
         }
-        .refreshable {
-            friendsViewModel.loadFriendships()
-            conversationsViewModel.loadConversations()
+        .background(AppColors.background.ignoresSafeArea())
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                profileButton
+            }
+
+            ToolbarItem(placement: .principal) {
+                Text("Feed")
+                    .headline(color: AppColors.textPrimary)
+            }
+
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                searchButton
+                messagesButton
+            }
         }
+        .navigationBarTitleDisplayMode(.inline)
     }
 
-    // MARK: - My Profile Section
+    // MARK: - Toolbar Buttons
 
-    private var myProfileSection: some View {
+    private var profileButton: some View {
         NavigationLink {
             AccountProfileView()
         } label: {
-            HStack(spacing: AppSpacing.md) {
-                // Avatar
-                Circle()
-                    .fill(AppColors.dominant.opacity(0.2))
-                    .frame(width: 64, height: 64)
-                    .overlay {
-                        Text(avatarInitials)
-                            .displaySmall(color: AppColors.dominant)
-                            .fontWeight(.semibold)
-                    }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    if let profile = profileRepo.currentProfile {
-                        if let displayName = profile.displayName, !displayName.isEmpty {
-                            Text(displayName)
-                                .headline(color: AppColors.textPrimary)
-                        }
-
-                        if !profile.username.isEmpty {
-                            Text("@\(profile.username)")
-                                .subheadline(color: AppColors.textSecondary)
-                        } else {
-                            Text("Set up your profile")
-                                .subheadline(color: AppColors.dominant)
-                        }
-                    } else {
-                        Text("Set up your profile")
-                            .headline(color: AppColors.textPrimary)
-                        Text("Add a username and bio")
-                            .subheadline(color: AppColors.textSecondary)
-                    }
-                }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.body.weight(.semibold))
-                    .foregroundColor(AppColors.textTertiary)
-            }
-            .padding(AppSpacing.md)
-            .background(AppColors.surfaceSecondary)
-            .cornerRadius(AppCorners.large)
+            profileAvatar
         }
-        .buttonStyle(.plain)
+    }
+
+    private var profileAvatar: some View {
+        Circle()
+            .fill(AppColors.accent2.opacity(0.2))
+            .frame(width: 32, height: 32)
+            .overlay {
+                Text(avatarInitials)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundColor(AppColors.accent2)
+            }
+            .overlay {
+                Circle()
+                    .stroke(AppColors.accent2.opacity(0.3), lineWidth: 1.5)
+            }
     }
 
     private var avatarInitials: String {
         if let profile = profileRepo.currentProfile {
             if let displayName = profile.displayName, !displayName.isEmpty {
-                return String(displayName.prefix(2)).uppercased()
+                return String(displayName.prefix(1)).uppercased()
             }
             if !profile.username.isEmpty {
-                return String(profile.username.prefix(2)).uppercased()
+                return String(profile.username.prefix(1)).uppercased()
             }
         }
         return "?"
     }
 
-    // MARK: - Messages Section
-
-    private var messagesSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            NavigationLink {
-                ConversationsListView()
-            } label: {
-                HStack {
-                    Image(systemName: "bubble.left.and.bubble.right.fill")
-                        .font(.title2)
-                        .foregroundColor(AppColors.accent3)
-                        .frame(width: 44, height: 44)
-                        .background(AppColors.accent3.opacity(0.15))
-                        .cornerRadius(AppCorners.medium)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Messages")
-                            .headline(color: AppColors.textPrimary)
-
-                        if conversationsViewModel.totalUnreadCount > 0 {
-                            Text("\(conversationsViewModel.totalUnreadCount) unread")
-                                .caption(color: AppColors.accent3)
-                        } else {
-                            Text("Chat with friends")
-                                .caption(color: AppColors.textSecondary)
-                        }
-                    }
-
-                    Spacer()
-
-                    // Unread badge
-                    if conversationsViewModel.totalUnreadCount > 0 {
-                        Text("\(conversationsViewModel.totalUnreadCount)")
-                            .font(.caption.weight(.bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(AppColors.accent3)
-                            .clipShape(Capsule())
-                    }
-
-                    Image(systemName: "chevron.right")
-                        .font(.body.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                }
-                .padding(AppSpacing.md)
-                .background(AppColors.surfaceSecondary)
-                .cornerRadius(AppCorners.large)
-            }
-            .buttonStyle(.plain)
+    private var searchButton: some View {
+        NavigationLink {
+            UserSearchView(viewModel: friendsViewModel)
+        } label: {
+            Image(systemName: "magnifyingglass")
+                .font(.body.weight(.medium))
+                .foregroundColor(AppColors.textSecondary)
         }
     }
 
-    // MARK: - Friends Section
+    private var messagesButton: some View {
+        NavigationLink {
+            ConversationsListView()
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "paperplane")
+                    .font(.body.weight(.medium))
+                    .foregroundColor(AppColors.textSecondary)
 
-    private var friendsSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            NavigationLink {
-                FriendsListView()
-            } label: {
-                HStack {
-                    Image(systemName: "person.2.fill")
-                        .font(.title2)
-                        .foregroundColor(AppColors.dominant)
-                        .frame(width: 44, height: 44)
-                        .background(AppColors.dominant.opacity(0.15))
-                        .cornerRadius(AppCorners.medium)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Friends")
-                            .headline(color: AppColors.textPrimary)
-
-                        Text("\(friendsViewModel.friends.count) friends")
-                            .caption(color: AppColors.textSecondary)
-                    }
-
-                    Spacer()
-
-                    // Pending requests badge
-                    if friendsViewModel.pendingRequestCount > 0 {
-                        Text("\(friendsViewModel.pendingRequestCount)")
-                            .font(.caption.weight(.bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(AppColors.error)
-                            .clipShape(Capsule())
-                    }
-
-                    Image(systemName: "chevron.right")
-                        .font(.body.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
+                // Unread badge
+                if conversationsViewModel.totalUnreadCount > 0 {
+                    Circle()
+                        .fill(AppColors.accent2)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 2, y: -2)
                 }
-                .padding(AppSpacing.md)
-                .background(AppColors.surfaceSecondary)
-                .cornerRadius(AppCorners.large)
             }
-            .buttonStyle(.plain)
         }
     }
 
-    // MARK: - Search Section
+    // MARK: - Compose Button
 
-    private var searchSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+    private var composeButton: some View {
+        Button {
+            HapticManager.shared.impact()
+            showingComposeSheet = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.title2.weight(.semibold))
+                .foregroundColor(.white)
+                .frame(width: 56, height: 56)
+                .background(
+                    Circle()
+                        .fill(AppGradients.socialGradient)
+                        .shadow(color: AppColors.accent2.opacity(0.4), radius: 8, x: 0, y: 4)
+                )
+        }
+        .padding(.trailing, AppSpacing.screenPadding)
+        .padding(.bottom, AppSpacing.lg)
+    }
+
+    // MARK: - Loading View
+
+    private var loadingView: some View {
+        VStack(spacing: AppSpacing.lg) {
+            ProgressView()
+                .tint(AppColors.accent2)
+            Text("Loading feed...")
+                .subheadline(color: AppColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 100)
+    }
+
+    // MARK: - Empty Feed State
+
+    private var emptyFeedState: some View {
+        VStack(spacing: AppSpacing.lg) {
+            Spacer()
+                .frame(height: 60)
+
+            // Empty state icon
+            ZStack {
+                Circle()
+                    .fill(AppColors.accent2.opacity(0.1))
+                    .frame(width: 100, height: 100)
+
+                Image(systemName: "rectangle.stack")
+                    .font(.system(size: 40))
+                    .foregroundColor(AppColors.accent2.opacity(0.6))
+            }
+
+            VStack(spacing: AppSpacing.sm) {
+                Text("Your Feed is Empty")
+                    .headline(color: AppColors.textPrimary)
+
+                Text("Add friends to see their workouts and progress")
+                    .subheadline(color: AppColors.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, AppSpacing.xl)
+            }
+
             NavigationLink {
                 UserSearchView(viewModel: friendsViewModel)
             } label: {
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .font(.title2)
-                        .foregroundColor(AppColors.success)
-                        .frame(width: 44, height: 44)
-                        .background(AppColors.success.opacity(0.15))
-                        .cornerRadius(AppCorners.medium)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Find Friends")
-                            .headline(color: AppColors.textPrimary)
-
-                        Text("Search by username")
-                            .caption(color: AppColors.textSecondary)
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.body.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "person.badge.plus")
+                    Text("Find Friends")
                 }
-                .padding(AppSpacing.md)
-                .background(AppColors.surfaceSecondary)
-                .cornerRadius(AppCorners.large)
+                .headline(color: .white)
+                .padding(.horizontal, AppSpacing.xl)
+                .padding(.vertical, AppSpacing.md)
+                .background(
+                    Capsule()
+                        .fill(AppColors.accent2)
+                )
             }
-            .buttonStyle(.plain)
+            .padding(.top, AppSpacing.sm)
+
+            Spacer()
         }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, AppSpacing.screenPadding)
+    }
+
+    // MARK: - Feed List
+
+    private var feedList: some View {
+        LazyVStack(spacing: AppSpacing.md) {
+            ForEach(feedViewModel.posts) { post in
+                PostCard(
+                    post: post,
+                    onLike: {
+                        Task {
+                            await feedViewModel.toggleLike(for: post)
+                        }
+                    },
+                    onComment: {
+                        selectedPost = post
+                    },
+                    onDelete: post.post.authorId == feedViewModel.currentUserId ? {
+                        Task {
+                            await feedViewModel.deletePost(post)
+                        }
+                    } : nil,
+                    onProfileTap: {
+                        // Profile viewing can be added later
+                    }
+                )
+                .onAppear {
+                    // Load more when reaching the end
+                    if post.id == feedViewModel.posts.last?.id {
+                        Task {
+                            await feedViewModel.loadMorePosts()
+                        }
+                    }
+                }
+            }
+
+            if feedViewModel.isLoadingMore {
+                ProgressView()
+                    .tint(AppColors.accent2)
+                    .padding(AppSpacing.lg)
+            }
+        }
+        .padding(.horizontal, AppSpacing.screenPadding)
+        .padding(.bottom, 80) // Space for FAB
     }
 
     // MARK: - Sign In Prompt
 
     private var signInPromptView: some View {
         ScrollView {
-            VStack(spacing: 32) {
+            VStack(spacing: AppSpacing.xl) {
                 Spacer()
-                    .frame(height: 40)
+                    .frame(height: 60)
 
-                // Icon
-                ZStack {
-                    Circle()
-                        .fill(AppColors.dominant.opacity(0.15))
-                        .frame(width: 120, height: 120)
+                // Hero section
+                VStack(spacing: AppSpacing.lg) {
+                    ZStack {
+                        Circle()
+                            .fill(AppColors.accent2.opacity(0.1))
+                            .frame(width: 120, height: 120)
 
-                    Image(systemName: "person.2.fill")
-                        .font(.largeTitle)
-                        .foregroundColor(AppColors.dominant)
+                        Circle()
+                            .fill(AppColors.accent2.opacity(0.15))
+                            .frame(width: 90, height: 90)
+
+                        Image(systemName: "person.2.fill")
+                            .font(.system(size: 36))
+                            .foregroundColor(AppColors.accent2)
+                    }
+
+                    VStack(spacing: AppSpacing.sm) {
+                        Text("Connect & Share")
+                            .displayMedium(color: AppColors.textPrimary)
+
+                        Text("Join the community to share your progress and stay motivated with friends")
+                            .subheadline(color: AppColors.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, AppSpacing.xl)
+                    }
                 }
 
-                // Title and Description
-                VStack(spacing: 12) {
-                    Text("Social")
-                        .displayLarge(color: AppColors.textPrimary)
-                        .fontWeight(.bold)
-
-                    Text("Sign in to connect with friends, share progress, and stay motivated together")
-                        .body(color: AppColors.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
-                }
-
-                // Sign In Button
+                // Sign in button
                 Button {
                     showingSignIn = true
                 } label: {
-                    HStack {
+                    HStack(spacing: AppSpacing.sm) {
                         Image(systemName: "apple.logo")
                         Text("Sign in with Apple")
                     }
+                    .headline(color: AppColors.background)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, AppSpacing.md)
                     .background(AppColors.textPrimary)
-                    .foregroundColor(AppColors.background)
                     .cornerRadius(AppCorners.medium)
                 }
                 .padding(.horizontal, AppSpacing.xl)
 
-                // Feature Preview Cards
-                VStack(spacing: 16) {
-                    FeaturePreviewCard(
-                        icon: "person.badge.plus",
-                        title: "Add Friends",
-                        description: "Connect with workout partners"
+                // Feature cards
+                VStack(spacing: AppSpacing.md) {
+                    featureRow(
+                        icon: "rectangle.stack.fill",
+                        title: "Share Workouts",
+                        description: "Post your sessions to inspire others",
+                        color: AppColors.accent2
                     )
 
-                    FeaturePreviewCard(
-                        icon: "chart.bar.fill",
-                        title: "Share Progress",
-                        description: "Celebrate achievements together"
+                    featureRow(
+                        icon: "heart.fill",
+                        title: "Celebrate Progress",
+                        description: "Like and comment on friends' achievements",
+                        color: AppColors.success
                     )
 
-                    FeaturePreviewCard(
-                        icon: "flame.fill",
-                        title: "Challenges",
-                        description: "Compete in fitness challenges"
+                    featureRow(
+                        icon: "paperplane.fill",
+                        title: "Direct Messages",
+                        description: "Chat and share tips with workout partners",
+                        color: AppColors.accent3
                     )
                 }
-                .padding(.horizontal)
-                .padding(.top, 16)
+                .padding(.horizontal, AppSpacing.screenPadding)
+                .padding(.top, AppSpacing.md)
 
                 Spacer()
             }
         }
-        .navigationTitle("Social")
         .background(AppColors.background.ignoresSafeArea())
+        .navigationTitle("Social")
+        .navigationBarTitleDisplayMode(.large)
     }
-}
 
-// MARK: - Feature Preview Card
-
-struct FeaturePreviewCard: View {
-    let icon: String
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(spacing: 16) {
+    private func featureRow(icon: String, title: String, description: String, color: Color) -> some View {
+        HStack(spacing: AppSpacing.md) {
             Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(AppColors.dominant)
+                .font(.title3)
+                .foregroundColor(color)
                 .frame(width: 44, height: 44)
-                .background(AppColors.dominant.opacity(0.15))
-                .cornerRadius(10)
+                .background(color.opacity(0.15))
+                .cornerRadius(AppCorners.medium)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .headline(color: AppColors.textPrimary)
 
                 Text(description)
-                    .subheadline(color: AppColors.textSecondary)
+                    .caption(color: AppColors.textSecondary)
             }
 
             Spacer()
         }
-        .padding()
-        .background(AppColors.surfaceSecondary)
+        .padding(AppSpacing.md)
+        .background(AppColors.surfacePrimary)
         .cornerRadius(AppCorners.large)
     }
 }
+
+// MARK: - Preview
 
 #Preview {
     SocialView()

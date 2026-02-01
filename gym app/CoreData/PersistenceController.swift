@@ -139,6 +139,11 @@ struct PersistenceController {
         let conversationEntity = createConversationEntity()
         let messageEntity = createMessageEntity()
 
+        // Create feed entities (for social feed)
+        let postEntity = createPostEntity()
+        let postLikeEntity = createPostLikeEntity()
+        let postCommentEntity = createPostCommentEntity()
+
         // Set up relationships
         setupRelationships(
             moduleEntity: moduleEntity,
@@ -203,7 +208,11 @@ struct PersistenceController {
             friendshipEntity,
             // Messaging entities
             conversationEntity,
-            messageEntity
+            messageEntity,
+            // Feed entities
+            postEntity,
+            postLikeEntity,
+            postCommentEntity
         ]
 
         return model
@@ -839,6 +848,64 @@ struct PersistenceController {
             createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             createAttribute("readAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncStatusRaw", type: .stringAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createPostEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "PostEntity"
+        entity.managedObjectClassName = "PostEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("authorId", type: .stringAttributeType),
+            createAttribute("contentData", type: .binaryDataAttributeType, optional: true),
+            createAttribute("caption", type: .stringAttributeType, optional: true),
+            createAttribute("likeCount", type: .integer32AttributeType, defaultValue: 0),
+            createAttribute("commentCount", type: .integer32AttributeType, defaultValue: 0),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncStatusRaw", type: .stringAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createPostLikeEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "PostLikeEntity"
+        entity.managedObjectClassName = "PostLikeEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("postId", type: .UUIDAttributeType),
+            createAttribute("userId", type: .stringAttributeType),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncStatusRaw", type: .stringAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createPostCommentEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "PostCommentEntity"
+        entity.managedObjectClassName = "PostCommentEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("postId", type: .UUIDAttributeType),
+            createAttribute("authorId", type: .stringAttributeType),
+            createAttribute("text", type: .stringAttributeType),
+            createAttribute("createdAt", type: .dateAttributeType, optional: true),
+            createAttribute("updatedAt", type: .dateAttributeType, optional: true),
+            createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncStatusRaw", type: .stringAttributeType)
         ]
 

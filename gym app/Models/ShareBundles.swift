@@ -197,6 +197,33 @@ struct SetShareBundle: Codable {
     }
 }
 
+// MARK: - Completed Module Share Bundle
+
+/// Snapshot of a completed module (from a session) for sharing
+struct CompletedModuleShareBundle: Codable {
+    let schemaVersion: Int
+    let module: CompletedModule
+    let workoutName: String
+    let date: Date
+
+    init(module: CompletedModule, workoutName: String, date: Date) {
+        self.schemaVersion = SchemaVersions.completedModuleShareBundle
+        self.module = module
+        self.workoutName = workoutName
+        self.date = date
+    }
+
+    /// Encodes the bundle to Data for embedding in a message
+    func encode() throws -> Data {
+        try JSONEncoder().encode(self)
+    }
+
+    /// Decodes a bundle from message data
+    static func decode(from data: Data) throws -> CompletedModuleShareBundle {
+        try JSONDecoder().decode(CompletedModuleShareBundle.self, from: data)
+    }
+}
+
 // MARK: - Implement Snapshot
 
 /// Lightweight snapshot of an implement for sharing

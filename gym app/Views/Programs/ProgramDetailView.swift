@@ -21,6 +21,7 @@ struct ProgramDetailView: View {
     @State private var showingProgressionConfig = false
     @State private var selectedDayOfWeek: Int?
     @State private var showingShareSheet = false
+    @State private var showingPostToFeed = false
 
     private var currentProgram: Program {
         programViewModel.getProgram(id: program.id) ?? program
@@ -54,6 +55,12 @@ struct ProgramDetailView: View {
                         showingEditSheet = true
                     } label: {
                         Label("Edit Details", systemImage: "pencil")
+                    }
+
+                    Button {
+                        showingPostToFeed = true
+                    } label: {
+                        Label("Post to Feed", systemImage: "rectangle.stack")
                     }
 
                     Button {
@@ -118,6 +125,9 @@ struct ProgramDetailView: View {
                 let content = try currentProgram.createMessageContent()
                 try await chatViewModel.sendSharedContent(content)
             }
+        }
+        .sheet(isPresented: $showingPostToFeed) {
+            ComposePostSheet(content: currentProgram)
         }
     }
 

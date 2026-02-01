@@ -45,4 +45,10 @@ enum SchemaVersions {
     static let sessionShareBundle = 1
     static let exerciseShareBundle = 1
     static let setShareBundle = 1
+    static let completedModuleShareBundle = 1
+
+    // Social feed
+    static let post = 1
+    static let postLike = 1
+    static let postComment = 1
 }
