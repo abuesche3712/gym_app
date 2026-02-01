@@ -24,19 +24,23 @@ class QuickLogService {
         exerciseType: ExerciseType,
         metrics: SetData,
         notes: String?,
-        date: Date = Date()
+        date: Date = Date(),
+        sessionName: String? = nil
     ) -> Session {
         let sessionId = UUID()
         let moduleId = UUID()
         let exerciseId = UUID()
         let setGroupId = UUID()
+        let workoutName = sessionName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+            ? sessionName!
+            : "Quick Log"
 
         // 1. Build SetData with sharing context
         var setData = metrics
         setData.sessionId = sessionId
         setData.exerciseId = exerciseId
         setData.exerciseName = exerciseName
-        setData.workoutName = "Quick Log"
+        setData.workoutName = workoutName
         setData.date = date
 
         // 2. Build CompletedSetGroup
@@ -59,7 +63,7 @@ class QuickLogService {
             moduleId: moduleId,
             moduleName: moduleTypeForExercise(exerciseType).displayName,
             workoutId: Self.quickLogWorkoutId,
-            workoutName: "Quick Log",
+            workoutName: workoutName,
             date: date
         )
 
@@ -73,7 +77,7 @@ class QuickLogService {
             completedExercises: [exercise],
             sessionId: sessionId,
             workoutId: Self.quickLogWorkoutId,
-            workoutName: "Quick Log",
+            workoutName: workoutName,
             date: date
         )
 
@@ -81,7 +85,7 @@ class QuickLogService {
         let session = Session(
             id: sessionId,
             workoutId: Self.quickLogWorkoutId,
-            workoutName: "Quick Log",
+            workoutName: workoutName,
             date: date,
             completedModules: [module],
             isQuickLog: true
@@ -109,10 +113,13 @@ class QuickLogService {
     // MARK: - Freestyle Session Support
 
     /// Creates an empty freestyle session ready for exercises to be added
-    func createFreestyleSession() -> Session {
+    func createFreestyleSession(name: String? = nil) -> Session {
+        let workoutName = name?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+            ? name!
+            : "Freestyle"
         return Session(
             workoutId: Self.freestyleWorkoutId,
-            workoutName: "Freestyle",
+            workoutName: workoutName,
             completedModules: [],
             isFreestyle: true
         )

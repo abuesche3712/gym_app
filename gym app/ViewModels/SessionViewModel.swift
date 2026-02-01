@@ -409,8 +409,8 @@ class SessionViewModel: ObservableObject {
     // MARK: - Freestyle Session
 
     /// Start an empty freestyle session where exercises are added on-the-fly
-    func startFreestyleSession() {
-        let session = QuickLogService.shared.createFreestyleSession()
+    func startFreestyleSession(name: String? = nil) {
+        let session = QuickLogService.shared.createFreestyleSession(name: name)
         currentSession = session
         navigator = SessionNavigator(modules: session.completedModules)
         sessionStartTime = session.date

@@ -13,6 +13,12 @@ struct MainTabView: View {
     @State private var selectedTab = 0
     @State private var showingFullSession = false
 
+    // Pop-to-root triggers - increment to signal navigation reset
+    @State private var homePopToRoot = 0
+    @State private var trainingPopToRoot = 0
+    @State private var socialPopToRoot = 0
+    @State private var analyticsPopToRoot = 0
+
     private let tabCount = 4
 
     private let tabs: [(icon: String, tag: Int)] = [
@@ -36,18 +42,22 @@ struct MainTabView: View {
         ZStack(alignment: .top) {
             TabView(selection: $selectedTab) {
                 HomeView()
+                    .id("home-\(homePopToRoot)")
                     .tag(0)
                     .simultaneousGesture(swipeGesture)
 
                 WorkoutBuilderView()
+                    .id("training-\(trainingPopToRoot)")
                     .tag(1)
                     .simultaneousGesture(swipeGesture)
 
                 SocialView()
+                    .id("social-\(socialPopToRoot)")
                     .tag(2)
                     .simultaneousGesture(swipeGesture)
 
                 AnalyticsView()
+                    .id("analytics-\(analyticsPopToRoot)")
                     .tag(3)
                     .simultaneousGesture(swipeGesture)
             }
@@ -127,21 +137,21 @@ struct MainTabView: View {
 
             // Tab buttons
             HStack(spacing: 0) {
-                ForEach(tabs, id: \.tag) { tab in
+                ForEach(Array(tabs.enumerated()), id: \.element.tag) { index, tab in
                     Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            selectedTab = tab.tag
+                        if selectedTab == tab.tag {
+                            // Already on this tab - pop to root
+                            popToRoot(tab: tab.tag)
+                        } else {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                selectedTab = tab.tag
+                            }
                         }
                     } label: {
-                        VStack(spacing: 3) {
+                        VStack(spacing: 4) {
                             Image(systemName: tab.icon)
-                                .font(.system(size: 20, weight: .medium))
+                                .font(.system(size: 24, weight: .medium))
                                 .foregroundColor(selectedTab == tab.tag ? AppColors.dominant : AppColors.textTertiary)
-                                .frame(width: 40, height: 40)
-                                .background(
-                                    Circle()
-                                        .fill(selectedTab == tab.tag ? AppColors.dominant.opacity(0.15) : AppColors.surfaceSecondary)
-                                )
 
                             // Selection indicator dot
                             Circle()
@@ -149,12 +159,19 @@ struct MainTabView: View {
                                 .frame(width: 4, height: 4)
                         }
                         .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
                     }
                     .buttonStyle(.plain)
+
+                    // Vertical divider (except after last tab)
+                    if index < tabs.count - 1 {
+                        Rectangle()
+                            .fill(AppColors.surfaceTertiary)
+                            .frame(width: 1, height: 24)
+                    }
                 }
             }
             .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, 6)
 
             // Mini bar spacer when active
             if showMiniBar {
@@ -191,6 +208,18 @@ struct MainTabView: View {
             }
             .ignoresSafeArea(edges: .bottom)
         )
+    }
+
+    // MARK: - Pop to Root
+
+    private func popToRoot(tab: Int) {
+        switch tab {
+        case 0: homePopToRoot += 1
+        case 1: trainingPopToRoot += 1
+        case 2: socialPopToRoot += 1
+        case 3: analyticsPopToRoot += 1
+        default: break
+        }
     }
 
     private var swipeGesture: some Gesture {

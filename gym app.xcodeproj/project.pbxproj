@@ -113,6 +113,8 @@
 		FB314B4CB2D940F6B27703FF /* DataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12D1154F7E74A3385D7FF2E /* DataSeeder.swift */; };
 		FEEDVM02BUILD002 /* FeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDVM01FILE001 /* FeedViewModel.swift */; };
 		FEEDVW02BUILD002 /* FeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDVW01FILE001 /* FeedView.swift */; };
+		FEEDPSTROW02BUILD002 /* FeedPostRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDPSTROW01FILE001 /* FeedPostRow.swift */; };
+		WKATCRD02BUILD002 /* WorkoutAttachmentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = WKATCRD01FILE001 /* WorkoutAttachmentCard.swift */; };
 		FONTEXTENS1BUILD /* Font+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FONTEXTENS1FILE01 /* Font+Extensions.swift */; };
 		FORMATTING002HELPERS002 /* FormattingHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = FORMATTING001HELPERS001 /* FormattingHelpers.swift */; };
 		FRNDREPO02BUILD /* FriendshipRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDREPO01FILE /* FriendshipRepository.swift */; };
@@ -330,6 +332,8 @@
 		F5A7B9D1C3E5F7A9B1D3E5F7 /* ExercisePickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExercisePickerView.swift; sourceTree = "<group>"; };
 		FEEDVM01FILE001 /* FeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedViewModel.swift; sourceTree = "<group>"; };
 		FEEDVW01FILE001 /* FeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedView.swift; sourceTree = "<group>"; };
+		FEEDPSTROW01FILE001 /* FeedPostRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedPostRow.swift; sourceTree = "<group>"; };
+		WKATCRD01FILE001 /* WorkoutAttachmentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutAttachmentCard.swift; sourceTree = "<group>"; };
 		FONTEXTENS1FILE01 /* Font+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+Extensions.swift"; sourceTree = "<group>"; };
 		FORMATTING001HELPERS001 /* FormattingHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FormattingHelpers.swift; sourceTree = "<group>"; };
 		FRNDREPO01FILE /* FriendshipRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendshipRepository.swift; sourceTree = "<group>"; };
@@ -858,6 +862,8 @@
 				FRNDRQST01FILE /* FriendRequestsView.swift */,
 				POSTCRD01FILE001 /* PostCard.swift */,
 				FEEDVW01FILE001 /* FeedView.swift */,
+				FEEDPSTROW01FILE001 /* FeedPostRow.swift */,
+				WKATCRD01FILE001 /* WorkoutAttachmentCard.swift */,
 				PSTDVW01FILE001 /* PostDetailView.swift */,
 				CMPSHT01FILE001 /* ComposePostSheet.swift */,
 			);
@@ -1231,6 +1237,8 @@
 				CMPSTVM02BUILD002 /* ComposePostViewModel.swift in Sources */,
 				POSTCRD02BUILD002 /* PostCard.swift in Sources */,
 				FEEDVW02BUILD002 /* FeedView.swift in Sources */,
+				FEEDPSTROW02BUILD002 /* FeedPostRow.swift in Sources */,
+				WKATCRD02BUILD002 /* WorkoutAttachmentCard.swift in Sources */,
 				PSTDVW02BUILD002 /* PostDetailView.swift in Sources */,
 				CMPSHT02BUILD002 /* ComposePostSheet.swift in Sources */,
 				ANLYT002BUILD002 /* AnalyticsView.swift in Sources */,

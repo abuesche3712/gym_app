@@ -186,16 +186,16 @@ struct SocialView: View {
         } label: {
             Image(systemName: "plus")
                 .font(.title2.weight(.semibold))
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.background)
                 .frame(width: 56, height: 56)
                 .background(
                     Circle()
-                        .fill(AppGradients.socialGradient)
+                        .fill(AppColors.accent2)
                         .shadow(color: AppColors.accent2.opacity(0.4), radius: 8, x: 0, y: 4)
                 )
         }
         .padding(.trailing, AppSpacing.screenPadding)
-        .padding(.bottom, AppSpacing.lg)
+        .padding(.bottom, 80) // Clear the custom tab bar
     }
 
     // MARK: - Loading View
@@ -262,30 +262,37 @@ struct SocialView: View {
         .padding(.horizontal, AppSpacing.screenPadding)
     }
 
-    // MARK: - Feed List
+    // MARK: - Feed List (Twitter-style flat layout)
 
     private var feedList: some View {
-        LazyVStack(spacing: AppSpacing.md) {
+        LazyVStack(spacing: 0) {
             ForEach(feedViewModel.posts) { post in
-                PostCard(
-                    post: post,
-                    onLike: {
-                        Task {
-                            await feedViewModel.toggleLike(for: post)
+                VStack(spacing: 0) {
+                    // Divider at top of each post
+                    Rectangle()
+                        .fill(AppColors.surfaceTertiary.opacity(0.5))
+                        .frame(height: 0.5)
+
+                    FeedPostRow(
+                        post: post,
+                        onLike: {
+                            Task {
+                                await feedViewModel.toggleLike(for: post)
+                            }
+                        },
+                        onComment: {
+                            selectedPost = post
+                        },
+                        onDelete: post.post.authorId == feedViewModel.currentUserId ? {
+                            Task {
+                                await feedViewModel.deletePost(post)
+                            }
+                        } : nil,
+                        onProfileTap: {
+                            // Profile viewing can be added later
                         }
-                    },
-                    onComment: {
-                        selectedPost = post
-                    },
-                    onDelete: post.post.authorId == feedViewModel.currentUserId ? {
-                        Task {
-                            await feedViewModel.deletePost(post)
-                        }
-                    } : nil,
-                    onProfileTap: {
-                        // Profile viewing can be added later
-                    }
-                )
+                    )
+                }
                 .onAppear {
                     // Load more when reaching the end
                     if post.id == feedViewModel.posts.last?.id {
@@ -296,13 +303,17 @@ struct SocialView: View {
                 }
             }
 
+            // Final divider
+            Rectangle()
+                .fill(AppColors.surfaceTertiary.opacity(0.5))
+                .frame(height: 0.5)
+
             if feedViewModel.isLoadingMore {
                 ProgressView()
                     .tint(AppColors.accent2)
                     .padding(AppSpacing.lg)
             }
         }
-        .padding(.horizontal, AppSpacing.screenPadding)
         .padding(.bottom, 80) // Space for FAB
     }
 

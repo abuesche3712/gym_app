@@ -1,13 +1,87 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2026-02-01
+> **Last updated:** 2026-02-01 (Twitter-style feed, bug fixes)
 
 ## Project Overview
 
 iOS workout tracking app built with SwiftUI. Offline-first with CoreData, Firebase for cloud sync.
 
-**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete. Major refactoring completed (DataRepository split, Session model split, AppTheme split, Session views split). Per-exercise progression system implemented. Comprehensive DataRepository tests added. **Social features Phase 1-5 complete** (Profiles, Friendships, Messaging, Sharing, Feed). **Design system unified** (Feb 1, 2026).
+**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete. Major refactoring completed (DataRepository split, Session model split, AppTheme split, Session views split). Per-exercise progression system implemented. Comprehensive DataRepository tests added. **Social features Phase 1-5 complete** (Profiles, Friendships, Messaging, Sharing, Feed). **Design system unified** (Feb 1, 2026). **Twitter-style feed implemented** (Feb 1, 2026).
+
+## Twitter-Style Feed Implementation (Feb 1, 2026)
+
+Redesigned social feed with flat Twitter/X-style layout and improved workout content display.
+
+### New Feed Components
+
+**FeedPostRow.swift** - Twitter-style flat post row:
+```swift
+VStack(alignment: .leading, spacing: AppSpacing.sm) {
+    // Top row: Avatar + Author info
+    HStack(alignment: .top, spacing: AppSpacing.sm) {
+        PostAvatarView(...)
+        authorLine  // Name, @username, time, menu
+    }
+
+    // Caption (if any) - full width
+    if let caption = post.post.caption { Text(caption)... }
+
+    // Attachment card (centered on full width)
+    attachmentContent.frame(maxWidth: .infinity)
+
+    // Engagement bar (evenly spaced)
+    engagementBar  // Like, Comment, Share buttons
+}
+.padding(.horizontal, AppSpacing.screenPadding)
+.background(AppColors.background)
+```
+
+**WorkoutAttachmentCard.swift** - Hero content card for workout posts:
+- Shows workout name, duration, date
+- Stats row: total sets, exercises, volume
+- **TOP LIFTS section**: Best weight×reps for strength exercises
+- **CARDIO section**: Duration and distance for cardio exercises
+- **HOLDS section**: Total hold time for isometric exercises
+
+### Feed Layout Changes
+- Flat layout with thin dividers between posts (vs. cards with margins)
+- Avatar on left, content flows vertically below author line
+- Workout attachment card centered on full screen width
+- Engagement buttons evenly distributed with `.frame(maxWidth: .infinity)`
+
+### Tab Navigation Improvements
+- Pop-to-root on tab re-tap using `.id()` modifier pattern
+- State triggers increment to force NavigationStack reset:
+```swift
+@State private var homePopToRoot = 0
+HomeView().id("home-\(homePopToRoot)").tag(0)
+
+private func popToRoot(tab: Int) {
+    switch tab {
+    case 0: homePopToRoot += 1
+    // ...
+    }
+}
+```
+
+### Compose Button Fix
+- Moved above tab bar with `padding(.bottom, 80)`
+- Changed to gold color (`AppColors.accent2`)
+
+### Bug Fixes (Feb 1, 2026)
+
+**Quick log/freestyle sessions not appearing until restart:**
+- **Root cause:** `QuickLogSheet.saveQuickLog()` saved to DataRepository but never called `sessionViewModel.loadSessions()` to refresh the observable array
+- **Fix:** Added `sessionViewModel.loadSessions()` after saving in `QuickLogSheet.swift:521`
+
+**Freestyle session start button requiring multiple clicks:**
+- **Root cause:** Keyboard auto-focused on sheet appear; button taps conflicted with keyboard dismissal
+- **Fix:** In `FreestyleNameSheet`:
+  - Created `startSession()` helper that dismisses keyboard first (`isFocused = false`)
+  - Added haptic feedback for immediate response feel
+  - Added 0.1s delay before calling `onStart()` to ensure keyboard dismisses
+  - Added `.submitLabel(.go)` and `.onSubmit` for keyboard "Go" button support
 
 ## Major Refactoring (Jan 29, 2026)
 
@@ -640,8 +714,10 @@ gym app/                          (90+ Swift files)
 │   ├── Auth/                     (1 file)
 │   ├── Analytics/                (1 file)
 │   ├── Components/               (2 files)
-│   ├── Social/                   (11 files - social features)
+│   ├── Social/                   (13 files - social features)
 │   │   ├── SocialView.swift
+│   │   ├── FeedPostRow.swift           (Twitter-style flat post row)
+│   │   ├── WorkoutAttachmentCard.swift (Hero workout card)
 │   │   ├── AccountProfileView.swift
 │   │   ├── UserSearchView.swift
 │   │   ├── FriendsListView.swift
@@ -983,6 +1059,8 @@ ViewModels/
 Views/Social/
 ├── SocialView.swift           (Main social tab with feed)
 ├── FeedView.swift             (Social feed display)
+├── FeedPostRow.swift          (Twitter-style flat post row)
+├── WorkoutAttachmentCard.swift (Hero workout card with exercise highlights)
 ├── PostCard.swift             (Strava/Twitter hybrid post card)
 ├── ComposePostSheet.swift     (Create new posts)
 ├── AccountProfileView.swift   (Profile editing)
@@ -1427,6 +1505,53 @@ friendshipListener = firestoreService.listenToFriendships(
 ```
 
 This ensures the feed includes new friends' posts immediately after accepting friend requests.
+
+### Tab Pop-to-Root Pattern
+**Pattern:** Reset NavigationStack when tapping already-selected tab
+```swift
+// State triggers - increment to force view identity change
+@State private var homePopToRoot = 0
+@State private var trainingPopToRoot = 0
+
+// Apply .id() to views in TabView
+HomeView()
+    .id("home-\(homePopToRoot)")
+    .tag(0)
+
+// In tab button action
+if selectedTab == tab.tag {
+    popToRoot(tab: tab.tag)  // Already on this tab
+} else {
+    selectedTab = tab.tag     // Switch to new tab
+}
+
+private func popToRoot(tab: Int) {
+    switch tab {
+    case 0: homePopToRoot += 1
+    case 1: trainingPopToRoot += 1
+    // ...
+    }
+}
+```
+
+### Keyboard-Safe Button Handling in Sheets
+**Pattern:** Dismiss keyboard before triggering sheet dismissal
+```swift
+@FocusState private var isFocused: Bool
+
+private func startSession() {
+    isFocused = false  // Dismiss keyboard first
+    HapticManager.shared.impact()
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        onStart()  // Now safe to dismiss sheet
+    }
+}
+
+TextField("Name", text: $name)
+    .focused($isFocused)
+    .submitLabel(.go)
+    .onSubmit { startSession() }  // Handle keyboard "Go" button
+```
 
 ### Audio Playback Over Music
 **Pattern:** Play notification sounds while music is playing

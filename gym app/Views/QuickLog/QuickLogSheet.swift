@@ -16,6 +16,7 @@ struct QuickLogSheet: View {
     @FocusState private var focusedField: FocusField?
 
     enum FocusField {
+        case sessionName
         case customName
         case distance
         case weight
@@ -31,6 +32,9 @@ struct QuickLogSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: AppSpacing.lg) {
+                    // Session Name (optional)
+                    sessionNameInput
+
                     // Preset Grid
                     presetGrid
 
@@ -139,6 +143,23 @@ struct QuickLogSheet: View {
             .foregroundColor(isSelected ? .white : AppColors.textSecondary)
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Session Name Input
+
+    private var sessionNameInput: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Session Name")
+                .font(.caption)
+                .foregroundColor(AppColors.textTertiary)
+
+            TextField("e.g., Morning Run, Leg Day", text: $viewModel.sessionName)
+                .font(.body)
+                .padding(AppSpacing.md)
+                .background(AppColors.surfacePrimary)
+                .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
+                .focused($focusedField, equals: .sessionName)
+        }
     }
 
     // MARK: - Custom Name Input
@@ -497,6 +518,9 @@ struct QuickLogSheet: View {
     private func saveQuickLog() {
         let session = viewModel.save()
         DataRepository.shared.saveSession(session)
+
+        // Refresh the session list so it appears immediately in history
+        sessionViewModel.loadSessions()
 
         // Update widget to show the completed session
         let widgetData = TodayWorkoutData(

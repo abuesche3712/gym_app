@@ -112,31 +112,38 @@ struct FeedView: View {
         .padding(AppSpacing.screenPadding)
     }
 
-    // MARK: - Feed List
+    // MARK: - Feed List (Twitter-style flat layout)
 
     private var feedList: some View {
         ScrollView {
-            LazyVStack(spacing: AppSpacing.xl) {
+            LazyVStack(spacing: 0) {
                 ForEach(viewModel.posts) { post in
-                    PostCard(
-                        post: post,
-                        onLike: {
-                            Task {
-                                await viewModel.toggleLike(for: post)
+                    VStack(spacing: 0) {
+                        // Divider at top of each post
+                        Rectangle()
+                            .fill(AppColors.surfaceTertiary.opacity(0.5))
+                            .frame(height: 0.5)
+
+                        FeedPostRow(
+                            post: post,
+                            onLike: {
+                                Task {
+                                    await viewModel.toggleLike(for: post)
+                                }
+                            },
+                            onComment: {
+                                selectedPost = post
+                            },
+                            onDelete: post.post.authorId == viewModel.currentUserId ? {
+                                Task {
+                                    await viewModel.deletePost(post)
+                                }
+                            } : nil,
+                            onProfileTap: {
+                                // Profile viewing can be added later
                             }
-                        },
-                        onComment: {
-                            selectedPost = post
-                        },
-                        onDelete: post.post.authorId == viewModel.currentUserId ? {
-                            Task {
-                                await viewModel.deletePost(post)
-                            }
-                        } : nil,
-                        onProfileTap: {
-                            // Profile viewing can be added later
-                        }
-                    )
+                        )
+                    }
                     .onAppear {
                         // Load more when reaching near the end
                         if post.id == viewModel.posts.last?.id {
@@ -146,6 +153,11 @@ struct FeedView: View {
                         }
                     }
                 }
+
+                // Final divider
+                Rectangle()
+                    .fill(AppColors.surfaceTertiary.opacity(0.5))
+                    .frame(height: 0.5)
 
                 // Loading more indicator
                 if viewModel.isLoadingMore {
@@ -158,8 +170,6 @@ struct FeedView: View {
                     .padding(.vertical, AppSpacing.lg)
                 }
             }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.lg)
         }
     }
 }

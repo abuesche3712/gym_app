@@ -120,6 +120,7 @@ class QuickLogViewModel: ObservableObject {
     @Published var isCustom: Bool = false
     @Published var customName: String = ""
     @Published var exerciseType: ExerciseType = .cardio
+    @Published var sessionName: String = ""  // Optional custom session name
 
     // Metric values
     @Published var distance: String = ""
@@ -188,7 +189,8 @@ class QuickLogViewModel: ObservableObject {
             exerciseType: resolvedExerciseType,
             metrics: metrics,
             notes: notes.isEmpty ? nil : notes,
-            date: logDate
+            date: logDate,
+            sessionName: sessionName.isEmpty ? nil : sessionName
         )
     }
 

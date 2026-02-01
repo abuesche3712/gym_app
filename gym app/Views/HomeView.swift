@@ -18,6 +18,8 @@ struct HomeView: View {
     @State private var showingTodayWorkoutDetail = false
     @State private var showingQuickSchedule = false
     @State private var showingQuickLog = false
+    @State private var showingFreestyleNameSheet = false
+    @State private var freestyleSessionName = ""
 
     // Session recovery state
     @State private var showingRecoveryAlert = false
@@ -110,6 +112,16 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showingQuickLog) {
                 QuickLogSheet()
+            }
+            .sheet(isPresented: $showingFreestyleNameSheet) {
+                FreestyleNameSheet(
+                    sessionName: $freestyleSessionName,
+                    onStart: {
+                        showingFreestyleNameSheet = false
+                        sessionViewModel.startFreestyleSession(name: freestyleSessionName.isEmpty ? nil : freestyleSessionName)
+                    }
+                )
+                .presentationDetents([.height(200)])
             }
             .alert("Resume Workout?", isPresented: $showingRecoveryAlert) {
                 Button("Resume") {
@@ -542,7 +554,8 @@ struct HomeView: View {
             // Freestyle Button
             Button {
                 HapticManager.shared.tap()
-                sessionViewModel.startFreestyleSession()
+                freestyleSessionName = ""
+                showingFreestyleNameSheet = true
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "figure.mixed.cardio")
@@ -903,6 +916,72 @@ struct HomeView: View {
 
         sessionViewModel.startSession(workout: workout, modules: modules)
         // MainTabView will auto-show full session when isSessionActive becomes true
+    }
+}
+
+// MARK: - Freestyle Name Sheet
+
+struct FreestyleNameSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var sessionName: String
+    let onStart: () -> Void
+    @FocusState private var isFocused: Bool
+
+    private func startSession() {
+        // Dismiss keyboard first to prevent tap interference
+        isFocused = false
+        HapticManager.shared.impact()
+        // Small delay to ensure keyboard dismisses before sheet closes
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            onStart()
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: AppSpacing.lg) {
+            Text("Name Your Session")
+                .font(.headline)
+                .foregroundColor(AppColors.textPrimary)
+
+            TextField("e.g., Morning Workout, Leg Day", text: $sessionName)
+                .font(.body)
+                .padding(AppSpacing.md)
+                .background(AppColors.surfacePrimary)
+                .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
+                .focused($isFocused)
+                .submitLabel(.go)
+                .onSubmit {
+                    startSession()
+                }
+
+            HStack(spacing: AppSpacing.md) {
+                Button("Skip") {
+                    sessionName = ""
+                    startSession()
+                }
+                .font(.subheadline.weight(.medium))
+                .foregroundColor(AppColors.textSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppSpacing.md)
+                .background(AppColors.surfaceSecondary)
+                .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
+
+                Button("Start") {
+                    startSession()
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppSpacing.md)
+                .background(AppColors.accent3)
+                .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
+            }
+        }
+        .padding(AppSpacing.lg)
+        .background(AppColors.background)
+        .onAppear {
+            isFocused = true
+        }
     }
 }
 

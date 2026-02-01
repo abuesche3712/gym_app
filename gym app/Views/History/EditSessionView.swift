@@ -14,6 +14,7 @@ struct EditSessionView: View {
     let session: Session
 
     @State private var editedSession: Session
+    @State private var workoutName: String
     @State private var sessionDate: Date
     @State private var duration: Int
     @State private var overallFeeling: Int?
@@ -22,6 +23,7 @@ struct EditSessionView: View {
     init(session: Session) {
         self.session = session
         _editedSession = State(initialValue: session)
+        _workoutName = State(initialValue: session.workoutName)
         _sessionDate = State(initialValue: session.date)
         _duration = State(initialValue: session.duration ?? 0)
         _overallFeeling = State(initialValue: session.overallFeeling)
@@ -33,6 +35,13 @@ struct EditSessionView: View {
             List {
                 // Session Info Section
                 Section("Session Info") {
+                    HStack {
+                        Text("Name")
+                        Spacer()
+                        TextField("Session name", text: $workoutName)
+                            .multilineTextAlignment(.trailing)
+                    }
+
                     DatePicker("Date", selection: $sessionDate, displayedComponents: [.date, .hourAndMinute])
 
                     HStack {
@@ -109,6 +118,9 @@ struct EditSessionView: View {
 
     private func saveChanges() {
         var updated = editedSession
+        updated.workoutName = workoutName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? session.workoutName
+            : workoutName.trimmingCharacters(in: .whitespacesAndNewlines)
         updated.date = sessionDate
         updated.duration = duration > 0 ? duration : nil
         updated.overallFeeling = overallFeeling
