@@ -350,7 +350,7 @@ enum ContentPickerType: Identifiable, CaseIterable {
     var color: Color {
         switch self {
         case .workoutHistory: return AppColors.success
-        case .programs: return AppColors.accent4
+        case .programs: return AppColors.dominant
         case .workouts: return AppColors.dominant
         case .modules: return AppColors.accent3
         }
@@ -819,7 +819,7 @@ private struct ProgramPickerView: View {
                             } label: {
                                 templateRow(
                                     icon: "doc.text.fill",
-                                    color: AppColors.accent4,
+                                    color: AppColors.dominant,
                                     title: program.name,
                                     subtitle: "\(program.durationWeeks) weeks"
                                 )

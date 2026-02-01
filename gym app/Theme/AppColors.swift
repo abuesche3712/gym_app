@@ -42,7 +42,7 @@ struct AppColors {
     static let reward = Color(hex: "00FFF0")           // ELECTRIC bright cyan (PR celebration!)
 
     // MARK: - Program Color
-    static let programAccent = accent4                 // Hot pink for programs
+    static let programAccent = accent2                 // Gold for programs
 
     // MARK: - Module Type Colors (More vibrant with personality!)
     static func moduleColor(_ type: ModuleType) -> Color {

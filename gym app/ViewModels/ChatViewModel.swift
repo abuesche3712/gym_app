@@ -61,11 +61,21 @@ class ChatViewModel: ObservableObject {
 
         // Start real-time listener
         messageListener?.remove()
-        messageListener = firestoreService.listenToMessages(conversationId: conversation.id, onChange: { [weak self] cloudMessages in
-            Task { @MainActor in
-                self?.handleMessagesUpdate(cloudMessages)
+        messageListener = firestoreService.listenToMessages(
+            conversationId: conversation.id,
+            onChange: { [weak self] cloudMessages in
+                Task { @MainActor in
+                    self?.handleMessagesUpdate(cloudMessages)
+                }
+            },
+            onError: { [weak self] error in
+                Task { @MainActor in
+                    Logger.error(error, context: "ChatViewModel.loadMessages")
+                    self?.error = error
+                    self?.isLoading = false
+                }
             }
-        })
+        )
 
         // Load from local cache immediately
         loadFromLocalCache()

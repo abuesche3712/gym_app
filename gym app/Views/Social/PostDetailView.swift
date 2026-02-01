@@ -299,7 +299,7 @@ private struct PostContentCard: View {
                 ModuleContentCard(snapshot: snapshot)
 
             case .program(_, let name, let snapshot):
-                TemplateContentCard(type: "Program", name: name, icon: "doc.text.fill", color: AppColors.accent4, snapshot: snapshot)
+                TemplateContentCard(type: "Program", name: name, icon: "doc.text.fill", color: AppColors.dominant, snapshot: snapshot)
 
             case .workout(_, let name, let snapshot):
                 TemplateContentCard(type: "Workout", name: name, icon: "figure.run", color: AppColors.dominant, snapshot: snapshot)

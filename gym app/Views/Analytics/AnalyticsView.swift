@@ -11,44 +11,49 @@ struct AnalyticsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 32) {
-                    Spacer()
-                        .frame(height: 40)
-
-                    // Icon
-                    ZStack {
-                        Circle()
-                            .fill(AppColors.dominant.opacity(0.15))
-                            .frame(width: 120, height: 120)
-
-                        Image(systemName: "chart.line.uptrend.xyaxis")
-                            .font(.largeTitle)
-                            .foregroundColor(AppColors.dominant)
-                    }
-
-                    // Title and Description
-                    VStack(spacing: 12) {
+                VStack(spacing: AppSpacing.xl) {
+                    // Custom header
+                    HStack {
                         Text("Analytics")
-                            .displayLarge(color: AppColors.textPrimary)
-                            .fontWeight(.bold)
+                            .font(.title.bold())
+                            .foregroundColor(AppColors.textPrimary)
 
-                        Text("Track your progress, analyze trends, and optimize your training")
-                            .body(color: AppColors.textSecondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 32)
+                        Spacer()
                     }
 
-                    // Coming Soon Badge
-                    Text("COMING SOON")
-                        .caption(color: .white)
-                        .fontWeight(.bold)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(AppColors.dominant)
-                        .cornerRadius(20)
+                    // Coming soon content
+                    VStack(spacing: AppSpacing.xl) {
+                        // Icon
+                        ZStack {
+                            Circle()
+                                .fill(AppColors.dominant.opacity(0.15))
+                                .frame(width: 120, height: 120)
+
+                            Image(systemName: "chart.line.uptrend.xyaxis")
+                                .font(.largeTitle)
+                                .foregroundColor(AppColors.dominant)
+                        }
+
+                        // Description
+                        VStack(spacing: AppSpacing.sm) {
+                            Text("Track your progress, analyze trends, and optimize your training")
+                                .body(color: AppColors.textSecondary)
+                                .multilineTextAlignment(.center)
+                        }
+
+                        // Coming Soon Badge
+                        Text("COMING SOON")
+                            .caption(color: .white)
+                            .fontWeight(.bold)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(AppColors.dominant)
+                            .cornerRadius(20)
+                    }
+                    .padding(.top, AppSpacing.xl)
 
                     // Feature Preview Cards
-                    VStack(spacing: 16) {
+                    VStack(spacing: AppSpacing.md) {
                         AnalyticsPreviewCard(
                             icon: "chart.bar.fill",
                             title: "Volume Tracking",
@@ -79,14 +84,11 @@ struct AnalyticsView: View {
                             description: "Personalized recommendations"
                         )
                     }
-                    .padding(.horizontal)
-                    .padding(.top, 16)
-
-                    Spacer()
                 }
+                .padding(AppSpacing.screenPadding)
             }
-            .navigationTitle("Analytics")
-            .background(Color(.systemGroupedBackground))
+            .background(AppColors.background.ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
 }

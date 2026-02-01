@@ -13,7 +13,7 @@ struct MainTabView: View {
     @State private var selectedTab = 0
     @State private var showingFullSession = false
 
-    private let tabCount = 5
+    private let tabCount = 4
 
     /// Show mini bar when session is active but full view is dismissed
     private var showMiniBar: Bool {
@@ -32,7 +32,7 @@ struct MainTabView: View {
 
                 WorkoutBuilderView()
                     .tabItem {
-                        Label("Workout", systemImage: "dumbbell.fill")
+                        Label("Training", systemImage: "dumbbell.fill")
                     }
                     .tag(1)
                     .simultaneousGesture(swipeGesture)
@@ -49,13 +49,6 @@ struct MainTabView: View {
                         Label("Analytics", systemImage: "chart.line.uptrend.xyaxis")
                     }
                     .tag(3)
-                    .simultaneousGesture(swipeGesture)
-
-                MoreView()
-                    .tabItem {
-                        Label("More", systemImage: "ellipsis.circle.fill")
-                    }
-                    .tag(4)
                     .simultaneousGesture(swipeGesture)
             }
             .tint(AppColors.dominant)

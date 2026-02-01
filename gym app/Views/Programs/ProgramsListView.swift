@@ -43,7 +43,7 @@ struct ProgramsListView: View {
                     showingCreateSheet = true
                 } label: {
                     Image(systemName: "plus")
-                        .foregroundColor(AppColors.programAccent)
+                        .foregroundColor(AppColors.accent2)
                 }
             }
         }
@@ -82,10 +82,10 @@ struct ProgramsListView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack(spacing: 6) {
                                     Circle()
-                                        .fill(AppColors.programAccent)
+                                        .fill(AppColors.accent2)
                                         .frame(width: 8, height: 8)
                                     Text("Active Program")
-                                        .caption(color: AppColors.programAccent)
+                                        .caption(color: AppColors.accent2)
                                         .fontWeight(.medium)
                                 }
 
@@ -121,7 +121,7 @@ struct ProgramsListView: View {
                             )
                         }
                     }
-                    .gradientCard(accent: AppColors.programAccent)
+                    .gradientCard(accent: AppColors.accent2)
                 }
                 .buttonStyle(.plain)
             } else {
@@ -150,7 +150,7 @@ struct ProgramsListView: View {
                         .fontWeight(.semibold)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(AppColors.programAccent)
+                .tint(AppColors.accent2)
                 .padding(.top, 4)
             } else {
                 Button {
@@ -160,7 +160,7 @@ struct ProgramsListView: View {
                         .fontWeight(.semibold)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(AppColors.programAccent)
+                .tint(AppColors.accent2)
                 .padding(.top, 4)
             }
         }
@@ -383,7 +383,7 @@ struct ProgramCompactRow: View {
                             .fontWeight(.bold)
                             .padding(.horizontal, 4)
                             .padding(.vertical, 1)
-                            .background(AppColors.programAccent)
+                            .background(AppColors.accent2)
                             .cornerRadius(3)
                     }
                 }
@@ -462,7 +462,7 @@ struct ProgramRow: View {
                         .fontWeight(.bold)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .background(AppColors.programAccent)
+                        .background(AppColors.accent2)
                         .cornerRadius(4)
                 }
             }
@@ -544,9 +544,9 @@ struct DayDetailSheet: View {
                                         if scheduled.isFromProgram {
                                             HStack(spacing: 4) {
                                                 Image(systemName: "calendar.badge.clock")
-                                                    .caption(color: AppColors.programAccent)
+                                                    .caption(color: AppColors.accent2)
                                                 Text("From Program")
-                                                    .caption(color: AppColors.programAccent)
+                                                    .caption(color: AppColors.accent2)
                                             }
                                         }
                                     }
@@ -562,9 +562,9 @@ struct DayDetailSheet: View {
                                         if scheduled.isFromProgram {
                                             HStack(spacing: 4) {
                                                 Image(systemName: "calendar.badge.clock")
-                                                    .caption(color: AppColors.programAccent)
+                                                    .caption(color: AppColors.accent2)
                                                 Text("From Program")
-                                                    .caption(color: AppColors.programAccent)
+                                                    .caption(color: AppColors.accent2)
                                             }
                                         }
                                     }

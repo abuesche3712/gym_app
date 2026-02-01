@@ -61,7 +61,7 @@ struct ModuleCard: View {
                     .fill(AppColors.surfacePrimary)
                     .overlay(
                         RoundedRectangle(cornerRadius: AppCorners.large)
-                            .stroke(AppColors.moduleColor(module.type).opacity(0.2), lineWidth: 1)
+                            .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
                     )
             )
         }
@@ -125,7 +125,7 @@ struct WorkoutCard: View {
         .padding(AppSpacing.cardPadding)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppGradients.subtleGradient)
+                .fill(AppColors.surfacePrimary)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppCorners.large)
                         .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
@@ -250,9 +250,32 @@ struct StatCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: AppCorners.medium)
+            RoundedRectangle(cornerRadius: AppCorners.large)
                 .fill(AppColors.surfacePrimary)
         )
+    }
+}
+
+// MARK: - Unified Card Style
+
+struct UnifiedCardStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(AppSpacing.cardPadding)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppColors.surfacePrimary)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
+            )
+    }
+}
+
+extension View {
+    func unifiedCard() -> some View {
+        self.modifier(UnifiedCardStyle())
     }
 }
 

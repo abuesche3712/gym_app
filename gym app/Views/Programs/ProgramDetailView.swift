@@ -152,7 +152,7 @@ struct ProgramDetailView: View {
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(AppColors.programAccent)
+                                .background(AppColors.accent2)
                                 .cornerRadius(4)
                         }
                     }
@@ -179,7 +179,7 @@ struct ProgramDetailView: View {
 
                 Image(systemName: "pencil.circle.fill")
                     .font(.title2)
-                    .foregroundColor(AppColors.programAccent)
+                    .foregroundColor(AppColors.accent2)
             }
             .padding()
             .background(Color(.secondarySystemGroupedBackground))
@@ -234,7 +234,7 @@ struct ProgramDetailView: View {
                 }
             }
         }
-        .gradientCard(accent: AppColors.programAccent)
+        .gradientCard(accent: AppColors.accent2)
     }
 
     private func programProgress(startDate: Date) -> Double {
@@ -323,7 +323,7 @@ struct ProgramDetailView: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(AppColors.programAccent)
+                .tint(AppColors.accent2)
                 .disabled(currentProgram.workoutSlots.isEmpty && currentProgram.moduleSlots.isEmpty)
 
                 if currentProgram.workoutSlots.isEmpty && currentProgram.moduleSlots.isEmpty {

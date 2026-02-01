@@ -440,7 +440,7 @@ class FirestoreService: ObservableObject {
     }
 
     /// Listen to friendship changes in real-time
-    func listenToFriendships(for userId: String, onChange: @escaping ([Friendship]) -> Void) -> ListenerRegistration {
+    func listenToFriendships(for userId: String, onChange: @escaping ([Friendship]) -> Void, onError: ((Error) -> Void)? = nil) -> ListenerRegistration {
         // We need two listeners - one for each direction
         var allFriendships: [UUID: Friendship] = [:]
         let lock = NSLock()
@@ -448,6 +448,11 @@ class FirestoreService: ObservableObject {
         let requesterListener = db.collection("friendships")
             .whereField("requesterId", isEqualTo: userId)
             .addSnapshotListener { snapshot, error in
+                if let error = error {
+                    Logger.error(error, context: "listenToFriendships (requester)")
+                    onError?(error)
+                    return
+                }
                 guard let documents = snapshot?.documents else { return }
                 lock.lock()
                 // Remove old requester friendships
@@ -466,6 +471,11 @@ class FirestoreService: ObservableObject {
         let addresseeListener = db.collection("friendships")
             .whereField("addresseeId", isEqualTo: userId)
             .addSnapshotListener { snapshot, error in
+                if let error = error {
+                    Logger.error(error, context: "listenToFriendships (addressee)")
+                    onError?(error)
+                    return
+                }
                 guard let documents = snapshot?.documents else { return }
                 lock.lock()
                 // Remove old addressee friendships
@@ -595,11 +605,16 @@ class FirestoreService: ObservableObject {
     }
 
     /// Listen to conversation changes in real-time
-    func listenToConversations(for userId: String, onChange: @escaping ([Conversation]) -> Void) -> ListenerRegistration {
+    func listenToConversations(for userId: String, onChange: @escaping ([Conversation]) -> Void, onError: ((Error) -> Void)? = nil) -> ListenerRegistration {
         db.collection("conversations")
             .whereField("participantIds", arrayContains: userId)
             .order(by: "lastMessageAt", descending: true)
             .addSnapshotListener { snapshot, error in
+                if let error = error {
+                    Logger.error(error, context: "listenToConversations")
+                    onError?(error)
+                    return
+                }
                 guard let documents = snapshot?.documents else { return }
                 let conversations = documents.compactMap { doc in
                     self.decodeConversation(from: doc.data())
@@ -645,13 +660,18 @@ class FirestoreService: ObservableObject {
     }
 
     /// Listen to messages in real-time
-    func listenToMessages(conversationId: UUID, limit: Int = 100, onChange: @escaping ([Message]) -> Void) -> ListenerRegistration {
+    func listenToMessages(conversationId: UUID, limit: Int = 100, onChange: @escaping ([Message]) -> Void, onError: ((Error) -> Void)? = nil) -> ListenerRegistration {
         db.collection("conversations")
             .document(conversationId.uuidString)
             .collection("messages")
             .order(by: "createdAt", descending: false)
             .limit(toLast: limit)
             .addSnapshotListener { snapshot, error in
+                if let error = error {
+                    Logger.error(error, context: "listenToMessages")
+                    onError?(error)
+                    return
+                }
                 guard let documents = snapshot?.documents else { return }
                 let messages = documents.compactMap { doc in
                     self.decodeMessage(from: doc.data(), conversationId: conversationId)

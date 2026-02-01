@@ -65,24 +65,22 @@ struct WorkoutBuilderView: View {
     // MARK: - Header
 
     private var builderHeader: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            // Top label row
-            HStack(alignment: .center) {
-                Text("TRAINING HUB")
-                    .elegantLabel(color: AppColors.dominant)
+        HStack(alignment: .center) {
+            Text("Training")
+                .font(.title.bold())
+                .foregroundColor(AppColors.textPrimary)
 
-                Spacer()
+            Spacer()
 
-                // Show active program indicator if exists
-                if programViewModel.activeProgram != nil {
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(AppColors.programAccent)
-                            .frame(width: 6, height: 6)
-                        Text("Program active")
-                            .font(.caption.weight(.medium))
-                            .foregroundColor(AppColors.programAccent)
-                    }
+            // Show active program indicator if exists
+            if programViewModel.activeProgram != nil {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(AppColors.dominant)
+                        .frame(width: 6, height: 6)
+                    Text("Program active")
+                        .font(.caption.weight(.medium))
+                        .foregroundColor(AppColors.dominant)
                 }
             }
         }
@@ -95,14 +93,13 @@ struct WorkoutBuilderView: View {
             // Section header
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("ACTIVE PROGRAM")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(AppColors.programAccent)
-                        .tracking(1.2)
+                    Text("Active Program")
+                        .font(.title3.bold())
+                        .foregroundColor(AppColors.textPrimary)
 
                     Text(program.name)
-                        .font(.headline)
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.textSecondary)
                 }
 
                 Spacer()
@@ -131,7 +128,7 @@ struct WorkoutBuilderView: View {
                 .fill(AppColors.surfacePrimary)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.programAccent.opacity(0.3), lineWidth: 1)
+                        .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
                 )
         )
     }
@@ -269,7 +266,7 @@ struct WorkoutBuilderView: View {
                 quickActionButton(
                     icon: "calendar.badge.plus",
                     label: "Program",
-                    color: AppColors.programAccent
+                    color: AppColors.accent2
                 ) {
                     showingNewProgram = true
                 }
@@ -311,7 +308,7 @@ struct WorkoutBuilderView: View {
         } label: {
             BuilderCard(
                 icon: "calendar.badge.plus",
-                iconColor: AppColors.programAccent,
+                iconColor: AppColors.accent2,
                 title: "Programs",
                 subtitle: "Multi-week training blocks",
                 count: programViewModel.programs.count,
@@ -371,25 +368,15 @@ struct BuilderCard: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            // Icon with gradient background
+            // Icon
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(
-                        LinearGradient(
-                            colors: [iconColor.opacity(0.12), iconColor.opacity(0.04)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(iconColor.opacity(0.15))
                     .frame(width: 56, height: 56)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(iconColor.opacity(0.15), lineWidth: 0.5)
-                    )
 
                 Image(systemName: icon)
                     .font(.title3)
-                    .foregroundColor(iconColor.opacity(0.8))
+                    .foregroundColor(iconColor)
             }
 
             // Content
@@ -406,13 +393,7 @@ struct BuilderCard: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(
-                                LinearGradient(
-                                    colors: [AppColors.programAccent, AppColors.programAccent.opacity(0.8)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
+                            .background(iconColor)
                             .cornerRadius(4)
                     }
                 }
@@ -432,7 +413,22 @@ struct BuilderCard: View {
                 .font(.subheadline)
                 .foregroundColor(AppColors.textTertiary)
         }
-        .gradientCard(accent: iconColor)
+        .padding(AppSpacing.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .fill(AppColors.surfacePrimary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .stroke(
+                    LinearGradient(
+                        colors: [iconColor.opacity(0.4), iconColor.opacity(0.1)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
     }
 }
 

@@ -133,7 +133,7 @@ struct SharedContentCard: View {
 
         switch content {
         case .sharedProgram:
-            return AppColors.accent4
+            return AppColors.dominant
         case .sharedWorkout:
             return AppColors.dominant
         case .sharedModule:

@@ -41,9 +41,15 @@ struct SocialView: View {
         }
         .onAppear {
             if authService.isAuthenticated {
-                feedViewModel.loadFeed()
                 friendsViewModel.loadFriendships()
                 conversationsViewModel.loadConversations()
+                feedViewModel.loadFeed()
+            }
+        }
+        // Reload feed when friends list changes (ensures feed includes new friends' posts)
+        .onChange(of: friendsViewModel.friends.count) { _, _ in
+            if authService.isAuthenticated {
+                feedViewModel.loadFeed()
             }
         }
     }
@@ -54,14 +60,21 @@ struct SocialView: View {
         ZStack(alignment: .bottomTrailing) {
             // Main feed content
             ScrollView {
-                LazyVStack(spacing: 0) {
+                VStack(spacing: 0) {
+                    // Custom header
+                    socialHeader
+                        .padding(.horizontal, AppSpacing.screenPadding)
+                        .padding(.bottom, AppSpacing.md)
+
                     // Feed content
-                    if feedViewModel.isLoading && feedViewModel.posts.isEmpty {
-                        loadingView
-                    } else if feedViewModel.posts.isEmpty {
-                        emptyFeedState
-                    } else {
-                        feedList
+                    LazyVStack(spacing: 0) {
+                        if feedViewModel.isLoading && feedViewModel.posts.isEmpty {
+                            loadingView
+                        } else if feedViewModel.posts.isEmpty {
+                            emptyFeedState
+                        } else {
+                            feedList
+                        }
                     }
                 }
             }
@@ -75,33 +88,55 @@ struct SocialView: View {
             composeButton
         }
         .background(AppColors.background.ignoresSafeArea())
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                profileButton
-            }
-
-            ToolbarItem(placement: .principal) {
-                Text("Feed")
-                    .headline(color: AppColors.textPrimary)
-            }
-
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                searchButton
-                messagesButton
-            }
-        }
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
     }
 
-    // MARK: - Toolbar Buttons
+    // MARK: - Social Header
 
-    private var profileButton: some View {
-        NavigationLink {
-            AccountProfileView()
-        } label: {
-            profileAvatar
+    private var socialHeader: some View {
+        HStack {
+            Text("Social")
+                .font(.title.bold())
+                .foregroundColor(AppColors.textPrimary)
+
+            Spacer()
+
+            HStack(spacing: AppSpacing.md) {
+                // Profile button
+                NavigationLink(destination: AccountProfileView()) {
+                    profileAvatar
+                }
+
+                // Search button
+                NavigationLink(destination: UserSearchView(viewModel: friendsViewModel)) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(AppColors.textSecondary)
+                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+                }
+
+                // Messages button
+                NavigationLink(destination: ConversationsListView()) {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "paperplane")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(AppColors.textSecondary)
+                            .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+
+                        // Unread badge
+                        if conversationsViewModel.totalUnreadCount > 0 {
+                            Circle()
+                                .fill(AppColors.accent2)
+                                .frame(width: 8, height: 8)
+                                .offset(x: 2, y: -2)
+                        }
+                    }
+                }
+            }
         }
     }
+
+    // MARK: - Profile Avatar
 
     private var profileAvatar: some View {
         Circle()
@@ -128,36 +163,6 @@ struct SocialView: View {
             }
         }
         return "?"
-    }
-
-    private var searchButton: some View {
-        NavigationLink {
-            UserSearchView(viewModel: friendsViewModel)
-        } label: {
-            Image(systemName: "magnifyingglass")
-                .font(.body.weight(.medium))
-                .foregroundColor(AppColors.textSecondary)
-        }
-    }
-
-    private var messagesButton: some View {
-        NavigationLink {
-            ConversationsListView()
-        } label: {
-            ZStack(alignment: .topTrailing) {
-                Image(systemName: "paperplane")
-                    .font(.body.weight(.medium))
-                    .foregroundColor(AppColors.textSecondary)
-
-                // Unread badge
-                if conversationsViewModel.totalUnreadCount > 0 {
-                    Circle()
-                        .fill(AppColors.accent2)
-                        .frame(width: 8, height: 8)
-                        .offset(x: 2, y: -2)
-                }
-            }
-        }
     }
 
     // MARK: - Compose Button

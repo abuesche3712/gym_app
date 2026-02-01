@@ -107,7 +107,7 @@ struct DayCell: View {
         } label: {
             Image(systemName: "plus.circle.fill")
                 .font(.caption)
-                .foregroundColor(AppColors.programAccent)
+                .foregroundColor(AppColors.accent2)
         }
         .buttonStyle(.plain)
         .padding(.bottom, 4)
@@ -212,7 +212,7 @@ struct UnifiedDayCell: View {
         } label: {
             Image(systemName: "plus.circle.fill")
                 .font(.caption)
-                .foregroundColor(AppColors.programAccent)
+                .foregroundColor(AppColors.accent2)
         }
         .buttonStyle(.plain)
         .padding(.bottom, 4)

@@ -254,24 +254,14 @@ struct ModuleListCard: View {
         VStack(alignment: .leading, spacing: 0) {
             // Header row
             HStack(spacing: AppSpacing.md) {
-                // Icon with gradient background (matches BuilderCard style)
+                // Icon
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(
-                            LinearGradient(
-                                colors: [moduleColor.opacity(0.12), moduleColor.opacity(0.04)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(moduleColor.opacity(0.15))
                         .frame(width: 56, height: 56)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(moduleColor.opacity(0.15), lineWidth: 0.5)
-                        )
 
                     Image(systemName: module.type.icon)
-                        .displaySmall(color: moduleColor.opacity(0.8))
+                        .displaySmall(color: moduleColor)
                 }
 
                 // Content
@@ -282,13 +272,13 @@ struct ModuleListCard: View {
 
                         // Type badge
                         Text(module.type.displayName)
-                            .caption2(color: moduleColor.opacity(0.8))
+                            .caption2(color: moduleColor)
                             .fontWeight(.semibold)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(
                                 Capsule()
-                                    .fill(moduleColor.opacity(0.08))
+                                    .fill(moduleColor.opacity(0.12))
                             )
                     }
 
@@ -347,7 +337,21 @@ struct ModuleListCard: View {
                 .padding(.top, AppSpacing.sm)
             }
         }
-        .gradientCard(accent: moduleColor, padding: 0)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .fill(AppColors.surfacePrimary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .stroke(
+                    LinearGradient(
+                        colors: [moduleColor.opacity(0.4), moduleColor.opacity(0.1)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
     }
 }
 

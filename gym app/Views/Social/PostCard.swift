@@ -278,7 +278,6 @@ struct PostAvatarView: View {
             AppColors.accent1,
             AppColors.accent2,
             AppColors.accent3,
-            AppColors.accent4,
             AppColors.success
         ]
         return colors[hash % colors.count]
@@ -727,7 +726,7 @@ private struct ProgramPostContent: View {
                     .font(.caption.weight(.bold))
                     .tracking(0.5)
             }
-            .foregroundColor(AppColors.accent4)
+            .foregroundColor(AppColors.dominant)
 
             // Program name
             Text(name)
@@ -748,11 +747,11 @@ private struct ProgramPostContent: View {
         .padding(AppSpacing.cardPadding)
         .background(
             RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(AppColors.accent4.opacity(0.06))
+                .fill(AppColors.dominant.opacity(0.06))
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppCorners.medium)
-                .stroke(AppColors.accent4.opacity(0.15), lineWidth: 1)
+                .stroke(AppColors.dominant.opacity(0.15), lineWidth: 1)
         )
     }
 }

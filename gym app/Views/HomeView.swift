@@ -183,6 +183,22 @@ struct HomeView: View {
                         )
                 )
             }
+
+            // History button
+            NavigationLink(destination: HistoryView()) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(AppColors.textSecondary)
+                    .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+            }
+
+            // Settings button
+            NavigationLink(destination: SettingsView()) {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(AppColors.textSecondary)
+                    .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+            }
         }
     }
 
@@ -634,19 +650,12 @@ struct HomeView: View {
             }
             .padding(.vertical, AppSpacing.sm)
             .background(
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .fill(AppColors.surfacePrimary)
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(
-                            LinearGradient(
-                                colors: [AppColors.dominant.opacity(0.20), AppColors.surfaceTertiary.opacity(0.15)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                }
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppColors.surfacePrimary)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
             )
         }
     }
@@ -746,21 +755,13 @@ struct HomeView: View {
             }
             .padding(.vertical, AppSpacing.lg)
             .background(
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .fill(AppColors.surfacePrimary)
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(
-                            LinearGradient(
-                                colors: [AppColors.dominant.opacity(0.25), AppColors.surfaceTertiary.opacity(0.15)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                }
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppColors.surfacePrimary)
             )
-            .shadow(color: AppColors.dominant.opacity(0.08), radius: 12, x: 0, y: 6)
+            .overlay(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
+            )
         }
     }
 

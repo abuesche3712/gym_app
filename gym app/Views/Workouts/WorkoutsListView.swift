@@ -293,9 +293,16 @@ struct WorkoutListCard: View {
         .background(
             RoundedRectangle(cornerRadius: AppCorners.large)
                 .fill(AppColors.surfacePrimary)
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 0.5)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .stroke(
+                    LinearGradient(
+                        colors: [AppColors.dominant.opacity(0.4), AppColors.dominant.opacity(0.1)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
                 )
         )
         .contentShape(Rectangle())

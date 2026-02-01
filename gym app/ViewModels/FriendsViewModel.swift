@@ -61,11 +61,21 @@ class FriendsViewModel: ObservableObject {
 
         // Start real-time listener
         friendshipListener?.remove()
-        friendshipListener = firestoreService.listenToFriendships(for: userId) { [weak self] cloudFriendships in
-            Task { @MainActor in
-                self?.handleFriendshipsUpdate(cloudFriendships, userId: userId)
+        friendshipListener = firestoreService.listenToFriendships(
+            for: userId,
+            onChange: { [weak self] cloudFriendships in
+                Task { @MainActor in
+                    self?.handleFriendshipsUpdate(cloudFriendships, userId: userId)
+                }
+            },
+            onError: { [weak self] error in
+                Task { @MainActor in
+                    Logger.error(error, context: "FriendsViewModel.loadFriendships")
+                    self?.error = error
+                    self?.isLoading = false
+                }
             }
-        }
+        )
 
         // Also load from local cache immediately
         Task {

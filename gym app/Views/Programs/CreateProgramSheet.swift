@@ -71,7 +71,7 @@ struct CreateProgramSheet: View {
     private func infoRow(icon: String, title: String, description: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .foregroundColor(AppColors.programAccent)
+                .foregroundColor(AppColors.accent2)
                 .frame(width: 24)
 
             VStack(alignment: .leading, spacing: 2) {

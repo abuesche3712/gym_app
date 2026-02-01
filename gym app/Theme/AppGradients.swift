@@ -99,13 +99,9 @@ struct AppGradients {
         endPoint: .bottomTrailing
     )
 
-    // MARK: - Program Gradient (Hot pink personality!)
+    // MARK: - Program Gradient (Gold-based)
     static let programGradient = LinearGradient(
-        colors: [
-            AppColors.programAccent,
-            AppColors.programAccent.opacity(0.7),
-            Color(hex: "C44569")  // Darker pink
-        ],
+        colors: [AppColors.accent2.opacity(0.4), AppColors.accent2.opacity(0.15)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )

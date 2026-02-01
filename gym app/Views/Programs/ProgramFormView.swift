@@ -157,24 +157,24 @@ struct ProgramFormView: View {
                 if isEditing && isActive {
                     HStack(spacing: 6) {
                         Circle()
-                            .fill(AppColors.programAccent)
+                            .fill(AppColors.accent2)
                             .frame(width: 8, height: 8)
                         Text("Active")
                             .font(.caption.weight(.semibold))
-                            .foregroundColor(AppColors.programAccent)
+                            .foregroundColor(AppColors.accent2)
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
                     .background(
                         Capsule()
-                            .fill(AppColors.programAccent.opacity(0.15))
+                            .fill(AppColors.accent2.opacity(0.15))
                     )
                 }
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(isEditing ? "EDIT PROGRAM" : "NEW PROGRAM")
-                    .elegantLabel(color: AppColors.programAccent)
+                    .elegantLabel(color: AppColors.accent2)
 
                 Text(isEditing ? "Edit Program" : "Create Program")
                     .font(.title)
@@ -184,7 +184,7 @@ struct ProgramFormView: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [AppColors.programAccent.opacity(0.6), AppColors.programAccent.opacity(0.1), Color.clear],
+                        colors: [AppColors.accent2.opacity(0.6), AppColors.accent2.opacity(0.1), Color.clear],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -504,7 +504,7 @@ struct ProgramFormView: View {
                         .padding(.vertical, AppSpacing.md)
                         .background(
                             RoundedRectangle(cornerRadius: AppCorners.medium)
-                                .fill(workoutSlots.isEmpty && moduleSlots.isEmpty ? AppColors.textTertiary : AppColors.programAccent)
+                                .fill(workoutSlots.isEmpty && moduleSlots.isEmpty ? AppColors.textTertiary : AppColors.accent2)
                         )
                     }
                     .disabled(workoutSlots.isEmpty && moduleSlots.isEmpty)
@@ -523,7 +523,7 @@ struct ProgramFormView: View {
                     .fill(AppColors.surfacePrimary)
                     .overlay(
                         RoundedRectangle(cornerRadius: AppCorners.large)
-                            .stroke(isActive ? AppColors.programAccent.opacity(0.3) : AppColors.surfaceTertiary.opacity(0.5), lineWidth: isActive ? 1 : 0.5)
+                            .stroke(isActive ? AppColors.accent2.opacity(0.3) : AppColors.surfaceTertiary.opacity(0.5), lineWidth: isActive ? 1 : 0.5)
                     )
             )
         }
@@ -573,7 +573,7 @@ struct ProgramFormView: View {
                 }
             }
             .padding(AppSpacing.cardPadding)
-            .gradientCard(accent: AppColors.programAccent, padding: 0)
+            .gradientCard(accent: AppColors.accent2, padding: 0)
         }
     }
 
@@ -610,7 +610,7 @@ struct ProgramFormView: View {
         HStack(spacing: AppSpacing.sm) {
             Image(systemName: icon)
                 .font(.subheadline)
-                .foregroundColor(AppColors.programAccent)
+                .foregroundColor(AppColors.accent2)
 
             Text(title)
                 .font(.subheadline.weight(.semibold))
@@ -686,13 +686,13 @@ private struct DurationChip: View {
                 .padding(.vertical, AppSpacing.sm)
                 .background(
                     Capsule()
-                        .fill(isSelected ? AppColors.programAccent.opacity(0.2) : AppColors.surfaceTertiary)
+                        .fill(isSelected ? AppColors.accent2.opacity(0.2) : AppColors.surfaceTertiary)
                         .overlay(
                             Capsule()
-                                .stroke(isSelected ? AppColors.programAccent.opacity(0.5) : AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
+                                .stroke(isSelected ? AppColors.accent2.opacity(0.5) : AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
                         )
                 )
-                .foregroundColor(isSelected ? AppColors.programAccent : AppColors.textSecondary)
+                .foregroundColor(isSelected ? AppColors.accent2 : AppColors.textSecondary)
         }
         .buttonStyle(.plain)
     }
@@ -745,7 +745,7 @@ private struct InlineDayCell: View {
             Button(action: onTap) {
                 Image(systemName: "plus.circle.fill")
                     .font(.caption)
-                    .foregroundColor(AppColors.programAccent)
+                    .foregroundColor(AppColors.accent2)
             }
             .buttonStyle(.plain)
             .padding(.bottom, 4)
@@ -850,7 +850,7 @@ private struct InlineAddSlotSheet: View {
                     // Day indicator
                     HStack {
                         Image(systemName: "calendar")
-                            .foregroundColor(AppColors.programAccent)
+                            .foregroundColor(AppColors.accent2)
                         Text(dayNames[dayOfWeek])
                             .font(.headline)
                             .foregroundColor(AppColors.textPrimary)
@@ -859,7 +859,7 @@ private struct InlineAddSlotSheet: View {
                     .padding(AppSpacing.md)
                     .background(
                         RoundedRectangle(cornerRadius: AppCorners.medium)
-                            .fill(AppColors.programAccent.opacity(0.1))
+                            .fill(AppColors.accent2.opacity(0.1))
                     )
 
                     // Content type picker
@@ -1081,15 +1081,15 @@ private struct FrequencyButton: View {
         Button(action: action) {
             Text(title)
                 .font(.subheadline.weight(isSelected ? .semibold : .regular))
-                .foregroundColor(isSelected ? AppColors.programAccent : AppColors.textSecondary)
+                .foregroundColor(isSelected ? AppColors.accent2 : AppColors.textSecondary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, AppSpacing.sm)
                 .background(
                     RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(isSelected ? AppColors.programAccent.opacity(0.15) : AppColors.surfaceTertiary)
+                        .fill(isSelected ? AppColors.accent2.opacity(0.15) : AppColors.surfaceTertiary)
                         .overlay(
                             RoundedRectangle(cornerRadius: AppCorners.medium)
-                                .stroke(isSelected ? AppColors.programAccent.opacity(0.4) : AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
+                                .stroke(isSelected ? AppColors.accent2.opacity(0.4) : AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
                         )
                 )
         }
@@ -1106,15 +1106,15 @@ private struct WeekChip: View {
         Button(action: action) {
             Text("Week \(week)")
                 .font(.caption.weight(isSelected ? .semibold : .regular))
-                .foregroundColor(isSelected ? AppColors.programAccent : AppColors.textSecondary)
+                .foregroundColor(isSelected ? AppColors.accent2 : AppColors.textSecondary)
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.vertical, AppSpacing.sm)
                 .background(
                     Capsule()
-                        .fill(isSelected ? AppColors.programAccent.opacity(0.2) : AppColors.surfaceTertiary)
+                        .fill(isSelected ? AppColors.accent2.opacity(0.2) : AppColors.surfaceTertiary)
                         .overlay(
                             Capsule()
-                                .stroke(isSelected ? AppColors.programAccent.opacity(0.5) : AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
+                                .stroke(isSelected ? AppColors.accent2.opacity(0.5) : AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
                         )
                 )
         }
@@ -1152,16 +1152,16 @@ private struct SelectionRow: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(AppColors.programAccent)
+                        .foregroundColor(AppColors.accent2)
                 }
             }
             .padding(AppSpacing.md)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(isSelected ? AppColors.programAccent.opacity(0.1) : AppColors.surfacePrimary)
+                    .fill(isSelected ? AppColors.accent2.opacity(0.1) : AppColors.surfacePrimary)
                     .overlay(
                         RoundedRectangle(cornerRadius: AppCorners.medium)
-                            .stroke(isSelected ? AppColors.programAccent.opacity(0.4) : AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
+                            .stroke(isSelected ? AppColors.accent2.opacity(0.4) : AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
                     )
             )
         }

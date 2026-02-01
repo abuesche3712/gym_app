@@ -229,20 +229,20 @@ struct SessionDetailView: View {
             if let programName = session.programName {
                 HStack(spacing: AppSpacing.xs) {
                     Image(systemName: "text.book.closed.fill")
-                        .caption(color: AppColors.programAccent)
+                        .caption(color: AppColors.accent2)
                     Text(programName)
-                        .caption(color: AppColors.programAccent)
+                        .caption(color: AppColors.accent2)
                         .fontWeight(.medium)
                     if let week = session.programWeekNumber {
                         Text("· Week \(week)")
-                            .caption(color: AppColors.programAccent)
+                            .caption(color: AppColors.accent2)
                     }
                 }
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.vertical, AppSpacing.xs)
                 .background(
                     Capsule()
-                        .fill(AppColors.programAccent.opacity(0.15))
+                        .fill(AppColors.accent2.opacity(0.15))
                 )
             }
         }
