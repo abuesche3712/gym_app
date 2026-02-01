@@ -819,34 +819,36 @@ struct HomeView: View {
 
     // MARK: - Computed Properties
 
-    private var startOfCurrentWeek: Date {
-        Calendar.current.date(from: Calendar.current.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())) ?? Date()
+    /// Sessions in the selected week (based on selectedCalendarDate)
+    private var sessionsInSelectedWeek: [Session] {
+        let dates = weekDates
+        guard let startOfWeek = dates.first, let endOfWeek = dates.last else { return [] }
+        let calendar = Calendar.current
+        return sessionViewModel.sessions.filter { session in
+            let sessionDay = calendar.startOfDay(for: session.date)
+            return sessionDay >= calendar.startOfDay(for: startOfWeek) &&
+                   sessionDay <= calendar.startOfDay(for: endOfWeek)
+        }
     }
 
     private var sessionsThisWeek: Int {
-        sessionViewModel.sessions.filter { $0.date >= startOfCurrentWeek }.count
+        sessionsInSelectedWeek.count
     }
 
     private var setsThisWeek: Int {
-        sessionViewModel.sessions
-            .filter { $0.date >= startOfCurrentWeek }
-            .reduce(0) { $0 + $1.totalSetsCompleted }
+        sessionsInSelectedWeek.reduce(0) { $0 + $1.totalSetsCompleted }
     }
 
     private var volumeThisWeek: Double {
-        sessionViewModel.sessions
-            .filter { $0.date >= startOfCurrentWeek }
+        sessionsInSelectedWeek
             .flatMap { $0.completedModules }
             .flatMap { $0.completedExercises }
             .reduce(0) { $0 + $1.totalVolume }
     }
 
     private var cardioMinutesThisWeek: Int {
-        let startOfWeek = startOfCurrentWeek
-        let weekSessions = sessionViewModel.sessions.filter { $0.date >= startOfWeek }
-
         var totalSeconds = 0
-        for session in weekSessions {
+        for session in sessionsInSelectedWeek {
             for module in session.completedModules where !module.skipped {
                 for exercise in module.completedExercises where exercise.exerciseType == .cardio {
                     for setGroup in exercise.completedSetGroups {
@@ -861,13 +863,14 @@ struct HomeView: View {
     }
 
     private var scheduledThisWeek: Int {
-        let weekDates = workoutViewModel.getWeekDates(for: Date())
-        guard let startOfWeek = weekDates.first, let endOfWeek = weekDates.last else { return 0 }
+        let dates = weekDates
+        guard let startOfWeek = dates.first, let endOfWeek = dates.last else { return 0 }
+        let calendar = Calendar.current
         return workoutViewModel.scheduledWorkouts.filter { scheduled in
             !scheduled.isRestDay &&
             scheduled.completedSessionId == nil &&
-            scheduled.scheduledDate >= startOfWeek &&
-            scheduled.scheduledDate <= endOfWeek
+            calendar.startOfDay(for: scheduled.scheduledDate) >= calendar.startOfDay(for: startOfWeek) &&
+            calendar.startOfDay(for: scheduled.scheduledDate) <= calendar.startOfDay(for: endOfWeek)
         }.count
     }
 

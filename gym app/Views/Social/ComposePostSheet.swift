@@ -591,7 +591,24 @@ private struct SessionContentPicker: View {
     let onSelect: (any ShareableContent) -> Void
     let onBack: () -> Void
 
+    @State private var selectedModule: CompletedModule?
+
     var body: some View {
+        Group {
+            if let module = selectedModule {
+                ModuleContentPicker(
+                    module: module,
+                    session: session,
+                    onSelect: onSelect,
+                    onBack: { selectedModule = nil }
+                )
+            } else {
+                sessionContentList
+            }
+        }
+    }
+
+    private var sessionContentList: some View {
         ScrollView {
             VStack(spacing: AppSpacing.lg) {
                 // Share whole workout
@@ -618,12 +635,7 @@ private struct SessionContentPicker: View {
 
                         ForEach(session.completedModules) { module in
                             Button {
-                                let wrapper = ShareableModulePerformance(
-                                    module: module,
-                                    workoutName: session.workoutName,
-                                    date: session.date
-                                )
-                                onSelect(wrapper)
+                                selectedModule = module
                             } label: {
                                 moduleRow(module)
                             }
@@ -792,6 +804,164 @@ private struct SessionContentPicker: View {
         }
 
         return Array(results.sorted { ($0.0.topSet?.weight ?? 0) > ($1.0.topSet?.weight ?? 0) }.prefix(5))
+    }
+}
+
+// MARK: - Module Content Picker (drill into a module)
+
+private struct ModuleContentPicker: View {
+    let module: CompletedModule
+    let session: Session
+    let onSelect: (any ShareableContent) -> Void
+    let onBack: () -> Void
+
+    private var moduleColor: Color {
+        AppColors.moduleColor(module.moduleType)
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: AppSpacing.lg) {
+                // Share whole module
+                Button {
+                    let wrapper = ShareableModulePerformance(
+                        module: module,
+                        workoutName: session.workoutName,
+                        date: session.date
+                    )
+                    onSelect(wrapper)
+                } label: {
+                    shareModuleRow
+                }
+                .buttonStyle(.plain)
+
+                // Exercises section
+                if !module.completedExercises.isEmpty {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("EXERCISES")
+                            .font(.caption.weight(.bold))
+                            .tracking(0.5)
+                            .foregroundColor(AppColors.textTertiary)
+                            .padding(.horizontal, AppSpacing.screenPadding)
+
+                        ForEach(module.completedExercises) { exercise in
+                            Button {
+                                let wrapper = ShareableExercisePerformance(
+                                    exercise: exercise,
+                                    workoutName: session.workoutName,
+                                    date: session.date
+                                )
+                                onSelect(wrapper)
+                            } label: {
+                                exerciseRowInModule(exercise)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, AppSpacing.md)
+        }
+        .navigationTitle(module.moduleName)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    onBack()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                            .font(.caption.weight(.semibold))
+                        Text("Back")
+                    }
+                }
+            }
+        }
+    }
+
+    private var shareModuleRow: some View {
+        let exerciseCount = module.completedExercises.count
+        let setCount = module.completedExercises.reduce(0) { total, exercise in
+            total + exercise.completedSetGroups.reduce(0) { $0 + $1.sets.filter(\.completed).count }
+        }
+
+        return HStack(spacing: AppSpacing.md) {
+            ZStack {
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .fill(moduleColor.opacity(0.1))
+                    .frame(width: 48, height: 48)
+
+                Image(systemName: module.moduleType.icon)
+                    .font(.title3.weight(.medium))
+                    .foregroundColor(moduleColor)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Share Entire Module")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundColor(AppColors.textPrimary)
+
+                Text("\(exerciseCount) exercises · \(setCount) sets")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textSecondary)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(AppColors.surfacePrimary)
+        .clipShape(RoundedRectangle(cornerRadius: AppCorners.large))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .stroke(moduleColor.opacity(0.2), lineWidth: 1)
+        )
+        .padding(.horizontal, AppSpacing.screenPadding)
+    }
+
+    private func exerciseRowInModule(_ exercise: SessionExercise) -> some View {
+        let completedSets = exercise.completedSetGroups.flatMap { $0.sets }.filter { $0.completed }
+        let topSet = exercise.topSet
+
+        return HStack(spacing: AppSpacing.md) {
+            Image(systemName: exercise.exerciseType.icon)
+                .font(.subheadline.weight(.medium))
+                .foregroundColor(AppColors.dominant)
+                .frame(width: 28)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(exercise.exerciseName)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(AppColors.textPrimary)
+
+                HStack(spacing: AppSpacing.xs) {
+                    Text("\(completedSets.count) sets")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
+
+                    if let topSet = topSet, let weight = topSet.weight, let reps = topSet.reps {
+                        Text("·")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                        Text("Top: \(Int(weight)) × \(reps)")
+                            .font(.caption)
+                            .foregroundColor(AppColors.dominant)
+                    }
+                }
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(AppColors.textTertiary)
+        }
+        .padding(AppSpacing.md)
+        .background(AppColors.surfacePrimary)
+        .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
+        .padding(.horizontal, AppSpacing.screenPadding)
     }
 }
 
