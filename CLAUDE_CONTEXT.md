@@ -1,7 +1,7 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2026-02-01 (Twitter-style feed, bug fixes)
+> **Last updated:** 2026-02-01 (Twitter-style feed, Week in Review fix, compose drill-down)
 
 ## Project Overview
 
@@ -82,6 +82,22 @@ private func popToRoot(tab: Int) {
   - Added haptic feedback for immediate response feel
   - Added 0.1s delay before calling `onStart()` to ensure keyboard dismisses
   - Added `.submitLabel(.go)` and `.onSubmit` for keyboard "Go" button support
+
+**Week in Review not updating when navigating weeks:**
+- **Root cause:** Stats computed from `Date()` (current week) instead of `selectedCalendarDate`
+- **Fix:** In `HomeView.swift`:
+  - Added `sessionsInSelectedWeek` computed property that filters by selected week dates
+  - Updated `sessionsThisWeek`, `volumeThisWeek`, `cardioMinutesThisWeek`, `scheduledThisWeek` to use selected week
+  - Now navigating forward/backward in calendar updates Week in Review stats
+
+**Compose post module drill-down missing:**
+- **Root cause:** Clicking a module in SessionContentPicker immediately selected it instead of showing exercises
+- **Fix:** In `ComposePostSheet.swift`:
+  - Added `selectedModule` state to `SessionContentPicker`
+  - Added `ModuleContentPicker` view showing:
+    - "Share Entire Module" option at top
+    - List of exercises within module with set counts and top set stats
+  - Users can now drill into modules to share specific exercises
 
 ## Major Refactoring (Jan 29, 2026)
 
