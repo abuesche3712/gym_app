@@ -158,12 +158,39 @@ struct HomeView: View {
     // MARK: - Home Header
 
     private var homeHeader: some View {
-        HStack {
-            Text(formattedDate.uppercased())
-                .elegantLabel(color: AppColors.dominant)
+        VStack(spacing: AppSpacing.sm) {
+            HStack {
+                Text(formattedDate.uppercased())
+                    .elegantLabel(color: AppColors.dominant)
 
-            Spacer()
+                Spacer()
 
+                // History button
+                NavigationLink(destination: HistoryView()) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(AppColors.textSecondary)
+                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+                }
+
+                // Settings button
+                NavigationLink(destination: SettingsView()) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(AppColors.textSecondary)
+                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+                }
+            }
+
+            // Bottom border
+            Rectangle()
+                .fill(AppColors.surfaceTertiary)
+                .frame(height: 1)
+        }
+    }
+
+    private var streakBadge: some View {
+        Group {
             if currentStreak >= 2 {
                 HStack(spacing: 4) {
                     Text("🔥")
@@ -182,22 +209,6 @@ struct HomeView: View {
                                 .stroke(AppColors.warning.opacity(0.3), lineWidth: 0.5)
                         )
                 )
-            }
-
-            // History button
-            NavigationLink(destination: HistoryView()) {
-                Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(AppColors.textSecondary)
-                    .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
-            }
-
-            // Settings button
-            NavigationLink(destination: SettingsView()) {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(AppColors.textSecondary)
-                    .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
             }
         }
     }

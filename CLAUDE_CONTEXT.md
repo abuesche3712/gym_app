@@ -1,13 +1,13 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2026-01-31
+> **Last updated:** 2026-02-01
 
 ## Project Overview
 
 iOS workout tracking app built with SwiftUI. Offline-first with CoreData, Firebase for cloud sync.
 
-**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete. Major refactoring completed (DataRepository split, Session model split, AppTheme split, Session views split). Per-exercise progression system implemented. Comprehensive DataRepository tests added. **Social features Phase 1-5 complete** (Profiles, Friendships, Messaging, Sharing, Feed).
+**Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete. Major refactoring completed (DataRepository split, Session model split, AppTheme split, Session views split). Per-exercise progression system implemented. Comprehensive DataRepository tests added. **Social features Phase 1-5 complete** (Profiles, Friendships, Messaging, Sharing, Feed). **Design system unified** (Feb 1, 2026).
 
 ## Major Refactoring (Jan 29, 2026)
 
@@ -183,6 +183,131 @@ extension View {
 Replaced `print()` statements with `Logger` utility in:
 - `HapticManager.swift` - Audio session and haptic feedback logging
 - `WidgetData.swift` - Widget data encoding/decoding errors
+
+## Design System Unification (Feb 1, 2026)
+
+Comprehensive visual unification: eliminated pink, standardized cards/headers, restructured tabs.
+
+### Color Scheme Standardization
+
+**Entity-to-Color Mapping:**
+| Entity | Color | Constant |
+|--------|-------|----------|
+| Programs | Gold/Amber | `AppColors.accent2` |
+| Workouts | Cyan | `AppColors.dominant` |
+| Modules | Purple | `AppColors.accent3` |
+
+**AppColors.swift Changes:**
+```swift
+// Changed programAccent from pink to gold
+static let programAccent = accent2  // was: accent4 (pink)
+```
+
+**AppGradients.swift Changes:**
+```swift
+// Gold-based gradient for programs
+static let programGradient = LinearGradient(
+    colors: [AppColors.accent2.opacity(0.4), AppColors.accent2.opacity(0.15)],
+    startPoint: .topLeading,
+    endPoint: .bottomTrailing
+)
+```
+
+### Unified Card Styling
+
+**Pattern:** Flat background + fading gradient colored border
+
+```swift
+// Card with fading colored border (e.g., WorkoutBuilderView BuilderCard)
+.background(AppColors.surfacePrimary)
+.cornerRadius(AppCorners.large)
+.overlay(
+    RoundedRectangle(cornerRadius: AppCorners.large)
+        .stroke(
+            LinearGradient(
+                colors: [iconColor.opacity(0.4), iconColor.opacity(0.1)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            lineWidth: 1
+        )
+)
+```
+
+**Files Updated:**
+- `WorkoutBuilderView.swift` - BuilderCard with colored fading borders
+- `ModulesListView.swift` - ModuleListCard with purple fading border
+- `WorkoutsListView.swift` - WorkoutListCard with cyan fading border
+- `ProgramsListView.swift` - ProgramListCard with gold fading border
+- `HomeView.swift` - Week Calendar and Week in Review use neutral borders
+
+### Tab Bar Restructure (5 → 4 tabs)
+
+**Before:** Home, Workout, Social, Analytics, More
+**After:** Home, Training, Social, Analytics
+
+**MainTabView.swift Changes:**
+- Removed "More" tab entirely
+- Renamed "Workout" to "Training"
+- History and Settings now accessible from HomeView header
+
+**HomeView.swift Header Additions:**
+```swift
+// Navigation links in header
+NavigationLink(destination: HistoryView()) {
+    Image(systemName: "clock.arrow.circlepath")
+}
+NavigationLink(destination: SettingsView()) {
+    Image(systemName: "gearshape.fill")
+}
+```
+
+### Pink Removal (14 files)
+
+Replaced all pink/magenta (`accent4`) usage with appropriate colors:
+
+**Program Views (now gold/accent2):**
+- `ProgramDetailView.swift` - badges, progress bars, buttons, icons
+- `ProgramsListView.swift` - indicators, progress bars, buttons
+- `ProgramFormView.swift` - status indicators, section headers
+- `ProgramWeeklyGridView.swift` - plus buttons
+- `CreateProgramSheet.swift` - icon colors
+- `AddWorkoutSlotSheet.swift` - checkmarks, row highlights
+
+**Social Views (program content now cyan/dominant):**
+- `ComposePostSheet.swift` - program content type color
+- `PostCard.swift` - program type badges
+- `PostDetailView.swift` - program template card
+- `SharedContentCard.swift` - program content type
+
+**Other Views:**
+- `WorkoutBuilderView.swift` - section headers, program card uses gold
+- `SessionDetailView.swift` - program context badge
+
+### Header Pattern Unification
+
+All tabs now use consistent left-aligned custom header:
+
+```swift
+NavigationStack {
+    ScrollView {
+        VStack {
+            // Custom header (no toolbar-based navigation title)
+            HStack {
+                Text("Tab Name")
+                    .font(.title.bold())
+                    .foregroundColor(AppColors.textPrimary)
+                Spacer()
+                // Right-side navigation items
+            }
+            .padding(.horizontal, AppSpacing.screenPadding)
+
+            // Tab content...
+        }
+    }
+    .toolbar(.hidden, for: .navigationBar)
+}
+```
 
 ## Bug Fixes (Jan 31, 2026)
 
@@ -742,7 +867,7 @@ Implemented in 5 phases: Profile → Friendships → Messaging → Sharing → F
 - `Friendship` model with status enum (pending, accepted, blocked)
 - `FriendshipRepository` for local CRUD + queries
 - `FriendsViewModel` managing friends list, requests, blocked users
-- Real-time Firestore listener for friendship changes
+- Real-time Firestore listener for friendship changes with error callbacks
 - Views: `FriendsListView`, `FriendRequestsView`, `UserSearchView`
 - Features: Send/accept/decline requests, block/unblock users
 - Debounced username search with block filtering
@@ -889,29 +1014,65 @@ usernames/{username} → userId (uniqueness enforcement)
 
 ### Required Firestore Security Rules
 ```javascript
-// Usernames collection (public read for search, write only for own username)
-match /usernames/{username} {
-    allow read: if true;
-    allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-    allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
-}
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection - full access to own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
 
-// Friendships (read/write if participant)
-match /friendships/{friendshipId} {
-    allow read, write: if request.auth != null &&
-        (request.auth.uid in resource.data.participantIds ||
-         request.auth.uid in request.resource.data.participantIds);
-}
+      // Public profile subcollection - readable by all authenticated users
+      match /profile/{document=**} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && request.auth.uid == userId;
+      }
 
-// Conversations (read/write if participant)
-match /conversations/{conversationId} {
-    allow read, write: if request.auth != null &&
+      // Exercise library subcollection
+      match /exerciseLibrary/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Catch-all for other subcollections (modules, workouts, sessions, programs)
+      match /{subcollection}/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Usernames collection (public read for search)
+    match /usernames/{username} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Friendships (read/write if participant)
+    match /friendships/{friendshipId} {
+      allow create: if request.auth != null &&
+        request.auth.uid in request.resource.data.participantIds;
+      allow read, update, delete: if request.auth != null &&
+        request.auth.uid in resource.data.participantIds;
+    }
+
+    // Conversations (read/write if participant)
+    match /conversations/{conversationId} {
+      allow create: if request.auth != null &&
+        request.auth.uid in request.resource.data.participantIds;
+      allow read, update, delete: if request.auth != null &&
         request.auth.uid in resource.data.participantIds;
 
-    match /messages/{messageId} {
+      match /messages/{messageId} {
         allow read, write: if request.auth != null &&
-            request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+      }
     }
+
+    // Posts collection (public read, authenticated write)
+    match /posts/{postId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
+    }
+  }
 }
 ```
 
@@ -1206,6 +1367,66 @@ func getCurrentWorkoutName(for scheduled: ScheduledWorkout) -> String {
     return workout.name  // Current name
 }
 ```
+
+### Firestore Listener Error Handling
+**Pattern:** Pass error callback to prevent silent listener failures
+
+```swift
+// FirebaseService.swift - Listener with error callback
+func listenToFriendships(
+    for userId: String,
+    onChange: @escaping ([Friendship]) -> Void,
+    onError: ((Error) -> Void)? = nil  // Optional error callback
+) -> ListenerRegistration {
+    return db.collection("friendships")
+        .whereField("participantIds", arrayContains: userId)
+        .addSnapshotListener { snapshot, error in
+            if let error = error {
+                Logger.error(error, context: "listenToFriendships")
+                onError?(error)  // Report error to caller
+                return
+            }
+            // Process snapshot...
+        }
+}
+
+// ViewModel usage - Handle errors to update UI state
+friendshipListener = firestoreService.listenToFriendships(
+    for: userId,
+    onChange: { [weak self] friendships in
+        Task { @MainActor in
+            self?.handleFriendshipsUpdate(friendships, userId: userId)
+        }
+    },
+    onError: { [weak self] error in
+        Task { @MainActor in
+            Logger.error(error, context: "FriendsViewModel.loadFriendships")
+            self?.error = error
+            self?.isLoading = false
+        }
+    }
+)
+```
+
+**Files using this pattern:**
+- `FirebaseService.swift` - `listenToFriendships`, `listenToConversations`, `listenToMessages`
+- `FriendsViewModel.swift` - Handles friendship listener errors
+- `ConversationsViewModel.swift` - Handles conversation listener errors
+- `ChatViewModel.swift` - Handles message listener errors
+
+### Feed Reload on Related Data Change
+**Pattern:** Reload feed when dependent data changes (e.g., new friends)
+
+```swift
+// SocialView.swift - Reload feed when friends list changes
+.onChange(of: friendsViewModel.friends.count) { _, _ in
+    if authService.isAuthenticated {
+        feedViewModel.loadFeed()
+    }
+}
+```
+
+This ensures the feed includes new friends' posts immediately after accepting friend requests.
 
 ### Audio Playback Over Music
 **Pattern:** Play notification sounds while music is playing

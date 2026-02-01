@@ -64,6 +64,7 @@ struct SocialView: View {
                     // Custom header
                     socialHeader
                         .padding(.horizontal, AppSpacing.screenPadding)
+                        .padding(.top, AppSpacing.screenPadding)
                         .padding(.bottom, AppSpacing.md)
 
                     // Feed content
@@ -94,45 +95,56 @@ struct SocialView: View {
     // MARK: - Social Header
 
     private var socialHeader: some View {
-        HStack {
-            Text("Social")
-                .font(.title.bold())
-                .foregroundColor(AppColors.textPrimary)
-
-            Spacer()
-
-            HStack(spacing: AppSpacing.md) {
-                // Profile button
+        VStack(spacing: AppSpacing.sm) {
+            HStack {
+                // Profile button (left side)
                 NavigationLink(destination: AccountProfileView()) {
                     profileAvatar
                 }
 
-                // Search button
-                NavigationLink(destination: UserSearchView(viewModel: friendsViewModel)) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(AppColors.textSecondary)
-                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
-                }
+                Spacer()
 
-                // Messages button
-                NavigationLink(destination: ConversationsListView()) {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: "paperplane")
+                HStack(spacing: AppSpacing.md) {
+                    // Search button
+                    NavigationLink(destination: UserSearchView(viewModel: friendsViewModel)) {
+                        Image(systemName: "magnifyingglass")
                             .font(.system(size: 18, weight: .medium))
                             .foregroundColor(AppColors.textSecondary)
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+                    }
 
-                        // Unread badge
-                        if conversationsViewModel.totalUnreadCount > 0 {
-                            Circle()
-                                .fill(AppColors.accent2)
-                                .frame(width: 8, height: 8)
-                                .offset(x: 2, y: -2)
+                    // Messages button
+                    NavigationLink(destination: ConversationsListView()) {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "paperplane")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(AppColors.textSecondary)
+                                .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+
+                            // Unread badge
+                            if conversationsViewModel.totalUnreadCount > 0 {
+                                Circle()
+                                    .fill(AppColors.accent2)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 2, y: -2)
+                            }
                         }
+                    }
+
+                    // Settings button
+                    NavigationLink(destination: SettingsView()) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundColor(AppColors.textSecondary)
+                            .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                     }
                 }
             }
+
+            // Bottom border
+            Rectangle()
+                .fill(AppColors.surfaceTertiary)
+                .frame(height: 1)
         }
     }
 

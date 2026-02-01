@@ -13,12 +13,23 @@ struct AnalyticsView: View {
             ScrollView {
                 VStack(spacing: AppSpacing.xl) {
                     // Custom header
-                    HStack {
-                        Text("Analytics")
-                            .font(.title.bold())
-                            .foregroundColor(AppColors.textPrimary)
+                    VStack(spacing: AppSpacing.sm) {
+                        HStack {
+                            Spacer()
 
-                        Spacer()
+                            // Settings button
+                            NavigationLink(destination: SettingsView()) {
+                                Image(systemName: "gearshape.fill")
+                                    .font(.system(size: 18, weight: .medium))
+                                    .foregroundColor(AppColors.textSecondary)
+                                    .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+                            }
+                        }
+
+                        // Bottom border
+                        Rectangle()
+                            .fill(AppColors.surfaceTertiary)
+                            .frame(height: 1)
                     }
 
                     // Coming soon content

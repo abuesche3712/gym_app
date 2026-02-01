@@ -65,24 +65,35 @@ struct WorkoutBuilderView: View {
     // MARK: - Header
 
     private var builderHeader: some View {
-        HStack(alignment: .center) {
-            Text("Training")
-                .font(.title.bold())
-                .foregroundColor(AppColors.textPrimary)
+        VStack(spacing: AppSpacing.sm) {
+            HStack(alignment: .center) {
+                // Show active program indicator if exists
+                if programViewModel.activeProgram != nil {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(AppColors.dominant)
+                            .frame(width: 6, height: 6)
+                        Text("Program active")
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(AppColors.dominant)
+                    }
+                }
 
-            Spacer()
+                Spacer()
 
-            // Show active program indicator if exists
-            if programViewModel.activeProgram != nil {
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(AppColors.dominant)
-                        .frame(width: 6, height: 6)
-                    Text("Program active")
-                        .font(.caption.weight(.medium))
-                        .foregroundColor(AppColors.dominant)
+                // Settings button
+                NavigationLink(destination: SettingsView()) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(AppColors.textSecondary)
+                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 }
             }
+
+            // Bottom border
+            Rectangle()
+                .fill(AppColors.surfaceTertiary)
+                .frame(height: 1)
         }
     }
 

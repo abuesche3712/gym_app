@@ -15,6 +15,13 @@ struct MainTabView: View {
 
     private let tabCount = 4
 
+    private let tabs: [(icon: String, tag: Int)] = [
+        ("house.fill", 0),
+        ("dumbbell.fill", 1),
+        ("person.2.fill", 2),
+        ("chart.line.uptrend.xyaxis", 3)
+    ]
+
     /// Show mini bar when session is active but full view is dismissed
     private var showMiniBar: Bool {
         sessionViewModel.isSessionActive && !showingFullSession
@@ -24,39 +31,25 @@ struct MainTabView: View {
         ZStack(alignment: .top) {
             TabView(selection: $selectedTab) {
                 HomeView()
-                    .tabItem {
-                        Label("Home", systemImage: "house.fill")
-                    }
                     .tag(0)
                     .simultaneousGesture(swipeGesture)
 
                 WorkoutBuilderView()
-                    .tabItem {
-                        Label("Training", systemImage: "dumbbell.fill")
-                    }
                     .tag(1)
                     .simultaneousGesture(swipeGesture)
 
                 SocialView()
-                    .tabItem {
-                        Label("Social", systemImage: "person.2.fill")
-                    }
                     .tag(2)
                     .simultaneousGesture(swipeGesture)
 
                 AnalyticsView()
-                    .tabItem {
-                        Label("Analytics", systemImage: "chart.line.uptrend.xyaxis")
-                    }
                     .tag(3)
                     .simultaneousGesture(swipeGesture)
             }
-            .tint(AppColors.dominant)
+            .toolbar(.hidden, for: .tabBar)
             .safeAreaInset(edge: .bottom) {
-                // Add space for mini bar when visible
-                if showMiniBar {
-                    Color.clear.frame(height: 60)
-                }
+                // Custom tab bar
+                customTabBar
             }
 
             // Sync error banner overlay (top)
@@ -86,7 +79,7 @@ struct MainTabView: View {
                             showingFullSession = true
                         }
                     }
-                    .padding(.bottom, 49) // Tab bar height
+                    .padding(.bottom, 56) // Custom tab bar height
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
@@ -116,6 +109,82 @@ struct MainTabView: View {
                 showingFullSession = true
             }
         }
+    }
+
+    // MARK: - Custom Tab Bar
+
+    private var customTabBar: some View {
+        VStack(spacing: 0) {
+            // Top border
+            Rectangle()
+                .fill(AppColors.surfaceTertiary)
+                .frame(height: 1)
+
+            // Tab buttons
+            HStack(spacing: 0) {
+                ForEach(tabs, id: \.tag) { tab in
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            selectedTab = tab.tag
+                        }
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: tab.icon)
+                                .font(.system(size: 22, weight: .medium))
+                                .foregroundColor(selectedTab == tab.tag ? AppColors.dominant : AppColors.textTertiary)
+                                .frame(width: 48, height: 48)
+                                .background(
+                                    Circle()
+                                        .fill(selectedTab == tab.tag ? AppColors.dominant.opacity(0.15) : AppColors.surfaceSecondary)
+                                )
+
+                            // Selection indicator dot
+                            Circle()
+                                .fill(selectedTab == tab.tag ? AppColors.dominant : Color.clear)
+                                .frame(width: 4, height: 4)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
+
+            // Mini bar spacer when active
+            if showMiniBar {
+                Color.clear.frame(height: 60)
+            }
+        }
+        .background(
+            ZStack {
+                AppColors.background
+
+                // Subtle texture overlay
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.02),
+                        Color.clear,
+                        Color.white.opacity(0.01)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                // Subtle noise-like speckle effect
+                Canvas { context, size in
+                    for _ in 0..<80 {
+                        let x = CGFloat.random(in: 0...size.width)
+                        let y = CGFloat.random(in: 0...size.height)
+                        let opacity = Double.random(in: 0.02...0.05)
+                        context.fill(
+                            Path(ellipseIn: CGRect(x: x, y: y, width: 1, height: 1)),
+                            with: .color(.white.opacity(opacity))
+                        )
+                    }
+                }
+            }
+        )
     }
 
     private var swipeGesture: some Gesture {
