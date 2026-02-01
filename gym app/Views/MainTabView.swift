@@ -22,6 +22,11 @@ struct MainTabView: View {
         ("chart.line.uptrend.xyaxis", 3)
     ]
 
+    init() {
+        // Hide the native tab bar
+        UITabBar.appearance().isHidden = true
+    }
+
     /// Show mini bar when session is active but full view is dismissed
     private var showMiniBar: Bool {
         sessionViewModel.isSessionActive && !showingFullSession
@@ -128,11 +133,11 @@ struct MainTabView: View {
                             selectedTab = tab.tag
                         }
                     } label: {
-                        VStack(spacing: 4) {
+                        VStack(spacing: 3) {
                             Image(systemName: tab.icon)
-                                .font(.system(size: 22, weight: .medium))
+                                .font(.system(size: 20, weight: .medium))
                                 .foregroundColor(selectedTab == tab.tag ? AppColors.dominant : AppColors.textTertiary)
-                                .frame(width: 48, height: 48)
+                                .frame(width: 40, height: 40)
                                 .background(
                                     Circle()
                                         .fill(selectedTab == tab.tag ? AppColors.dominant.opacity(0.15) : AppColors.surfaceSecondary)
@@ -149,7 +154,7 @@ struct MainTabView: View {
                 }
             }
             .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm)
+            .padding(.vertical, 6)
 
             // Mini bar spacer when active
             if showMiniBar {
@@ -184,6 +189,7 @@ struct MainTabView: View {
                     }
                 }
             }
+            .ignoresSafeArea(edges: .bottom)
         )
     }
 
