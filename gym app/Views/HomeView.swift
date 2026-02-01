@@ -238,7 +238,7 @@ struct HomeView: View {
 
                 HStack(spacing: AppSpacing.md) {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text(session.workoutName)
+                        Text(session.displayName)
                             .headline()
 
                         HStack(spacing: AppSpacing.md) {
@@ -490,41 +490,24 @@ struct HomeView: View {
     // MARK: - Quick Actions Row (Quick Log + Freestyle)
 
     private var quickActionsRow: some View {
-        HStack(spacing: AppSpacing.md) {
+        HStack(spacing: AppSpacing.sm) {
             // Quick Log Button
             Button {
                 HapticManager.shared.tap()
                 showingQuickLog = true
             } label: {
-                VStack(spacing: AppSpacing.sm) {
-                    ZStack {
-                        Circle()
-                            .fill(AppColors.accent2.opacity(0.15))
-                            .frame(width: 44, height: 44)
-
-                        Image(systemName: "bolt.fill")
-                            .font(.title3.weight(.semibold))
-                            .foregroundColor(AppColors.accent2)
-                    }
-
-                    Text("Quick Log")
+                HStack(spacing: 6) {
+                    Image(systemName: "bolt.fill")
                         .font(.caption.weight(.semibold))
-                        .foregroundColor(AppColors.textPrimary)
-
-                    Text("Log a single activity")
-                        .font(.caption2)
-                        .foregroundColor(AppColors.textTertiary)
-                        .lineLimit(1)
+                    Text("Quick Log")
+                        .font(.caption.weight(.medium))
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, AppSpacing.md)
+                .foregroundColor(AppColors.accent2)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
                 .background(
-                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(AppColors.surfacePrimary)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppCorners.medium)
-                                .stroke(AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
-                        )
+                    Capsule()
+                        .fill(AppColors.accent2.opacity(0.12))
                 )
             }
             .buttonStyle(.plain)
@@ -534,38 +517,23 @@ struct HomeView: View {
                 HapticManager.shared.tap()
                 sessionViewModel.startFreestyleSession()
             } label: {
-                VStack(spacing: AppSpacing.sm) {
-                    ZStack {
-                        Circle()
-                            .fill(AppColors.accent3.opacity(0.15))
-                            .frame(width: 44, height: 44)
-
-                        Image(systemName: "figure.mixed.cardio")
-                            .font(.title3.weight(.semibold))
-                            .foregroundColor(AppColors.accent3)
-                    }
-
-                    Text("Freestyle")
+                HStack(spacing: 6) {
+                    Image(systemName: "figure.mixed.cardio")
                         .font(.caption.weight(.semibold))
-                        .foregroundColor(AppColors.textPrimary)
-
-                    Text("Build as you go")
-                        .font(.caption2)
-                        .foregroundColor(AppColors.textTertiary)
-                        .lineLimit(1)
+                    Text("Freestyle")
+                        .font(.caption.weight(.medium))
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, AppSpacing.md)
+                .foregroundColor(AppColors.accent3)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
                 .background(
-                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(AppColors.surfacePrimary)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppCorners.medium)
-                                .stroke(AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
-                        )
+                    Capsule()
+                        .fill(AppColors.accent3.opacity(0.12))
                 )
             }
             .buttonStyle(.plain)
+
+            Spacer()
         }
     }
 

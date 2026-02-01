@@ -142,4 +142,21 @@ struct Session: Identifiable, Codable, Hashable {
         let daysSinceCreation = Calendar.current.dateComponents([.day], from: createdAt, to: Date()).day ?? 0
         return daysSinceCreation <= 30
     }
+
+    /// Display name for the session - shows exercise name for Quick Log/Freestyle, otherwise workout name
+    var displayName: String {
+        if isUnstructured {
+            // For Quick Log/Freestyle, show the first exercise name(s)
+            let exercises = completedModules.flatMap { $0.completedExercises }
+            if exercises.isEmpty {
+                return isFreestyle ? "Freestyle" : "Quick Log"
+            } else if exercises.count == 1 {
+                return exercises[0].exerciseName
+            } else {
+                // Multiple exercises - show first + count
+                return "\(exercises[0].exerciseName) +\(exercises.count - 1)"
+            }
+        }
+        return workoutName
+    }
 }

@@ -454,21 +454,17 @@ class WorkoutViewModel: ObservableObject {
             return
         }
 
-        // Check if there's a completed workout for today
-        if let completedScheduled = todayScheduled.first(where: { !$0.isRestDay && $0.completedSessionId != nil }),
-           let workoutId = completedScheduled.workoutId,
-           let workout = workouts.first(where: { $0.id == workoutId }) {
-            // Workout completed - show completed status
-            let modules = repository.modules
-            let moduleNames = workout.moduleReferences
-                .sorted { $0.order < $1.order }
-                .compactMap { ref in
-                    modules.first { $0.id == ref.moduleId }?.name
-                }
+        // Check for any completed session today (including Quick Log/Freestyle)
+        let calendar = Calendar.current
+        let todaySessions = repository.sessions.filter {
+            calendar.isDateInToday($0.date)
+        }
 
+        if let completedSession = todaySessions.first {
+            // Use displayName for unstructured sessions (shows exercise name)
             let widgetData = TodayWorkoutData(
-                workoutName: workout.name,
-                moduleNames: moduleNames,
+                workoutName: completedSession.displayName,
+                moduleNames: completedSession.completedModules.map { $0.moduleName },
                 isRestDay: false,
                 isCompleted: true,
                 lastUpdated: Date()
