@@ -3,6 +3,7 @@
 //  gym app
 //
 //  Main social feed view showing posts from friends
+//  Design: Strava meets Twitter meets Apple Fitness
 //
 
 import SwiftUI
@@ -31,6 +32,8 @@ struct FeedView: View {
                         showingComposeSheet = true
                     } label: {
                         Image(systemName: "square.and.pencil")
+                            .font(.body.weight(.medium))
+                            .foregroundColor(AppColors.dominant)
                     }
                 }
             }
@@ -54,8 +57,11 @@ struct FeedView: View {
     private var loadingView: some View {
         VStack(spacing: AppSpacing.lg) {
             ProgressView()
+                .scaleEffect(1.2)
+
             Text("Loading feed...")
-                .subheadline(color: AppColors.textSecondary)
+                .font(.subheadline)
+                .foregroundColor(AppColors.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -64,38 +70,53 @@ struct FeedView: View {
 
     private var emptyState: some View {
         VStack(spacing: AppSpacing.lg) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.system(size: 48))
-                .foregroundColor(AppColors.textTertiary)
+            // Icon
+            ZStack {
+                Circle()
+                    .fill(AppColors.dominant.opacity(0.1))
+                    .frame(width: 80, height: 80)
 
+                Image(systemName: "figure.run")
+                    .font(.system(size: 32, weight: .medium))
+                    .foregroundColor(AppColors.dominant)
+            }
+
+            // Title
             Text("No Posts Yet")
-                .headline(color: AppColors.textPrimary)
+                .font(.title2.weight(.bold))
+                .foregroundColor(AppColors.textPrimary)
 
-            Text("Add friends to see their workouts in your feed")
-                .subheadline(color: AppColors.textSecondary)
+            // Subtitle
+            Text("When you or your friends share workouts,\nthey'll show up here.")
+                .font(.subheadline)
+                .foregroundColor(AppColors.textSecondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal)
+                .lineSpacing(4)
 
+            // CTA Button
             NavigationLink {
                 FriendsListView()
             } label: {
                 Text("Find Friends")
-                    .fontWeight(.semibold)
+                    .font(.headline.weight(.semibold))
                     .foregroundColor(.white)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.vertical, AppSpacing.sm)
-                    .background(AppColors.dominant)
-                    .cornerRadius(AppCorners.medium)
+                    .padding(.horizontal, AppSpacing.xl)
+                    .padding(.vertical, AppSpacing.md)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppCorners.medium)
+                            .fill(AppGradients.dominantGradient)
+                    )
             }
+            .padding(.top, AppSpacing.sm)
         }
-        .padding()
+        .padding(AppSpacing.screenPadding)
     }
 
     // MARK: - Feed List
 
     private var feedList: some View {
         ScrollView {
-            LazyVStack(spacing: AppSpacing.md) {
+            LazyVStack(spacing: AppSpacing.xl) {
                 ForEach(viewModel.posts) { post in
                     PostCard(
                         post: post,
@@ -117,7 +138,7 @@ struct FeedView: View {
                         }
                     )
                     .onAppear {
-                        // Load more when reaching the end
+                        // Load more when reaching near the end
                         if post.id == viewModel.posts.last?.id {
                             Task {
                                 await viewModel.loadMorePosts()
@@ -126,13 +147,19 @@ struct FeedView: View {
                     }
                 }
 
+                // Loading more indicator
                 if viewModel.isLoadingMore {
-                    ProgressView()
-                        .padding()
+                    HStack(spacing: AppSpacing.sm) {
+                        ProgressView()
+                        Text("Loading more...")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                    .padding(.vertical, AppSpacing.lg)
                 }
             }
-            .padding(.horizontal, AppSpacing.screenPadding)
-            .padding(.vertical, AppSpacing.md)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.lg)
         }
     }
 }

@@ -435,10 +435,22 @@ struct HistorySessionRow: View {
 
             // Main content
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                // Workout name
-                Text(session.workoutName)
-                    .headline()
-                    .lineLimit(1)
+                // Workout name with session type badge
+                HStack(spacing: AppSpacing.sm) {
+                    Text(session.workoutName)
+                        .headline()
+                        .lineLimit(1)
+
+                    if session.isFreestyle {
+                        Label("Freestyle", systemImage: "figure.mixed.cardio")
+                            .font(.caption2.weight(.medium))
+                            .foregroundColor(AppColors.accent3)
+                    } else if session.isQuickLog {
+                        Label("Quick Log", systemImage: "bolt.fill")
+                            .font(.caption2.weight(.medium))
+                            .foregroundColor(AppColors.accent2)
+                    }
+                }
 
                 // Stats row
                 HStack(spacing: AppSpacing.md) {

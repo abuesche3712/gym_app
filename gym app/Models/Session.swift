@@ -28,6 +28,15 @@ struct Session: Identifiable, Codable, Hashable {
     var programName: String?
     var programWeekNumber: Int? // Which week of the program (1-based)
 
+    // Quick Log flag (true for sessions created via Quick Log without workout template)
+    var isQuickLog: Bool
+
+    // Freestyle flag (true for sessions started without a template, exercises added on-the-fly)
+    var isFreestyle: Bool
+
+    /// Whether this session is unstructured (Quick Log or Freestyle)
+    var isUnstructured: Bool { isQuickLog || isFreestyle }
+
     init(
         id: UUID = UUID(),
         workoutId: UUID,
@@ -42,7 +51,9 @@ struct Session: Identifiable, Codable, Hashable {
         syncStatus: SyncStatus = .pendingSync,
         programId: UUID? = nil,
         programName: String? = nil,
-        programWeekNumber: Int? = nil
+        programWeekNumber: Int? = nil,
+        isQuickLog: Bool = false,
+        isFreestyle: Bool = false
     ) {
         self.id = id
         self.workoutId = workoutId
@@ -58,6 +69,8 @@ struct Session: Identifiable, Codable, Hashable {
         self.programId = programId
         self.programName = programName
         self.programWeekNumber = programWeekNumber
+        self.isQuickLog = isQuickLog
+        self.isFreestyle = isFreestyle
     }
 
     init(from decoder: Decoder) throws {
@@ -86,12 +99,19 @@ struct Session: Identifiable, Codable, Hashable {
         programId = try container.decodeIfPresent(UUID.self, forKey: .programId)
         programName = try container.decodeIfPresent(String.self, forKey: .programName)
         programWeekNumber = try container.decodeIfPresent(Int.self, forKey: .programWeekNumber)
+
+        // Quick Log flag (backward compat default of false)
+        isQuickLog = try container.decodeIfPresent(Bool.self, forKey: .isQuickLog) ?? false
+
+        // Freestyle flag (backward compat default of false)
+        isFreestyle = try container.decodeIfPresent(Bool.self, forKey: .isFreestyle) ?? false
     }
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion
         case id, workoutId, workoutName, date, completedModules, skippedModuleIds, duration, overallFeeling, notes, createdAt, syncStatus
         case programId, programName, programWeekNumber
+        case isQuickLog, isFreestyle
     }
 
     var formattedDate: String {

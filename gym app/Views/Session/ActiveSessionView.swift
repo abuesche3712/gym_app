@@ -43,6 +43,9 @@ struct ActiveSessionView: View {
     @State private var pendingFeeling: Int?
     @State private var pendingNotes: String?
 
+    // Freestyle mode state
+    @State private var showFreestyleAddExercise = false
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -125,6 +128,10 @@ struct ActiveSessionView: View {
                                 .frame(width: geometry.size.width)
                             }
                         }
+                    } else if sessionViewModel.currentSession?.isFreestyle == true &&
+                              sessionViewModel.currentSession?.completedModules.isEmpty == true {
+                        // Freestyle empty state
+                        freestyleEmptyState
                     } else {
                         // Workout complete
                         WorkoutCompleteView()
@@ -142,6 +149,33 @@ struct ActiveSessionView: View {
                 // Workout Complete Overlay
                 if showWorkoutComplete {
                     WorkoutCompleteOverlay(showingWorkoutSummary: $showingWorkoutSummary)
+                }
+
+                // Freestyle FAB - floating action button to add exercises
+                if sessionViewModel.currentSession?.isFreestyle == true {
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            Button {
+                                HapticManager.shared.tap()
+                                showFreestyleAddExercise = true
+                            } label: {
+                                Image(systemName: "plus")
+                                    .font(.title2.bold())
+                                    .foregroundColor(.white)
+                                    .frame(width: 56, height: 56)
+                                    .background(
+                                        Circle()
+                                            .fill(AppGradients.dominantGradient)
+                                            .shadow(color: AppColors.dominant.opacity(0.3), radius: 8, y: 4)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .padding(AppSpacing.lg)
+                            .padding(.bottom, AppSpacing.xxl) // Clear bottom toolbar
+                        }
+                    }
                 }
             }
             .navigationTitle(sessionViewModel.currentSession?.workoutName ?? "Workout")
@@ -289,6 +323,9 @@ struct ActiveSessionView: View {
                     )
                 }
             }
+            .sheet(isPresented: $showFreestyleAddExercise) {
+                FreestyleAddExerciseSheet()
+            }
             .fullScreenCover(isPresented: $showIntervalTimer) {
                 if let exercise = sessionViewModel.currentExercise,
                    intervalSetGroupIndex < exercise.completedSetGroups.count {
@@ -359,6 +396,28 @@ struct ActiveSessionView: View {
         guard sessionViewModel.currentModuleIndex < session.completedModules.count else { return true }
         let module = session.completedModules[sessionViewModel.currentModuleIndex]
         return sessionViewModel.currentExerciseIndex == module.completedExercises.count - 1
+    }
+
+    // MARK: - Freestyle Empty State
+
+    private var freestyleEmptyState: some View {
+        VStack(spacing: AppSpacing.lg) {
+            Spacer()
+
+            Image(systemName: "plus.circle.dashed")
+                .font(.system(size: 48))
+                .foregroundColor(AppColors.textTertiary)
+
+            Text("Add your first exercise")
+                .headline(color: AppColors.textSecondary)
+
+            Text("Tap + to start building your workout")
+                .caption(color: AppColors.textTertiary)
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
     }
 
     private var canGoBack: Bool {

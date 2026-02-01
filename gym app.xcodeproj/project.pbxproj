@@ -8,6 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		00FCCDDAC9AD41A7AAD9E386 /* gym app/Views/Library/ImplementPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67FA42E2E5A4400DBB4D6761 /* gym app/Views/Library/ImplementPickerView.swift */; };
+		QKLGSVC02BUILD /* QuickLogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKLGSVC01FILE /* QuickLogService.swift */; };
+		QKLGVM02BUILD /* QuickLogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKLGVM01FILE /* QuickLogViewModel.swift */; };
+		QKLGSHT02BUILD /* QuickLogSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKLGSHT01FILE /* QuickLogSheet.swift */; };
 		0DE55B310BEE4A628944C240 /* gym app/Views/Library/LibraryExerciseEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05D2B6AD67E44647BABA141E /* gym app/Views/Library/LibraryExerciseEditView.swift */; };
 		196485342F25516E00078F82 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 196485332F25516E00078F82 /* GoogleService-Info.plist */; };
 		197B16192F2569D8006135E4 /* BackgroundSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197B16182F2569D8006135E4 /* BackgroundSessionManager.swift */; };
@@ -31,6 +34,7 @@
 		AC0ED3886796C115F34301E5 /* EditSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E042C6DBCCF889BD355F6AC1 /* EditSessionView.swift */; };
 		ACCPRVWBUILD001 /* AccountProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCPRVWFILE0001 /* AccountProfileView.swift */; };
 		ADDEXR02BUILD002 /* AddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDEXR01FILE001 /* AddExerciseSheet.swift */; };
+		FRSTYL02BUILD01 /* FreestyleAddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRSTYL01FILE01 /* FreestyleAddExerciseSheet.swift */; };
 		ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANIMCO001FILE001 /* AnimatedComponents.swift */; };
 		ANLYT002BUILD002 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLYT001FILE001 /* AnalyticsView.swift */; };
 		APPCFG02BUILD002 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPCFG01FILE001 /* AppConfig.swift */; };
@@ -243,6 +247,7 @@
 		A1B2C3D4E5F647890123456A /* IntervalTimerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IntervalTimerView.swift; sourceTree = "<group>"; };
 		ACCPRVWFILE0001 /* AccountProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountProfileView.swift; sourceTree = "<group>"; };
 		ADDEXR01FILE001 /* AddExerciseSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddExerciseSheet.swift; sourceTree = "<group>"; };
+		FRSTYL01FILE01 /* FreestyleAddExerciseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreestyleAddExerciseSheet.swift; sourceTree = "<group>"; };
 		ANIMCO001FILE001 /* AnimatedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedComponents.swift; sourceTree = "<group>"; };
 		ANLYT001FILE001 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
 		APPCFG01FILE001 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
@@ -403,6 +408,9 @@
 		WKBLD001FILE001 /* WorkoutBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutBuilderView.swift; sourceTree = "<group>"; };
 		WKDIFF01FILE001 /* WorkoutDiffService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDiffService.swift; sourceTree = "<group>"; };
 		WKREP001FILE001 /* WorkoutRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRepository.swift; sourceTree = "<group>"; };
+		QKLGSVC01FILE /* QuickLogService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogService.swift; sourceTree = "<group>"; };
+		QKLGVM01FILE /* QuickLogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogViewModel.swift; sourceTree = "<group>"; };
+		QKLGSHT01FILE /* QuickLogSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -552,6 +560,7 @@
 				FEEDVM01FILE001 /* FeedViewModel.swift */,
 				PSTDVM01FILE001 /* PostDetailViewModel.swift */,
 				CMPSTVM01FILE001 /* ComposePostViewModel.swift */,
+				QKLGVM01FILE /* QuickLogViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -632,6 +641,7 @@
 				EDTEXR01FILE001 /* EditExerciseSheet.swift */,
 				EDTSET01FILE001 /* EditSetGroupSheet.swift */,
 				ADDEXR01FILE001 /* AddExerciseSheet.swift */,
+				FRSTYL01FILE01 /* FreestyleAddExerciseSheet.swift */,
 				A1B2C3D4E5F647890123456A /* IntervalTimerView.swift */,
 				C8C0101650AF44AEA8A6F8A1 /* EndSessionSheet.swift */,
 				96AA7ABE49544DD3B54CEF8B /* WorkoutSummaryView.swift */,
@@ -673,6 +683,7 @@
 				MOREVGRP001GROUP001 /* More */,
 				PRFLGRP001GROUP001 /* Profile */,
 				PRGGRP001GROUP001 /* Programs */,
+				QKLGGRP001GROUP /* QuickLog */,
 				B63EBEFC2F15E73700D8C22D /* Session */,
 				B63EBEFE2F15E73700D8C22D /* Settings */,
 				SOCALGRP001GROUP001 /* Social */,
@@ -730,6 +741,7 @@
 				B63EBF0D2F15E73700D8C22D /* SyncManager.swift */,
 				WDGSVC01FILE001 /* WidgetData.swift */,
 				WKDIFF01FILE001 /* WorkoutDiffService.swift */,
+				QKLGSVC01FILE /* QuickLogService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -870,7 +882,40 @@
 			path = WorkoutBuilder;
 			sourceTree = "<group>";
 		};
+		QKLGGRP001GROUP /* QuickLog */ = {
+			isa = PBXGroup;
+			children = (
+				QKLGSHT01FILE /* QuickLogSheet.swift */,
+			);
+			path = QuickLog;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		CRASH01SCRIPT001 /* Upload dSYMs to Crashlytics */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist",
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "Upload dSYMs to Crashlytics";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Upload dSYMs to Firebase Crashlytics\nif [[ \"${CONFIGURATION}\" == \"Release\" ]]; then\n    \"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXNativeTarget section */
 		B610ABFE2F15B4DD008B2C15 /* gym app */ = {
@@ -881,6 +926,7 @@
 				B610ABFC2F15B4DD008B2C15 /* Frameworks */,
 				B610ABFD2F15B4DD008B2C15 /* Resources */,
 				B6FFC4BA2F22DC240007E03E /* Embed Foundation Extensions */,
+				CRASH01SCRIPT001 /* Upload dSYMs to Crashlytics */,
 			);
 			buildRules = (
 			);
@@ -1126,6 +1172,7 @@
 				EDTEXR02BUILD002 /* EditExerciseSheet.swift in Sources */,
 				EDTSET02BUILD002 /* EditSetGroupSheet.swift in Sources */,
 				ADDEXR02BUILD002 /* AddExerciseSheet.swift in Sources */,
+				FRSTYL02BUILD01 /* FreestyleAddExerciseSheet.swift in Sources */,
 				F9E8D7C6B5A443218765432B /* IntervalTimerView.swift in Sources */,
 				39DB3468001A45CEA0E01B1F /* EndSessionSheet.swift in Sources */,
 				1C651C6390424CC3A0E14293 /* WorkoutSummaryView.swift in Sources */,
@@ -1203,6 +1250,9 @@
 				LOGGER02BUILD002 /* Logger.swift in Sources */,
 				E3A1B2C3D4E5F60000000002 /* ExerciseMetrics.swift in Sources */,
 				WDGSVC02BUILD002 /* WidgetData.swift in Sources */,
+				QKLGSVC02BUILD /* QuickLogService.swift in Sources */,
+				QKLGVM02BUILD /* QuickLogViewModel.swift in Sources */,
+				QKLGSHT02BUILD /* QuickLogSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

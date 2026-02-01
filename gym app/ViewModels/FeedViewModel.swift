@@ -23,6 +23,7 @@ class FeedViewModel: ObservableObject {
     private var feedListener: ListenerRegistration?
     private var profileCache: [String: UserProfile] = [:]
     private var likedPostIds: Set<UUID> = []
+    private var newPostObserver: Any?
 
     var currentUserId: String? { authService.currentUser?.uid }
 
@@ -32,10 +33,51 @@ class FeedViewModel: ObservableObject {
     ) {
         self.postRepo = postRepo
         self.friendshipRepo = friendshipRepo
+        setupNotificationObserver()
     }
 
     deinit {
         feedListener?.remove()
+        if let observer = newPostObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    private func setupNotificationObserver() {
+        newPostObserver = NotificationCenter.default.addObserver(
+            forName: .didCreatePost,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self,
+                  let post = notification.object as? Post,
+                  let userId = self.currentUserId else { return }
+
+            Task { @MainActor in
+                // Optimistically add the new post to the top of the feed
+                await self.addNewPostToFeed(post, userId: userId)
+            }
+        }
+    }
+
+    private func addNewPostToFeed(_ post: Post, userId: String) async {
+        // Get author profile (current user)
+        let profile: UserProfile
+        if let cached = profileCache[post.authorId] {
+            profile = cached
+        } else if let fetched = try? await firestoreService.fetchUserProfile(firebaseUserId: post.authorId) {
+            profileCache[post.authorId] = fetched
+            profile = fetched
+        } else {
+            profile = UserProfile(id: UUID(), username: "me", displayName: "Me")
+        }
+
+        let newPost = PostWithAuthor(post: post, author: profile, isLikedByCurrentUser: false)
+
+        // Add to top of feed if not already there
+        if !posts.contains(where: { $0.post.id == post.id }) {
+            posts.insert(newPost, at: 0)
+        }
     }
 
     // MARK: - Loading Feed

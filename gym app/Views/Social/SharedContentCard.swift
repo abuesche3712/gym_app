@@ -3,6 +3,7 @@
 //  gym app
 //
 //  Card component for displaying shared content in chat messages
+//  Uses consistent patterns with PostCard attachments
 //
 
 import SwiftUI
@@ -27,18 +28,39 @@ struct SharedContentCard: View {
                 Image(systemName: iconName)
                     .font(.caption.weight(.semibold))
                 Text(contentType)
-                    .font(.caption.weight(.semibold))
+                    .font(.caption.weight(.bold))
+                    .tracking(0.5)
             }
-            .foregroundColor(isFromCurrentUser ? .white.opacity(0.8) : AppColors.dominant)
+            .foregroundColor(typeColor)
 
             // Content name
             Text(contentName)
-                .headline(color: isFromCurrentUser ? .white : AppColors.textPrimary)
+                .font(.headline.weight(.semibold))
+                .foregroundColor(isFromCurrentUser ? .white : AppColors.textPrimary)
+                .lineLimit(2)
 
             // Subtitle if available
             if let subtitle = contentSubtitle {
                 Text(subtitle)
-                    .caption(color: isFromCurrentUser ? .white.opacity(0.7) : AppColors.textSecondary)
+                    .font(.caption)
+                    .foregroundColor(isFromCurrentUser ? .white.opacity(0.7) : AppColors.textSecondary)
+            }
+
+            // Stats for workouts/sessions
+            if let stats = contentStats {
+                HStack(spacing: AppSpacing.md) {
+                    ForEach(stats.indices, id: \.self) { index in
+                        let stat = stats[index]
+                        HStack(spacing: 4) {
+                            Text(stat.value)
+                                .font(.subheadline.weight(.semibold))
+                            Text(stat.label)
+                                .font(.caption)
+                        }
+                        .foregroundColor(isFromCurrentUser ? .white.opacity(0.9) : AppColors.textSecondary)
+                    }
+                }
+                .padding(.top, 2)
             }
 
             // Action buttons (only for received messages with importable content)
@@ -54,7 +76,7 @@ struct SharedContentCard: View {
                             .foregroundColor(AppColors.dominant)
                             .padding(.horizontal, AppSpacing.sm)
                             .padding(.vertical, 6)
-                            .background(AppColors.dominant.opacity(0.15))
+                            .background(AppColors.dominant.opacity(0.12))
                             .cornerRadius(AppCorners.small)
                         }
                     }
@@ -74,29 +96,65 @@ struct SharedContentCard: View {
                         }
                     }
                 }
-                .padding(.top, 4)
+                .padding(.top, AppSpacing.xs)
             }
         }
-        .padding(AppSpacing.md)
+        .padding(AppSpacing.cardPadding)
         .background(cardBackground)
-        .cornerRadius(AppCorners.medium)
+        .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppCorners.medium)
+                .stroke(borderColor, lineWidth: 1)
+        )
     }
+
+    // MARK: - Background
 
     private var cardBackground: some View {
         Group {
             if isFromCurrentUser {
-                RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(AppColors.dominant.opacity(0.8))
+                AppColors.dominant
             } else {
-                RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(AppColors.surfaceSecondary)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppCorners.medium)
-                            .stroke(AppColors.dominant.opacity(0.3), lineWidth: 1)
-                    )
+                typeColor.opacity(0.06)
             }
         }
     }
+
+    private var borderColor: Color {
+        if isFromCurrentUser {
+            return AppColors.dominant.opacity(0.8)
+        } else {
+            return typeColor.opacity(0.15)
+        }
+    }
+
+    private var typeColor: Color {
+        if isFromCurrentUser { return .white.opacity(0.9) }
+
+        switch content {
+        case .sharedProgram:
+            return AppColors.accent4
+        case .sharedWorkout:
+            return AppColors.dominant
+        case .sharedModule:
+            return AppColors.accent3
+        case .sharedSession:
+            return AppColors.success
+        case .sharedExercise:
+            return AppColors.dominant
+        case .sharedSet(let snapshot):
+            if let bundle = try? SetShareBundle.decode(from: snapshot), bundle.isPR {
+                return AppColors.warning
+            }
+            return AppColors.accent2
+        case .sharedCompletedModule:
+            return AppColors.success
+        case .text:
+            return AppColors.textSecondary
+        }
+    }
+
+    // MARK: - Icon
 
     private var iconName: String {
         switch content {
@@ -110,14 +168,19 @@ struct SharedContentCard: View {
             return "checkmark.circle.fill"
         case .sharedExercise:
             return "dumbbell.fill"
-        case .sharedSet:
+        case .sharedSet(let snapshot):
+            if let bundle = try? SetShareBundle.decode(from: snapshot), bundle.isPR {
+                return "trophy.fill"
+            }
             return "flame.fill"
         case .sharedCompletedModule:
-            return "square.stack.3d.up.fill"
+            return "checkmark.circle.fill"
         case .text:
             return "text.bubble"
         }
     }
+
+    // MARK: - Content Type
 
     private var contentType: String {
         switch content {
@@ -128,17 +191,22 @@ struct SharedContentCard: View {
         case .sharedModule:
             return "MODULE"
         case .sharedSession:
-            return "COMPLETED WORKOUT"
+            return "COMPLETED"
         case .sharedExercise:
             return "EXERCISE"
-        case .sharedSet:
-            return "PERSONAL BEST"
+        case .sharedSet(let snapshot):
+            if let bundle = try? SetShareBundle.decode(from: snapshot), bundle.isPR {
+                return "NEW PR"
+            }
+            return "SET"
         case .sharedCompletedModule:
-            return "COMPLETED MODULE"
+            return "MODULE"
         case .text:
             return "MESSAGE"
         }
     }
+
+    // MARK: - Content Name
 
     private var contentName: String {
         switch content {
@@ -170,31 +238,31 @@ struct SharedContentCard: View {
         }
     }
 
+    // MARK: - Content Subtitle
+
     private var contentSubtitle: String? {
         switch content {
         case .sharedProgram(_, _, let snapshot):
             if let bundle = try? ProgramShareBundle.decode(from: snapshot) {
-                let count = bundle.workouts.count
-                return "\(count) workout\(count == 1 ? "" : "s")"
+                return "\(bundle.program.durationWeeks) weeks · \(bundle.workouts.count) workouts"
             }
             return nil
         case .sharedWorkout(_, _, let snapshot):
             if let bundle = try? WorkoutShareBundle.decode(from: snapshot) {
-                let count = bundle.modules.count
-                return "\(count) module\(count == 1 ? "" : "s")"
+                let exerciseCount = bundle.modules.reduce(0) { $0 + $1.exercises.count }
+                return "\(bundle.modules.count) modules · \(exerciseCount) exercises"
             }
             return nil
         case .sharedModule(_, _, let snapshot):
             if let bundle = try? ModuleShareBundle.decode(from: snapshot) {
-                let count = bundle.module.exercises.count
-                return "\(count) exercise\(count == 1 ? "" : "s")"
+                return "\(bundle.module.exercises.count) exercises"
             }
             return nil
         case .sharedSession(_, _, let date, _):
             return date.formatted(date: .abbreviated, time: .omitted)
         case .sharedExercise(let snapshot):
             if let bundle = try? ExerciseShareBundle.decode(from: snapshot) {
-                return "\(bundle.setData.count) sets"
+                return "\(bundle.setData.count) sets · \(bundle.date.formatted(date: .abbreviated, time: .omitted))"
             }
             return nil
         case .sharedSet(let snapshot):
@@ -205,7 +273,7 @@ struct SharedContentCard: View {
         case .sharedCompletedModule(let snapshot):
             if let bundle = try? CompletedModuleShareBundle.decode(from: snapshot) {
                 let exerciseCount = bundle.module.completedExercises.count
-                return "\(exerciseCount) exercise\(exerciseCount == 1 ? "" : "s")"
+                return "\(exerciseCount) exercises · \(bundle.date.formatted(date: .abbreviated, time: .omitted))"
             }
             return nil
         case .text:
@@ -213,16 +281,45 @@ struct SharedContentCard: View {
         }
     }
 
+    // MARK: - Content Stats
+
+    private var contentStats: [(value: String, label: String)]? {
+        switch content {
+        case .sharedSession(_, _, _, let snapshot):
+            if let bundle = try? SessionShareBundle.decode(from: snapshot) {
+                let session = bundle.session
+                var stats: [(String, String)] = []
+
+                let setCount = session.completedModules.reduce(0) { moduleTotal, module in
+                    moduleTotal + module.completedExercises.reduce(0) { exerciseTotal, exercise in
+                        exerciseTotal + exercise.completedSetGroups.reduce(0) { $0 + $1.sets.filter(\.completed).count }
+                    }
+                }
+                stats.append(("\(setCount)", "sets"))
+
+                let exerciseCount = session.completedModules.reduce(0) { $0 + $1.completedExercises.count }
+                stats.append(("\(exerciseCount)", "exercises"))
+
+                if let duration = session.duration {
+                    stats.append(("\(duration)", "min"))
+                }
+
+                return stats
+            }
+            return nil
+        default:
+            return nil
+        }
+    }
+
+    // MARK: - Helpers
+
     private func formatSetData(_ setData: SetData) -> String {
         var parts: [String] = []
 
-        if let weight = setData.weight {
-            parts.append("\(Int(weight)) lbs")
-        }
-        if let reps = setData.reps {
-            parts.append("\(reps) reps")
-        }
-        if let duration = setData.duration {
+        if let weight = setData.weight, let reps = setData.reps {
+            parts.append("\(Int(weight)) × \(reps)")
+        } else if let duration = setData.duration {
             let minutes = duration / 60
             let seconds = duration % 60
             if minutes > 0 {
@@ -232,7 +329,7 @@ struct SharedContentCard: View {
             }
         }
 
-        return parts.joined(separator: " × ")
+        return parts.joined(separator: " · ")
     }
 }
 

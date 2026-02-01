@@ -406,6 +406,84 @@ class SessionViewModel: ObservableObject {
         repository.clearInProgressSession()
     }
 
+    // MARK: - Freestyle Session
+
+    /// Start an empty freestyle session where exercises are added on-the-fly
+    func startFreestyleSession() {
+        let session = QuickLogService.shared.createFreestyleSession()
+        currentSession = session
+        navigator = SessionNavigator(modules: session.completedModules)
+        sessionStartTime = session.date
+        isSessionActive = true
+
+        startSessionTimer()
+
+        // Save in-progress session for crash recovery
+        autoSaveInProgressSession()
+    }
+
+    /// Add an exercise to the active freestyle session
+    func addExerciseToFreestyle(
+        exerciseName: String,
+        exerciseType: ExerciseType,
+        implementIds: Set<UUID> = [],
+        isBodyweight: Bool = false,
+        distanceUnit: DistanceUnit = .miles
+    ) {
+        guard var session = currentSession, session.isFreestyle else { return }
+
+        QuickLogService.shared.addExercise(
+            to: &session,
+            exerciseName: exerciseName,
+            exerciseType: exerciseType,
+            implementIds: implementIds,
+            isBodyweight: isBodyweight,
+            distanceUnit: distanceUnit
+        )
+
+        self.currentSession = session
+
+        // Rebuild navigator to include new exercise
+        self.navigator = SessionNavigator(modules: session.completedModules)
+
+        // Navigate to the newly added exercise (last exercise in its module type)
+        let moduleType = QuickLogService.shared.moduleTypeForExercise(exerciseType)
+        if let module = session.completedModules.first(where: { $0.moduleType == moduleType }),
+           let moduleIndex = session.completedModules.firstIndex(where: { $0.id == module.id }),
+           let exercise = module.completedExercises.last,
+           let exerciseIndex = module.completedExercises.firstIndex(where: { $0.id == exercise.id }) {
+            navigator?.setPosition(
+                moduleIndex: moduleIndex,
+                exerciseIndex: exerciseIndex,
+                setGroupIndex: 0,
+                setIndex: 0
+            )
+        }
+
+        autoSaveInProgressSession()
+    }
+
+    /// Remove an exercise from the active freestyle session (only if no sets completed)
+    func removeExerciseFromFreestyle(moduleId: UUID, exerciseId: UUID) {
+        guard var session = currentSession, session.isFreestyle else { return }
+
+        // Check if exercise has any completed sets
+        if let module = session.completedModules.first(where: { $0.id == moduleId }),
+           let exercise = module.completedExercises.first(where: { $0.id == exerciseId }) {
+            let hasCompletedSets = exercise.completedSetGroups.contains { group in
+                group.sets.contains { $0.completed }
+            }
+            if hasCompletedSets { return } // Don't remove exercises with logged data
+        }
+
+        QuickLogService.shared.removeExercise(from: &session, moduleId: moduleId, exerciseId: exerciseId)
+
+        self.currentSession = session
+        self.navigator = SessionNavigator(modules: session.completedModules)
+
+        autoSaveInProgressSession()
+    }
+
     /// Finds the first incomplete set and navigates to it
     private func findAndNavigateToFirstIncompleteSet() {
         guard let session = currentSession else { return }

@@ -7,13 +7,19 @@
 
 import Foundation
 
+// MARK: - Notification Names
+
+extension Notification.Name {
+    static let didCreatePost = Notification.Name("didCreatePost")
+}
+
 @MainActor
 class ComposePostViewModel: ObservableObject {
     @Published var caption: String = ""
     @Published var isPosting = false
     @Published var error: Error?
 
-    let content: PostContent
+    @Published private(set) var content: PostContent
     private(set) var contentCreationError: Error?
 
     private let postRepo: PostRepository
@@ -48,6 +54,26 @@ class ComposePostViewModel: ObservableObject {
         self.postRepo = postRepo
     }
 
+    // MARK: - Content Management
+
+    /// Set content from a shareable item
+    func setContent(_ shareableContent: any ShareableContent) {
+        do {
+            let messageContent = try shareableContent.createMessageContent()
+            self.content = PostContent(from: messageContent)
+            self.contentCreationError = nil
+        } catch {
+            print("[ComposePostViewModel] Error setting content: \(error)")
+            self.contentCreationError = error
+        }
+    }
+
+    /// Clear the attached content (revert to text-only)
+    func clearContent() {
+        self.content = .text("")
+        self.contentCreationError = nil
+    }
+
     // MARK: - Actions
 
     func createPost() async -> Bool {
@@ -77,6 +103,10 @@ class ComposePostViewModel: ObservableObject {
             try await firestoreService.savePost(post)
             postRepo.save(post)
             HapticManager.shared.success()
+
+            // Notify that a new post was created so feed can refresh
+            NotificationCenter.default.post(name: .didCreatePost, object: post)
+
             return true
         } catch {
             self.error = error

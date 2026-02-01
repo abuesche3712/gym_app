@@ -17,6 +17,7 @@ struct HomeView: View {
     @State private var dayToSchedule: IdentifiableDate?
     @State private var showingTodayWorkoutDetail = false
     @State private var showingQuickSchedule = false
+    @State private var showingQuickLog = false
 
     // Session recovery state
     @State private var showingRecoveryAlert = false
@@ -32,6 +33,9 @@ struct HomeView: View {
 
                     // Today's Workout Bar
                     todayWorkoutBar
+
+                    // Quick Actions (Quick Log + Freestyle)
+                    quickActionsRow
 
                     // Week Calendar
                     weekCalendarSection
@@ -103,6 +107,9 @@ struct HomeView: View {
                         showingQuickSchedule = false
                     }
                 )
+            }
+            .sheet(isPresented: $showingQuickLog) {
+                QuickLogSheet()
             }
             .alert("Resume Workout?", isPresented: $showingRecoveryAlert) {
                 Button("Resume") {
@@ -478,6 +485,88 @@ struct HomeView: View {
                     )
             }
         )
+    }
+
+    // MARK: - Quick Actions Row (Quick Log + Freestyle)
+
+    private var quickActionsRow: some View {
+        HStack(spacing: AppSpacing.md) {
+            // Quick Log Button
+            Button {
+                HapticManager.shared.tap()
+                showingQuickLog = true
+            } label: {
+                VStack(spacing: AppSpacing.sm) {
+                    ZStack {
+                        Circle()
+                            .fill(AppColors.accent2.opacity(0.15))
+                            .frame(width: 44, height: 44)
+
+                        Image(systemName: "bolt.fill")
+                            .font(.title3.weight(.semibold))
+                            .foregroundColor(AppColors.accent2)
+                    }
+
+                    Text("Quick Log")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(AppColors.textPrimary)
+
+                    Text("Log a single activity")
+                        .font(.caption2)
+                        .foregroundColor(AppColors.textTertiary)
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppSpacing.md)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .fill(AppColors.surfacePrimary)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppCorners.medium)
+                                .stroke(AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+
+            // Freestyle Button
+            Button {
+                HapticManager.shared.tap()
+                sessionViewModel.startFreestyleSession()
+            } label: {
+                VStack(spacing: AppSpacing.sm) {
+                    ZStack {
+                        Circle()
+                            .fill(AppColors.accent3.opacity(0.15))
+                            .frame(width: 44, height: 44)
+
+                        Image(systemName: "figure.mixed.cardio")
+                            .font(.title3.weight(.semibold))
+                            .foregroundColor(AppColors.accent3)
+                    }
+
+                    Text("Freestyle")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(AppColors.textPrimary)
+
+                    Text("Build as you go")
+                        .font(.caption2)
+                        .foregroundColor(AppColors.textTertiary)
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppSpacing.md)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .fill(AppColors.surfacePrimary)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppCorners.medium)
+                                .stroke(AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private var noScheduleBar: some View {
