@@ -86,6 +86,12 @@ struct SettingsView: View {
                         }
 
                         NavigationLink {
+                            ImportDataView()
+                        } label: {
+                            SettingsRowLabel(icon: "square.and.arrow.down", title: "Import from Strong")
+                        }
+
+                        NavigationLink {
                             ExportDataView()
                         } label: {
                             SettingsRowLabel(icon: "square.and.arrow.up", title: "Export Data")

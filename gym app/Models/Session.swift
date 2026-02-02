@@ -34,6 +34,9 @@ struct Session: Identifiable, Codable, Hashable {
     // Freestyle flag (true for sessions started without a template, exercises added on-the-fly)
     var isFreestyle: Bool
 
+    // Imported flag (true for sessions imported from external apps like Strong)
+    var isImported: Bool
+
     /// Whether this session is unstructured (Quick Log or Freestyle)
     var isUnstructured: Bool { isQuickLog || isFreestyle }
 
@@ -53,7 +56,8 @@ struct Session: Identifiable, Codable, Hashable {
         programName: String? = nil,
         programWeekNumber: Int? = nil,
         isQuickLog: Bool = false,
-        isFreestyle: Bool = false
+        isFreestyle: Bool = false,
+        isImported: Bool = false
     ) {
         self.id = id
         self.workoutId = workoutId
@@ -71,6 +75,7 @@ struct Session: Identifiable, Codable, Hashable {
         self.programWeekNumber = programWeekNumber
         self.isQuickLog = isQuickLog
         self.isFreestyle = isFreestyle
+        self.isImported = isImported
     }
 
     init(from decoder: Decoder) throws {
@@ -105,13 +110,16 @@ struct Session: Identifiable, Codable, Hashable {
 
         // Freestyle flag (backward compat default of false)
         isFreestyle = try container.decodeIfPresent(Bool.self, forKey: .isFreestyle) ?? false
+
+        // Imported flag (backward compat default of false)
+        isImported = try container.decodeIfPresent(Bool.self, forKey: .isImported) ?? false
     }
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion
         case id, workoutId, workoutName, date, completedModules, skippedModuleIds, duration, overallFeeling, notes, createdAt, syncStatus
         case programId, programName, programWeekNumber
-        case isQuickLog, isFreestyle
+        case isQuickLog, isFreestyle, isImported
     }
 
     var formattedDate: String {

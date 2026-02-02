@@ -1,7 +1,7 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2026-02-02 (Widget delete fix, add set without prescheduled fix)
+> **Last updated:** 2026-02-02 (Strong app import, widget delete fix, add set without prescheduled fix)
 
 ## Project Overview
 
@@ -98,6 +98,63 @@ private func popToRoot(tab: Int) {
     - "Share Entire Module" option at top
     - List of exercises within module with set counts and top set stats
   - Users can now drill into modules to share specific exercises
+
+## Strong App Import Feature (Feb 2, 2026)
+
+Full CSV import from Strong app workout exports, allowing users to migrate their workout history.
+
+### New Files
+
+**StrongImportService.swift** - Core import engine:
+- Parses Strong's CSV format (Date, Workout Name, Duration, Exercise Name, Set Order, Weight, Reps, Distance, Seconds, Notes)
+- Handles quoted fields with embedded newlines/commas
+- Weight unit conversion (lbs ↔ kg)
+- Duration string parsing ("1h 15m" → 75 minutes)
+- Groups rows by date+workout into Session objects
+- Deterministic UUID generation for consistent imports
+- Duplicate detection against existing sessions
+
+**ImportDataView.swift** - Import UI:
+- Multi-state flow: ready → parsing → preview → importing → complete/error
+- Weight unit picker (match CSV source)
+- Preview shows workout count, exercise count, date range
+- Duplicate warnings before import
+- Progress bar during import
+- Session list preview (first 50 workouts)
+
+### Session Model Changes
+
+```swift
+// Session.swift - New flag for imported sessions
+var isImported: Bool  // true for sessions imported from external apps
+```
+
+- Added to init, decoder, and CodingKeys
+- Backward compatible (defaults to false)
+- Imported sessions show distinct "Imported" badge in history (vs "Quick Log")
+
+### Pagination Fix for Old Imports
+
+**Problem:** Sessions older than 90 days weren't appearing in History after import (pagination cutoff)
+
+**Solution:**
+- Added `loadAllSessions()` to SessionViewModel - bypasses pagination
+- ImportDataView calls `loadAllSessions()` after import
+- HistoryView pull-to-refresh now calls `loadAllSessions()` to show full history
+
+### Files Modified
+- `Session.swift` - Added `isImported` flag
+- `SessionViewModel.swift` - Added `loadAllSessions()` method
+- `HistoryView.swift` - "Imported" badge, pull-to-refresh loads all sessions
+- `SettingsView.swift` - "Import from Strong" navigation link
+
+### Usage Flow
+1. User goes to Settings → Import from Strong
+2. Selects weight unit used in Strong CSV
+3. Picks CSV file from Files app
+4. Reviews preview (workout count, warnings, duplicates)
+5. Confirms import
+6. Sessions appear in History with "Imported" badge
 
 ## Bug Fixes (Feb 2, 2026)
 

@@ -120,7 +120,7 @@ struct HistoryView: View {
             .navigationTitle("History")
             .searchable(text: $searchText, prompt: "Search workouts")
             .refreshable {
-                sessionViewModel.loadSessions()
+                sessionViewModel.loadAllSessions()
                 HapticManager.shared.success()
             }
             .confirmationDialog(
@@ -441,7 +441,11 @@ struct HistorySessionRow: View {
                         .headline()
                         .lineLimit(1)
 
-                    if session.isFreestyle {
+                    if session.isImported {
+                        Label("Imported", systemImage: "square.and.arrow.down")
+                            .font(.caption2.weight(.medium))
+                            .foregroundColor(AppColors.textTertiary)
+                    } else if session.isFreestyle {
                         Label("Freestyle", systemImage: "figure.mixed.cardio")
                             .font(.caption2.weight(.medium))
                             .foregroundColor(AppColors.accent3)

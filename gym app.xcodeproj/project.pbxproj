@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		00FCCDDAC9AD41A7AAD9E386 /* gym app/Views/Library/ImplementPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67FA42E2E5A4400DBB4D6761 /* gym app/Views/Library/ImplementPickerView.swift */; };
 		QKLGSVC02BUILD /* QuickLogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKLGSVC01FILE /* QuickLogService.swift */; };
+		STGIMP02BUILD /* StrongImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = STGIMP01FILE /* StrongImportService.swift */; };
+		IMPDTV02BUILD /* ImportDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMPDTV01FILE /* ImportDataView.swift */; };
 		QKLGVM02BUILD /* QuickLogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKLGVM01FILE /* QuickLogViewModel.swift */; };
 		QKLGSHT02BUILD /* QuickLogSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKLGSHT01FILE /* QuickLogSheet.swift */; };
 		0DE55B310BEE4A628944C240 /* gym app/Views/Library/LibraryExerciseEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05D2B6AD67E44647BABA141E /* gym app/Views/Library/LibraryExerciseEditView.swift */; };
@@ -413,6 +415,8 @@
 		WKDIFF01FILE001 /* WorkoutDiffService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDiffService.swift; sourceTree = "<group>"; };
 		WKREP001FILE001 /* WorkoutRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRepository.swift; sourceTree = "<group>"; };
 		QKLGSVC01FILE /* QuickLogService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogService.swift; sourceTree = "<group>"; };
+		STGIMP01FILE /* StrongImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrongImportService.swift; sourceTree = "<group>"; };
+		IMPDTV01FILE /* ImportDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportDataView.swift; sourceTree = "<group>"; };
 		QKLGVM01FILE /* QuickLogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogViewModel.swift; sourceTree = "<group>"; };
 		QKLGSHT01FILE /* QuickLogSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -662,6 +666,7 @@
 				DBGSYN01FILE001 /* DebugSyncLogsView.swift */,
 				B6EXERC012F15E73700D8C22D /* ExerciseLibraryView.swift */,
 				EQUIPL001FILE001 /* EquipmentLibraryView.swift */,
+				IMPDTV01FILE /* ImportDataView.swift */,
 				B63EBEFD2F15E73700D8C22D /* SettingsView.swift */,
 			);
 			path = Settings;
@@ -746,6 +751,7 @@
 				WDGSVC01FILE001 /* WidgetData.swift */,
 				WKDIFF01FILE001 /* WorkoutDiffService.swift */,
 				QKLGSVC01FILE /* QuickLogService.swift */,
+				STGIMP01FILE /* StrongImportService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -1260,6 +1266,8 @@
 				E3A1B2C3D4E5F60000000002 /* ExerciseMetrics.swift in Sources */,
 				WDGSVC02BUILD002 /* WidgetData.swift in Sources */,
 				QKLGSVC02BUILD /* QuickLogService.swift in Sources */,
+				STGIMP02BUILD /* StrongImportService.swift in Sources */,
+				IMPDTV02BUILD /* ImportDataView.swift in Sources */,
 				QKLGVM02BUILD /* QuickLogViewModel.swift in Sources */,
 				QKLGSHT02BUILD /* QuickLogSheet.swift in Sources */,
 			);

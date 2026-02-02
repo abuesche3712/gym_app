@@ -92,6 +92,12 @@ class SessionViewModel: ObservableObject {
         sessions = repository.sessions
     }
 
+    /// Load all sessions (bypasses pagination - use after importing old data)
+    func loadAllSessions() {
+        repository.loadAllSessions()
+        sessions = repository.sessions
+    }
+
     /// Set up observer for library changes to propagate to active sessions
     private func setupLibraryObserver() {
         // Listen specifically to implement changes (not muscle groups)
