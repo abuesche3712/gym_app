@@ -236,7 +236,7 @@
 /* Begin PBXFileReference section */
 		05D2B6AD67E44647BABA141E /* gym app/Views/Library/LibraryExerciseEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Views/Library/LibraryExerciseEditView.swift"; sourceTree = SOURCE_ROOT; };
 		09F384AAD9014FF9A582680C /* gym app/Services/LibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Services/LibraryService.swift"; sourceTree = SOURCE_ROOT; };
-		196485332F25516E00078F82 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		196485332F25516E00078F82 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; name = "GoogleService-Info.plist"; };
 		197B16182F2569D8006135E4 /* BackgroundSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundSessionManager.swift; sourceTree = "<group>"; };
 		387043A6FC4F49ABB2403548 /* CompletedProgram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedProgram.swift; sourceTree = "<group>"; };
 		41BC86B3BCEE40829E96B24B /* RecentSetsSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecentSetsSheet.swift; sourceTree = "<group>"; };
@@ -911,6 +911,7 @@
 				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}",
 				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist",
 				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+				"$(SRCROOT)/GoogleService-Info.plist",
 			);
 			name = "Upload dSYMs to Crashlytics";
 			outputFileListPaths = (
@@ -919,7 +920,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Upload dSYMs to Firebase Crashlytics\nif [[ \"${CONFIGURATION}\" == \"Release\" ]]; then\n    \"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\nfi\n";
+			shellScript = "# Upload dSYMs to Firebase Crashlytics - temporarily disabled\n# Uncomment to enable Crashlytics dSYM upload\n# if [[ \"${CONFIGURATION}\" == \"Release\" ]]; then\n#     \"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n# fi\nexit 0\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

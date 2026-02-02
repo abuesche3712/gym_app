@@ -485,26 +485,38 @@ struct ActiveSessionView: View {
         guard sessionViewModel.currentExerciseIndex < module.completedExercises.count else { return }
         var exercise = module.completedExercises[sessionViewModel.currentExerciseIndex]
 
-        // Find the last set group and its last set to copy targets from
-        guard let lastSetGroup = exercise.completedSetGroups.last,
-              let lastSet = lastSetGroup.sets.last else { return }
-
-        // Create new set with same targets
         let newSetNumber = exercise.completedSetGroups.reduce(0) { $0 + $1.sets.count } + 1
-        let newSet = SetData(
-            setNumber: newSetNumber,
-            weight: lastSet.weight,
-            reps: lastSet.reps,
-            completed: false,
-            duration: lastSet.duration,
-            distance: lastSet.distance,
-            holdTime: lastSet.holdTime
-        )
 
-        // Add to the last set group
-        var updatedSetGroup = lastSetGroup
-        updatedSetGroup.sets.append(newSet)
-        exercise.completedSetGroups[exercise.completedSetGroups.count - 1] = updatedSetGroup
+        // Check if there's an existing set group with sets to copy from
+        if let lastSetGroup = exercise.completedSetGroups.last,
+           let lastSet = lastSetGroup.sets.last {
+            // Create new set with same targets as last set
+            let newSet = SetData(
+                setNumber: newSetNumber,
+                weight: lastSet.weight,
+                reps: lastSet.reps,
+                completed: false,
+                duration: lastSet.duration,
+                distance: lastSet.distance,
+                holdTime: lastSet.holdTime
+            )
+
+            // Add to the last set group
+            var updatedSetGroup = lastSetGroup
+            updatedSetGroup.sets.append(newSet)
+            exercise.completedSetGroups[exercise.completedSetGroups.count - 1] = updatedSetGroup
+        } else {
+            // No existing sets - create a new set group with default values
+            let newSet = SetData(
+                setNumber: newSetNumber,
+                completed: false
+            )
+            let newSetGroup = CompletedSetGroup(
+                setGroupId: UUID(),
+                sets: [newSet]
+            )
+            exercise.completedSetGroups.append(newSetGroup)
+        }
 
         module.completedExercises[sessionViewModel.currentExerciseIndex] = exercise
         session.completedModules[sessionViewModel.currentModuleIndex] = module

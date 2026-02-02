@@ -10,6 +10,7 @@
 import Foundation
 import Combine
 import UIKit
+import WidgetKit
 
 // MARK: - Sharing Context Structs
 
@@ -1143,6 +1144,27 @@ class SessionViewModel: ObservableObject {
     func deleteSession(_ session: Session) {
         repository.deleteSession(session)
         loadSessions()
+
+        // Update widget if the deleted session was from today
+        if Calendar.current.isDateInToday(session.date) {
+            // Check if there are any other sessions today
+            let todaySessions = sessions.filter { Calendar.current.isDateInToday($0.date) }
+            if todaySessions.isEmpty {
+                // No sessions today - clear widget completed state
+                WidgetDataService.writeTodayWorkout(.noWorkout)
+            } else if let latestToday = todaySessions.first {
+                // Show the most recent remaining session
+                let widgetData = TodayWorkoutData(
+                    workoutName: latestToday.displayName,
+                    moduleNames: latestToday.completedModules.map { $0.moduleName },
+                    isRestDay: false,
+                    isCompleted: true,
+                    lastUpdated: Date()
+                )
+                WidgetDataService.writeTodayWorkout(widgetData)
+            }
+            WidgetCenter.shared.reloadTimelines(ofKind: "TodayWorkoutWidget")
+        }
     }
 
     func deleteSessions(at offsets: IndexSet) {

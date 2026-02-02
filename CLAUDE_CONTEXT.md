@@ -1,7 +1,7 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2026-02-01 (Twitter-style feed, Week in Review fix, compose drill-down)
+> **Last updated:** 2026-02-02 (Widget delete fix, add set without prescheduled fix)
 
 ## Project Overview
 
@@ -98,6 +98,24 @@ private func popToRoot(tab: Int) {
     - "Share Entire Module" option at top
     - List of exercises within module with set counts and top set stats
   - Users can now drill into modules to share specific exercises
+
+## Bug Fixes (Feb 2, 2026)
+
+**Widget not updating when session deleted:**
+- **Root cause:** `SessionViewModel.deleteSession()` removed session from CoreData but never notified WidgetKit
+- **Fix:** In `SessionViewModel.swift`:
+  - Added `import WidgetKit`
+  - After deleting session, check if it was from today
+  - If today had other sessions, update widget with latest session data
+  - If today is now empty, write `.noWorkout` to widget data
+  - Call `WidgetCenter.shared.reloadTimelines(ofKind: "TodayWorkoutWidget")`
+
+**Add set button not working when no sets prescheduled:**
+- **Root cause:** `addSetToCurrentExercise()` in `ActiveSessionView.swift:480` had a guard that returned early if `completedSetGroups` was empty
+- **Fix:** Changed guard to conditional logic:
+  - If existing sets exist: copy targets from last set (same as before)
+  - If no sets exist: create new `CompletedSetGroup` with default empty `SetData`
+- **Impact:** Freestyle and quick log workouts can now add sets even when starting with no prescheduled sets
 
 ## Major Refactoring (Jan 29, 2026)
 
