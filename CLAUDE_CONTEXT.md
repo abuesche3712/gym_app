@@ -1,7 +1,7 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2026-02-03 (CoreDataRepository protocol refactoring)
+> **Last updated:** 2026-02-03 (Builder UI components extraction)
 
 ## Project Overview
 
@@ -200,6 +200,85 @@ var isImported: Bool  // true for sessions imported from external apps
 - **Impact:** Structural change detection now works correctly for sessions resumed after crash recovery
 
 ## Major Refactoring (Jan 29, 2026)
+
+### Builder UI Components Extraction (Feb 3, 2026)
+
+Extracted shared UI patterns from `ModuleFormView` and `WorkoutFormView` into reusable components.
+
+**New files in `Views/Components/Builder/`:**
+
+| Component | Lines | Purpose |
+|-----------|-------|---------|
+| `BuilderEmptyState.swift` | 48 | Empty state placeholder with icon/title/subtitle |
+| `BuilderQuickAddBar.swift` | 78 | Search bar with add/clear button support |
+| `BuilderSearchResultRow.swift` | 104 | Search result row (simple and detail variants) |
+| `BuilderItemRow.swift` | 121 | Item row with order indicator, drag handle, edit/delete |
+| `BuilderActionButton.swift` | 69 | Action button for browse/create actions |
+
+**Line reductions:**
+- `ModuleFormView.swift`: 735 → 626 lines (-109)
+- `WorkoutFormView.swift`: 1150 → 979 lines (-171)
+
+**Usage patterns:**
+```swift
+// Empty state
+BuilderEmptyState(
+    icon: "dumbbell",
+    title: "No exercises yet",
+    subtitle: "Search above or browse the library"
+)
+
+// Quick add search bar
+BuilderQuickAddBar(
+    placeholder: "Quick add exercise...",
+    text: $searchText,
+    accentColor: moduleColor,
+    showAddButton: true,
+    onAdd: { addExercise() }
+)
+
+// Search result row (simple)
+BuilderSearchResultRow(
+    icon: template.exerciseType.icon,
+    iconColor: AppColors.dominant,
+    title: template.name,
+    subtitle: template.exerciseType.displayName,
+    accentColor: moduleColor,
+    onSelect: { selectTemplate(template) }
+)
+
+// Search result row with detail
+BuilderSearchResultRowWithDetail(
+    icon: module.type.icon,
+    iconColor: AppColors.moduleColor(module.type),
+    title: module.name,
+    detail: "\(module.exercises.count) exercises",
+    accentColor: AppColors.accent1,
+    onSelect: { selectModule(module) }
+)
+
+// Item row
+BuilderItemRow(
+    index: index,
+    title: exercise.name,
+    subtitle: "\(exercise.exerciseType.displayName) • 3x10",
+    accentColor: moduleColor,
+    showDragHandle: true,
+    showEditButton: true,
+    onEdit: { editExercise(exercise) },
+    onDelete: { deleteExercise(at: index) }
+)
+
+// Action button
+BuilderActionButton(
+    icon: "books.vertical",
+    title: "Browse Exercise Library",
+    color: moduleColor,
+    action: { showingPicker = true }
+)
+```
+
+**Note:** Exercise row in `WorkoutFormView` kept custom due to superset selection complexity.
 
 ### CoreDataRepository Protocol (Feb 3, 2026)
 
@@ -885,7 +964,13 @@ gym app/                          (90+ Swift files)
 │   ├── Library/                  (3 files)
 │   ├── Auth/                     (1 file)
 │   ├── Analytics/                (1 file)
-│   ├── Components/               (2 files)
+│   ├── Components/               (7 files)
+│   │   ├── Builder/              (5 files - reusable builder UI components)
+│   │   │   ├── BuilderEmptyState.swift
+│   │   │   ├── BuilderQuickAddBar.swift
+│   │   │   ├── BuilderSearchResultRow.swift
+│   │   │   ├── BuilderItemRow.swift
+│   │   │   └── BuilderActionButton.swift
 │   ├── Social/                   (13 files - social features)
 │   │   ├── SocialView.swift
 │   │   ├── FeedPostRow.swift           (Twitter-style flat post row)
