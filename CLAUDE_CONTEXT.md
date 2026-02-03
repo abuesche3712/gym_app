@@ -59,6 +59,11 @@ Fixed 8 bugs and improvements in the module/workout builder flow.
 - **Fix:** Removed `estimatedDuration` state, FormTextField, and related load/save code
 - **Files:** `ModuleFormView.swift`, `WorkoutFormView.swift`
 
+**Bug 9: Exercise edits not saving to library**
+- **Problem:** Edits to custom exercises (muscles, equipment, unilateral) in InlineExerciseEditor didn't update the CustomExerciseLibrary template
+- **Fix:** In `InlineExerciseEditor.saveExercise()`, check if exercise has a `templateId` pointing to a custom template, and if so, update that template with the new values
+- **Files:** `ModuleFormView.swift`
+
 ### InlineExerciseEditor Enhancements
 
 Now includes full exercise editing capabilities:
