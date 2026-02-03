@@ -1,7 +1,7 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2026-02-02 (Feed post type detection, distance unit fix, module sync fix)
+> **Last updated:** 2026-02-03 (CoreDataRepository protocol refactoring)
 
 ## Project Overview
 
@@ -201,12 +201,68 @@ var isImported: Bool  // true for sessions imported from external apps
 
 ## Major Refactoring (Jan 29, 2026)
 
+### CoreDataRepository Protocol (Feb 3, 2026)
+
+Consolidated ~50% of repetitive CRUD boilerplate from the four main repositories into a shared protocol.
+
+**New file:** `Repositories/CoreDataRepository.swift`
+
+```swift
+protocol CoreDataRepository {
+    associatedtype DomainModel: Identifiable where DomainModel.ID == UUID
+    associatedtype CDEntity: NSManagedObject
+
+    var persistence: PersistenceController { get }
+    var entityName: String { get }
+    var defaultSortDescriptors: [NSSortDescriptor] { get }
+    var defaultPredicate: NSPredicate? { get }  // Optional, defaults to nil
+
+    func toDomain(_ entity: CDEntity) -> DomainModel
+    func updateEntity(_ entity: CDEntity, from model: DomainModel)
+}
+```
+
+**Default implementations provided via protocol extension:**
+- `viewContext` - computed property accessing persistence.container.viewContext
+- `loadAll()` - generic fetch with sort/predicate
+- `find(id:)` - find by UUID
+- `save(_:)` - find-or-create + update + persist
+- `delete(_:)` - find + delete + persist
+- `findEntity(id:)` - low-level entity lookup for sync
+- `deleteEntity(id:)` - low-level deletion for sync
+- `findOrCreateEntity(id:)` - find or create new entity with ID
+
+**Refactored repositories:**
+- `ModuleRepository` - removed ~60 lines, kept exercise instance conversion helpers
+- `WorkoutRepository` - removed ~55 lines, uses `defaultPredicate` for `archived == NO`
+- `ProgramRepository` - removed ~45 lines, kept `findActive()` specialized query
+- `SessionRepository` - kept all specialized methods (pagination, history, in-progress recovery)
+
+**Pattern for conforming:**
+```swift
+@MainActor
+class ModuleRepository: CoreDataRepository {
+    typealias DomainModel = Module
+    typealias CDEntity = ModuleEntity
+
+    let persistence: PersistenceController
+    var entityName: String { "ModuleEntity" }
+    var defaultSortDescriptors: [NSSortDescriptor] {
+        [NSSortDescriptor(keyPath: \ModuleEntity.name, ascending: true)]
+    }
+
+    func toDomain(_ entity: ModuleEntity) -> Module { /* conversion */ }
+    func updateEntity(_ entity: ModuleEntity, from module: Module) { /* update */ }
+}
+```
+
 ### DataRepository Split
 
 Split monolithic `DataRepository.swift` into entity-specific repositories for better maintainability:
 
 ```
-Services/
+Repositories/
+├── CoreDataRepository.swift  (Protocol with default CRUD implementations)
 ├── DataRepository.swift      (Coordinator - delegates to sub-repositories)
 ├── ModuleRepository.swift    (Module CRUD, CoreData <-> Model conversion)
 ├── WorkoutRepository.swift   (Workout CRUD)
@@ -875,19 +931,23 @@ gym app/                          (90+ Swift files)
 │   ├── SchemaVersions.swift
 │   └── Enums.swift
 │
-├── Services/                     (24 files)
-│   ├── FirebaseService.swift     (38KB - includes social operations)
-│   ├── AuthService.swift
-│   ├── SyncManager.swift         (25KB)
-│   ├── DataRepository.swift      (Coordinator)
-│   ├── ModuleRepository.swift    (Module CRUD)
-│   ├── WorkoutRepository.swift   (Workout CRUD)
-│   ├── SessionRepository.swift   (Session CRUD)
-│   ├── ProgramRepository.swift   (Program CRUD + progression)
+├── Repositories/                 (11 files)
+│   ├── CoreDataRepository.swift  (Protocol with default CRUD implementations)
+│   ├── DataRepository.swift      (Coordinator - delegates to sub-repositories)
+│   ├── ModuleRepository.swift    (Module CRUD, conforms to CoreDataRepository)
+│   ├── WorkoutRepository.swift   (Workout CRUD, conforms to CoreDataRepository)
+│   ├── SessionRepository.swift   (Session CRUD + pagination, conforms to CoreDataRepository)
+│   ├── ProgramRepository.swift   (Program CRUD + progression, conforms to CoreDataRepository)
 │   ├── ProfileRepository.swift   (Social - user profiles)
 │   ├── FriendshipRepository.swift (Social - friendships)
 │   ├── ConversationRepository.swift (Social - conversations)
 │   ├── MessageRepository.swift   (Social - messages)
+│   └── PostRepository.swift      (Social - feed posts)
+│
+├── Services/                     (14 files)
+│   ├── FirebaseService.swift     (38KB - includes social operations)
+│   ├── AuthService.swift
+│   ├── SyncManager.swift         (25KB)
 │   ├── SharingService.swift      (Social - share bundles & import)
 │   ├── ProgressionService.swift  (Progression calculations)
 │   ├── ExerciseResolver.swift

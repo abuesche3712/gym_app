@@ -8,78 +8,54 @@
 import CoreData
 
 @MainActor
-class WorkoutRepository {
-    private let persistence: PersistenceController
+class WorkoutRepository: CoreDataRepository {
+    typealias DomainModel = Workout
+    typealias CDEntity = WorkoutEntity
 
-    private var viewContext: NSManagedObjectContext {
-        persistence.container.viewContext
+    let persistence: PersistenceController
+
+    var entityName: String { "WorkoutEntity" }
+
+    var defaultSortDescriptors: [NSSortDescriptor] {
+        [NSSortDescriptor(keyPath: \WorkoutEntity.name, ascending: true)]
+    }
+
+    var defaultPredicate: NSPredicate? {
+        NSPredicate(format: "archived == NO")
     }
 
     init(persistence: PersistenceController = .shared) {
         self.persistence = persistence
     }
 
-    // MARK: - CRUD Operations
+    // MARK: - Entity-Specific Conversion
 
-    func loadAll() -> [Workout] {
-        let request = NSFetchRequest<WorkoutEntity>(entityName: "WorkoutEntity")
-        request.sortDescriptors = [NSSortDescriptor(keyPath: \WorkoutEntity.name, ascending: true)]
-        request.predicate = NSPredicate(format: "archived == NO")
-
-        do {
-            let entities = try viewContext.fetch(request)
-            return entities.map { convertToWorkout($0) }
-        } catch {
-            Logger.error(error, context: "WorkoutRepository.loadAll")
-            return []
+    func toDomain(_ entity: WorkoutEntity) -> Workout {
+        let moduleRefs = entity.moduleReferenceArray.map { refEntity in
+            ModuleReference(
+                id: refEntity.id,
+                moduleId: refEntity.moduleId,
+                order: Int(refEntity.orderIndex),
+                isRequired: refEntity.isRequired,
+                notes: refEntity.notes
+            )
         }
+
+        return Workout(
+            id: entity.id,
+            name: entity.name,
+            moduleReferences: moduleRefs,
+            standaloneExercises: entity.standaloneExercises,
+            estimatedDuration: entity.estimatedDuration > 0 ? Int(entity.estimatedDuration) : nil,
+            notes: entity.notes,
+            createdAt: entity.createdAt ?? Date(),
+            updatedAt: entity.updatedAt ?? Date(),
+            archived: entity.archived,
+            syncStatus: entity.syncStatus
+        )
     }
 
-    func save(_ workout: Workout) {
-        let entity = findOrCreateEntity(id: workout.id)
-        updateEntity(entity, from: workout)
-        persistence.save()
-    }
-
-    func delete(_ workout: Workout) {
-        if let entity = findEntity(id: workout.id) {
-            viewContext.delete(entity)
-            persistence.save()
-        }
-    }
-
-    func find(id: UUID) -> Workout? {
-        guard let entity = findEntity(id: id) else { return nil }
-        return convertToWorkout(entity)
-    }
-
-    // MARK: - Entity Operations (for sync)
-
-    func findEntity(id: UUID) -> WorkoutEntity? {
-        let request = NSFetchRequest<WorkoutEntity>(entityName: "WorkoutEntity")
-        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
-        return try? viewContext.fetch(request).first
-    }
-
-    func deleteEntity(id: UUID) {
-        if let entity = findEntity(id: id) {
-            viewContext.delete(entity)
-            persistence.save()
-        }
-    }
-
-    // MARK: - Private Helpers
-
-    private func findOrCreateEntity(id: UUID) -> WorkoutEntity {
-        if let existing = findEntity(id: id) {
-            return existing
-        }
-        let entity = WorkoutEntity(context: viewContext)
-        entity.id = id
-        return entity
-    }
-
-    private func updateEntity(_ entity: WorkoutEntity, from workout: Workout) {
+    func updateEntity(_ entity: WorkoutEntity, from workout: Workout) {
         entity.name = workout.name
         entity.estimatedDuration = Int32(workout.estimatedDuration ?? 0)
         entity.notes = workout.notes
@@ -110,30 +86,5 @@ class WorkoutRepository {
 
         // Save standalone exercises
         entity.standaloneExercises = workout.standaloneExercises
-    }
-
-    private func convertToWorkout(_ entity: WorkoutEntity) -> Workout {
-        let moduleRefs = entity.moduleReferenceArray.map { refEntity in
-            ModuleReference(
-                id: refEntity.id,
-                moduleId: refEntity.moduleId,
-                order: Int(refEntity.orderIndex),
-                isRequired: refEntity.isRequired,
-                notes: refEntity.notes
-            )
-        }
-
-        return Workout(
-            id: entity.id,
-            name: entity.name,
-            moduleReferences: moduleRefs,
-            standaloneExercises: entity.standaloneExercises,
-            estimatedDuration: entity.estimatedDuration > 0 ? Int(entity.estimatedDuration) : nil,
-            notes: entity.notes,
-            createdAt: entity.createdAt ?? Date(),
-            updatedAt: entity.updatedAt ?? Date(),
-            archived: entity.archived,
-            syncStatus: entity.syncStatus
-        )
     }
 }

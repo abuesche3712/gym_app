@@ -8,88 +8,59 @@
 import CoreData
 
 @MainActor
-class ProgramRepository {
-    private let persistence: PersistenceController
+class ProgramRepository: CoreDataRepository {
+    typealias DomainModel = Program
+    typealias CDEntity = ProgramEntity
 
-    private var viewContext: NSManagedObjectContext {
-        persistence.container.viewContext
+    let persistence: PersistenceController
+
+    var entityName: String { "ProgramEntity" }
+
+    var defaultSortDescriptors: [NSSortDescriptor] {
+        [NSSortDescriptor(keyPath: \ProgramEntity.updatedAt, ascending: false)]
     }
 
     init(persistence: PersistenceController = .shared) {
         self.persistence = persistence
     }
 
-    // MARK: - CRUD Operations
+    // MARK: - Entity-Specific Conversion
 
-    func loadAll() -> [Program] {
-        let request = NSFetchRequest<ProgramEntity>(entityName: "ProgramEntity")
-        request.sortDescriptors = [NSSortDescriptor(keyPath: \ProgramEntity.updatedAt, ascending: false)]
-
-        do {
-            let entities = try viewContext.fetch(request)
-            return entities.map { convertToProgram($0) }
-        } catch {
-            Logger.error(error, context: "ProgramRepository.loadAll")
-            return []
+    func toDomain(_ entity: ProgramEntity) -> Program {
+        let slots = entity.workoutSlotArray.map { slotEntity in
+            ProgramWorkoutSlot(
+                id: slotEntity.id,
+                workoutId: slotEntity.workoutId,
+                workoutName: slotEntity.workoutName,
+                scheduleType: slotEntity.scheduleType,
+                dayOfWeek: slotEntity.optionalDayOfWeek,
+                weekNumber: slotEntity.optionalWeekNumber,
+                specificDateOffset: slotEntity.optionalSpecificDateOffset,
+                order: Int(slotEntity.orderIndex),
+                notes: slotEntity.notes
+            )
         }
+
+        return Program(
+            id: entity.id,
+            name: entity.name,
+            programDescription: entity.programDescription,
+            durationWeeks: Int(entity.durationWeeks),
+            startDate: entity.startDate,
+            endDate: entity.endDate,
+            isActive: entity.isActive,
+            createdAt: entity.createdAt ?? Date(),
+            updatedAt: entity.updatedAt ?? Date(),
+            syncStatus: entity.syncStatus,
+            workoutSlots: slots,
+            defaultProgressionRule: entity.defaultProgressionRule,
+            progressionEnabled: entity.progressionEnabled,
+            progressionEnabledExercises: entity.progressionEnabledExercises,
+            exerciseProgressionOverrides: entity.exerciseProgressionOverrides
+        )
     }
 
-    func save(_ program: Program) {
-        let entity = findOrCreateEntity(id: program.id)
-        updateEntity(entity, from: program)
-        persistence.save()
-    }
-
-    func delete(_ program: Program) {
-        if let entity = findEntity(id: program.id) {
-            viewContext.delete(entity)
-            persistence.save()
-        }
-    }
-
-    func find(id: UUID) -> Program? {
-        guard let entity = findEntity(id: id) else { return nil }
-        return convertToProgram(entity)
-    }
-
-    func findActive() -> Program? {
-        let request = NSFetchRequest<ProgramEntity>(entityName: "ProgramEntity")
-        request.predicate = NSPredicate(format: "isActive == YES")
-        request.fetchLimit = 1
-
-        guard let entity = try? viewContext.fetch(request).first else {
-            return nil
-        }
-        return convertToProgram(entity)
-    }
-
-    // MARK: - Entity Operations (for sync)
-
-    func findEntity(id: UUID) -> ProgramEntity? {
-        let request = NSFetchRequest<ProgramEntity>(entityName: "ProgramEntity")
-        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
-        return try? viewContext.fetch(request).first
-    }
-
-    func deleteEntity(id: UUID) {
-        if let entity = findEntity(id: id) {
-            viewContext.delete(entity)
-            persistence.save()
-        }
-    }
-
-    // MARK: - Private Helpers
-
-    private func findOrCreateEntity(id: UUID) -> ProgramEntity {
-        if let existing = findEntity(id: id) {
-            return existing
-        }
-        let entity = ProgramEntity(context: viewContext)
-        entity.id = id
-        return entity
-    }
-
-    private func updateEntity(_ entity: ProgramEntity, from program: Program) {
+    func updateEntity(_ entity: ProgramEntity, from program: Program) {
         entity.name = program.name
         entity.programDescription = program.programDescription
         entity.durationWeeks = Int32(program.durationWeeks)
@@ -131,37 +102,16 @@ class ProgramRepository {
         entity.workoutSlots = NSOrderedSet(array: slotEntities)
     }
 
-    private func convertToProgram(_ entity: ProgramEntity) -> Program {
-        let slots = entity.workoutSlotArray.map { slotEntity in
-            ProgramWorkoutSlot(
-                id: slotEntity.id,
-                workoutId: slotEntity.workoutId,
-                workoutName: slotEntity.workoutName,
-                scheduleType: slotEntity.scheduleType,
-                dayOfWeek: slotEntity.optionalDayOfWeek,
-                weekNumber: slotEntity.optionalWeekNumber,
-                specificDateOffset: slotEntity.optionalSpecificDateOffset,
-                order: Int(slotEntity.orderIndex),
-                notes: slotEntity.notes
-            )
-        }
+    // MARK: - Program-Specific Queries
 
-        return Program(
-            id: entity.id,
-            name: entity.name,
-            programDescription: entity.programDescription,
-            durationWeeks: Int(entity.durationWeeks),
-            startDate: entity.startDate,
-            endDate: entity.endDate,
-            isActive: entity.isActive,
-            createdAt: entity.createdAt ?? Date(),
-            updatedAt: entity.updatedAt ?? Date(),
-            syncStatus: entity.syncStatus,
-            workoutSlots: slots,
-            defaultProgressionRule: entity.defaultProgressionRule,
-            progressionEnabled: entity.progressionEnabled,
-            progressionEnabledExercises: entity.progressionEnabledExercises,
-            exerciseProgressionOverrides: entity.exerciseProgressionOverrides
-        )
+    func findActive() -> Program? {
+        let request = NSFetchRequest<ProgramEntity>(entityName: entityName)
+        request.predicate = NSPredicate(format: "isActive == YES")
+        request.fetchLimit = 1
+
+        guard let entity = try? viewContext.fetch(request).first else {
+            return nil
+        }
+        return toDomain(entity)
     }
 }

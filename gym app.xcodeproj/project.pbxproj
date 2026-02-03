@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CDREP002BUILD02 /* CoreDataRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDREP001FILE001 /* CoreDataRepository.swift */; };
 		00FCCDDAC9AD41A7AAD9E386 /* gym app/Views/Library/ImplementPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67FA42E2E5A4400DBB4D6761 /* gym app/Views/Library/ImplementPickerView.swift */; };
 		QKLGSVC02BUILD /* QuickLogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKLGSVC01FILE /* QuickLogService.swift */; };
 		STGIMP02BUILD /* StrongImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = STGIMP01FILE /* StrongImportService.swift */; };
@@ -92,6 +93,9 @@
 		CHATVM002BUILD /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATVM001FILE /* ChatViewModel.swift */; };
 		CHATVW002BUILD /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATVW001FILE /* ChatView.swift */; };
 		CMPSHT02BUILD002 /* ComposePostSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMPSHT01FILE001 /* ComposePostSheet.swift */; };
+		HLTPKR02BUILD001 /* HighlightPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HLTPKR01FILE001 /* HighlightPickerView.swift */; };
+		EDTPST02BUILD001 /* EditPostSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDTPST01FILE001 /* EditPostSheet.swift */; };
+		EDTPSTVM02BUILD001 /* EditPostViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDTPSTVM01FILE001 /* EditPostViewModel.swift */; };
 		CMPSTVM02BUILD002 /* ComposePostViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMPSTVM01FILE001 /* ComposePostViewModel.swift */; };
 		COMPMOD02BUILD002 /* CompletedModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = COMPMOD01FILE001 /* CompletedModule.swift */; };
 		COMPSTG02BUILD002 /* CompletedSetGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = COMPSTG01FILE001 /* CompletedSetGroup.swift */; };
@@ -236,6 +240,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		CDREP001FILE001 /* CoreDataRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataRepository.swift; sourceTree = "<group>"; };
 		05D2B6AD67E44647BABA141E /* gym app/Views/Library/LibraryExerciseEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Views/Library/LibraryExerciseEditView.swift"; sourceTree = SOURCE_ROOT; };
 		09F384AAD9014FF9A582680C /* gym app/Services/LibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Services/LibraryService.swift"; sourceTree = SOURCE_ROOT; };
 		196485332F25516E00078F82 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; name = "GoogleService-Info.plist"; };
@@ -311,6 +316,9 @@
 		CHATVM001FILE /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		CHATVW001FILE /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		CMPSHT01FILE001 /* ComposePostSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposePostSheet.swift; sourceTree = "<group>"; };
+		HLTPKR01FILE001 /* HighlightPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightPickerView.swift; sourceTree = "<group>"; };
+		EDTPST01FILE001 /* EditPostSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPostSheet.swift; sourceTree = "<group>"; };
+		EDTPSTVM01FILE001 /* EditPostViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPostViewModel.swift; sourceTree = "<group>"; };
 		CMPSTVM01FILE001 /* ComposePostViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposePostViewModel.swift; sourceTree = "<group>"; };
 		COMPMOD01FILE001 /* CompletedModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedModule.swift; sourceTree = "<group>"; };
 		COMPSTG01FILE001 /* CompletedSetGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedSetGroup.swift; sourceTree = "<group>"; };
@@ -569,6 +577,7 @@
 				PSTDVM01FILE001 /* PostDetailViewModel.swift */,
 				CMPSTVM01FILE001 /* ComposePostViewModel.swift */,
 				QKLGVM01FILE /* QuickLogViewModel.swift */,
+				EDTPSTVM01FILE001 /* EditPostViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -720,6 +729,7 @@
 			isa = PBXGroup;
 			children = (
 				B63EBF092F15E73700D8C22D /* DataRepository.swift */,
+				CDREP001FILE001 /* CoreDataRepository.swift */,
 				MODREP001FILE001 /* ModuleRepository.swift */,
 				WKREP001FILE001 /* WorkoutRepository.swift */,
 				SESREP001FILE001 /* SessionRepository.swift */,
@@ -872,6 +882,8 @@
 				WKATCRD01FILE001 /* WorkoutAttachmentCard.swift */,
 				PSTDVW01FILE001 /* PostDetailView.swift */,
 				CMPSHT01FILE001 /* ComposePostSheet.swift */,
+				HLTPKR01FILE001 /* HighlightPickerView.swift */,
+				EDTPST01FILE001 /* EditPostSheet.swift */,
 			);
 			path = Social;
 			sourceTree = "<group>";
@@ -1103,6 +1115,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CDREP002BUILD02 /* CoreDataRepository.swift in Sources */,
 				SHRBND02BUILD002 /* ShareBundles.swift in Sources */,
 				IMPCON02BUILD002 /* ImportConflict.swift in Sources */,
 				SHRSER02BUILD002 /* SharingService.swift in Sources */,
@@ -1248,6 +1261,9 @@
 				WKATCRD02BUILD002 /* WorkoutAttachmentCard.swift in Sources */,
 				PSTDVW02BUILD002 /* PostDetailView.swift in Sources */,
 				CMPSHT02BUILD002 /* ComposePostSheet.swift in Sources */,
+				HLTPKR02BUILD001 /* HighlightPickerView.swift in Sources */,
+				EDTPST02BUILD001 /* EditPostSheet.swift in Sources */,
+				EDTPSTVM02BUILD001 /* EditPostViewModel.swift in Sources */,
 				ANLYT002BUILD002 /* AnalyticsView.swift in Sources */,
 				MOREV002BUILD002 /* MoreView.swift in Sources */,
 				USRPFL002BUILD002 /* UserProfile.swift in Sources */,

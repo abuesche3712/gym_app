@@ -8,77 +8,41 @@
 import CoreData
 
 @MainActor
-class ModuleRepository {
-    private let persistence: PersistenceController
+class ModuleRepository: CoreDataRepository {
+    typealias DomainModel = Module
+    typealias CDEntity = ModuleEntity
 
-    private var viewContext: NSManagedObjectContext {
-        persistence.container.viewContext
+    let persistence: PersistenceController
+
+    var entityName: String { "ModuleEntity" }
+
+    var defaultSortDescriptors: [NSSortDescriptor] {
+        [NSSortDescriptor(keyPath: \ModuleEntity.name, ascending: true)]
     }
 
     init(persistence: PersistenceController = .shared) {
         self.persistence = persistence
     }
 
-    // MARK: - CRUD Operations
+    // MARK: - Entity-Specific Conversion
 
-    func loadAll() -> [Module] {
-        let request = NSFetchRequest<ModuleEntity>(entityName: "ModuleEntity")
-        request.sortDescriptors = [NSSortDescriptor(keyPath: \ModuleEntity.name, ascending: true)]
+    func toDomain(_ entity: ModuleEntity) -> Module {
+        let exercises = convertExerciseInstanceEntities(entity.exerciseInstanceArray)
 
-        do {
-            let entities = try viewContext.fetch(request)
-            return entities.map { convertToModule($0) }
-        } catch {
-            Logger.error(error, context: "ModuleRepository.loadAll")
-            return []
-        }
+        return Module(
+            id: entity.id,
+            name: entity.name,
+            type: entity.type,
+            exercises: exercises,
+            notes: entity.notes,
+            estimatedDuration: entity.estimatedDuration > 0 ? Int(entity.estimatedDuration) : nil,
+            createdAt: entity.createdAt ?? Date(),
+            updatedAt: entity.updatedAt ?? Date(),
+            syncStatus: entity.syncStatus
+        )
     }
 
-    func save(_ module: Module) {
-        let entity = findOrCreateEntity(id: module.id)
-        updateEntity(entity, from: module)
-        persistence.save()
-    }
-
-    func delete(_ module: Module) {
-        if let entity = findEntity(id: module.id) {
-            viewContext.delete(entity)
-            persistence.save()
-        }
-    }
-
-    func find(id: UUID) -> Module? {
-        guard let entity = findEntity(id: id) else { return nil }
-        return convertToModule(entity)
-    }
-
-    // MARK: - Entity Operations (for sync)
-
-    func findEntity(id: UUID) -> ModuleEntity? {
-        let request = NSFetchRequest<ModuleEntity>(entityName: "ModuleEntity")
-        request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
-        return try? viewContext.fetch(request).first
-    }
-
-    func deleteEntity(id: UUID) {
-        if let entity = findEntity(id: id) {
-            viewContext.delete(entity)
-            persistence.save()
-        }
-    }
-
-    // MARK: - Private Helpers
-
-    private func findOrCreateEntity(id: UUID) -> ModuleEntity {
-        if let existing = findEntity(id: id) {
-            return existing
-        }
-        let entity = ModuleEntity(context: viewContext)
-        entity.id = id
-        return entity
-    }
-
-    private func updateEntity(_ entity: ModuleEntity, from module: Module) {
+    func updateEntity(_ entity: ModuleEntity, from module: Module) {
         entity.name = module.name
         entity.type = module.type
         entity.notes = module.notes
@@ -105,22 +69,6 @@ class ModuleRepository {
         // Add exercise instances
         let instanceEntities = createExerciseInstanceEntities(from: module.exercises, for: entity)
         entity.exerciseInstances = NSOrderedSet(array: instanceEntities)
-    }
-
-    private func convertToModule(_ entity: ModuleEntity) -> Module {
-        let exercises = convertExerciseInstanceEntities(entity.exerciseInstanceArray)
-
-        return Module(
-            id: entity.id,
-            name: entity.name,
-            type: entity.type,
-            exercises: exercises,
-            notes: entity.notes,
-            estimatedDuration: entity.estimatedDuration > 0 ? Int(entity.estimatedDuration) : nil,
-            createdAt: entity.createdAt ?? Date(),
-            updatedAt: entity.updatedAt ?? Date(),
-            syncStatus: entity.syncStatus
-        )
     }
 
     // MARK: - ExerciseInstance Conversion
