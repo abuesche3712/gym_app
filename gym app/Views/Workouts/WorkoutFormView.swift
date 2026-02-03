@@ -271,64 +271,29 @@ struct WorkoutFormView: View {
     }
 
     private var moduleQuickAddBar: some View {
-        HStack(spacing: AppSpacing.md) {
-            Image(systemName: "magnifyingglass")
-                .font(.body)
-                .foregroundColor(AppColors.textTertiary)
-                .frame(width: 24)
-
-            TextField("Quick add module...", text: $moduleSearchText)
-                .textFieldStyle(.plain)
-                .submitLabel(.done)
-
-            if !moduleSearchText.isEmpty {
-                Button {
-                    moduleSearchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.body)
-                        .foregroundColor(AppColors.textTertiary)
-                }
-            }
-        }
-        .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.vertical, AppSpacing.md)
-        .background(AppColors.surfacePrimary)
+        BuilderQuickAddBar(
+            placeholder: "Quick add module...",
+            text: $moduleSearchText,
+            accentColor: AppColors.accent1,
+            showAddButton: false,
+            onClear: { moduleSearchText = "" }
+        )
     }
 
     private var moduleSearchResultsDropdown: some View {
         VStack(spacing: 0) {
             ForEach(quickModuleResults) { module in
-                Button {
-                    selectedModuleIds.append(module.id)
-                    moduleSearchText = ""
-                } label: {
-                    HStack(spacing: AppSpacing.md) {
-                        Image(systemName: module.type.icon)
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.moduleColor(module.type))
-                            .frame(width: 24)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(module.name)
-                                .font(.subheadline)
-                                .foregroundColor(AppColors.textPrimary)
-                            Text("\(module.exercises.count) exercises")
-                                .font(.caption)
-                                .foregroundColor(AppColors.textTertiary)
-                        }
-
-                        Spacer()
-
-                        Image(systemName: "plus.circle")
-                            .font(.body)
-                            .foregroundColor(AppColors.accent1)
+                BuilderSearchResultRowWithDetail(
+                    icon: module.type.icon,
+                    iconColor: AppColors.moduleColor(module.type),
+                    title: module.name,
+                    detail: "\(module.exercises.count) exercises",
+                    accentColor: AppColors.accent1,
+                    onSelect: {
+                        selectedModuleIds.append(module.id)
+                        moduleSearchText = ""
                     }
-                    .padding(.horizontal, AppSpacing.cardPadding)
-                    .padding(.vertical, AppSpacing.sm)
-                    .background(AppColors.surfaceTertiary)
-                }
-                .buttonStyle(.plain)
+                )
 
                 if module.id != quickModuleResults.last?.id {
                     Divider().padding(.leading, 56)
@@ -338,20 +303,11 @@ struct WorkoutFormView: View {
     }
 
     private var emptyModulesView: some View {
-        VStack(spacing: AppSpacing.sm) {
-            Image(systemName: "square.stack.3d.up")
-                .font(.title)
-                .foregroundColor(AppColors.textTertiary.opacity(0.5))
-            Text("No modules added")
-                .font(.subheadline)
-                .foregroundColor(AppColors.textTertiary)
-            Text("Search above or browse your library")
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary.opacity(0.7))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.xl)
-        .background(AppColors.surfacePrimary)
+        BuilderEmptyState(
+            icon: "square.stack.3d.up",
+            title: "No modules added",
+            subtitle: "Search above or browse your library"
+        )
     }
 
     private var modulesList: some View {
@@ -378,77 +334,27 @@ struct WorkoutFormView: View {
     }
 
     private func moduleRow(module: Module, index: Int) -> some View {
-        HStack(spacing: AppSpacing.md) {
-            // Drag handle
-            Image(systemName: "line.3.horizontal")
-                .font(.subheadline.weight(.medium))
-                .foregroundColor(AppColors.textTertiary)
-                .frame(width: 20)
-
-            ZStack {
-                Circle()
-                    .fill(AppColors.moduleColor(module.type).opacity(0.12))
-                    .frame(width: 28, height: 28)
-                Text("\(index + 1)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.moduleColor(module.type))
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(module.name)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundColor(AppColors.textPrimary)
-                HStack(spacing: AppSpacing.sm) {
-                    Text(module.type.displayName)
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                    Text("•")
-                        .foregroundColor(AppColors.textTertiary)
-                    Text("\(module.exercises.count) exercises")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
-                }
-            }
-
-            Spacer()
-
-            Button {
+        BuilderItemRow(
+            index: index,
+            title: module.name,
+            subtitle: "\(module.type.displayName) • \(module.exercises.count) exercises",
+            accentColor: AppColors.moduleColor(module.type),
+            showDragHandle: true,
+            onDelete: {
                 withAnimation {
                     _ = selectedModuleIds.remove(at: index)
                 }
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.body)
-                    .foregroundColor(AppColors.textTertiary.opacity(0.6))
             }
-        }
-        .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.vertical, AppSpacing.md)
-        .background(AppColors.surfacePrimary)
+        )
     }
 
     private var browseModulesButton: some View {
-        Button {
-            showingModulePicker = true
-        } label: {
-            HStack(spacing: AppSpacing.md) {
-                Image(systemName: "folder")
-                    .font(.body)
-                    .foregroundColor(AppColors.accent1)
-                    .frame(width: 24)
-                Text("Browse Module Library")
-                    .foregroundColor(AppColors.accent1)
-                    .fontWeight(.medium)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(AppColors.textTertiary)
-            }
-            .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.vertical, AppSpacing.md)
-            .background(AppColors.surfacePrimary)
-        }
-        .buttonStyle(.plain)
+        BuilderActionButton(
+            icon: "folder",
+            title: "Browse Module Library",
+            color: AppColors.accent1,
+            action: { showingModulePicker = true }
+        )
     }
 
     // MARK: - Exercises Section
@@ -496,70 +402,32 @@ struct WorkoutFormView: View {
     }
 
     private var exerciseQuickAddBar: some View {
-        HStack(spacing: AppSpacing.md) {
-            Image(systemName: "magnifyingglass")
-                .font(.body)
-                .foregroundColor(AppColors.textTertiary)
-                .frame(width: 24)
-
-            TextField("Quick add exercise...", text: $exerciseSearchText)
-                .textFieldStyle(.plain)
-                .submitLabel(.done)
-                .onSubmit {
-                    if !exerciseSearchText.isEmpty {
-                        addCustomExercise(name: exerciseSearchText)
-                        exerciseSearchText = ""
-                    }
-                }
-
-            if !exerciseSearchText.isEmpty {
-                Button {
-                    addCustomExercise(name: exerciseSearchText)
-                    exerciseSearchText = ""
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title3)
-                        .foregroundColor(AppColors.dominant)
-                }
+        BuilderQuickAddBar(
+            placeholder: "Quick add exercise...",
+            text: $exerciseSearchText,
+            accentColor: AppColors.dominant,
+            showAddButton: true,
+            onAdd: {
+                addCustomExercise(name: exerciseSearchText)
+                exerciseSearchText = ""
             }
-        }
-        .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.vertical, AppSpacing.md)
-        .background(AppColors.surfacePrimary)
+        )
     }
 
     private var exerciseSearchResultsDropdown: some View {
         VStack(spacing: 0) {
             ForEach(quickExerciseResults) { template in
-                Button {
-                    addExerciseFromTemplate(template)
-                    exerciseSearchText = ""
-                } label: {
-                    HStack(spacing: AppSpacing.md) {
-                        Image(systemName: template.exerciseType.icon)
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.dominant)
-                            .frame(width: 24)
-
-                        Text(template.name)
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.textPrimary)
-
-                        Spacer()
-
-                        Text(template.exerciseType.displayName)
-                            .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
-
-                        Image(systemName: "plus.circle")
-                            .font(.body)
-                            .foregroundColor(AppColors.dominant)
+                BuilderSearchResultRow(
+                    icon: template.exerciseType.icon,
+                    iconColor: AppColors.dominant,
+                    title: template.name,
+                    subtitle: template.exerciseType.displayName,
+                    accentColor: AppColors.dominant,
+                    onSelect: {
+                        addExerciseFromTemplate(template)
+                        exerciseSearchText = ""
                     }
-                    .padding(.horizontal, AppSpacing.cardPadding)
-                    .padding(.vertical, AppSpacing.sm)
-                    .background(AppColors.surfaceTertiary)
-                }
-                .buttonStyle(.plain)
+                )
 
                 if template.id != quickExerciseResults.last?.id {
                     Divider().padding(.leading, 56)
@@ -569,20 +437,11 @@ struct WorkoutFormView: View {
     }
 
     private var emptyExercisesView: some View {
-        VStack(spacing: AppSpacing.sm) {
-            Image(systemName: "dumbbell")
-                .font(.title)
-                .foregroundColor(AppColors.textTertiary.opacity(0.5))
-            Text("No standalone exercises")
-                .font(.subheadline)
-                .foregroundColor(AppColors.textTertiary)
-            Text("Add exercises that aren't part of a module")
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary.opacity(0.7))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.xl)
-        .background(AppColors.surfacePrimary)
+        BuilderEmptyState(
+            icon: "dumbbell",
+            title: "No standalone exercises",
+            subtitle: "Add exercises that aren't part of a module"
+        )
     }
 
     private var exercisesList: some View {
@@ -776,51 +635,21 @@ struct WorkoutFormView: View {
 
     private var browseExercisesButton: some View {
         VStack(spacing: 0) {
-            Button {
-                showingExercisePicker = true
-            } label: {
-                HStack(spacing: AppSpacing.md) {
-                    Image(systemName: "books.vertical")
-                        .font(.body)
-                        .foregroundColor(AppColors.dominant)
-                        .frame(width: 24)
-                    Text("Browse Exercise Library")
-                        .foregroundColor(AppColors.dominant)
-                        .fontWeight(.medium)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                }
-                .padding(.horizontal, AppSpacing.cardPadding)
-                .padding(.vertical, AppSpacing.md)
-                .background(AppColors.surfacePrimary)
-            }
-            .buttonStyle(.plain)
+            BuilderActionButton(
+                icon: "books.vertical",
+                title: "Browse Exercise Library",
+                color: AppColors.dominant,
+                action: { showingExercisePicker = true }
+            )
 
             FormDivider()
 
-            Button {
-                showingCreateExercise = true
-            } label: {
-                HStack(spacing: AppSpacing.md) {
-                    Image(systemName: "plus.circle")
-                        .font(.body)
-                        .foregroundColor(AppColors.accent1)
-                        .frame(width: 24)
-                    Text("Create New Exercise")
-                        .foregroundColor(AppColors.accent1)
-                        .fontWeight(.medium)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundColor(AppColors.textTertiary)
-                }
-                .padding(.horizontal, AppSpacing.cardPadding)
-                .padding(.vertical, AppSpacing.md)
-                .background(AppColors.surfacePrimary)
-            }
-            .buttonStyle(.plain)
+            BuilderActionButton(
+                icon: "plus.circle",
+                title: "Create New Exercise",
+                color: AppColors.accent1,
+                action: { showingCreateExercise = true }
+            )
         }
     }
 

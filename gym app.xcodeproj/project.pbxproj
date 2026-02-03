@@ -39,6 +39,11 @@
 		ADDEXR02BUILD002 /* AddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDEXR01FILE001 /* AddExerciseSheet.swift */; };
 		FRSTYL02BUILD01 /* FreestyleAddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRSTYL01FILE01 /* FreestyleAddExerciseSheet.swift */; };
 		ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANIMCO001FILE001 /* AnimatedComponents.swift */; };
+		BLDREMT02BUILD002 /* BuilderEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDREMT01FILE001 /* BuilderEmptyState.swift */; };
+		BLDRQAB02BUILD002 /* BuilderQuickAddBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDRQAB01FILE001 /* BuilderQuickAddBar.swift */; };
+		BLDRSRR02BUILD002 /* BuilderSearchResultRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDRSRR01FILE001 /* BuilderSearchResultRow.swift */; };
+		BLDRITM02BUILD002 /* BuilderItemRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDRITM01FILE001 /* BuilderItemRow.swift */; };
+		BLDRACT02BUILD002 /* BuilderActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDRACT01FILE001 /* BuilderActionButton.swift */; };
 		ANLYT002BUILD002 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLYT001FILE001 /* AnalyticsView.swift */; };
 		APPCFG02BUILD002 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPCFG01FILE001 /* AppConfig.swift */; };
 		B610AC032F15B4DD008B2C15 /* gym_appApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC022F15B4DD008B2C15 /* gym_appApp.swift */; };
@@ -79,6 +84,15 @@
 		B63EBF2A2F15E73700D8C22D /* FirebaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF0B2F15E73700D8C22D /* FirebaseService.swift */; };
 		B63EBF2B2F15E73700D8C22D /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */; };
 		B63EBF2C2F15E73700D8C22D /* SyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF0D2F15E73700D8C22D /* SyncManager.swift */; };
+		34A15C16E7C4C417F54DC7C1 /* SyncHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B47EA18754D362A6C72724 /* SyncHandlers.swift */; };
+		DB4505338C4FD921A7C6EBA4 /* FirestoreCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89217DA0F8957EE059AB3FF9 /* FirestoreCore.swift */; };
+		7F3EC832EE57150180BE8044 /* FirestoreSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261588C9A91F154B9EB4D4AC /* FirestoreSyncService.swift */; };
+		DA6EFC77B9DEDA4DC1F1671D /* FirestoreSocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF6E38FBE904533D715F6D3 /* FirestoreSocialService.swift */; };
+		7E1FF5EBF4BFBD7B730535A2 /* FirestoreMessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DB70BA70750F2B1167A8DC /* FirestoreMessagingService.swift */; };
+		0637D22035CA595B39D501D2 /* FirestoreFeedService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A95B76FC49816E35CDDF867 /* FirestoreFeedService.swift */; };
+		5752B2C149CBD12B3690CBBB /* FirestoreLibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBA7D111F1233C5EFE90EDA6 /* FirestoreLibraryService.swift */; };
+		D7BE18369D46FE792E6CE8B4 /* FirestoreConflictService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112F204E54595BC864A784E2 /* FirestoreConflictService.swift */; };
+		0DAF3A6CC5EE6557FE86D3E0 /* FirestoreDeletionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */; };
 		B63EBF302F15E73700D8C22D /* ExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */; };
 		B63FFF3B2F22DF2300090EA5 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B6FFC4A12F22DC220007E03E /* WidgetKit.framework */; };
 		B63FFF3C2F22DF2300090EA5 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B6FFC4A32F22DC220007E03E /* SwiftUI.framework */; };
@@ -258,6 +272,11 @@
 		ADDEXR01FILE001 /* AddExerciseSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddExerciseSheet.swift; sourceTree = "<group>"; };
 		FRSTYL01FILE01 /* FreestyleAddExerciseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreestyleAddExerciseSheet.swift; sourceTree = "<group>"; };
 		ANIMCO001FILE001 /* AnimatedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedComponents.swift; sourceTree = "<group>"; };
+		BLDREMT01FILE001 /* BuilderEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderEmptyState.swift; sourceTree = "<group>"; };
+		BLDRQAB01FILE001 /* BuilderQuickAddBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderQuickAddBar.swift; sourceTree = "<group>"; };
+		BLDRSRR01FILE001 /* BuilderSearchResultRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderSearchResultRow.swift; sourceTree = "<group>"; };
+		BLDRITM01FILE001 /* BuilderItemRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderItemRow.swift; sourceTree = "<group>"; };
+		BLDRACT01FILE001 /* BuilderActionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderActionButton.swift; sourceTree = "<group>"; };
 		ANLYT001FILE001 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
 		APPCFG01FILE001 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		B12D1154F7E74A3385D7FF2E /* DataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSeeder.swift; sourceTree = "<group>"; };
@@ -301,6 +320,15 @@
 		B63EBF0B2F15E73700D8C22D /* FirebaseService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FirebaseService.swift; sourceTree = "<group>"; };
 		B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		B63EBF0D2F15E73700D8C22D /* SyncManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncManager.swift; sourceTree = "<group>"; };
+		73B47EA18754D362A6C72724 /* SyncHandlers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncHandlers.swift; sourceTree = "<group>"; };
+		89217DA0F8957EE059AB3FF9 /* FirestoreCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreCore.swift; sourceTree = "<group>"; };
+		261588C9A91F154B9EB4D4AC /* FirestoreSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreSyncService.swift; sourceTree = "<group>"; };
+		9FF6E38FBE904533D715F6D3 /* FirestoreSocialService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreSocialService.swift; sourceTree = "<group>"; };
+		00DB70BA70750F2B1167A8DC /* FirestoreMessagingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreMessagingService.swift; sourceTree = "<group>"; };
+		9A95B76FC49816E35CDDF867 /* FirestoreFeedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreFeedService.swift; sourceTree = "<group>"; };
+		EBA7D111F1233C5EFE90EDA6 /* FirestoreLibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreLibraryService.swift; sourceTree = "<group>"; };
+		112F204E54595BC864A784E2 /* FirestoreConflictService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreConflictService.swift; sourceTree = "<group>"; };
+		4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreDeletionService.swift; sourceTree = "<group>"; };
 		B63FFF3A2F22DF2300090EA5 /* TodayWorkoutWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TodayWorkoutWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B63FFF502F22DFB200090EA5 /* TodayWorkoutWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TodayWorkoutWidgetExtension.entitlements; sourceTree = "<group>"; };
 		B658B09B2F16903C00B2F84E /* AppTheme.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
@@ -746,6 +774,7 @@
 		B63EBF0E2F15E73700D8C22D /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				7A224F97F4BE8E23B7C532F9 /* Firebase */,
 				197B16182F2569D8006135E4 /* BackgroundSessionManager.swift */,
 				APPCFG01FILE001 /* AppConfig.swift */,
 				C36DDB57BAA44FEF866BE090 /* AuthService.swift */,
@@ -758,6 +787,7 @@
 				DELTRC01FILE001 /* DeletionTracker.swift */,
 				SYNCLOG01FILE001 /* SyncLogger.swift */,
 				B63EBF0D2F15E73700D8C22D /* SyncManager.swift */,
+				73B47EA18754D362A6C72724 /* SyncHandlers.swift */,
 				WDGSVC01FILE001 /* WidgetData.swift */,
 				WKDIFF01FILE001 /* WorkoutDiffService.swift */,
 				QKLGSVC01FILE /* QuickLogService.swift */,
@@ -813,8 +843,21 @@
 			children = (
 				ANIMCO001FILE001 /* AnimatedComponents.swift */,
 				SYCERR001FILE001 /* SyncErrorBanner.swift */,
+				BLDRGRP001GROUP001 /* Builder */,
 			);
 			path = Components;
+			sourceTree = "<group>";
+		};
+		BLDRGRP001GROUP001 /* Builder */ = {
+			isa = PBXGroup;
+			children = (
+				BLDREMT01FILE001 /* BuilderEmptyState.swift */,
+				BLDRQAB01FILE001 /* BuilderQuickAddBar.swift */,
+				BLDRSRR01FILE001 /* BuilderSearchResultRow.swift */,
+				BLDRITM01FILE001 /* BuilderItemRow.swift */,
+				BLDRACT01FILE001 /* BuilderActionButton.swift */,
+			);
+			path = Builder;
 			sourceTree = "<group>";
 		};
 		E3A1B2C3D4E5F60000000003 /* Protocols */ = {
@@ -912,6 +955,21 @@
 				QKLGSHT01FILE /* QuickLogSheet.swift */,
 			);
 			path = QuickLog;
+			sourceTree = "<group>";
+		};
+		7A224F97F4BE8E23B7C532F9 /* Firebase */ = {
+			isa = PBXGroup;
+			children = (
+				89217DA0F8957EE059AB3FF9 /* FirestoreCore.swift */,
+				261588C9A91F154B9EB4D4AC /* FirestoreSyncService.swift */,
+				9FF6E38FBE904533D715F6D3 /* FirestoreSocialService.swift */,
+				00DB70BA70750F2B1167A8DC /* FirestoreMessagingService.swift */,
+				9A95B76FC49816E35CDDF867 /* FirestoreFeedService.swift */,
+				EBA7D111F1233C5EFE90EDA6 /* FirestoreLibraryService.swift */,
+				112F204E54595BC864A784E2 /* FirestoreConflictService.swift */,
+				4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */
+			);
+			path = Firebase;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1128,6 +1186,15 @@
 				B63EBF172F15E73700D8C22D /* SetGroup.swift in Sources */,
 				B63EBF2B2F15E73700D8C22D /* NetworkMonitor.swift in Sources */,
 				B63EBF2C2F15E73700D8C22D /* SyncManager.swift in Sources */,
+				34A15C16E7C4C417F54DC7C1 /* SyncHandlers.swift in Sources */,
+				DB4505338C4FD921A7C6EBA4 /* FirestoreCore.swift in Sources */,
+				7F3EC832EE57150180BE8044 /* FirestoreSyncService.swift in Sources */,
+				DA6EFC77B9DEDA4DC1F1671D /* FirestoreSocialService.swift in Sources */,
+				7E1FF5EBF4BFBD7B730535A2 /* FirestoreMessagingService.swift in Sources */,
+				0637D22035CA595B39D501D2 /* FirestoreFeedService.swift in Sources */,
+				5752B2C149CBD12B3690CBBB /* FirestoreLibraryService.swift in Sources */,
+				D7BE18369D46FE792E6CE8B4 /* FirestoreConflictService.swift in Sources */,
+				0DAF3A6CC5EE6557FE86D3E0 /* FirestoreDeletionService.swift in Sources */,
 				B63EBF252F15E73700D8C22D /* HomeView.swift in Sources */,
 				B63EBF1B2F15E73700D8C22D /* ExerciseDetailView.swift in Sources */,
 				B63EBF162F15E73700D8C22D /* Session.swift in Sources */,
@@ -1219,6 +1286,11 @@
 				HAPTIC002BUILD002 /* HapticManager.swift in Sources */,
 				ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */,
 				SYCERR002BUILD002 /* SyncErrorBanner.swift in Sources */,
+				BLDREMT02BUILD002 /* BuilderEmptyState.swift in Sources */,
+				BLDRQAB02BUILD002 /* BuilderQuickAddBar.swift in Sources */,
+				BLDRSRR02BUILD002 /* BuilderSearchResultRow.swift in Sources */,
+				BLDRITM02BUILD002 /* BuilderItemRow.swift in Sources */,
+				BLDRACT02BUILD002 /* BuilderActionButton.swift in Sources */,
 				HOMESC002BUILD002 /* HomeScheduleSheets.swift in Sources */,
 				EQUIPL002BUILD002 /* EquipmentLibraryView.swift in Sources */,
 				PROGAM002BUILD002 /* Program.swift in Sources */,
