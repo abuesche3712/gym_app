@@ -542,6 +542,7 @@ class FirestoreService: ObservableObject {
             "id": friendship.id.uuidString,
             "requesterId": friendship.requesterId,
             "addresseeId": friendship.addresseeId,
+            "participantIds": [friendship.requesterId, friendship.addresseeId],  // Required for security rules
             "status": friendship.status.rawValue,
             "createdAt": Timestamp(date: friendship.createdAt),
             "updatedAt": FieldValue.serverTimestamp()
