@@ -1,13 +1,81 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2026-02-03 (Builder UI components extraction)
+> **Last updated:** 2026-02-03 (Module/Workout builder bug fixes)
 
 ## Project Overview
 
 iOS workout tracking app built with SwiftUI. Offline-first with CoreData, Firebase for cloud sync.
 
 **Status:** Feature-complete foundation with UX bugs fixed and design system fully implemented. Typography refactoring complete. Major refactoring completed (DataRepository split, Session model split, AppTheme split, Session views split). Per-exercise progression system implemented. Comprehensive DataRepository tests added. **Social features Phase 1-5 complete** (Profiles, Friendships, Messaging, Sharing, Feed). **Design system unified** (Feb 1, 2026). **Twitter-style feed implemented** (Feb 1, 2026).
+
+## Module/Workout Builder Bug Fixes (Feb 3, 2026)
+
+Fixed 8 bugs and improvements in the module/workout builder flow.
+
+### Bug Fixes
+
+**Bug 1: Can't delete a program**
+- **Problem:** No obvious way to delete a program from ProgramFormView
+- **Fix:** Added delete section with confirmation alert at bottom of ProgramFormView
+- **Files:** `ProgramFormView.swift`
+
+**Bug 2 & 6: Duplicate weight/band tracking**
+- **Problem:** Equipment attributes showed redundant weight fields (e.g., "Weight" field AND "Dumbbell - Weight")
+- **Fix:** Filter out weight/load measurables from `implementSpecificMeasurables` for ALL exercises, not just bodyweight
+- **Files:** `SetGroupFormView.swift`
+
+**Bug 3: Remove quick add module from workout builder**
+- **Problem:** Module search bar in WorkoutFormView was confusing - users should use Browse Library
+- **Fix:** Removed `moduleQuickAddBar`, `moduleSearchText`, `quickModuleResults`, and `moduleSearchResultsDropdown`
+- **Files:** `WorkoutFormView.swift`
+
+**Bug 4: Add mobility module type**
+- **Problem:** ModuleType enum missing `.mobility` for stretching/flexibility modules
+- **Fix:** Added `.mobility` case with:
+  - `displayName`: "Mobility"
+  - `icon`: "figure.flexibility"
+  - `colorName`: "pink"
+  - `color`: `accent4` (hot pink)
+- **Files:** `Enums.swift`, `AppColors.swift`
+
+**Bug 5: Wrong edit view for exercises in unsaved modules**
+- **Problem:** InlineExerciseEditor missing unilateral, muscles, equipment options
+- **Fix:** Enhanced InlineExerciseEditor with:
+  - Exercise type picker
+  - Unilateral toggle
+  - Muscles picker (primary/secondary)
+  - Equipment picker
+  - Updated `loadExercise()` and `saveExercise()` to handle new fields
+- **Files:** `ModuleFormView.swift`
+
+**Bug 7: Keyboard gets stuck**
+- **Problem:** Keyboard stays visible and won't dismiss
+- **Fix:** Added `.scrollDismissesKeyboard(.interactively)` to ScrollViews and `@FocusState` handling with `focusedField = false` before save/cancel
+- **Files:** `ModuleFormView.swift`, `WorkoutFormView.swift`, `InlineExerciseEditor`
+
+**Bug 8: Remove estimated duration**
+- **Problem:** Duration input cluttered the forms
+- **Fix:** Removed `estimatedDuration` state, FormTextField, and related load/save code
+- **Files:** `ModuleFormView.swift`, `WorkoutFormView.swift`
+
+### InlineExerciseEditor Enhancements
+
+Now includes full exercise editing capabilities:
+```swift
+// State variables added
+@State private var isUnilateral: Bool = false
+@State private var primaryMuscles: [MuscleGroup] = []
+@State private var secondaryMuscles: [MuscleGroup] = []
+@State private var selectedImplementIds: Set<UUID> = []
+@State private var showingMusclePicker = false
+@State private var showingEquipmentPicker = false
+
+// New sections in body
+- Exercise type picker (Picker with ExerciseType.allCases)
+- Unilateral toggle (except for cardio)
+- musclesAndEquipmentSection with MuscleGroupEnumPickerView and ImplementPickerView sheets
+```
 
 ## Twitter-Style Feed Implementation (Feb 1, 2026)
 
