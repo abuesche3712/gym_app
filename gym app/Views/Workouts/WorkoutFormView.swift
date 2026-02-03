@@ -18,7 +18,6 @@ struct WorkoutFormView: View {
     // Workout info
     @State private var name: String = ""
     @State private var notes: String = ""
-    @State private var estimatedDuration: String = ""
 
     // Content
     @State private var selectedModuleIds: [UUID] = []
@@ -27,24 +26,14 @@ struct WorkoutFormView: View {
     // UI state
     @State private var showingModulePicker = false
     @State private var showingExercisePicker = false
-    @State private var moduleSearchText = ""
     @State private var exerciseSearchText = ""
     @State private var editingExercise: ExerciseInstance?
     @State private var selectedForSuperset: Set<UUID> = []
     @State private var isSelectingForSuperset = false
     @State private var showingCreateExercise = false
+    @FocusState private var focusedField: Bool
 
     private var isEditing: Bool { workout != nil }
-
-    // Quick search results for modules
-    private var quickModuleResults: [Module] {
-        guard !moduleSearchText.isEmpty else { return [] }
-        return moduleViewModel.modules
-            .filter { $0.name.localizedCaseInsensitiveContains(moduleSearchText) }
-            .filter { !selectedModuleIds.contains($0.id) }
-            .prefix(4)
-            .map { $0 }
-    }
 
     // Quick search results for exercises
     private var quickExerciseResults: [ExerciseTemplate] {
@@ -77,11 +66,13 @@ struct WorkoutFormView: View {
             }
             .padding(AppSpacing.screenPadding)
         }
+        .scrollDismissesKeyboard(.interactively)
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
+                    focusedField = false
                     dismiss()
                 }
                 .foregroundColor(AppColors.textSecondary)
@@ -89,6 +80,7 @@ struct WorkoutFormView: View {
 
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
+                    focusedField = false
                     saveWorkout()
                 }
                 .fontWeight(.semibold)
@@ -161,11 +153,6 @@ struct WorkoutFormView: View {
             HStack(spacing: AppSpacing.lg) {
                 statBadge(value: "\(selectedModuleIds.count)", label: "modules", icon: "square.stack.3d.up", color: AppColors.accent1)
                 statBadge(value: "\(totalExerciseCount)", label: "exercises", icon: "dumbbell", color: AppColors.dominant)
-
-                if let duration = Int(estimatedDuration), duration > 0 {
-                    statBadge(value: "\(duration)", label: "min", icon: "clock", color: AppColors.accent3)
-                }
-
                 Spacer()
             }
             .padding(.top, AppSpacing.xs)
@@ -204,8 +191,7 @@ struct WorkoutFormView: View {
         var filled = 0.0
         if !name.trimmingCharacters(in: .whitespaces).isEmpty { filled += 1 }
         if !selectedModuleIds.isEmpty || !standaloneExercises.isEmpty { filled += 1 }
-        if Int(estimatedDuration) ?? 0 > 0 { filled += 1 }
-        return filled / 3.0
+        return filled / 2.0
     }
 
     private var totalExerciseCount: Int {
@@ -235,8 +221,6 @@ struct WorkoutFormView: View {
     private var workoutInfoSection: some View {
         FormSection(title: "Workout Info", icon: "figure.strengthtraining.traditional", iconColor: AppColors.dominant) {
             FormTextField(label: "Name", text: $name, icon: "textformat", placeholder: "e.g., Monday - Lower A")
-            FormDivider()
-            FormTextField(label: "Duration", text: $estimatedDuration, icon: "clock", placeholder: "minutes", keyboardType: .numberPad)
         }
     }
 
@@ -245,16 +229,6 @@ struct WorkoutFormView: View {
     private var modulesSection: some View {
         FormSection(title: "Modules", icon: "square.stack.3d.up", iconColor: AppColors.accent1) {
             VStack(spacing: 0) {
-                // Quick search
-                moduleQuickAddBar
-
-                // Search results
-                if !moduleSearchText.isEmpty && !quickModuleResults.isEmpty {
-                    moduleSearchResultsDropdown
-                }
-
-                FormDivider()
-
                 // Module list
                 if selectedModuleIds.isEmpty {
                     emptyModulesView
@@ -270,43 +244,11 @@ struct WorkoutFormView: View {
         }
     }
 
-    private var moduleQuickAddBar: some View {
-        BuilderQuickAddBar(
-            placeholder: "Quick add module...",
-            text: $moduleSearchText,
-            accentColor: AppColors.accent1,
-            showAddButton: false,
-            onClear: { moduleSearchText = "" }
-        )
-    }
-
-    private var moduleSearchResultsDropdown: some View {
-        VStack(spacing: 0) {
-            ForEach(quickModuleResults) { module in
-                BuilderSearchResultRowWithDetail(
-                    icon: module.type.icon,
-                    iconColor: AppColors.moduleColor(module.type),
-                    title: module.name,
-                    detail: "\(module.exercises.count) exercises",
-                    accentColor: AppColors.accent1,
-                    onSelect: {
-                        selectedModuleIds.append(module.id)
-                        moduleSearchText = ""
-                    }
-                )
-
-                if module.id != quickModuleResults.last?.id {
-                    Divider().padding(.leading, 56)
-                }
-            }
-        }
-    }
-
     private var emptyModulesView: some View {
         BuilderEmptyState(
             icon: "square.stack.3d.up",
             title: "No modules added",
-            subtitle: "Search above or browse your library"
+            subtitle: "Browse your library to add modules"
         )
     }
 
@@ -671,9 +613,6 @@ struct WorkoutFormView: View {
         if let workout = workout {
             name = workout.name
             notes = workout.notes ?? ""
-            if let duration = workout.estimatedDuration {
-                estimatedDuration = "\(duration)"
-            }
             selectedModuleIds = workout.moduleReferences
                 .sorted { $0.order < $1.order }
                 .map { $0.moduleId }
@@ -731,7 +670,6 @@ struct WorkoutFormView: View {
     private func saveWorkout() {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         let trimmedNotes = notes.trimmingCharacters(in: .whitespaces)
-        let duration = Int(estimatedDuration)
 
         let moduleRefs = selectedModuleIds.enumerated().map { index, moduleId in
             ModuleReference(moduleId: moduleId, order: index)
@@ -744,7 +682,6 @@ struct WorkoutFormView: View {
         if var existingWorkout = workout {
             existingWorkout.name = trimmedName
             existingWorkout.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
-            existingWorkout.estimatedDuration = duration
             existingWorkout.moduleReferences = moduleRefs
             existingWorkout.standaloneExercises = workoutExercises
             existingWorkout.updatedAt = Date()
@@ -754,7 +691,6 @@ struct WorkoutFormView: View {
                 name: trimmedName,
                 moduleReferences: moduleRefs,
                 standaloneExercises: workoutExercises,
-                estimatedDuration: duration,
                 notes: trimmedNotes.isEmpty ? nil : trimmedNotes
             )
             workoutViewModel.saveWorkout(newWorkout)

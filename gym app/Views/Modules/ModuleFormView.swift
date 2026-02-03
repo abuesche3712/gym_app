@@ -19,7 +19,6 @@ struct ModuleFormView: View {
     @State private var name: String = ""
     @State private var type: ModuleType = .strength
     @State private var notes: String = ""
-    @State private var estimatedDuration: String = ""
 
     // Exercises
     @State private var exercises: [ExerciseInstance] = []
@@ -28,6 +27,7 @@ struct ModuleFormView: View {
     @State private var editingExercise: ExerciseInstance?
     @State private var searchText = ""
     @State private var isSearchFocused = false
+    @FocusState private var focusedField: Bool
 
     private var isEditing: Bool { module != nil }
 
@@ -60,12 +60,14 @@ struct ModuleFormView: View {
             }
             .padding(AppSpacing.screenPadding)
         }
+        .scrollDismissesKeyboard(.interactively)
         .background(AppColors.background.ignoresSafeArea())
         .navigationTitle(isEditing ? "Edit Module" : "New Module")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
+                    focusedField = false
                     dismiss()
                 }
                 .foregroundColor(AppColors.textSecondary)
@@ -73,6 +75,7 @@ struct ModuleFormView: View {
 
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save") {
+                    focusedField = false
                     saveModule()
                 }
                 .fontWeight(.semibold)
@@ -120,8 +123,6 @@ struct ModuleFormView: View {
             FormTextField(label: "Name", text: $name, icon: "textformat", placeholder: "e.g., Upper Body Push")
             FormDivider()
             typePickerRow
-            FormDivider()
-            FormTextField(label: "Duration", text: $estimatedDuration, icon: "clock", placeholder: "minutes", keyboardType: .numberPad)
         }
     }
 
@@ -297,9 +298,6 @@ struct ModuleFormView: View {
             name = module.name
             type = module.type
             notes = module.notes ?? ""
-            if let duration = module.estimatedDuration {
-                estimatedDuration = "\(duration)"
-            }
             exercises = module.exercises
         }
     }
@@ -360,7 +358,6 @@ struct ModuleFormView: View {
 
     private func saveModule() {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
-        let duration = Int(estimatedDuration)
         let trimmedNotes = notes.trimmingCharacters(in: .whitespaces)
 
         // Ensure exercises are properly ordered
@@ -371,7 +368,6 @@ struct ModuleFormView: View {
             existingModule.name = trimmedName
             existingModule.type = type
             existingModule.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
-            existingModule.estimatedDuration = duration
             existingModule.exercises = exercises
             existingModule.updatedAt = Date()
             moduleViewModel.saveModule(existingModule)
@@ -382,8 +378,7 @@ struct ModuleFormView: View {
                 name: trimmedName,
                 type: type,
                 exercises: exercises,
-                notes: trimmedNotes.isEmpty ? nil : trimmedNotes,
-                estimatedDuration: duration
+                notes: trimmedNotes.isEmpty ? nil : trimmedNotes
             )
             moduleViewModel.saveModule(newModule)
             dismiss()
@@ -411,13 +406,22 @@ struct InlineExerciseEditor: View {
     @State private var notes: String = ""
     @State private var showingAddSetGroup = false
     @State private var editingSetGroupIndex: Int? = nil
+    @FocusState private var focusedField: Bool
+
+    // Additional exercise properties
+    @State private var isUnilateral: Bool = false
+    @State private var primaryMuscles: [MuscleGroup] = []
+    @State private var secondaryMuscles: [MuscleGroup] = []
+    @State private var selectedImplementIds: Set<UUID> = []
+    @State private var showingMusclePicker = false
+    @State private var showingEquipmentPicker = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: AppSpacing.xl) {
                 // Exercise info
                 FormSection(title: "Exercise", icon: "dumbbell", iconColor: AppColors.dominant) {
-                    // Name (read-only for now)
+                    // Name display
                     HStack(spacing: AppSpacing.md) {
                         Image(systemName: "textformat")
                             .body(color: AppColors.textTertiary)
@@ -427,18 +431,54 @@ struct InlineExerciseEditor: View {
                             .body(color: AppColors.textPrimary)
 
                         Spacer()
-
-                        Text(exerciseType.displayName)
-                            .caption(color: AppColors.textSecondary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(AppColors.surfaceTertiary)
-                            .clipShape(Capsule())
                     }
                     .padding(.horizontal, AppSpacing.cardPadding)
                     .padding(.vertical, AppSpacing.md)
                     .background(AppColors.surfacePrimary)
+
+                    FormDivider()
+
+                    // Type picker
+                    HStack(spacing: AppSpacing.md) {
+                        Image(systemName: "tag")
+                            .body(color: AppColors.textTertiary)
+                            .frame(width: 24)
+
+                        Text("Type")
+                            .body(color: AppColors.textPrimary)
+
+                        Spacer()
+
+                        Picker("", selection: $exerciseType) {
+                            ForEach(ExerciseType.allCases) { type in
+                                Text(type.displayName).tag(type)
+                            }
+                        }
+                        .tint(AppColors.dominant)
+                    }
+                    .padding(.horizontal, AppSpacing.cardPadding)
+                    .padding(.vertical, AppSpacing.sm)
+                    .background(AppColors.surfacePrimary)
+
+                    // Unilateral toggle (except for cardio)
+                    if exerciseType != .cardio {
+                        FormDivider()
+                        HStack(spacing: AppSpacing.md) {
+                            Image(systemName: "figure.walk")
+                                .body(color: AppColors.textTertiary)
+                                .frame(width: 24)
+
+                            Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
+                                .tint(AppColors.accent3)
+                        }
+                        .padding(.horizontal, AppSpacing.cardPadding)
+                        .padding(.vertical, AppSpacing.md)
+                        .background(AppColors.surfacePrimary)
+                    }
                 }
+
+                // Muscles & Equipment section
+                musclesAndEquipmentSection
 
                 // Sets section
                 FormSection(title: "Sets", icon: "list.number", iconColor: AppColors.dominant) {
@@ -500,12 +540,14 @@ struct InlineExerciseEditor: View {
             }
             .padding(AppSpacing.screenPadding)
         }
+        .scrollDismissesKeyboard(.interactively)
         .background(AppColors.background.ignoresSafeArea())
         .navigationTitle("Edit Exercise")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
+                    focusedField = false
                     onCancel()
                 }
                 .foregroundColor(AppColors.textSecondary)
@@ -513,6 +555,7 @@ struct InlineExerciseEditor: View {
 
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") {
+                    focusedField = false
                     saveExercise()
                 }
                 .fontWeight(.semibold)
@@ -607,14 +650,151 @@ struct InlineExerciseEditor: View {
         exerciseType = exercise.exerciseType
         setGroups = exercise.setGroups
         notes = exercise.notes ?? ""
+        isUnilateral = exercise.isUnilateral
+        primaryMuscles = exercise.primaryMuscles
+        secondaryMuscles = exercise.secondaryMuscles
+        selectedImplementIds = exercise.implementIds
     }
 
     private func saveExercise() {
         var updated = exercise
+        updated.exerciseType = exerciseType
+        updated.isUnilateral = isUnilateral
+        updated.primaryMuscles = primaryMuscles
+        updated.secondaryMuscles = secondaryMuscles
+        updated.implementIds = selectedImplementIds
         updated.setGroups = setGroups
         updated.notes = notes.trimmingCharacters(in: .whitespaces).isEmpty ? nil : notes.trimmingCharacters(in: .whitespaces)
         updated.updatedAt = Date()
         onSave(updated)
+    }
+
+    // MARK: - Muscles & Equipment Section
+
+    private var musclesAndEquipmentSection: some View {
+        FormSection(title: "Muscles & Equipment", icon: "figure.strengthtraining.traditional", iconColor: AppColors.accent1) {
+            // Muscles row
+            Button {
+                showingMusclePicker = true
+            } label: {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "figure.arms.open")
+                        .body(color: AppColors.textTertiary)
+                        .frame(width: 24)
+
+                    Text("Muscles")
+                        .body(color: AppColors.textPrimary)
+
+                    Spacer()
+
+                    if primaryMuscles.isEmpty && secondaryMuscles.isEmpty {
+                        Text("None")
+                            .body(color: AppColors.textTertiary)
+                    } else {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            if !primaryMuscles.isEmpty {
+                                Text(primaryMuscles.map { $0.rawValue }.joined(separator: ", "))
+                                    .caption(color: AppColors.dominant)
+                                    .lineLimit(1)
+                            }
+                            if !secondaryMuscles.isEmpty {
+                                Text(secondaryMuscles.map { $0.rawValue }.joined(separator: ", "))
+                                    .caption(color: AppColors.textSecondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                    }
+
+                    Image(systemName: "chevron.right")
+                        .caption(color: AppColors.textTertiary)
+                        .fontWeight(.semibold)
+                }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, AppSpacing.md)
+                .background(AppColors.surfacePrimary)
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showingMusclePicker) {
+                NavigationStack {
+                    MuscleGroupEnumPickerView(
+                        primaryMuscles: $primaryMuscles,
+                        secondaryMuscles: $secondaryMuscles
+                    )
+                    .navigationTitle("Muscles")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") {
+                                showingMusclePicker = false
+                            }
+                            .foregroundColor(AppColors.dominant)
+                        }
+                    }
+                }
+                .presentationDetents([.medium, .large])
+            }
+
+            FormDivider()
+
+            // Equipment row
+            Button {
+                showingEquipmentPicker = true
+            } label: {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "dumbbell")
+                        .body(color: AppColors.textTertiary)
+                        .frame(width: 24)
+
+                    Text("Equipment")
+                        .body(color: AppColors.textPrimary)
+
+                    Spacer()
+
+                    if selectedImplementIds.isEmpty {
+                        Text("None")
+                            .body(color: AppColors.textTertiary)
+                    } else {
+                        Text(equipmentNames.joined(separator: ", "))
+                            .caption(color: AppColors.accent1)
+                            .lineLimit(1)
+                    }
+
+                    Image(systemName: "chevron.right")
+                        .caption(color: AppColors.textTertiary)
+                        .fontWeight(.semibold)
+                }
+                .padding(.horizontal, AppSpacing.cardPadding)
+                .padding(.vertical, AppSpacing.md)
+                .background(AppColors.surfacePrimary)
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showingEquipmentPicker) {
+                NavigationStack {
+                    ScrollView {
+                        ImplementPickerView(selectedIds: $selectedImplementIds)
+                            .padding()
+                    }
+                    .background(AppColors.background.ignoresSafeArea())
+                    .navigationTitle("Equipment")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") {
+                                showingEquipmentPicker = false
+                            }
+                            .foregroundColor(AppColors.dominant)
+                        }
+                    }
+                }
+                .presentationDetents([.medium, .large])
+            }
+        }
+    }
+
+    private var equipmentNames: [String] {
+        selectedImplementIds.compactMap { id in
+            libraryService.getImplement(id: id)?.name
+        }.sorted()
     }
 }
 

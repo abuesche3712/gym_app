@@ -15,6 +15,7 @@ enum ModuleType: String, Codable, CaseIterable, Identifiable {
     case prehab
     case explosive
     case strength
+    case mobility
     case cardioLong = "cardio_long"
     case cardioSpeed = "cardio_speed"
     case recovery
@@ -27,6 +28,7 @@ enum ModuleType: String, Codable, CaseIterable, Identifiable {
         case .prehab: return "Prehab"
         case .explosive: return "Explosive"
         case .strength: return "Strength"
+        case .mobility: return "Mobility"
         case .cardioLong: return "Cardio"
         case .cardioSpeed: return "High Intensity"
         case .recovery: return "Recovery"
@@ -39,6 +41,7 @@ enum ModuleType: String, Codable, CaseIterable, Identifiable {
         case .prehab: return "bandage"
         case .explosive: return "bolt"
         case .strength: return "dumbbell"
+        case .mobility: return "figure.flexibility"
         case .cardioLong: return "figure.run"
         case .cardioSpeed: return "timer"
         case .recovery: return "heart.circle"
@@ -51,6 +54,7 @@ enum ModuleType: String, Codable, CaseIterable, Identifiable {
         case .prehab: return "green"
         case .explosive: return "yellow"
         case .strength: return "red"
+        case .mobility: return "pink"
         case .cardioLong: return "blue"
         case .cardioSpeed: return "purple"
         case .recovery: return "teal"

@@ -34,6 +34,7 @@ struct ProgramFormView: View {
     @State private var selectedDayOfWeek: Int?
     @State private var showingActivateSheet = false
     @State private var showingDeactivateAlert = false
+    @State private var showingDeleteAlert = false
 
     private let durationOptions = [2, 4, 6, 8, 10, 12, 16]
     private let dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -92,6 +93,11 @@ struct ProgramFormView: View {
 
                 // Save/Create Button
                 saveButton
+
+                // Delete Section (only for existing programs)
+                if isEditing {
+                    deleteSection
+                }
             }
             .padding(AppSpacing.screenPadding)
         }
@@ -127,6 +133,17 @@ struct ProgramFormView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Would you like to keep the scheduled workouts or remove future ones?")
+        }
+        .alert("Delete Program?", isPresented: $showingDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                if let program = currentProgram {
+                    programViewModel.deleteProgram(program)
+                    dismiss()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will permanently delete the program. Scheduled workouts will be kept.")
         }
     }
 
@@ -616,6 +633,35 @@ struct ProgramFormView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(AppColors.textPrimary)
         }
+    }
+
+    // MARK: - Delete Section
+
+    private var deleteSection: some View {
+        VStack(spacing: AppSpacing.md) {
+            Button {
+                showingDeleteAlert = true
+            } label: {
+                HStack {
+                    Image(systemName: "trash")
+                        .font(.body)
+                    Text("Delete Program")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundColor(AppColors.error)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppSpacing.md)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .fill(AppColors.error.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppCorners.medium)
+                                .stroke(AppColors.error.opacity(0.3), lineWidth: 1)
+                        )
+                )
+            }
+        }
+        .padding(.top, AppSpacing.lg)
     }
 
     private func saveProgram() {

@@ -52,6 +52,7 @@ struct AppColors {
         case .prehab: return accent1                   // Vibrant teal
         case .explosive: return accent2                // Bright gold energy
         case .strength: return dominant                // Electric cyan (primary type)
+        case .mobility: return accent4                 // Hot pink for flexibility work
         case .cardioLong: return accent3.opacity(0.8)  // Vibrant purple
         case .cardioSpeed: return accent3              // Full vibrant purple
         case .recovery: return accent1.opacity(0.7)    // Softer teal

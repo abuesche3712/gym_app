@@ -92,17 +92,15 @@ struct SetGroupFormView: View {
         }
 
         // Filter to only include measurables for currently selected implements
-        // AND skip weight measurables for bodyweight exercises (redundant with Added Weight field)
+        // Skip weight/load measurables for ALL exercises (redundant with the main Weight field)
         let validKeys = result.keys
         return merged.filter { entry in
             guard validKeys.contains(entry.key) else { return false }
 
-            // Skip weight/load measurables for bodyweight exercises
-            if isBodyweight {
-                let measurableName = extractMeasurableName(from: entry.key).lowercased()
-                if measurableName.contains("weight") || measurableName.contains("load") {
-                    return false
-                }
+            // Always skip weight/load measurables - the main Weight field handles this
+            let measurableName = extractMeasurableName(from: entry.key).lowercased()
+            if measurableName.contains("weight") || measurableName.contains("load") {
+                return false
             }
 
             return true
