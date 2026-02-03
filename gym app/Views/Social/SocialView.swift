@@ -113,6 +113,24 @@ struct SocialView: View {
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                     }
 
+                    // Friends button
+                    NavigationLink(destination: FriendsListView()) {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "person.2")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(AppColors.textSecondary)
+                                .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+
+                            // Pending request badge
+                            if friendsViewModel.pendingRequestCount > 0 {
+                                Circle()
+                                    .fill(AppColors.warning)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 2, y: -2)
+                            }
+                        }
+                    }
+
                     // Messages button
                     NavigationLink(destination: ConversationsListView()) {
                         ZStack(alignment: .topTrailing) {
