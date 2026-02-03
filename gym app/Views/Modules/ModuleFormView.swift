@@ -395,6 +395,7 @@ struct ModuleFormView: View {
 struct InlineExerciseEditor: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var libraryService = LibraryService.shared
+    @ObservedObject private var customLibrary = CustomExerciseLibrary.shared
 
     let exercise: ExerciseInstance
     let onSave: (ExerciseInstance) -> Void
@@ -666,6 +667,20 @@ struct InlineExerciseEditor: View {
         updated.setGroups = setGroups
         updated.notes = notes.trimmingCharacters(in: .whitespaces).isEmpty ? nil : notes.trimmingCharacters(in: .whitespaces)
         updated.updatedAt = Date()
+
+        // If this instance is linked to a custom template, update the template in the library
+        if let templateId = updated.templateId,
+           let customTemplate = customLibrary.exercises.first(where: { $0.id == templateId }) {
+            var updatedTemplate = customTemplate
+            updatedTemplate.name = name
+            updatedTemplate.exerciseType = exerciseType
+            updatedTemplate.primaryMuscles = primaryMuscles
+            updatedTemplate.secondaryMuscles = secondaryMuscles
+            updatedTemplate.isUnilateral = isUnilateral
+            updatedTemplate.implementIds = selectedImplementIds
+            customLibrary.updateExercise(updatedTemplate)
+        }
+
         onSave(updated)
     }
 
