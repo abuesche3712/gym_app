@@ -22,6 +22,11 @@ struct FriendsListView: View {
                     pendingRequestsSection
                 }
 
+                // Outgoing Requests Section (if any)
+                if !viewModel.outgoingRequests.isEmpty {
+                    outgoingRequestsSection
+                }
+
                 // Friends Section
                 friendsSection
 
@@ -98,6 +103,36 @@ struct FriendsListView: View {
         }
         .padding(AppSpacing.md)
         .background(AppColors.warning.opacity(0.1))
+        .cornerRadius(AppCorners.large)
+    }
+
+    // MARK: - Outgoing Requests Section
+
+    private var outgoingRequestsSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack {
+                Text("Sent Requests")
+                    .headline(color: AppColors.textPrimary)
+
+                Spacer()
+
+                Text("(\(viewModel.outgoingRequests.count))")
+                    .subheadline(color: AppColors.textSecondary)
+            }
+
+            VStack(spacing: AppSpacing.sm) {
+                ForEach(viewModel.outgoingRequests) { request in
+                    OutgoingRequestRow(
+                        friendWithProfile: request,
+                        onCancel: {
+                            cancelRequest(request.friendship)
+                        }
+                    )
+                }
+            }
+        }
+        .padding(AppSpacing.md)
+        .background(AppColors.surfacePrimary)
         .cornerRadius(AppCorners.large)
     }
 
@@ -227,6 +262,17 @@ struct FriendsListView: View {
         }
     }
 
+    private func cancelRequest(_ friendship: Friendship) {
+        Task {
+            do {
+                try await viewModel.removeFriend(friendship)
+            } catch {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+        }
+    }
+
     private func removeFriend(_ friendship: Friendship) {
         Task {
             do {
@@ -313,6 +359,63 @@ struct FriendRequestRow: View {
                 .buttonStyle(.borderedProminent)
                 .tint(AppColors.dominant)
             }
+        }
+        .padding(AppSpacing.sm)
+        .background(AppColors.surfaceSecondary)
+        .cornerRadius(AppCorners.medium)
+    }
+
+    private var avatarInitials: String {
+        if let displayName = profile.displayName, !displayName.isEmpty {
+            return String(displayName.prefix(2)).uppercased()
+        }
+        return String(profile.username.prefix(2)).uppercased()
+    }
+}
+
+// MARK: - Outgoing Request Row
+
+struct OutgoingRequestRow: View {
+    let friendWithProfile: FriendWithProfile
+    let onCancel: () -> Void
+
+    private var profile: UserProfile { friendWithProfile.profile }
+
+    var body: some View {
+        HStack(spacing: AppSpacing.md) {
+            // Avatar
+            Circle()
+                .fill(AppColors.textTertiary.opacity(0.2))
+                .frame(width: 44, height: 44)
+                .overlay {
+                    Text(avatarInitials)
+                        .subheadline(color: AppColors.textTertiary)
+                        .fontWeight(.semibold)
+                }
+
+            // Info
+            VStack(alignment: .leading, spacing: 2) {
+                Text(profile.displayName ?? profile.username)
+                    .headline(color: AppColors.textPrimary)
+
+                Text("@\(profile.username)")
+                    .caption(color: AppColors.textSecondary)
+
+                Text("Pending")
+                    .caption(color: AppColors.textTertiary)
+            }
+
+            Spacer()
+
+            // Cancel button
+            Button {
+                onCancel()
+            } label: {
+                Text("Cancel")
+                    .font(.subheadline.weight(.medium))
+            }
+            .buttonStyle(.bordered)
+            .tint(AppColors.textSecondary)
         }
         .padding(AppSpacing.sm)
         .background(AppColors.surfaceSecondary)
