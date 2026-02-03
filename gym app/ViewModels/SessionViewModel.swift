@@ -402,6 +402,13 @@ class SessionViewModel: ObservableObject {
         // Calculate elapsed time since the original session started
         sessionElapsedSeconds = Int(Date().timeIntervalSince(session.date))
 
+        // Restore original modules for structural change detection
+        if let workout = repository.getWorkout(id: session.workoutId) {
+            originalModules = workout.moduleReferences.compactMap { repository.getModule(id: $0.moduleId) }
+        } else {
+            originalModules = []
+        }
+
         startSessionTimer()
 
         // Navigate to first incomplete set

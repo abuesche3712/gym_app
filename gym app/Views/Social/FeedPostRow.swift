@@ -257,14 +257,47 @@ private struct ExerciseAttachmentCard: View {
         try? ExerciseShareBundle.decode(from: snapshot)
     }
 
+    // Detect exercise type from set data
+    private enum DetectedType {
+        case strength
+        case cardio
+        case isometric
+        case band
+        case unknown
+    }
+
+    private func detectType(from sets: [SetData]) -> DetectedType {
+        let firstCompleted = sets.first { $0.completed }
+        guard let set = firstCompleted else { return .unknown }
+
+        if let holdTime = set.holdTime, holdTime > 0 {
+            return .isometric
+        } else if (set.duration != nil && set.duration! > 0) || (set.distance != nil && set.distance! > 0) {
+            // Check if it looks like cardio (no reps, just time/distance)
+            if set.reps == nil || set.reps == 0 {
+                return .cardio
+            }
+        }
+        if let bandColor = set.bandColor, !bandColor.isEmpty {
+            return .band
+        }
+        if set.weight != nil || set.reps != nil {
+            return .strength
+        }
+        return .unknown
+    }
+
     var body: some View {
         if let bundle = bundle {
+            let completedSets = bundle.setData.filter { $0.completed }
+            let detectedType = detectType(from: completedSets)
+
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 // Header
                 HStack(spacing: AppSpacing.sm) {
-                    Image(systemName: "dumbbell.fill")
+                    Image(systemName: iconForType(detectedType))
                         .font(.subheadline)
-                        .foregroundColor(AppColors.dominant)
+                        .foregroundColor(colorForType(detectedType))
 
                     Text(bundle.exerciseName.uppercased())
                         .font(.subheadline.weight(.bold))
@@ -272,19 +305,8 @@ private struct ExerciseAttachmentCard: View {
                         .kerning(0.5)
                 }
 
-                // Sets summary
-                let completedSets = bundle.setData.filter { $0.weight != nil || $0.duration != nil }
-                if let topSet = completedSets.max(by: { ($0.weight ?? 0) < ($1.weight ?? 0) }),
-                   let weight = topSet.weight, let reps = topSet.reps {
-                    HStack(spacing: AppSpacing.xs) {
-                        Text("\(completedSets.count) sets")
-                            .caption(color: AppColors.textSecondary)
-                        Text("·")
-                            .caption(color: AppColors.textTertiary)
-                        Text("Top: \(formatWeight(weight)) × \(reps)")
-                            .caption(color: AppColors.dominant)
-                    }
-                }
+                // Sets summary based on type
+                exerciseSummary(completedSets: completedSets, type: detectedType)
             }
             .padding(AppSpacing.cardPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -298,6 +320,114 @@ private struct ExerciseAttachmentCard: View {
             )
         }
     }
+
+    @ViewBuilder
+    private func exerciseSummary(completedSets: [SetData], type: DetectedType) -> some View {
+        switch type {
+        case .strength:
+            if let topSet = completedSets.max(by: { ($0.weight ?? 0) < ($1.weight ?? 0) }),
+               let weight = topSet.weight, let reps = topSet.reps {
+                HStack(spacing: AppSpacing.xs) {
+                    Text("\(completedSets.count) sets")
+                        .caption(color: AppColors.textSecondary)
+                    Text("·")
+                        .caption(color: AppColors.textTertiary)
+                    Text("Top: \(formatWeight(weight)) × \(reps)")
+                        .caption(color: AppColors.dominant)
+                }
+            }
+
+        case .cardio:
+            let totalDuration = completedSets.compactMap { $0.duration }.reduce(0, +)
+            let totalDistance = completedSets.compactMap { $0.distance }.reduce(0, +)
+            HStack(spacing: AppSpacing.xs) {
+                Text("\(completedSets.count) sets")
+                    .caption(color: AppColors.textSecondary)
+                if totalDuration > 0 {
+                    Text("·")
+                        .caption(color: AppColors.textTertiary)
+                    Text(formatDurationSeconds(totalDuration))
+                        .caption(color: AppColors.accent3)
+                }
+                if totalDistance > 0 {
+                    Text("·")
+                        .caption(color: AppColors.textTertiary)
+                    Text(formatDistance(totalDistance))
+                        .caption(color: AppColors.accent1)
+                }
+            }
+
+        case .isometric:
+            let totalHoldTime = completedSets.compactMap { $0.holdTime }.reduce(0, +)
+            HStack(spacing: AppSpacing.xs) {
+                Text("\(completedSets.count) sets")
+                    .caption(color: AppColors.textSecondary)
+                Text("·")
+                    .caption(color: AppColors.textTertiary)
+                Text("Total: \(formatDurationSeconds(totalHoldTime))")
+                    .caption(color: AppColors.accent2)
+            }
+
+        case .band:
+            if let topSet = completedSets.first, let bandColor = topSet.bandColor, let reps = topSet.reps {
+                HStack(spacing: AppSpacing.xs) {
+                    Text("\(completedSets.count) sets")
+                        .caption(color: AppColors.textSecondary)
+                    Text("·")
+                        .caption(color: AppColors.textTertiary)
+                    Text("\(bandColor) × \(reps)")
+                        .caption(color: AppColors.accent3)
+                }
+            }
+
+        case .unknown:
+            Text("\(completedSets.count) sets")
+                .caption(color: AppColors.textSecondary)
+        }
+    }
+
+    private func iconForType(_ type: DetectedType) -> String {
+        switch type {
+        case .strength, .band: return "dumbbell.fill"
+        case .cardio: return "figure.run"
+        case .isometric: return "timer"
+        case .unknown: return "dumbbell.fill"
+        }
+    }
+
+    private func colorForType(_ type: DetectedType) -> Color {
+        switch type {
+        case .strength: return AppColors.dominant
+        case .cardio: return AppColors.accent1
+        case .isometric: return AppColors.accent2
+        case .band: return AppColors.accent3
+        case .unknown: return AppColors.dominant
+        }
+    }
+
+    private func formatDurationSeconds(_ seconds: Int) -> String {
+        if seconds >= 3600 {
+            let hours = seconds / 3600
+            let mins = (seconds % 3600) / 60
+            return "\(hours)h \(mins)m"
+        } else if seconds >= 60 {
+            let mins = seconds / 60
+            let secs = seconds % 60
+            if secs > 0 {
+                return "\(mins)m \(secs)s"
+            }
+            return "\(mins)m"
+        } else {
+            return "\(seconds)s"
+        }
+    }
+
+    private func formatDistance(_ distance: Double) -> String {
+        if distance.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(distance)) mi"
+        }
+        return String(format: "%.1f mi", distance)
+    }
 }
 
 // MARK: - Set Attachment Card (PR Celebration)
@@ -309,8 +439,33 @@ private struct SetAttachmentCard: View {
         try? SetShareBundle.decode(from: snapshot)
     }
 
+    // Detect set type from data
+    private enum DetectedType {
+        case strength
+        case cardio
+        case isometric
+        case band
+    }
+
+    private func detectType(from set: SetData) -> DetectedType {
+        if let holdTime = set.holdTime, holdTime > 0 {
+            return .isometric
+        }
+        if let bandColor = set.bandColor, !bandColor.isEmpty {
+            return .band
+        }
+        if (set.duration != nil && set.duration! > 0) || (set.distance != nil && set.distance! > 0) {
+            if set.reps == nil || set.reps == 0 {
+                return .cardio
+            }
+        }
+        return .strength
+    }
+
     var body: some View {
         if let bundle = bundle {
+            let detectedType = detectType(from: bundle.setData)
+
             VStack(spacing: AppSpacing.md) {
                 // PR Badge
                 if bundle.isPR {
@@ -330,26 +485,8 @@ private struct SetAttachmentCard: View {
                     .tracking(0.5)
                     .foregroundColor(AppColors.textSecondary)
 
-                // Big numbers
-                if let weight = bundle.setData.weight, let reps = bundle.setData.reps {
-                    HStack(spacing: AppSpacing.sm) {
-                        Text("\(Int(weight))")
-                            .font(.system(size: 44, weight: .bold, design: .rounded))
-                            .foregroundColor(bundle.isPR ? AppColors.warning : AppColors.textPrimary)
-
-                        Text("×")
-                            .font(.title2)
-                            .foregroundColor(AppColors.textTertiary)
-
-                        Text("\(reps)")
-                            .font(.system(size: 44, weight: .bold, design: .rounded))
-                            .foregroundColor(bundle.isPR ? AppColors.warning : AppColors.textPrimary)
-                    }
-
-                    Text("lbs")
-                        .font(.caption.weight(.medium))
-                        .foregroundColor(AppColors.textTertiary)
-                }
+                // Display based on type
+                setDisplay(set: bundle.setData, type: detectedType, isPR: bundle.isPR)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, AppSpacing.lg)
@@ -366,6 +503,114 @@ private struct SetAttachmentCard: View {
                     )
             )
         }
+    }
+
+    @ViewBuilder
+    private func setDisplay(set: SetData, type: DetectedType, isPR: Bool) -> some View {
+        switch type {
+        case .strength:
+            if let weight = set.weight, let reps = set.reps {
+                HStack(spacing: AppSpacing.sm) {
+                    Text("\(Int(weight))")
+                        .font(.system(size: 44, weight: .bold, design: .rounded))
+                        .foregroundColor(isPR ? AppColors.warning : AppColors.textPrimary)
+
+                    Text("×")
+                        .font(.title2)
+                        .foregroundColor(AppColors.textTertiary)
+
+                    Text("\(reps)")
+                        .font(.system(size: 44, weight: .bold, design: .rounded))
+                        .foregroundColor(isPR ? AppColors.warning : AppColors.textPrimary)
+                }
+
+                Text("lbs")
+                    .font(.caption.weight(.medium))
+                    .foregroundColor(AppColors.textTertiary)
+            }
+
+        case .cardio:
+            HStack(spacing: AppSpacing.lg) {
+                if let duration = set.duration, duration > 0 {
+                    VStack(spacing: 4) {
+                        Text(formatDurationSeconds(duration))
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .foregroundColor(isPR ? AppColors.warning : AppColors.accent3)
+                        Text("time")
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+                if let distance = set.distance, distance > 0 {
+                    VStack(spacing: 4) {
+                        Text(formatDistanceValue(distance))
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .foregroundColor(isPR ? AppColors.warning : AppColors.accent1)
+                        Text("mi")
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+            }
+
+        case .isometric:
+            if let holdTime = set.holdTime {
+                VStack(spacing: 4) {
+                    Text(formatDurationSeconds(holdTime))
+                        .font(.system(size: 44, weight: .bold, design: .rounded))
+                        .foregroundColor(isPR ? AppColors.warning : AppColors.accent2)
+                    Text("hold")
+                        .font(.caption.weight(.medium))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            }
+
+        case .band:
+            if let bandColor = set.bandColor, let reps = set.reps {
+                VStack(spacing: 4) {
+                    HStack(spacing: AppSpacing.sm) {
+                        Text(bandColor)
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundColor(isPR ? AppColors.warning : AppColors.accent3)
+
+                        Text("×")
+                            .font(.title2)
+                            .foregroundColor(AppColors.textTertiary)
+
+                        Text("\(reps)")
+                            .font(.system(size: 44, weight: .bold, design: .rounded))
+                            .foregroundColor(isPR ? AppColors.warning : AppColors.textPrimary)
+                    }
+                    Text("reps")
+                        .font(.caption.weight(.medium))
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            }
+        }
+    }
+
+    private func formatDurationSeconds(_ seconds: Int) -> String {
+        if seconds >= 3600 {
+            let hours = seconds / 3600
+            let mins = (seconds % 3600) / 60
+            return "\(hours)h \(mins)m"
+        } else if seconds >= 60 {
+            let mins = seconds / 60
+            let secs = seconds % 60
+            if secs > 0 {
+                return "\(mins):\(String(format: "%02d", secs))"
+            }
+            return "\(mins)m"
+        } else {
+            return "\(seconds)s"
+        }
+    }
+
+    private func formatDistanceValue(_ distance: Double) -> String {
+        if distance.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(distance))"
+        }
+        return String(format: "%.1f", distance)
     }
 }
 

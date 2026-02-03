@@ -67,8 +67,8 @@ struct WorkoutAttachmentCard: View {
     }
 
     // Cardio exercises with duration/distance
-    private var cardioHighlights: [(exerciseName: String, duration: Int?, distance: Double?)] {
-        var highlights: [(exerciseName: String, duration: Int?, distance: Double?)] = []
+    private var cardioHighlights: [(exerciseName: String, duration: Int?, distance: Double?, distanceUnit: DistanceUnit)] {
+        var highlights: [(exerciseName: String, duration: Int?, distance: Double?, distanceUnit: DistanceUnit)] = []
 
         for module in session.completedModules where !module.skipped {
             for exercise in module.completedExercises where exercise.exerciseType == .cardio {
@@ -77,7 +77,7 @@ struct WorkoutAttachmentCard: View {
                 let totalDistance = completedSets.compactMap { $0.distance }.reduce(0, +)
 
                 if totalDuration > 0 || totalDistance > 0 {
-                    highlights.append((exercise.exerciseName, totalDuration > 0 ? totalDuration : nil, totalDistance > 0 ? totalDistance : nil))
+                    highlights.append((exercise.exerciseName, totalDuration > 0 ? totalDuration : nil, totalDistance > 0 ? totalDistance : nil, exercise.distanceUnit))
                 }
             }
         }
@@ -254,7 +254,7 @@ struct WorkoutAttachmentCard: View {
                             HStack(spacing: 2) {
                                 Image(systemName: "figure.run")
                                     .font(.caption2)
-                                Text(String(format: "%.1f mi", distance))
+                                Text(formatDistance(distance, unit: item.distanceUnit))
                                     .monoSmall()
                             }
                             .foregroundColor(AppColors.accent1)
@@ -316,6 +316,13 @@ struct WorkoutAttachmentCard: View {
         } else {
             return "\(seconds)s"
         }
+    }
+
+    private func formatDistance(_ distance: Double, unit: DistanceUnit) -> String {
+        if distance.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(distance)) \(unit.abbreviation)"
+        }
+        return String(format: "%.1f %@", distance, unit.abbreviation)
     }
 }
 

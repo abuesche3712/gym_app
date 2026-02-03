@@ -38,107 +38,111 @@ struct CardioInputs: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
-            // Time input box
-            VStack(spacing: 4) {
-                HStack(spacing: 6) {
-                    if let targetDuration = flatSet.targetDuration, targetDuration > 0 {
-                        // Has time target - show countdown timer
-                        Button {
-                            showTimePicker = true
-                        } label: {
-                            Text(timerRunning ? formatDuration(timerSecondsRemaining) : formatDuration(inputDuration))
-                                .monoMedium(color: timerRunning ? (timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.dominant) : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
-                                .multilineTextAlignment(.center)
-                                .frame(width: 56, alignment: .center)
-                                .padding(.vertical, 8)
-                                .padding(.horizontal, 6)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
-                        }
-                        .buttonStyle(.plain)
+            // Time input box - only show if tracking time
+            if exercise.cardioMetric.tracksTime {
+                VStack(spacing: 4) {
+                    HStack(spacing: 6) {
+                        if let targetDuration = flatSet.targetDuration, targetDuration > 0 {
+                            // Has time target - show countdown timer
+                            Button {
+                                showTimePicker = true
+                            } label: {
+                                Text(timerRunning ? formatDuration(timerSecondsRemaining) : formatDuration(inputDuration))
+                                    .monoMedium(color: timerRunning ? (timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.dominant) : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
+                                    .multilineTextAlignment(.center)
+                                    .frame(width: 56, alignment: .center)
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 6)
+                                    .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                            }
+                            .buttonStyle(.plain)
 
-                        Button {
-                            toggleTimer()
-                        } label: {
-                            Image(systemName: timerRunning ? "stop.fill" : "play.fill")
-                                .subheadline(color: timerRunning ? AppColors.warning : AppColors.dominant)
-                                .fontWeight(.semibold)
-                                .frame(width: 32, height: 32)
-                                .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.dominant.opacity(0.12)))
-                        }
-                        .buttonStyle(.bouncy)
-                        .accessibilityLabel(timerRunning ? "Stop timer" : "Start timer")
-                    } else {
-                        // No time target (distance-based) - show stopwatch
-                        Button {
-                            showTimePicker = true
-                        } label: {
-                            Text(timerRunning ? formatDuration(stopwatchSeconds) : formatDuration(inputDuration))
-                                .font(.system(size: 16, weight: timerRunning ? .bold : .semibold, design: .rounded))
-                                .foregroundColor(timerRunning ? AppColors.dominant : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
-                                .monospacedDigit()
-                                .multilineTextAlignment(.center)
-                                .frame(width: 56, alignment: .center)
-                                .padding(.vertical, 8)
-                                .padding(.horizontal, 6)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Time: \(formatDuration(inputDuration))")
+                            Button {
+                                toggleTimer()
+                            } label: {
+                                Image(systemName: timerRunning ? "stop.fill" : "play.fill")
+                                    .subheadline(color: timerRunning ? AppColors.warning : AppColors.dominant)
+                                    .fontWeight(.semibold)
+                                    .frame(width: 32, height: 32)
+                                    .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.dominant.opacity(0.12)))
+                            }
+                            .buttonStyle(.bouncy)
+                            .accessibilityLabel(timerRunning ? "Stop timer" : "Start timer")
+                        } else {
+                            // No time target (distance-based) - show stopwatch
+                            Button {
+                                showTimePicker = true
+                            } label: {
+                                Text(timerRunning ? formatDuration(stopwatchSeconds) : formatDuration(inputDuration))
+                                    .font(.system(size: 16, weight: timerRunning ? .bold : .semibold, design: .rounded))
+                                    .foregroundColor(timerRunning ? AppColors.dominant : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
+                                    .monospacedDigit()
+                                    .multilineTextAlignment(.center)
+                                    .frame(width: 56, alignment: .center)
+                                    .padding(.vertical, 8)
+                                    .padding(.horizontal, 6)
+                                    .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Time: \(formatDuration(inputDuration))")
 
-                        Button {
-                            toggleStopwatch()
-                        } label: {
-                            Image(systemName: timerRunning ? "stop.fill" : "stopwatch")
-                                .subheadline(color: timerRunning ? AppColors.warning : AppColors.accent1)
-                                .fontWeight(.semibold)
-                                .frame(width: 32, height: 32)
-                                .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accent1.opacity(0.12)))
+                            Button {
+                                toggleStopwatch()
+                            } label: {
+                                Image(systemName: timerRunning ? "stop.fill" : "stopwatch")
+                                    .subheadline(color: timerRunning ? AppColors.warning : AppColors.accent1)
+                                    .fontWeight(.semibold)
+                                    .frame(width: 32, height: 32)
+                                    .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accent1.opacity(0.12)))
+                            }
+                            .buttonStyle(.bouncy)
+                            .accessibilityLabel(timerRunning ? "Stop stopwatch" : "Start stopwatch")
                         }
-                        .buttonStyle(.bouncy)
-                        .accessibilityLabel(timerRunning ? "Stop stopwatch" : "Start stopwatch")
                     }
+
+                    Text("time")
+                        .caption2(color: AppColors.textTertiary)
+                        .fontWeight(.medium)
                 }
-
-                Text("time")
-                    .caption2(color: AppColors.textTertiary)
-                    .fontWeight(.medium)
+                .fixedSize(horizontal: true, vertical: false)
             }
-            .fixedSize(horizontal: true, vertical: false)
 
-            // Distance input box
-            VStack(spacing: 4) {
-                HStack(spacing: 4) {
-                    TextField("0", text: $inputDistance)
-                        .keyboardType(.decimalPad)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .foregroundColor(AppColors.textPrimary)
-                        .multilineTextAlignment(.center)
-                        .frame(width: 56)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 6)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
-                        .focused(focusedField, equals: .distance)
-
-                    // Tappable unit selector
-                    Button {
-                        showDistanceUnitPicker = true
-                    } label: {
-                        Text(exercise.distanceUnit.abbreviation)
-                            .caption(color: AppColors.dominant)
-                            .fontWeight(.medium)
-                            .frame(minWidth: 24)
-                            .padding(.horizontal, 6)
+            // Distance input box - only show if tracking distance
+            if exercise.cardioMetric.tracksDistance {
+                VStack(spacing: 4) {
+                    HStack(spacing: 4) {
+                        TextField("0", text: $inputDistance)
+                            .keyboardType(.decimalPad)
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .foregroundColor(AppColors.textPrimary)
+                            .multilineTextAlignment(.center)
+                            .frame(width: 56)
                             .padding(.vertical, 8)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.dominant.opacity(0.1)))
-                    }
-                    .buttonStyle(.plain)
-                }
+                            .padding(.horizontal, 6)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                            .focused(focusedField, equals: .distance)
 
-                Text("distance")
-                    .caption2(color: AppColors.textTertiary)
-                    .fontWeight(.medium)
+                        // Tappable unit selector
+                        Button {
+                            showDistanceUnitPicker = true
+                        } label: {
+                            Text(exercise.distanceUnit.abbreviation)
+                                .caption(color: AppColors.dominant)
+                                .fontWeight(.medium)
+                                .frame(minWidth: 24)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 8)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.dominant.opacity(0.1)))
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    Text("distance")
+                        .caption2(color: AppColors.textTertiary)
+                        .fontWeight(.medium)
+                }
+                .fixedSize(horizontal: true, vertical: false)
             }
-            .fixedSize(horizontal: true, vertical: false)
         }
         .confirmationDialog("Distance Unit", isPresented: $showDistanceUnitPicker, titleVisibility: .visible) {
             ForEach(DistanceUnit.allCases) { unit in

@@ -1,7 +1,7 @@
 # Gym App - Development Context
 
 > Reference document for Claude Code sessions
-> **Last updated:** 2026-02-02 (Strong app import, widget delete fix, add set without prescheduled fix)
+> **Last updated:** 2026-02-02 (Feed post type detection, distance unit fix, module sync fix)
 
 ## Project Overview
 
@@ -173,6 +173,31 @@ var isImported: Bool  // true for sessions imported from external apps
   - If existing sets exist: copy targets from last set (same as before)
   - If no sets exist: create new `CompletedSetGroup` with default empty `SetData`
 - **Impact:** Freestyle and quick log workouts can now add sets even when starting with no prescheduled sets
+
+**Feed posts only showing lifting data (Bug 5):**
+- **Root cause:** `ExerciseAttachmentCard` and `SetAttachmentCard` in `FeedPostRow.swift` were hardcoded for strength exercises
+- **Fix:** Added exercise type detection based on available set data:
+  - Detects strength (weight/reps), cardio (duration/distance), isometric (holdTime), band (bandColor)
+  - `ExerciseAttachmentCard` now shows appropriate metrics: cardio shows total duration/distance, isometric shows total hold time
+  - `SetAttachmentCard` displays time/distance for cardio, hold time for isometric, band color for band exercises
+  - Uses appropriate icons and colors per type (dumbbell for strength, figure.run for cardio, timer for isometric)
+
+**Feed post distances ignore per-exercise unit (Bug 6):**
+- **Root cause:** `WorkoutAttachmentCard` cardio section hardcoded "mi" for distance display
+- **Fix:** In `WorkoutAttachmentCard.swift`:
+  - Added `distanceUnit: DistanceUnit` to `cardioHighlights` tuple
+  - `formatDistance()` now uses exercise's `distanceUnit.abbreviation` instead of hardcoded "mi"
+  - Distance displays correctly as km, mi, m, etc. based on how user logged it
+
+**Module sync not working for resumed sessions (Bug 7):**
+- **Root cause:** `resumeSession()` in `SessionViewModel.swift` didn't restore `originalModules`, leaving it empty
+- **Fix:** Added original module restoration when resuming a session:
+  ```swift
+  if let workout = repository.getWorkout(id: session.workoutId) {
+      originalModules = workout.moduleReferences.compactMap { repository.getModule(id: $0.moduleId) }
+  }
+  ```
+- **Impact:** Structural change detection now works correctly for sessions resumed after crash recovery
 
 ## Major Refactoring (Jan 29, 2026)
 

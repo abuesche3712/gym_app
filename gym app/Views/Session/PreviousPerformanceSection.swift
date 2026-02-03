@@ -133,6 +133,12 @@ struct PreviousSetRow: View {
             if let reps = set.reps {
                 MetricPill(value: "\(reps)", label: "reps", color: AppColors.accent1)
             }
+        } else if let bandColor = set.bandColor, !bandColor.isEmpty {
+            // Show band color even if implement isn't loaded (for historical data)
+            MetricPill(value: bandColor, label: "band", color: AppColors.accent3)
+            if let reps = set.reps {
+                MetricPill(value: "\(reps)", label: "reps", color: AppColors.accent1)
+            }
         } else if exercise.isBodyweight {
             if let reps = set.reps {
                 if let weight = set.weight, weight > 0 {

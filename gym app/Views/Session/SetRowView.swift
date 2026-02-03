@@ -59,6 +59,11 @@ struct SetRowView: View {
         sessionViewModel.isExerciseTimerRunning && sessionViewModel.exerciseTimerSetId == flatSet.id
     }
 
+    // Fingerprint of target values - used to detect when exercise targets change via edit sheet
+    private var targetFingerprint: String {
+        "\(flatSet.targetWeight ?? 0)-\(flatSet.targetReps ?? 0)-\(flatSet.targetDuration ?? 0)-\(flatSet.targetHoldTime ?? 0)-\(flatSet.targetDistance ?? 0)-\(exercise.exerciseType.rawValue)-\(exercise.cardioMetric.rawValue)-\(exercise.mobilityTracking.rawValue)"
+    }
+
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
             // Set number indicator
@@ -105,6 +110,13 @@ struct SetRowView: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: timerRunning)
         .animation(.spring(response: 0.35, dampingFraction: 0.7), value: flatSet.setData.completed)
         .onAppear { loadDefaults() }
+        .onChange(of: targetFingerprint) { _, _ in
+            // Reload defaults when targets change (e.g., after editing exercise via EditExerciseSheet)
+            // Only reload for incomplete sets to preserve logged data
+            if !flatSet.setData.completed {
+                loadDefaults()
+            }
+        }
         .onChange(of: sessionViewModel.isExerciseTimerRunning) { wasRunning, isRunning in
             // When exercise timer stops (countdown complete), update input fields
             if wasRunning && !isRunning && sessionViewModel.exerciseTimerSetId == nil {
@@ -228,6 +240,21 @@ struct SetRowView: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Edit completed set: \(completedSummary)")
         .accessibilityHint("Tap to modify this set")
+        .contextMenu {
+            Button {
+                onUncheck?()
+            } label: {
+                Label("Edit Set", systemImage: "pencil")
+            }
+
+            if let deleteAction = onDelete {
+                Button(role: .destructive) {
+                    deleteAction()
+                } label: {
+                    Label("Delete Set", systemImage: "trash")
+                }
+            }
+        }
     }
 
     @ViewBuilder
