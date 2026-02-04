@@ -40,6 +40,8 @@
 		FRSTYL02BUILD01 /* FreestyleAddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRSTYL01FILE01 /* FreestyleAddExerciseSheet.swift */; };
 		ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANIMCO001FILE001 /* AnimatedComponents.swift */; };
 		AVATVW02BUILD001 /* AvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AVATVW01FILE001 /* AvatarView.swift */; };
+		B6PHOTO052F2A000000D8C22D /* ProfilePhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6PHOTO042F2A000000D8C22D /* ProfilePhotoView.swift */; };
+		B6PHOTO072F2A000000D8C22D /* ProfilePhotoPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6PHOTO062F2A000000D8C22D /* ProfilePhotoPickerSheet.swift */; };
 		USRROW02BUILD001 /* UserRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = USRROW01FILE001 /* UserRowView.swift */; };
 		BLDREMT02BUILD002 /* BuilderEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDREMT01FILE001 /* BuilderEmptyState.swift */; };
 		BLDRQAB02BUILD002 /* BuilderQuickAddBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDRQAB01FILE001 /* BuilderQuickAddBar.swift */; };
@@ -57,6 +59,7 @@
 		B610AC202F15B4DF008B2C15 /* gym_appUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC1F2F15B4DF008B2C15 /* gym_appUITestsLaunchTests.swift */; };
 		B63EBEE32F15E55600D8C22D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B63EBEE22F15E55600D8C22D /* FirebaseAuth */; };
 		B63EBEE52F15E55600D8C22D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = B63EBEE42F15E55600D8C22D /* FirebaseFirestore */; };
+		B6PHOTO012F2A000000D8C22D /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = B6PHOTO002F2A000000D8C22D /* FirebaseStorage */; };
 		B63EBF0F2F15E73700D8C22D /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEE62F15E73700D8C22D /* AppState.swift */; };
 		B63EBF102F15E73700D8C22D /* ModuleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEE72F15E73700D8C22D /* ModuleViewModel.swift */; };
 		B63EBF112F15E73700D8C22D /* SessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEE82F15E73700D8C22D /* SessionViewModel.swift */; };
@@ -90,6 +93,7 @@
 		DB4505338C4FD921A7C6EBA4 /* FirestoreCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89217DA0F8957EE059AB3FF9 /* FirestoreCore.swift */; };
 		7F3EC832EE57150180BE8044 /* FirestoreSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261588C9A91F154B9EB4D4AC /* FirestoreSyncService.swift */; };
 		DA6EFC77B9DEDA4DC1F1671D /* FirestoreSocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF6E38FBE904533D715F6D3 /* FirestoreSocialService.swift */; };
+		B6PHOTO032F2A000000D8C22D /* ProfilePhotoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6PHOTO022F2A000000D8C22D /* ProfilePhotoService.swift */; };
 		7E1FF5EBF4BFBD7B730535A2 /* FirestoreMessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DB70BA70750F2B1167A8DC /* FirestoreMessagingService.swift */; };
 		0637D22035CA595B39D501D2 /* FirestoreFeedService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A95B76FC49816E35CDDF867 /* FirestoreFeedService.swift */; };
 		5752B2C149CBD12B3690CBBB /* FirestoreLibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBA7D111F1233C5EFE90EDA6 /* FirestoreLibraryService.swift */; };
@@ -111,6 +115,10 @@
 		CMPSHT02BUILD002 /* ComposePostSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMPSHT01FILE001 /* ComposePostSheet.swift */; };
 		HLTPKR02BUILD001 /* HighlightPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HLTPKR01FILE001 /* HighlightPickerView.swift */; };
 		EDTPST02BUILD001 /* EditPostSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDTPST01FILE001 /* EditPostSheet.swift */; };
+		HLTSLCR02BUILD001 /* HighlightSelectionCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = HLTSLCR01FILE001 /* HighlightSelectionCore.swift */; };
+		CAPTNINP02BUILD001 /* CaptionInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAPTNINP01FILE001 /* CaptionInputView.swift */; };
+		CNTPRVC02BUILD001 /* ContentPreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CNTPRVC01FILE001 /* ContentPreviewCard.swift */; };
+		PSTEDTLBR02BUILD001 /* PostEditorToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = PSTEDTLBR01FILE001 /* PostEditorToolbar.swift */; };
 		EDTPSTVM02BUILD001 /* EditPostViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDTPSTVM01FILE001 /* EditPostViewModel.swift */; };
 		CMPSTVM02BUILD002 /* ComposePostViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMPSTVM01FILE001 /* ComposePostViewModel.swift */; };
 		COMPMOD02BUILD002 /* CompletedModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = COMPMOD01FILE001 /* CompletedModule.swift */; };
@@ -273,6 +281,8 @@
 		FRSTYL01FILE01 /* FreestyleAddExerciseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreestyleAddExerciseSheet.swift; sourceTree = "<group>"; };
 		ANIMCO001FILE001 /* AnimatedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedComponents.swift; sourceTree = "<group>"; };
 		AVATVW01FILE001 /* AvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarView.swift; sourceTree = "<group>"; };
+		B6PHOTO042F2A000000D8C22D /* ProfilePhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePhotoView.swift; sourceTree = "<group>"; };
+		B6PHOTO062F2A000000D8C22D /* ProfilePhotoPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePhotoPickerSheet.swift; sourceTree = "<group>"; };
 		USRROW01FILE001 /* UserRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRowView.swift; sourceTree = "<group>"; };
 		BLDREMT01FILE001 /* BuilderEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderEmptyState.swift; sourceTree = "<group>"; };
 		BLDRQAB01FILE001 /* BuilderQuickAddBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderQuickAddBar.swift; sourceTree = "<group>"; };
@@ -331,6 +341,7 @@
 		EBA7D111F1233C5EFE90EDA6 /* FirestoreLibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreLibraryService.swift; sourceTree = "<group>"; };
 		112F204E54595BC864A784E2 /* FirestoreConflictService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreConflictService.swift; sourceTree = "<group>"; };
 		4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreDeletionService.swift; sourceTree = "<group>"; };
+		B6PHOTO022F2A000000D8C22D /* ProfilePhotoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePhotoService.swift; sourceTree = "<group>"; };
 		B63FFF3A2F22DF2300090EA5 /* TodayWorkoutWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TodayWorkoutWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B63FFF502F22DFB200090EA5 /* TodayWorkoutWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TodayWorkoutWidgetExtension.entitlements; sourceTree = "<group>"; };
 		B658B09B2F16903C00B2F84E /* AppTheme.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
@@ -348,6 +359,10 @@
 		CMPSHT01FILE001 /* ComposePostSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposePostSheet.swift; sourceTree = "<group>"; };
 		HLTPKR01FILE001 /* HighlightPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightPickerView.swift; sourceTree = "<group>"; };
 		EDTPST01FILE001 /* EditPostSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPostSheet.swift; sourceTree = "<group>"; };
+		HLTSLCR01FILE001 /* HighlightSelectionCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightSelectionCore.swift; sourceTree = "<group>"; };
+		CAPTNINP01FILE001 /* CaptionInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionInputView.swift; sourceTree = "<group>"; };
+		CNTPRVC01FILE001 /* ContentPreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentPreviewCard.swift; sourceTree = "<group>"; };
+		PSTEDTLBR01FILE001 /* PostEditorToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostEditorToolbar.swift; sourceTree = "<group>"; };
 		EDTPSTVM01FILE001 /* EditPostViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPostViewModel.swift; sourceTree = "<group>"; };
 		CMPSTVM01FILE001 /* ComposePostViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposePostViewModel.swift; sourceTree = "<group>"; };
 		COMPMOD01FILE001 /* CompletedModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedModule.swift; sourceTree = "<group>"; };
@@ -479,6 +494,7 @@
 				B6F5091E2F1F04DA007CA28A /* FirebaseCrashlytics in Frameworks */,
 				B63EBEE32F15E55600D8C22D /* FirebaseAuth in Frameworks */,
 				B63EBEE52F15E55600D8C22D /* FirebaseFirestore in Frameworks */,
+				B6PHOTO012F2A000000D8C22D /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -843,6 +859,7 @@
 			children = (
 				ANIMCO001FILE001 /* AnimatedComponents.swift */,
 				AVATVW01FILE001 /* AvatarView.swift */,
+				B6PHOTO042F2A000000D8C22D /* ProfilePhotoView.swift */,
 				USRROW01FILE001 /* UserRowView.swift */,
 				SYCERR001FILE001 /* SyncErrorBanner.swift */,
 				BLDRGRP001GROUP001 /* Builder */,
@@ -891,6 +908,7 @@
 			children = (
 				ACCPRVWFILE0001 /* AccountProfileView.swift */,
 				PRFLEDT01FILE001 /* ProfileEditView.swift */,
+				B6PHOTO062F2A000000D8C22D /* ProfilePhotoPickerSheet.swift */,
 				PRFLVIW01FILE001 /* ProfileView.swift */,
 			);
 			path = Profile;
@@ -914,6 +932,7 @@
 		SOCALGRP001GROUP001 /* Social */ = {
 			isa = PBXGroup;
 			children = (
+				SOCLCMPGRP01 /* Components */,
 				SOCAL001FILE001 /* SocialView.swift */,
 				CONVLST001FILE /* ConversationsListView.swift */,
 				CHATVW001FILE /* ChatView.swift */,
@@ -929,6 +948,17 @@
 				EDTPST01FILE001 /* EditPostSheet.swift */,
 			);
 			path = Social;
+			sourceTree = "<group>";
+		};
+		SOCLCMPGRP01 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				HLTSLCR01FILE001 /* HighlightSelectionCore.swift */,
+				CAPTNINP01FILE001 /* CaptionInputView.swift */,
+				CNTPRVC01FILE001 /* ContentPreviewCard.swift */,
+				PSTEDTLBR01FILE001 /* PostEditorToolbar.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 		UTILITIES001GROUP001 /* Utilities */ = {
@@ -967,7 +997,8 @@
 				9A95B76FC49816E35CDDF867 /* FirestoreFeedService.swift */,
 				EBA7D111F1233C5EFE90EDA6 /* FirestoreLibraryService.swift */,
 				112F204E54595BC864A784E2 /* FirestoreConflictService.swift */,
-				4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */
+				4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */,
+				B6PHOTO022F2A000000D8C22D /* ProfilePhotoService.swift */
 			);
 			path = Firebase;
 			sourceTree = "<group>";
@@ -1021,6 +1052,7 @@
 				B63EBEE22F15E55600D8C22D /* FirebaseAuth */,
 				B63EBEE42F15E55600D8C22D /* FirebaseFirestore */,
 				B6F5091D2F1F04DA007CA28A /* FirebaseCrashlytics */,
+				B6PHOTO002F2A000000D8C22D /* FirebaseStorage */,
 			);
 			productName = "gym app";
 			productReference = B610ABFF2F15B4DD008B2C15 /* gym app.app */;
@@ -1190,6 +1222,7 @@
 				DB4505338C4FD921A7C6EBA4 /* FirestoreCore.swift in Sources */,
 				7F3EC832EE57150180BE8044 /* FirestoreSyncService.swift in Sources */,
 				DA6EFC77B9DEDA4DC1F1671D /* FirestoreSocialService.swift in Sources */,
+				B6PHOTO032F2A000000D8C22D /* ProfilePhotoService.swift in Sources */,
 				7E1FF5EBF4BFBD7B730535A2 /* FirestoreMessagingService.swift in Sources */,
 				0637D22035CA595B39D501D2 /* FirestoreFeedService.swift in Sources */,
 				5752B2C149CBD12B3690CBBB /* FirestoreLibraryService.swift in Sources */,
@@ -1286,6 +1319,8 @@
 				HAPTIC002BUILD002 /* HapticManager.swift in Sources */,
 				ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */,
 				AVATVW02BUILD001 /* AvatarView.swift in Sources */,
+				B6PHOTO052F2A000000D8C22D /* ProfilePhotoView.swift in Sources */,
+				B6PHOTO072F2A000000D8C22D /* ProfilePhotoPickerSheet.swift in Sources */,
 				USRROW02BUILD001 /* UserRowView.swift in Sources */,
 				SYCERR002BUILD002 /* SyncErrorBanner.swift in Sources */,
 				BLDREMT02BUILD002 /* BuilderEmptyState.swift in Sources */,
@@ -1335,6 +1370,10 @@
 				CMPSHT02BUILD002 /* ComposePostSheet.swift in Sources */,
 				HLTPKR02BUILD001 /* HighlightPickerView.swift in Sources */,
 				EDTPST02BUILD001 /* EditPostSheet.swift in Sources */,
+				HLTSLCR02BUILD001 /* HighlightSelectionCore.swift in Sources */,
+				CAPTNINP02BUILD001 /* CaptionInputView.swift in Sources */,
+				CNTPRVC02BUILD001 /* ContentPreviewCard.swift in Sources */,
+				PSTEDTLBR02BUILD001 /* PostEditorToolbar.swift in Sources */,
 				EDTPSTVM02BUILD001 /* EditPostViewModel.swift in Sources */,
 				ANLYT002BUILD002 /* AnalyticsView.swift in Sources */,
 				MOREV002BUILD002 /* MoreView.swift in Sources */,
@@ -1806,6 +1845,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B63EBEE12F15E55600D8C22D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCrashlytics;
+		};
+		B6PHOTO002F2A000000D8C22D /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B63EBEE12F15E55600D8C22D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -141,9 +141,13 @@ class ChatViewModel: ObservableObject {
 
         // Sync to cloud
         do {
+            // First ensure conversation exists in Firestore (critical for first message)
+            try await firestoreService.saveConversation(conversation)
+
+            // Then save message
             try await firestoreService.saveMessage(message)
 
-            // Also update conversation in cloud
+            // Update conversation with last message preview
             if let updatedConversation = conversationRepo.getConversation(id: conversation.id) {
                 try await firestoreService.saveConversation(updatedConversation)
             }

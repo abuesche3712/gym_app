@@ -1420,6 +1420,7 @@ public class UserProfileEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var displayName: String?
     @NSManaged public var bio: String?
     @NSManaged public var isPublic: Bool
+    @NSManaged public var profilePhotoURL: String?
     @NSManaged public var weightUnitRaw: String
     @NSManaged public var distanceUnitRaw: String
     @NSManaged public var defaultRestTime: Int32
@@ -1463,6 +1464,7 @@ public class UserProfileEntity: NSManagedObject, SyncableEntity {
             displayName: displayName,
             bio: bio,
             isPublic: isPublic,
+            profilePhotoURL: profilePhotoURL,
             weightUnit: weightUnit,
             distanceUnit: distanceUnit,
             defaultRestTime: Int(defaultRestTime),
@@ -1479,6 +1481,7 @@ public class UserProfileEntity: NSManagedObject, SyncableEntity {
         self.displayName = profile.displayName
         self.bio = profile.bio
         self.isPublic = profile.isPublic
+        self.profilePhotoURL = profile.profilePhotoURL
         self.weightUnit = profile.weightUnit
         self.distanceUnit = profile.distanceUnit
         self.defaultRestTime = Int32(profile.defaultRestTime)

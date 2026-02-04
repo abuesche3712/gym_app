@@ -17,7 +17,13 @@ struct UserRowView<TrailingContent: View>: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.md) {
-            AvatarView(profile: profile, size: avatarSize, color: avatarColor)
+            ProfilePhotoView(
+                profile: profile,
+                size: avatarSize,
+                backgroundColor: avatarColor.opacity(0.2),
+                foregroundColor: avatarColor,
+                borderColor: avatarColor.opacity(0.3)
+            )
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(profile.displayName ?? profile.username)

@@ -17,6 +17,7 @@ struct SocialView: View {
     @State private var showingSignIn = false
     @State private var showingComposeSheet = false
     @State private var selectedPost: PostWithAuthor?
+    @State private var postToEdit: PostWithAuthor?
 
     private var profileRepo: ProfileRepository {
         dataRepository.profileRepo
@@ -38,6 +39,13 @@ struct SocialView: View {
         }
         .sheet(item: $selectedPost) { post in
             PostDetailView(post: post)
+        }
+        .sheet(item: $postToEdit) { postWithAuthor in
+            EditPostSheet(post: postWithAuthor.post) { updatedPost in
+                Task<Void, Never> { @MainActor in
+                    await feedViewModel.updatePost(updatedPost)
+                }
+            }
         }
         .onAppear {
             if authService.isAuthenticated {
@@ -169,30 +177,24 @@ struct SocialView: View {
     // MARK: - Profile Avatar
 
     private var profileAvatar: some View {
-        Circle()
-            .fill(AppColors.accent2.opacity(0.2))
-            .frame(width: 32, height: 32)
-            .overlay {
-                Text(avatarInitials)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundColor(AppColors.accent2)
-            }
-            .overlay {
+        Group {
+            if let profile = profileRepo.currentProfile {
+                ProfilePhotoView.gold(profile: profile, size: 32)
+            } else {
                 Circle()
-                    .stroke(AppColors.accent2.opacity(0.3), lineWidth: 1.5)
-            }
-    }
-
-    private var avatarInitials: String {
-        if let profile = profileRepo.currentProfile {
-            if let displayName = profile.displayName, !displayName.isEmpty {
-                return String(displayName.prefix(1)).uppercased()
-            }
-            if !profile.username.isEmpty {
-                return String(profile.username.prefix(1)).uppercased()
+                    .fill(AppColors.accent2.opacity(0.2))
+                    .frame(width: 32, height: 32)
+                    .overlay {
+                        Text("?")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundColor(AppColors.accent2)
+                    }
+                    .overlay {
+                        Circle()
+                            .stroke(AppColors.accent2.opacity(0.3), lineWidth: 1.5)
+                    }
             }
         }
-        return "?"
     }
 
     // MARK: - Compose Button
@@ -294,27 +296,33 @@ struct SocialView: View {
                     FeedPostRow(
                         post: post,
                         onLike: {
-                            Task {
+                            Task<Void, Never> { @MainActor in
                                 await feedViewModel.toggleLike(for: post)
                             }
                         },
                         onComment: {
                             selectedPost = post
                         },
+                        onEdit: post.post.authorId == feedViewModel.currentUserId ? {
+                            postToEdit = post
+                        } : nil,
                         onDelete: post.post.authorId == feedViewModel.currentUserId ? {
-                            Task {
+                            Task<Void, Never> { @MainActor in
                                 await feedViewModel.deletePost(post)
                             }
                         } : nil,
                         onProfileTap: {
                             // Profile viewing can be added later
+                        },
+                        onPostTap: {
+                            selectedPost = post
                         }
                     )
                 }
                 .onAppear {
                     // Load more when reaching the end
                     if post.id == feedViewModel.posts.last?.id {
-                        Task {
+                        Task<Void, Never> { @MainActor in
                             await feedViewModel.loadMorePosts()
                         }
                     }

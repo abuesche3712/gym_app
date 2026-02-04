@@ -30,6 +30,7 @@ struct AccountProfileView: View {
     @State private var errorMessage: String = ""
     @State private var showingSignIn: Bool = false
     @State private var showingDeleteConfirmation: Bool = false
+    @State private var showingPhotoPicker: Bool = false
     @State private var hasUnsavedChanges: Bool = false
 
     private var profileRepo: ProfileRepository {
@@ -43,6 +44,9 @@ struct AccountProfileView: View {
                 accountStatusSection
 
                 if authService.isAuthenticated {
+                    // Profile Photo Section
+                    profilePhotoSection
+
                     // Profile Fields Section
                     profileFieldsSection
 
@@ -89,6 +93,9 @@ struct AccountProfileView: View {
         } message: {
             Text("This will permanently delete your account and all cloud data. Local data will remain on this device. This cannot be undone.")
         }
+        .sheet(isPresented: $showingPhotoPicker) {
+            ProfilePhotoPickerSheet(profileRepository: profileRepo)
+        }
     }
 
     // MARK: - Account Status Section
@@ -127,6 +134,50 @@ struct AccountProfileView: View {
                 }
                 .padding(.vertical, AppSpacing.sm)
             }
+        }
+    }
+
+    // MARK: - Profile Photo Section
+
+    private var profilePhotoSection: some View {
+        SettingsSection(title: "Profile Photo") {
+            HStack {
+                Spacer()
+
+                Button {
+                    showingPhotoPicker = true
+                } label: {
+                    ZStack(alignment: .bottomTrailing) {
+                        if let profile = profileRepo.currentProfile {
+                            ProfilePhotoView(profile: profile, size: 100)
+                        } else {
+                            Circle()
+                                .fill(AppColors.dominant.opacity(0.2))
+                                .frame(width: 100, height: 100)
+                                .overlay {
+                                    Image(systemName: "person.fill")
+                                        .font(.system(size: 40))
+                                        .foregroundColor(AppColors.dominant.opacity(0.5))
+                                }
+                        }
+
+                        // Edit indicator
+                        Circle()
+                            .fill(AppColors.dominant)
+                            .frame(width: 32, height: 32)
+                            .overlay {
+                                Image(systemName: "camera.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white)
+                            }
+                            .offset(x: 4, y: 4)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+            }
+            .padding(.vertical, AppSpacing.md)
         }
     }
 

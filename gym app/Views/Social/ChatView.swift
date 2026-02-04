@@ -242,7 +242,7 @@ struct MessageBubble: View {
     }
 
     private var avatarView: some View {
-        AvatarView(profile: otherUserProfile, size: 28, characterCount: 1)
+        ProfilePhotoView(profile: otherUserProfile, size: 28, characterCount: 1)
     }
 
     @ViewBuilder

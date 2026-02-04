@@ -24,6 +24,7 @@ class FeedViewModel: ObservableObject {
     private var profileCache: [String: UserProfile] = [:]
     private var likedPostIds: Set<UUID> = []
     private var newPostObserver: Any?
+    private var commentCountObserver: Any?
 
     var currentUserId: String? { authService.currentUser?.uid }
 
@@ -39,6 +40,9 @@ class FeedViewModel: ObservableObject {
     deinit {
         feedListener?.remove()
         if let observer = newPostObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        if let observer = commentCountObserver {
             NotificationCenter.default.removeObserver(observer)
         }
     }
@@ -58,6 +62,33 @@ class FeedViewModel: ObservableObject {
                 await self.addNewPostToFeed(post, userId: userId)
             }
         }
+
+        commentCountObserver = NotificationCenter.default.addObserver(
+            forName: .didUpdatePostCommentCount,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self,
+                  let info = notification.object as? [String: Any],
+                  let postId = info["postId"] as? UUID,
+                  let commentCount = info["commentCount"] as? Int else { return }
+
+            Task { @MainActor in
+                self.updatePostCommentCount(postId: postId, count: commentCount)
+            }
+        }
+    }
+
+    private func updatePostCommentCount(postId: UUID, count: Int) {
+        guard let index = posts.firstIndex(where: { $0.post.id == postId }) else { return }
+
+        var updatedPost = posts[index].post
+        updatedPost.commentCount = count
+        posts[index] = PostWithAuthor(
+            post: updatedPost,
+            author: posts[index].author,
+            isLikedByCurrentUser: posts[index].isLikedByCurrentUser
+        )
     }
 
     private func addNewPostToFeed(_ post: Post, userId: String) async {
@@ -156,8 +187,15 @@ class FeedViewModel: ObservableObject {
     // MARK: - Processing Posts
 
     private func processFeedPosts(_ posts: [Post], userId: String) async {
-        // Load liked status for current user
-        likedPostIds = postRepo.getLikedPostIds(userId: userId)
+        // Load liked status from Firestore (primary source of truth)
+        let postIds = posts.map { $0.id }
+        likedPostIds = await firestoreService.fetchLikedPostIds(postIds: postIds, userId: userId)
+
+        // Also sync to local cache for offline access
+        for postId in likedPostIds {
+            let like = PostLike(postId: postId, userId: userId)
+            postRepo.saveLike(like)
+        }
 
         // Load authors and create PostWithAuthor objects
         let postsWithAuthors = await loadAuthorsForPosts(posts, userId: userId)
@@ -252,6 +290,33 @@ class FeedViewModel: ObservableObject {
         } catch {
             // Reload feed on failure
             loadFeed()
+            self.error = error
+        }
+    }
+
+    // MARK: - Update Post
+
+    func updatePost(_ updatedPost: Post) async {
+        guard updatedPost.authorId == currentUserId else { return }
+
+        // Find the post in the feed and update it optimistically
+        guard let index = posts.firstIndex(where: { $0.post.id == updatedPost.id }) else { return }
+        let originalPost = posts[index]
+
+        // Optimistic update - preserve author and like status
+        posts[index] = PostWithAuthor(
+            post: updatedPost,
+            author: originalPost.author,
+            isLikedByCurrentUser: originalPost.isLikedByCurrentUser
+        )
+
+        do {
+            try await firestoreService.updatePost(updatedPost)
+            postRepo.update(updatedPost)
+            HapticManager.shared.success()
+        } catch {
+            // Revert on failure
+            posts[index] = originalPost
             self.error = error
         }
     }

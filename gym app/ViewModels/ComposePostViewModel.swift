@@ -11,6 +11,7 @@ import Foundation
 
 extension Notification.Name {
     static let didCreatePost = Notification.Name("didCreatePost")
+    static let didUpdatePostCommentCount = Notification.Name("didUpdatePostCommentCount")
 }
 
 @MainActor
@@ -63,7 +64,7 @@ class ComposePostViewModel: ObservableObject {
             self.content = PostContent(from: messageContent)
             self.contentCreationError = nil
         } catch {
-            print("[ComposePostViewModel] Error setting content: \(error)")
+            Logger.error(error, context: "ComposePostViewModel.setContent")
             self.contentCreationError = error
         }
     }
@@ -142,6 +143,12 @@ class ComposePostViewModel: ObservableObject {
                 return "Module: \(bundle.module.moduleName)"
             }
             return "Completed Module"
+        case .highlights(let snapshot):
+            if let bundle = try? HighlightsShareBundle.decode(from: snapshot) {
+                let count = bundle.exercises.count + bundle.sets.count
+                return "\(count) Highlight\(count == 1 ? "" : "s") from \(bundle.workoutName)"
+            }
+            return "Highlights"
         case .text:
             return "Text post"
         }

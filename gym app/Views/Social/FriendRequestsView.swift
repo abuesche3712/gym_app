@@ -122,14 +122,7 @@ struct FriendRequestCard: View {
         VStack(spacing: AppSpacing.md) {
             HStack(spacing: AppSpacing.md) {
                 // Avatar
-                Circle()
-                    .fill(AppColors.dominant.opacity(0.2))
-                    .frame(width: 56, height: 56)
-                    .overlay {
-                        Text(avatarInitials)
-                            .headline(color: AppColors.dominant)
-                            .fontWeight(.bold)
-                    }
+                ProfilePhotoView(profile: profile, size: 56)
 
                 // Info
                 VStack(alignment: .leading, spacing: 4) {
@@ -175,13 +168,6 @@ struct FriendRequestCard: View {
         .padding(AppSpacing.md)
         .background(AppColors.surfaceSecondary)
         .cornerRadius(AppCorners.large)
-    }
-
-    private var avatarInitials: String {
-        if let displayName = profile.displayName, !displayName.isEmpty {
-            return String(displayName.prefix(2)).uppercased()
-        }
-        return String(profile.username.prefix(2)).uppercased()
     }
 }
 

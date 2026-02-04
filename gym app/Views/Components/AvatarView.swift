@@ -4,9 +4,12 @@
 //
 //  Reusable avatar component for user profiles
 //
+//  DEPRECATED: Use ProfilePhotoView instead for photo support
+//
 
 import SwiftUI
 
+@available(*, deprecated, message: "Use ProfilePhotoView instead for photo support")
 struct AvatarView: View {
     let profile: UserProfile
     var size: CGFloat = 48

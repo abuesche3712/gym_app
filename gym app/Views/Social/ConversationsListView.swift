@@ -139,7 +139,7 @@ struct ConversationRow: View {
             HStack(spacing: AppSpacing.md) {
                 // Avatar with unread indicator
                 ZStack(alignment: .topTrailing) {
-                    AvatarView(profile: profile, size: 52)
+                    ProfilePhotoView(profile: profile, size: 52)
 
                     if conversation.unreadCount > 0 {
                         Circle()

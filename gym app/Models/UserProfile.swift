@@ -16,6 +16,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
     var displayName: String?
     var bio: String?  // max 160 chars
     var isPublic: Bool
+    var profilePhotoURL: String?  // Firebase Storage download URL
 
     // Settings/preferences
     var weightUnit: WeightUnit
@@ -35,6 +36,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         displayName: String? = nil,
         bio: String? = nil,
         isPublic: Bool = false,
+        profilePhotoURL: String? = nil,
         weightUnit: WeightUnit = .lbs,
         distanceUnit: DistanceUnit = .miles,
         defaultRestTime: Int = 90,
@@ -47,6 +49,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         self.displayName = displayName
         self.bio = bio
         self.isPublic = isPublic
+        self.profilePhotoURL = profilePhotoURL
         self.weightUnit = weightUnit
         self.distanceUnit = distanceUnit
         self.defaultRestTime = defaultRestTime
@@ -66,6 +69,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
         bio = try container.decodeIfPresent(String.self, forKey: .bio)
         isPublic = try container.decodeIfPresent(Bool.self, forKey: .isPublic) ?? false
+        profilePhotoURL = try container.decodeIfPresent(String.self, forKey: .profilePhotoURL)
 
         // Settings
         weightUnit = try container.decodeIfPresent(WeightUnit.self, forKey: .weightUnit) ?? .lbs
@@ -81,7 +85,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, id, username, displayName, bio, isPublic
+        case schemaVersion, id, username, displayName, bio, isPublic, profilePhotoURL
         case weightUnit, distanceUnit, defaultRestTime
         case createdAt, updatedAt, syncStatus
     }

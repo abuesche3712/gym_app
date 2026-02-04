@@ -113,6 +113,12 @@ class PostDetailViewModel: ObservableObject {
                 isLikedByCurrentUser: post.isLikedByCurrentUser
             )
 
+            // Notify feed to update comment count
+            NotificationCenter.default.post(
+                name: .didUpdatePostCommentCount,
+                object: ["postId": post.post.id, "commentCount": post.post.commentCount]
+            )
+
             HapticManager.shared.success()
         } catch {
             self.error = error
@@ -136,6 +142,12 @@ class PostDetailViewModel: ObservableObject {
                 post: updatedPost,
                 author: post.author,
                 isLikedByCurrentUser: post.isLikedByCurrentUser
+            )
+
+            // Notify feed to update comment count
+            NotificationCenter.default.post(
+                name: .didUpdatePostCommentCount,
+                object: ["postId": post.post.id, "commentCount": post.post.commentCount]
             )
 
             HapticManager.shared.impact()

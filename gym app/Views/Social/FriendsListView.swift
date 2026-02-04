@@ -350,7 +350,7 @@ struct OutgoingRequestRow: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.md) {
-            AvatarView(profile: friendWithProfile.profile, size: 44, color: AppColors.textTertiary)
+            ProfilePhotoView.muted(profile: friendWithProfile.profile, size: 44)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(friendWithProfile.profile.displayName ?? friendWithProfile.profile.username)

@@ -58,10 +58,10 @@ struct PostDetailView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Author row
             HStack(alignment: .top, spacing: AppSpacing.sm) {
-                PostAvatarView(
-                    displayName: viewModel.post.author.displayName,
-                    username: viewModel.post.author.username,
-                    size: 44
+                ProfilePhotoView(
+                    profile: viewModel.post.author,
+                    size: 44,
+                    borderWidth: 0
                 )
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -307,6 +307,9 @@ private struct PostContentCard: View {
             case .module(_, let name, let snapshot):
                 TemplateContentCard(type: "Module", name: name, icon: "square.stack.3d.up.fill", color: AppColors.accent3, snapshot: snapshot)
 
+            case .highlights(let snapshot):
+                HighlightsContentCard(snapshot: snapshot)
+
             case .text:
                 EmptyView()
             }
@@ -314,17 +317,14 @@ private struct PostContentCard: View {
     }
 }
 
-// Placeholder content cards for detail view - reuse patterns from PostCard
+// Session content card - reuse SessionPostContent from feed for consistency
 private struct SessionContentCard: View {
     let workoutName: String
     let date: Date
     let snapshot: Data
 
     var body: some View {
-        SharedContentCard(
-            content: .sharedSession(id: UUID(), workoutName: workoutName, date: date, snapshot: snapshot),
-            isFromCurrentUser: false
-        )
+        SessionPostContent(workoutName: workoutName, date: date, snapshot: snapshot)
     }
 }
 
@@ -396,6 +396,84 @@ private struct TemplateContentCard: View {
     }
 }
 
+// MARK: - Highlights Content Card
+
+private struct HighlightsContentCard: View {
+    let snapshot: Data
+
+    private var bundle: HighlightsShareBundle? {
+        try? HighlightsShareBundle.decode(from: snapshot)
+    }
+
+    private var totalCount: Int {
+        (bundle?.exercises.count ?? 0) + (bundle?.sets.count ?? 0)
+    }
+
+    var body: some View {
+        if let bundle = bundle {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                // Header
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "star.fill")
+                        .font(.title3.weight(.semibold))
+                        .foregroundColor(AppColors.warning)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(totalCount) HIGHLIGHT\(totalCount == 1 ? "" : "S")")
+                            .font(.headline.weight(.bold))
+                            .foregroundColor(AppColors.textPrimary)
+
+                        Text("from \(bundle.workoutName)")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textSecondary)
+                    }
+
+                    Spacer()
+                }
+
+                // Show highlights
+                ForEach(bundle.exercises.indices, id: \.self) { index in
+                    let exercise = bundle.exercises[index]
+                    highlightRow(name: exercise.exerciseName, icon: "dumbbell.fill", color: AppColors.dominant)
+                }
+
+                ForEach(bundle.sets.indices, id: \.self) { index in
+                    let set = bundle.sets[index]
+                    highlightRow(
+                        name: set.exerciseName,
+                        icon: set.isPR ? "trophy.fill" : "flame.fill",
+                        color: set.isPR ? AppColors.warning : AppColors.accent1
+                    )
+                }
+            }
+            .padding(AppSpacing.cardPadding)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .fill(AppColors.warning.opacity(0.06))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .stroke(AppColors.warning.opacity(0.15), lineWidth: 1)
+            )
+        }
+    }
+
+    private func highlightRow(name: String, icon: String, color: Color) -> some View {
+        HStack(spacing: AppSpacing.sm) {
+            Image(systemName: icon)
+                .font(.subheadline)
+                .foregroundColor(color)
+                .frame(width: 20)
+
+            Text(name)
+                .font(.subheadline)
+                .foregroundColor(AppColors.textPrimary)
+                .lineLimit(1)
+        }
+        .padding(.vertical, AppSpacing.xs)
+    }
+}
+
 // MARK: - Comment Row
 
 struct CommentRow: View {
@@ -408,10 +486,10 @@ struct CommentRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
             // Avatar
-            PostAvatarView(
-                displayName: comment.author.displayName,
-                username: comment.author.username,
-                size: 32
+            ProfilePhotoView(
+                profile: comment.author,
+                size: 32,
+                borderWidth: 0
             )
 
             // Content

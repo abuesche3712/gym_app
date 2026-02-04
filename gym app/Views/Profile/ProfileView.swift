@@ -12,6 +12,7 @@ struct ProfileView: View {
     @ObservedObject var dataRepository: DataRepository
     @State private var showingEditProfile = false
     @State private var showingSettings = false
+    @State private var showingPhotoPicker = false
 
     var body: some View {
         NavigationStack {
@@ -49,6 +50,9 @@ struct ProfileView: View {
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
             }
+            .sheet(isPresented: $showingPhotoPicker) {
+                ProfilePhotoPickerSheet(profileRepository: profileRepository)
+            }
         }
     }
 
@@ -56,16 +60,38 @@ struct ProfileView: View {
 
     private var profileHeader: some View {
         VStack(spacing: AppSpacing.md) {
-            // Avatar placeholder
-            Circle()
-                .fill(Color.accentColor.opacity(0.2))
-                .frame(width: 80, height: 80)
-                .overlay {
-                    Text(avatarInitials)
-                        .font(.title)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(Color.accentColor)
+            // Avatar with photo picker
+            Button {
+                showingPhotoPicker = true
+            } label: {
+                ZStack(alignment: .bottomTrailing) {
+                    if let profile = profileRepository.currentProfile {
+                        ProfilePhotoView(profile: profile, size: 80)
+                    } else {
+                        Circle()
+                            .fill(AppColors.dominant.opacity(0.2))
+                            .frame(width: 80, height: 80)
+                            .overlay {
+                                Text("?")
+                                    .font(.title)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(AppColors.dominant)
+                            }
+                    }
+
+                    // Edit indicator
+                    Circle()
+                        .fill(AppColors.dominant)
+                        .frame(width: 28, height: 28)
+                        .overlay {
+                            Image(systemName: "camera.fill")
+                                .font(.caption)
+                                .foregroundColor(AppColors.background)
+                        }
+                        .offset(x: 4, y: 4)
                 }
+            }
+            .buttonStyle(.plain)
 
             // Name and username
             VStack(spacing: AppSpacing.xs) {
@@ -104,17 +130,6 @@ struct ProfileView: View {
             .buttonStyle(.bordered)
         }
         .padding(.vertical)
-    }
-
-    private var avatarInitials: String {
-        if let displayName = profileRepository.currentProfile?.displayName,
-           !displayName.isEmpty {
-            return String(displayName.prefix(2)).uppercased()
-        } else if let username = profileRepository.currentProfile?.username,
-                  !username.isEmpty {
-            return String(username.prefix(2)).uppercased()
-        }
-        return "?"
     }
 
     // MARK: - Today's Workout

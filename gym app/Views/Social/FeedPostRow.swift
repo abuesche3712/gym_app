@@ -12,8 +12,10 @@ struct FeedPostRow: View {
     let post: PostWithAuthor
     let onLike: () -> Void
     let onComment: () -> Void
+    let onEdit: (() -> Void)?
     let onDelete: (() -> Void)?
     let onProfileTap: () -> Void
+    var onPostTap: (() -> Void)? = nil
 
     @State private var showingDeleteConfirmation = false
     @State private var isLikeAnimating = false
@@ -27,10 +29,10 @@ struct FeedPostRow: View {
             // Top row: Avatar + Author info
             HStack(alignment: .top, spacing: AppSpacing.sm) {
                 Button(action: onProfileTap) {
-                    PostAvatarView(
-                        displayName: post.author.displayName,
-                        username: post.author.username,
-                        size: 40
+                    ProfilePhotoView(
+                        profile: post.author,
+                        size: 40,
+                        borderWidth: 0
                     )
                 }
                 .buttonStyle(.plain)
@@ -39,18 +41,28 @@ struct FeedPostRow: View {
                 authorLine
             }
 
-            // Caption (if any) - left aligned, full width
-            if let caption = post.post.caption, !caption.isEmpty {
-                Text(caption)
-                    .font(.body)
-                    .foregroundColor(AppColors.textPrimary)
-                    .lineSpacing(4)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            // Tappable content area (caption + attachment)
+            Button {
+                onPostTap?()
+            } label: {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    // Caption (if any) - left aligned, full width
+                    if let caption = post.post.caption, !caption.isEmpty {
+                        Text(caption)
+                            .font(.body)
+                            .foregroundColor(AppColors.textPrimary)
+                            .lineSpacing(4)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .multilineTextAlignment(.leading)
+                    }
 
-            // Attachment card (centered on full width)
-            attachmentContent
-                .frame(maxWidth: .infinity)
+                    // Attachment card (centered on full width)
+                    attachmentContent
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(onPostTap == nil)
 
             // Engagement bar (centered, spans full width)
             engagementBar
@@ -100,6 +112,14 @@ struct FeedPostRow: View {
             // More menu (for own posts)
             if isOwnPost {
                 Menu {
+                    if let onEdit = onEdit {
+                        Button {
+                            onEdit()
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                    }
+
                     Button(role: .destructive) {
                         showingDeleteConfirmation = true
                     } label: {
@@ -122,11 +142,9 @@ struct FeedPostRow: View {
     private var attachmentContent: some View {
         Group {
             switch post.post.content {
-            case .session(_, _, _, let snapshot):
-                // Use WorkoutAttachmentCard for sessions
-                if let session = decodeSession(from: snapshot) {
-                    WorkoutAttachmentCard(session: session)
-                }
+            case .session(_, let workoutName, let date, let snapshot):
+                // Use SessionPostContent which supports user-selected highlights
+                SessionPostContent(workoutName: workoutName, date: date, snapshot: snapshot)
 
             case .text:
                 // Text-only posts have no attachment (caption is the content)
@@ -149,6 +167,9 @@ struct FeedPostRow: View {
 
             case .module(_, let name, let snapshot):
                 TemplateAttachmentCard(type: "MODULE", name: name, snapshot: snapshot)
+
+            case .highlights(let snapshot):
+                HighlightsAttachmentCard(snapshot: snapshot)
             }
         }
     }
@@ -306,7 +327,7 @@ private struct ExerciseAttachmentCard: View {
                 }
 
                 // Sets summary based on type
-                exerciseSummary(completedSets: completedSets, type: detectedType)
+                exerciseSummary(completedSets: completedSets, type: detectedType, distanceUnit: bundle.distanceUnit)
             }
             .padding(AppSpacing.cardPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -322,7 +343,7 @@ private struct ExerciseAttachmentCard: View {
     }
 
     @ViewBuilder
-    private func exerciseSummary(completedSets: [SetData], type: DetectedType) -> some View {
+    private func exerciseSummary(completedSets: [SetData], type: DetectedType, distanceUnit: DistanceUnit?) -> some View {
         switch type {
         case .strength:
             if let topSet = completedSets.max(by: { ($0.weight ?? 0) < ($1.weight ?? 0) }),
@@ -352,7 +373,7 @@ private struct ExerciseAttachmentCard: View {
                 if totalDistance > 0 {
                     Text("·")
                         .caption(color: AppColors.textTertiary)
-                    Text(formatDistance(totalDistance))
+                    Text(formatDistance(totalDistance, unit: distanceUnit))
                         .caption(color: AppColors.accent1)
                 }
             }
@@ -422,11 +443,12 @@ private struct ExerciseAttachmentCard: View {
         }
     }
 
-    private func formatDistance(_ distance: Double) -> String {
+    private func formatDistance(_ distance: Double, unit: DistanceUnit?) -> String {
+        let unitAbbr = unit?.abbreviation ?? "m"
         if distance.truncatingRemainder(dividingBy: 1) == 0 {
-            return "\(Int(distance)) mi"
+            return "\(Int(distance)) \(unitAbbr)"
         }
-        return String(format: "%.1f mi", distance)
+        return String(format: "%.1f \(unitAbbr)", distance)
     }
 }
 
@@ -486,7 +508,7 @@ private struct SetAttachmentCard: View {
                     .foregroundColor(AppColors.textSecondary)
 
                 // Display based on type
-                setDisplay(set: bundle.setData, type: detectedType, isPR: bundle.isPR)
+                setDisplay(set: bundle.setData, type: detectedType, isPR: bundle.isPR, distanceUnit: bundle.distanceUnit)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, AppSpacing.lg)
@@ -506,7 +528,7 @@ private struct SetAttachmentCard: View {
     }
 
     @ViewBuilder
-    private func setDisplay(set: SetData, type: DetectedType, isPR: Bool) -> some View {
+    private func setDisplay(set: SetData, type: DetectedType, isPR: Bool, distanceUnit: DistanceUnit?) -> some View {
         switch type {
         case .strength:
             if let weight = set.weight, let reps = set.reps {
@@ -546,7 +568,7 @@ private struct SetAttachmentCard: View {
                         Text(formatDistanceValue(distance))
                             .font(.system(size: 36, weight: .bold, design: .rounded))
                             .foregroundColor(isPR ? AppColors.warning : AppColors.accent1)
-                        Text("mi")
+                        Text(distanceUnit?.abbreviation ?? "m")
                             .font(.caption.weight(.medium))
                             .foregroundColor(AppColors.textTertiary)
                     }
@@ -711,6 +733,85 @@ private struct TemplateAttachmentCard: View {
     }
 }
 
+// MARK: - Highlights Attachment Card
+
+private struct HighlightsAttachmentCard: View {
+    let snapshot: Data
+
+    private var bundle: HighlightsShareBundle? {
+        try? HighlightsShareBundle.decode(from: snapshot)
+    }
+
+    private var totalCount: Int {
+        (bundle?.exercises.count ?? 0) + (bundle?.sets.count ?? 0)
+    }
+
+    var body: some View {
+        if let bundle = bundle {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                // Header
+                HStack(spacing: AppSpacing.xs) {
+                    Image(systemName: "star.fill")
+                        .font(.caption.weight(.bold))
+                        .foregroundColor(AppColors.warning)
+
+                    Text("\(totalCount) HIGHLIGHT\(totalCount == 1 ? "" : "S")")
+                        .font(.caption.weight(.bold))
+                        .tracking(0.5)
+                        .foregroundColor(AppColors.warning)
+
+                    Text("·")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+
+                    Text(bundle.workoutName)
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                        .lineLimit(1)
+                }
+
+                // Show highlights
+                ForEach(bundle.exercises.indices, id: \.self) { index in
+                    let exercise = bundle.exercises[index]
+                    highlightRow(name: exercise.exerciseName, icon: "dumbbell.fill", color: AppColors.dominant)
+                }
+
+                ForEach(bundle.sets.indices, id: \.self) { index in
+                    let set = bundle.sets[index]
+                    highlightRow(
+                        name: set.exerciseName,
+                        icon: set.isPR ? "trophy.fill" : "flame.fill",
+                        color: set.isPR ? AppColors.warning : AppColors.accent1
+                    )
+                }
+            }
+            .padding(AppSpacing.cardPadding)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppColors.warning.opacity(0.06))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .stroke(AppColors.warning.opacity(0.2), lineWidth: 1)
+            )
+        }
+    }
+
+    private func highlightRow(name: String, icon: String, color: Color) -> some View {
+        HStack(spacing: AppSpacing.sm) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundColor(color)
+                .frame(width: 16)
+
+            Text(name)
+                .font(.subheadline)
+                .foregroundColor(AppColors.textPrimary)
+                .lineLimit(1)
+        }
+    }
+}
+
 #Preview {
     ScrollView {
         VStack(spacing: 0) {
@@ -732,6 +833,7 @@ private struct TemplateAttachmentCard: View {
                 ),
                 onLike: {},
                 onComment: {},
+                onEdit: {},
                 onDelete: {},
                 onProfileTap: {}
             )

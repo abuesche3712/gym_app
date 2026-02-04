@@ -789,7 +789,8 @@ struct PersistenceController {
             createAttribute("createdAt", type: .dateAttributeType, optional: true),
             createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true),
-            createAttribute("syncStatusRaw", type: .stringAttributeType)
+            createAttribute("syncStatusRaw", type: .stringAttributeType),
+            createAttribute("profilePhotoURL", type: .stringAttributeType, optional: true)
         ]
 
         return entity
