@@ -96,6 +96,7 @@ class ProfilePhotoService: ObservableObject {
     }
 
     /// Delete the current user's profile photo from Firebase Storage
+    /// Returns silently if photo doesn't exist or deletion fails
     func deleteProfilePhoto() async throws {
         guard let userId = core.userId else {
             throw ProfilePhotoError.notAuthenticated
@@ -105,10 +106,14 @@ class ProfilePhotoService: ObservableObject {
 
         do {
             try await storageRef.delete()
-        } catch {
+        } catch let error as NSError {
             // Ignore "object not found" errors (photo may not exist)
-            let nsError = error as NSError
-            if nsError.domain == StorageErrorDomain && nsError.code == StorageErrorCode.objectNotFound.rawValue {
+            // StorageErrorCode.objectNotFound = -13010
+            if error.code == StorageErrorCode.objectNotFound.rawValue {
+                return
+            }
+            // Also ignore permission errors during delete - we'll overwrite anyway
+            if error.code == StorageErrorCode.unauthorized.rawValue {
                 return
             }
             throw ProfilePhotoError.deletionFailed(error.localizedDescription)
