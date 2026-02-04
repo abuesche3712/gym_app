@@ -26,10 +26,12 @@ final class HapticManager: @unchecked Sendable {
     private var countdownBeepPlayer: AVAudioPlayer?
     private var phaseTransitionPlayer: AVAudioPlayer?
 
+    private var isAudioSessionActive = false
+
     private init() {
         // Pre-warm the generators for faster response
         prepareAll()
-        // Configure audio session for playback even on silent mode
+        // Configure audio session category (but don't activate yet)
         configureAudioSession()
         // Pre-load sound files
         prepareSounds()
@@ -37,27 +39,39 @@ final class HapticManager: @unchecked Sendable {
 
     private func configureAudioSession() {
         do {
-            // Use playback category with duckOthers to:
-            // 1. Play sounds even when silent switch is on
-            // 2. Temporarily lower music volume when playing alerts
-            // 3. Mix with other audio so music resumes after
+            // Use playback category to play sounds even when silent switch is on
+            // Use mixWithOthers to not interrupt music playback
+            // Don't use duckOthers - it reduces music volume the whole time session is active
             try AVAudioSession.sharedInstance().setCategory(
                 .playback,
                 mode: .default,
-                options: [.mixWithOthers, .duckOthers]
+                options: [.mixWithOthers]
             )
-            try AVAudioSession.sharedInstance().setActive(true)
+            // Don't activate here - only activate when actually playing sounds
         } catch {
             Logger.error(error, context: "Failed to configure audio session")
         }
     }
 
-    /// Re-activate audio session before playing sounds (needed after other apps take over audio)
-    private func ensureAudioSessionActive() {
+    /// Activate audio session before playing sounds
+    private func activateAudioSession() {
+        guard !isAudioSessionActive else { return }
         do {
             try AVAudioSession.sharedInstance().setActive(true)
+            isAudioSessionActive = true
         } catch {
             Logger.debug("Audio session activation failed: \(error.localizedDescription)")
+        }
+    }
+
+    /// Deactivate audio session after sounds finish to restore other audio
+    private func deactivateAudioSession() {
+        guard isAudioSessionActive else { return }
+        do {
+            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            isAudioSessionActive = false
+        } catch {
+            Logger.debug("Audio session deactivation failed: \(error.localizedDescription)")
         }
     }
 
@@ -182,45 +196,58 @@ final class HapticManager: @unchecked Sendable {
 
     /// Play timer completion sound
     private func playTimerCompleteSound() {
-        ensureAudioSessionActive()
+        activateAudioSession()
 
         // Try custom sound first, fall back to system sound
         if let player = timerCompletePlayer {
             player.volume = 1.0
             player.currentTime = 0
             player.play()
+            // Deactivate session after sound finishes
+            scheduleDeactivation(after: player.duration + 0.1)
         } else {
             // Fallback: Use system sound
-            // Note: AudioServicesPlaySystemSound ignores silent switch when audio session is .playback
             AudioServicesPlaySystemSound(SystemSoundID(1304))
+            scheduleDeactivation(after: 0.5)
         }
     }
 
     /// Play countdown beep sound
     private func playCountdownBeepSound() {
-        ensureAudioSessionActive()
+        activateAudioSession()
 
         if let player = countdownBeepPlayer {
             player.volume = 0.7
             player.currentTime = 0
             player.play()
+            scheduleDeactivation(after: player.duration + 0.1)
         } else {
             // Fallback: Short click sound
             AudioServicesPlaySystemSound(SystemSoundID(1057))
+            scheduleDeactivation(after: 0.3)
         }
     }
 
     /// Play phase transition sound
     private func playPhaseTransitionSound() {
-        ensureAudioSessionActive()
+        activateAudioSession()
 
         if let player = phaseTransitionPlayer {
             player.volume = 1.0
             player.currentTime = 0
             player.play()
+            scheduleDeactivation(after: player.duration + 0.1)
         } else {
             // Fallback: Alert tone
             AudioServicesPlaySystemSound(SystemSoundID(1322))
+            scheduleDeactivation(after: 0.5)
+        }
+    }
+
+    /// Schedule audio session deactivation after sound finishes
+    private func scheduleDeactivation(after delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            self?.deactivateAudioSession()
         }
     }
 
