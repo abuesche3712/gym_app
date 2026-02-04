@@ -148,41 +148,10 @@ struct UserSearchRow: View {
     let onAcceptRequest: (Friendship) -> Void
 
     var body: some View {
-        HStack(spacing: AppSpacing.md) {
-            // Avatar
-            Circle()
-                .fill(AppColors.dominant.opacity(0.2))
-                .frame(width: 52, height: 52)
-                .overlay {
-                    Text(avatarInitials)
-                        .headline(color: AppColors.dominant)
-                        .fontWeight(.semibold)
-                }
-
-            // User info
-            VStack(alignment: .leading, spacing: 2) {
-                if let displayName = profile.displayName, !displayName.isEmpty {
-                    Text(displayName)
-                        .headline(color: AppColors.textPrimary)
-                }
-
-                Text("@\(profile.username)")
-                    .subheadline(color: AppColors.textSecondary)
-            }
-
-            Spacer()
-
-            // Action button
+        UserRowView(profile: profile, avatarSize: 52) {
             actionButton
         }
         .padding(.vertical, AppSpacing.md)
-    }
-
-    private var avatarInitials: String {
-        if let displayName = profile.displayName, !displayName.isEmpty {
-            return String(displayName.prefix(2)).uppercased()
-        }
-        return String(profile.username.prefix(2)).uppercased()
     }
 
     @ViewBuilder

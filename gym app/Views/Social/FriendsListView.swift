@@ -314,32 +314,8 @@ struct FriendRequestRow: View {
     let onAccept: () -> Void
     let onDecline: () -> Void
 
-    private var profile: UserProfile { friendWithProfile.profile }
-
     var body: some View {
-        HStack(spacing: AppSpacing.md) {
-            // Avatar
-            Circle()
-                .fill(AppColors.dominant.opacity(0.2))
-                .frame(width: 44, height: 44)
-                .overlay {
-                    Text(avatarInitials)
-                        .subheadline(color: AppColors.dominant)
-                        .fontWeight(.semibold)
-                }
-
-            // Info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(profile.displayName ?? profile.username)
-                    .headline(color: AppColors.textPrimary)
-
-                Text("@\(profile.username)")
-                    .caption(color: AppColors.textSecondary)
-            }
-
-            Spacer()
-
-            // Actions
+        UserRowView(profile: friendWithProfile.profile, avatarSize: 44) {
             HStack(spacing: AppSpacing.sm) {
                 Button {
                     onDecline()
@@ -364,13 +340,6 @@ struct FriendRequestRow: View {
         .background(AppColors.surfaceSecondary)
         .cornerRadius(AppCorners.medium)
     }
-
-    private var avatarInitials: String {
-        if let displayName = profile.displayName, !displayName.isEmpty {
-            return String(displayName.prefix(2)).uppercased()
-        }
-        return String(profile.username.prefix(2)).uppercased()
-    }
 }
 
 // MARK: - Outgoing Request Row
@@ -379,26 +348,15 @@ struct OutgoingRequestRow: View {
     let friendWithProfile: FriendWithProfile
     let onCancel: () -> Void
 
-    private var profile: UserProfile { friendWithProfile.profile }
-
     var body: some View {
         HStack(spacing: AppSpacing.md) {
-            // Avatar
-            Circle()
-                .fill(AppColors.textTertiary.opacity(0.2))
-                .frame(width: 44, height: 44)
-                .overlay {
-                    Text(avatarInitials)
-                        .subheadline(color: AppColors.textTertiary)
-                        .fontWeight(.semibold)
-                }
+            AvatarView(profile: friendWithProfile.profile, size: 44, color: AppColors.textTertiary)
 
-            // Info
             VStack(alignment: .leading, spacing: 2) {
-                Text(profile.displayName ?? profile.username)
+                Text(friendWithProfile.profile.displayName ?? friendWithProfile.profile.username)
                     .headline(color: AppColors.textPrimary)
 
-                Text("@\(profile.username)")
+                Text("@\(friendWithProfile.profile.username)")
                     .caption(color: AppColors.textSecondary)
 
                 Text("Pending")
@@ -407,7 +365,6 @@ struct OutgoingRequestRow: View {
 
             Spacer()
 
-            // Cancel button
             Button {
                 onCancel()
             } label: {
@@ -421,13 +378,6 @@ struct OutgoingRequestRow: View {
         .background(AppColors.surfaceSecondary)
         .cornerRadius(AppCorners.medium)
     }
-
-    private var avatarInitials: String {
-        if let displayName = profile.displayName, !displayName.isEmpty {
-            return String(displayName.prefix(2)).uppercased()
-        }
-        return String(profile.username.prefix(2)).uppercased()
-    }
 }
 
 // MARK: - Friend Row
@@ -437,34 +387,8 @@ struct FriendRow: View {
     let onRemove: () -> Void
     let onBlock: () -> Void
 
-    @State private var showingOptions = false
-
-    private var profile: UserProfile { friendWithProfile.profile }
-
     var body: some View {
-        HStack(spacing: AppSpacing.md) {
-            // Avatar
-            Circle()
-                .fill(AppColors.dominant.opacity(0.2))
-                .frame(width: 48, height: 48)
-                .overlay {
-                    Text(avatarInitials)
-                        .headline(color: AppColors.dominant)
-                        .fontWeight(.semibold)
-                }
-
-            // Info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(profile.displayName ?? profile.username)
-                    .headline(color: AppColors.textPrimary)
-
-                Text("@\(profile.username)")
-                    .caption(color: AppColors.textSecondary)
-            }
-
-            Spacer()
-
-            // Options menu
+        UserRowView(profile: friendWithProfile.profile, avatarSize: 48) {
             Menu {
                 Button(role: .destructive) {
                     onRemove()
@@ -486,13 +410,6 @@ struct FriendRow: View {
         }
         .padding(.horizontal, AppSpacing.md)
         .padding(.vertical, AppSpacing.sm)
-    }
-
-    private var avatarInitials: String {
-        if let displayName = profile.displayName, !displayName.isEmpty {
-            return String(displayName.prefix(2)).uppercased()
-        }
-        return String(profile.username.prefix(2)).uppercased()
     }
 }
 

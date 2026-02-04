@@ -101,28 +101,7 @@ struct NewConversationSheet: View {
         Button {
             startConversation(with: friend)
         } label: {
-            HStack(spacing: AppSpacing.md) {
-                // Avatar
-                Circle()
-                    .fill(AppColors.dominant.opacity(0.2))
-                    .frame(width: 48, height: 48)
-                    .overlay {
-                        Text(avatarInitials(for: friend.profile))
-                            .headline(color: AppColors.dominant)
-                            .fontWeight(.semibold)
-                    }
-
-                // Info
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(friend.profile.displayName ?? friend.profile.username)
-                        .headline(color: AppColors.textPrimary)
-
-                    Text("@\(friend.profile.username)")
-                        .caption(color: AppColors.textSecondary)
-                }
-
-                Spacer()
-
+            UserRowView(profile: friend.profile, avatarSize: 48) {
                 if isLoading {
                     ProgressView()
                         .controlSize(.small)
@@ -138,13 +117,6 @@ struct NewConversationSheet: View {
         }
         .buttonStyle(.plain)
         .disabled(isLoading)
-    }
-
-    private func avatarInitials(for profile: UserProfile) -> String {
-        if let displayName = profile.displayName, !displayName.isEmpty {
-            return String(displayName.prefix(2)).uppercased()
-        }
-        return String(profile.username.prefix(2)).uppercased()
     }
 
     private func startConversation(with friend: FriendWithProfile) {

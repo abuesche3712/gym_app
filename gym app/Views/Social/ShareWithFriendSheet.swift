@@ -86,6 +86,43 @@ extension Session: ShareableContent {
     }
 }
 
+// MARK: - Session With Highlights Wrapper
+
+/// Wrapper for sharing a full workout with user-selected highlights
+struct ShareableSessionWithHighlights: ShareableContent, Identifiable {
+    let id: UUID
+    let session: Session
+    let highlightedExerciseIds: [UUID]
+    let highlightedSetIds: [UUID]
+
+    init(session: Session, highlightedExerciseIds: [UUID], highlightedSetIds: [UUID]) {
+        self.id = session.id
+        self.session = session
+        self.highlightedExerciseIds = highlightedExerciseIds
+        self.highlightedSetIds = highlightedSetIds
+    }
+
+    var shareTitle: String { session.workoutName }
+    var shareSubtitle: String? {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter.string(from: session.date)
+    }
+    var shareIcon: String { "checkmark.circle.fill" }
+
+    func createMessageContent() throws -> MessageContent {
+        let bundle = SessionShareBundle(
+            session: session,
+            workoutName: session.workoutName,
+            date: session.date,
+            highlightedExerciseIds: highlightedExerciseIds.isEmpty ? nil : highlightedExerciseIds,
+            highlightedSetIds: highlightedSetIds.isEmpty ? nil : highlightedSetIds
+        )
+        let data = try bundle.encode()
+        return .sharedSession(id: session.id, workoutName: session.workoutName, date: session.date, snapshot: data)
+    }
+}
+
 // MARK: - Exercise Performance Wrapper
 
 /// Wrapper for sharing a completed exercise with all its context
@@ -122,7 +159,8 @@ struct ShareableExercisePerformance: ShareableContent, Identifiable {
         let bundle = try SharingService.shared.createExerciseBundle(
             exerciseName: exercise.exerciseName,
             setData: allSets,
-            workoutName: workoutName
+            workoutName: workoutName,
+            distanceUnit: exercise.distanceUnit
         )
         let data = try bundle.encode()
         return .sharedExercise(snapshot: data)
@@ -199,15 +237,17 @@ struct ShareableSetPerformance: ShareableContent, Identifiable {
     let set: SetData
     let exerciseName: String
     let exerciseType: ExerciseType
+    let distanceUnit: DistanceUnit
     let workoutName: String?
     let date: Date
     let isPR: Bool
 
-    init(set: SetData, exerciseName: String, exerciseType: ExerciseType, workoutName: String? = nil, date: Date = Date(), isPR: Bool = false) {
+    init(set: SetData, exerciseName: String, exerciseType: ExerciseType, distanceUnit: DistanceUnit = .miles, workoutName: String? = nil, date: Date = Date(), isPR: Bool = false) {
         self.id = set.id
         self.set = set
         self.exerciseName = exerciseName
         self.exerciseType = exerciseType
+        self.distanceUnit = distanceUnit
         self.workoutName = workoutName
         self.date = date
         self.isPR = isPR
@@ -228,7 +268,8 @@ struct ShareableSetPerformance: ShareableContent, Identifiable {
             exerciseName: exerciseName,
             setData: set,
             isPR: isPR,
-            workoutName: workoutName
+            workoutName: workoutName,
+            distanceUnit: distanceUnit
         )
         let data = try bundle.encode()
         return .sharedSet(snapshot: data)
@@ -249,7 +290,7 @@ struct ShareableSetPerformance: ShareableContent, Identifiable {
         case .cardio:
             var parts: [String] = []
             if let duration = set.duration { parts.append(formatDuration(duration)) }
-            if let distance = set.distance { parts.append("\(formatDistanceValue(distance)) mi") }
+            if let distance = set.distance { parts.append("\(formatDistanceValue(distance)) \(distanceUnit.abbreviation)") }
             return parts.isEmpty ? nil : parts.joined(separator: " - ")
         case .isometric:
             if let holdTime = set.holdTime {
@@ -261,6 +302,88 @@ struct ShareableSetPerformance: ShareableContent, Identifiable {
             }
         }
         return nil
+    }
+}
+
+// MARK: - Highlights Bundle Wrapper
+
+/// Wrapper for sharing multiple exercises/sets as highlights
+struct ShareableHighlightBundle: ShareableContent, Identifiable {
+    let id: UUID
+    let workoutName: String
+    let date: Date
+    let exercises: [ShareableExercisePerformance]
+    let sets: [ShareableSetPerformance]
+
+    init(workoutName: String, date: Date, exercises: [ShareableExercisePerformance] = [], sets: [ShareableSetPerformance] = []) {
+        self.id = UUID()
+        self.workoutName = workoutName
+        self.date = date
+        self.exercises = exercises
+        self.sets = sets
+    }
+
+    var shareTitle: String {
+        let count = exercises.count + sets.count
+        return "\(count) Highlight\(count == 1 ? "" : "s")"
+    }
+
+    var shareSubtitle: String? {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return "\(workoutName) · \(formatter.string(from: date))"
+    }
+
+    var shareIcon: String { "star.fill" }
+
+    /// Label for display in compose preview
+    var contentTypeLabel: String? {
+        var parts: [String] = []
+        if exercises.count > 0 {
+            parts.append("\(exercises.count) exercise\(exercises.count == 1 ? "" : "s")")
+        }
+        if sets.count > 0 {
+            parts.append("\(sets.count) set\(sets.count == 1 ? "" : "s")")
+        }
+        return parts.joined(separator: ", ")
+    }
+
+    func createMessageContent() throws -> MessageContent {
+        // Convert to ExerciseShareBundle and SetShareBundle
+        var exerciseBundles: [ExerciseShareBundle] = []
+        for ex in exercises {
+            let allSets = ex.exercise.completedSetGroups.flatMap { $0.sets }.filter { $0.completed }
+            let bundle = ExerciseShareBundle(
+                exerciseName: ex.exercise.exerciseName,
+                setData: allSets,
+                workoutName: workoutName,
+                date: date,
+                distanceUnit: ex.exercise.distanceUnit
+            )
+            exerciseBundles.append(bundle)
+        }
+
+        var setBundles: [SetShareBundle] = []
+        for s in sets {
+            let bundle = SetShareBundle(
+                exerciseName: s.exerciseName,
+                setData: s.set,
+                isPR: s.isPR,
+                workoutName: workoutName,
+                date: date,
+                distanceUnit: s.distanceUnit
+            )
+            setBundles.append(bundle)
+        }
+
+        let highlightsBundle = HighlightsShareBundle(
+            workoutName: workoutName,
+            date: date,
+            exercises: exerciseBundles,
+            sets: setBundles
+        )
+        let data = try highlightsBundle.encode()
+        return .sharedHighlights(snapshot: data)
     }
 }
 
@@ -416,29 +539,7 @@ struct FriendShareRow: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: AppSpacing.md) {
-                // Avatar
-                Circle()
-                    .fill(AppColors.dominant.opacity(0.2))
-                    .frame(width: 44, height: 44)
-                    .overlay {
-                        Text(avatarInitials)
-                            .subheadline(color: AppColors.dominant)
-                            .fontWeight(.semibold)
-                    }
-
-                // Name
-                VStack(alignment: .leading, spacing: 2) {
-                    if let displayName = friendship.profile.displayName, !displayName.isEmpty {
-                        Text(displayName)
-                            .headline(color: AppColors.textPrimary)
-                    }
-                    Text("@\(friendship.profile.username)")
-                        .subheadline(color: AppColors.textSecondary)
-                }
-
-                Spacer()
-
+            UserRowView(profile: friendship.profile, avatarSize: 44) {
                 if isSharing {
                     ProgressView()
                 } else {
@@ -450,13 +551,6 @@ struct FriendShareRow: View {
         }
         .buttonStyle(.plain)
         .disabled(isSharing)
-    }
-
-    private var avatarInitials: String {
-        if let displayName = friendship.profile.displayName, !displayName.isEmpty {
-            return String(displayName.prefix(2)).uppercased()
-        }
-        return String(friendship.profile.username.prefix(2)).uppercased()
     }
 }
 

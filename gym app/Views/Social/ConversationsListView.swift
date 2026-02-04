@@ -139,14 +139,7 @@ struct ConversationRow: View {
             HStack(spacing: AppSpacing.md) {
                 // Avatar with unread indicator
                 ZStack(alignment: .topTrailing) {
-                    Circle()
-                        .fill(AppColors.dominant.opacity(0.2))
-                        .frame(width: 52, height: 52)
-                        .overlay {
-                            Text(avatarInitials)
-                                .headline(color: AppColors.dominant)
-                                .fontWeight(.semibold)
-                        }
+                    AvatarView(profile: profile, size: 52)
 
                     if conversation.unreadCount > 0 {
                         Circle()
@@ -197,13 +190,6 @@ struct ConversationRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-
-    private var avatarInitials: String {
-        if let displayName = profile.displayName, !displayName.isEmpty {
-            return String(displayName.prefix(2)).uppercased()
-        }
-        return String(profile.username.prefix(2)).uppercased()
     }
 
     private var unreadBadgeText: String {

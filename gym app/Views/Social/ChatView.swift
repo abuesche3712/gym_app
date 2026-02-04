@@ -242,21 +242,7 @@ struct MessageBubble: View {
     }
 
     private var avatarView: some View {
-        Circle()
-            .fill(AppColors.dominant.opacity(0.2))
-            .frame(width: 28, height: 28)
-            .overlay {
-                Text(avatarInitials)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundColor(AppColors.dominant)
-            }
-    }
-
-    private var avatarInitials: String {
-        if let displayName = otherUserProfile.displayName, !displayName.isEmpty {
-            return String(displayName.prefix(1)).uppercased()
-        }
-        return String(otherUserProfile.username.prefix(1)).uppercased()
+        AvatarView(profile: otherUserProfile, size: 28, characterCount: 1)
     }
 
     @ViewBuilder
@@ -294,6 +280,14 @@ struct MessageBubble: View {
 
         case .sharedCompletedModule:
             sharedContentView(icon: "square.stack.3d.up.fill", label: "Module Results", name: "Completed module")
+
+        case .sharedHighlights(let snapshot):
+            if let bundle = try? HighlightsShareBundle.decode(from: snapshot) {
+                let count = bundle.exercises.count + bundle.sets.count
+                sharedContentView(icon: "star.fill", label: "\(count) Highlight\(count == 1 ? "" : "s")", name: bundle.workoutName)
+            } else {
+                sharedContentView(icon: "star.fill", label: "Highlights", name: "Workout highlights")
+            }
         }
     }
 
