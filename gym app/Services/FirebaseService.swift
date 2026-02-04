@@ -351,6 +351,10 @@ class FirestoreService: ObservableObject {
         feed.listenToFeedPosts(friendIds: friendIds, limit: limit, onChange: onChange, onError: onError)
     }
 
+    func listenToPost(postId: UUID, onChange: @escaping (Post?) -> Void, onError: ((Error) -> Void)? = nil) -> ListenerRegistration {
+        feed.listenToPost(postId: postId, onChange: onChange, onError: onError)
+    }
+
     func updatePost(_ post: Post) async throws {
         try await feed.updatePost(post)
     }

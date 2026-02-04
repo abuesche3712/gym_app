@@ -22,6 +22,7 @@ class PostDetailViewModel: ObservableObject {
 
     private var commentsListener: ListenerRegistration?
     private var likeListener: ListenerRegistration?
+    private var postListener: ListenerRegistration?
     private var profileCache: [String: UserProfile] = [:]
 
     var currentUserId: String? { authService.currentUser?.uid }
@@ -34,6 +35,7 @@ class PostDetailViewModel: ObservableObject {
     deinit {
         commentsListener?.remove()
         likeListener?.remove()
+        postListener?.remove()
     }
 
     // MARK: - Loading
@@ -49,6 +51,19 @@ class PostDetailViewModel: ObservableObject {
                 self?.isLoading = false
             }
         }
+
+        // Listen for post updates (counts, caption, content)
+        postListener?.remove()
+        postListener = firestoreService.listenToPost(postId: post.post.id, onChange: { [weak self] updatedPost in
+            guard let self, let updatedPost else { return }
+            Task { @MainActor in
+                self.post = PostWithAuthor(
+                    post: updatedPost,
+                    author: self.post.author,
+                    isLikedByCurrentUser: self.post.isLikedByCurrentUser
+                )
+            }
+        })
 
         // Set up like status listener
         if let userId = currentUserId {

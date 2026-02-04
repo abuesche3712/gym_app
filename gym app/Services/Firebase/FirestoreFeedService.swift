@@ -128,12 +128,46 @@ class FirestoreFeedService: ObservableObject {
         return CompositeListenerRegistration(listeners: listeners)
     }
 
+    /// Listen to a single post for live updates (counts, caption, content)
+    func listenToPost(postId: UUID, onChange: @escaping (Post?) -> Void, onError: ((Error) -> Void)? = nil) -> ListenerRegistration {
+        core.db.collection("posts").document(postId.uuidString)
+            .addSnapshotListener { [weak self] snapshot, error in
+                if let error = error {
+                    Logger.error(error, context: "listenToPost")
+                    onError?(error)
+                    return
+                }
+
+                guard let data = snapshot?.data(), snapshot?.exists == true else {
+                    onChange(nil)
+                    return
+                }
+
+                let post = self?.decodePost(from: data)
+                onChange(post)
+            }
+    }
+
     /// Update an existing post
     func updatePost(_ post: Post) async throws {
         let ref = core.db.collection("posts").document(post.id.uuidString)
-        var data = encodePost(post)
-        data["updatedAt"] = FieldValue.serverTimestamp()
-        try await ref.setData(data, merge: true)
+        var data: [String: Any] = [
+            "updatedAt": FieldValue.serverTimestamp()
+        ]
+
+        // Update content only (avoid overwriting like/comment counts)
+        guard let contentDict = encodePostContent(post.content) else {
+            throw FirestoreError.encodingFailed
+        }
+        data["content"] = contentDict
+
+        if let caption = post.caption {
+            data["caption"] = caption
+        } else {
+            data["caption"] = FieldValue.delete()
+        }
+
+        try await ref.updateData(data)
     }
 
     /// Delete a post and associated likes/comments
@@ -157,8 +191,13 @@ class FirestoreFeedService: ObservableObject {
 
     /// Like a post
     func likePost(postId: UUID, userId: String) async throws {
-        let like = PostLike(postId: postId, userId: userId)
         let ref = core.db.collection("posts").document(postId.uuidString).collection("likes").document(userId)
+
+        // Only increment if not already liked
+        let likeDoc = try await ref.getDocument()
+        guard !likeDoc.exists else { return }
+
+        let like = PostLike(postId: postId, userId: userId)
         try await ref.setData(encodeLike(like))
 
         let postRef = core.db.collection("posts").document(postId.uuidString)
@@ -168,6 +207,11 @@ class FirestoreFeedService: ObservableObject {
     /// Unlike a post
     func unlikePost(postId: UUID, userId: String) async throws {
         let ref = core.db.collection("posts").document(postId.uuidString).collection("likes").document(userId)
+
+        // Only decrement if the like actually exists
+        let likeDoc = try await ref.getDocument()
+        guard likeDoc.exists else { return }
+
         try await ref.delete()
 
         let postRef = core.db.collection("posts").document(postId.uuidString)
@@ -274,8 +318,7 @@ class FirestoreFeedService: ObservableObject {
             "createdAt": Timestamp(date: post.createdAt)
         ]
 
-        if let contentData = try? JSONEncoder().encode(post.content),
-           let contentDict = try? JSONSerialization.jsonObject(with: contentData) as? [String: Any] {
+        if let contentDict = encodePostContent(post.content) {
             data["content"] = contentDict
         }
 
@@ -288,6 +331,14 @@ class FirestoreFeedService: ObservableObject {
         }
 
         return data
+    }
+
+    private func encodePostContent(_ content: PostContent) -> [String: Any]? {
+        guard let contentData = try? JSONEncoder().encode(content),
+              let contentDict = try? JSONSerialization.jsonObject(with: contentData) as? [String: Any] else {
+            return nil
+        }
+        return contentDict
     }
 
     private func decodePost(from data: [String: Any]) -> Post? {
@@ -321,8 +372,29 @@ class FirestoreFeedService: ObservableObject {
         }
 
         let caption = data["caption"] as? String
-        let likeCount = data["likeCount"] as? Int ?? 0
-        let commentCount = data["commentCount"] as? Int ?? 0
+
+        // Handle multiple number types from Firestore (Int, Int64, NSNumber)
+        let likeCount: Int
+        if let count = data["likeCount"] as? Int {
+            likeCount = count
+        } else if let count = data["likeCount"] as? Int64 {
+            likeCount = Int(count)
+        } else if let count = data["likeCount"] as? NSNumber {
+            likeCount = count.intValue
+        } else {
+            likeCount = 0
+        }
+
+        let commentCount: Int
+        if let count = data["commentCount"] as? Int {
+            commentCount = count
+        } else if let count = data["commentCount"] as? Int64 {
+            commentCount = Int(count)
+        } else if let count = data["commentCount"] as? NSNumber {
+            commentCount = count.intValue
+        } else {
+            commentCount = 0
+        }
 
         return Post(
             id: id,
