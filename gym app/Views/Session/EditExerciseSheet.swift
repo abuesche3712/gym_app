@@ -41,6 +41,18 @@ struct EditableSetGroup: Identifiable {
     var completedSetsCount: Int  // Number of already completed sets
     var completedSets: [SetData]  // The actual completed sets to preserve
     var allSets: [SetData]  // All sets (completed and incomplete) for history editing
+
+    // Interval mode fields
+    var isInterval: Bool
+    var workDuration: Int?
+    var intervalRestDuration: Int?
+
+    // AMRAP mode fields
+    var isAMRAP: Bool
+    var amrapTimeLimit: Int?
+
+    // Equipment-specific measurable targets
+    var implementMeasurables: [ImplementMeasurableTarget]
 }
 
 // MARK: - Edit Exercise Sheet
@@ -491,7 +503,13 @@ struct EditExerciseSheet: View {
                 trackRPE: group.trackRPE,
                 completedSetsCount: completedSets.count,  // Keep actual count for preserving completed sets
                 completedSets: completedSets,
-                allSets: group.sets  // Store all sets for history editing
+                allSets: group.sets,  // Store all sets for history editing
+                isInterval: group.isInterval,
+                workDuration: group.workDuration,
+                intervalRestDuration: group.intervalRestDuration,
+                isAMRAP: group.isAMRAP,
+                amrapTimeLimit: group.amrapTimeLimit,
+                implementMeasurables: group.implementMeasurables
             )
         }
 
@@ -517,7 +535,13 @@ struct EditExerciseSheet: View {
             trackRPE: true,
             completedSetsCount: 0,
             completedSets: [],
-            allSets: []
+            allSets: [],
+            isInterval: false,
+            workDuration: nil,
+            intervalRestDuration: nil,
+            isAMRAP: false,
+            amrapTimeLimit: nil,
+            implementMeasurables: []
         )
         setGroups.append(newGroup)
     }
@@ -611,8 +635,14 @@ struct EditExerciseSheet: View {
                     setGroupId: editableGroup.id,
                     restPeriod: editableGroup.restPeriod,
                     sets: sets,
+                    isInterval: editableGroup.isInterval,
+                    workDuration: editableGroup.workDuration,
+                    intervalRestDuration: editableGroup.intervalRestDuration,
+                    isAMRAP: editableGroup.isAMRAP,
+                    amrapTimeLimit: editableGroup.amrapTimeLimit,
                     isUnilateral: editableGroup.isUnilateral,
-                    trackRPE: editableGroup.trackRPE
+                    trackRPE: editableGroup.trackRPE,
+                    implementMeasurables: editableGroup.implementMeasurables
                 ))
             }
         }

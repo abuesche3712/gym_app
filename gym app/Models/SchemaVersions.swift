@@ -46,6 +46,10 @@ enum SchemaVersions {
     static let exerciseShareBundle = 1
     static let setShareBundle = 1
     static let completedModuleShareBundle = 1
+    static let highlightsShareBundle = 1
+    static let exerciseInstanceShareBundle = 1
+    static let setGroupShareBundle = 1
+    static let completedSetGroupShareBundle = 1
 
     // Social feed
     static let post = 1

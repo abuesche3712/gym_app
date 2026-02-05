@@ -34,7 +34,7 @@ class FirestoreMessagingService: ObservableObject {
             .getDocuments()
 
         return snapshot.documents.compactMap { doc in
-            decodeConversation(from: doc.data())
+            decodeConversation(from: doc.data(), for: userId)
         }
     }
 
@@ -51,7 +51,7 @@ class FirestoreMessagingService: ObservableObject {
                 }
                 guard let documents = snapshot?.documents else { return }
                 let conversations = documents.compactMap { doc in
-                    self?.decodeConversation(from: doc.data())
+                    self?.decodeConversation(from: doc.data(), for: userId)
                 }
                 onChange(conversations)
             }
@@ -123,6 +123,35 @@ class FirestoreMessagingService: ObservableObject {
         try await ref.updateData(["readAt": Timestamp(date: date)])
     }
 
+    /// Update conversation metadata when a new message is sent
+    func updateConversationOnNewMessage(
+        conversationId: UUID,
+        recipientId: String,
+        preview: String
+    ) async throws {
+        let ref = core.db.collection("conversations").document(conversationId.uuidString)
+        try await ref.updateData([
+            "lastMessageAt": FieldValue.serverTimestamp(),
+            "lastMessagePreview": String(preview.prefix(50)),
+            "unreadCounts.\(recipientId)": FieldValue.increment(Int64(1))
+        ])
+    }
+
+    /// Reset unread count for a user when they open a conversation
+    func resetUnreadCount(conversationId: UUID, userId: String) async throws {
+        let ref = core.db.collection("conversations").document(conversationId.uuidString)
+        try await ref.updateData([
+            "unreadCounts.\(userId)": 0
+        ])
+    }
+
+    /// Fetch a single conversation by ID
+    func fetchConversation(id: UUID, for userId: String? = nil) async throws -> Conversation? {
+        let doc = try await core.db.collection("conversations").document(id.uuidString).getDocument()
+        guard let data = doc.data() else { return nil }
+        return decodeConversation(from: data, for: userId)
+    }
+
     // MARK: - Conversation Encoding/Decoding
 
     private func encodeConversation(_ conversation: Conversation) -> [String: Any] {
@@ -139,10 +168,17 @@ class FirestoreMessagingService: ObservableObject {
             data["lastMessagePreview"] = preview
         }
 
+        // Initialize unreadCounts map for all participants (set to 0)
+        var unreadCounts: [String: Int] = [:]
+        for participantId in conversation.participantIds {
+            unreadCounts[participantId] = 0
+        }
+        data["unreadCounts"] = unreadCounts
+
         return data
     }
 
-    private func decodeConversation(from data: [String: Any]) -> Conversation? {
+    private func decodeConversation(from data: [String: Any], for userId: String? = nil) -> Conversation? {
         guard let idString = data["id"] as? String,
               let id = UUID(uuidString: idString),
               let participantIds = data["participantIds"] as? [String] else {
@@ -165,13 +201,22 @@ class FirestoreMessagingService: ObservableObject {
 
         let lastMessagePreview = data["lastMessagePreview"] as? String
 
+        // Extract unread count for the current user
+        var unreadCount = 0
+        if let userId = userId,
+           let unreadCounts = data["unreadCounts"] as? [String: Any],
+           let count = unreadCounts[userId] as? Int {
+            unreadCount = count
+        }
+
         return Conversation(
             id: id,
             participantIds: participantIds,
             createdAt: createdAt,
             lastMessageAt: lastMessageAt,
             lastMessagePreview: lastMessagePreview,
-            syncStatus: .synced
+            syncStatus: .synced,
+            unreadCount: unreadCount
         )
     }
 
@@ -218,10 +263,14 @@ class FirestoreMessagingService: ObservableObject {
         }
 
         let content: MessageContent
-        if let contentDict = data["content"] as? [String: Any],
-           let contentData = try? JSONSerialization.data(withJSONObject: contentDict),
-           let decoded = try? JSONDecoder().decode(MessageContent.self, from: contentData) {
-            content = decoded
+        if let contentDict = data["content"] as? [String: Any] {
+            do {
+                let contentData = try JSONSerialization.data(withJSONObject: contentDict)
+                content = try JSONDecoder().decode(MessageContent.self, from: contentData)
+            } catch {
+                Logger.error(error, context: "decodeMessage.content - dict: \(contentDict)")
+                content = .decodeFailed(originalType: contentDict["type"] as? String)
+            }
         } else {
             content = .text("")
         }

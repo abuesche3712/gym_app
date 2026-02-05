@@ -17,6 +17,7 @@ import Combine
 actor SyncQueueProcessor {
     private let persistence: PersistenceController
     private let firestoreService: FirestoreService
+    private var handlers: [SyncEntityType: AnySyncHandler] = [:]
 
     private lazy var backgroundContext: NSManagedObjectContext = {
         let context = persistence.container.newBackgroundContext()
@@ -27,6 +28,20 @@ actor SyncQueueProcessor {
     init(persistence: PersistenceController, firestoreService: FirestoreService) {
         self.persistence = persistence
         self.firestoreService = firestoreService
+        registerHandlers()
+    }
+
+    private func registerHandlers() {
+        register(ModuleSyncHandler(firestoreService: firestoreService))
+        register(WorkoutSyncHandler(firestoreService: firestoreService))
+        register(SessionSyncHandler(firestoreService: firestoreService))
+        register(ProgramSyncHandler(firestoreService: firestoreService))
+        register(ScheduledWorkoutSyncHandler(firestoreService: firestoreService))
+        register(CustomExerciseSyncHandler(firestoreService: firestoreService))
+    }
+
+    private func register<H: SyncHandler>(_ handler: H) {
+        handlers[handler.entityType] = AnySyncHandler(handler)
     }
 
     // Non-blocking log helpers to avoid MainActor deadlock
@@ -97,23 +112,19 @@ actor SyncQueueProcessor {
         let entityIdStr = item.entityId.uuidString
 
         do {
+            // Special cases that don't fit the standard handler pattern
             switch item.entityType {
             case .setData:
                 try await syncSetFromQueue(item)
-            case .session:
-                try await syncSessionFromQueue(item)
-            case .module:
-                try await syncModuleFromQueue(item)
-            case .workout:
-                try await syncWorkoutFromQueue(item)
-            case .program:
-                try await syncProgramFromQueue(item)
-            case .scheduledWorkout:
-                try await syncScheduledWorkoutFromQueue(item)
-            case .customExercise:
-                try await syncCustomExerciseFromQueue(item)
             case .userProfile:
                 try await syncUserProfileFromQueue(item)
+            default:
+                // Use registered handler
+                guard let handler = handlers[item.entityType] else {
+                    logWarning("No handler registered for \(entityTypeStr)", context: "SyncQueueProcessor")
+                    return
+                }
+                try await handler.process(payload: item.payload, action: item.action)
             }
 
             // Success - remove from queue
@@ -140,7 +151,7 @@ actor SyncQueueProcessor {
         }
     }
 
-    // MARK: - Entity-Specific Sync
+    // MARK: - Special Case Sync Methods
 
     private func syncSetFromQueue(_ item: SyncQueueEntity) async throws {
         guard let payload = try? JSONDecoder().decode(SetSyncPayload.self, from: item.payload) else {
@@ -151,78 +162,6 @@ actor SyncQueueProcessor {
             exerciseId: payload.exerciseId,
             set: payload.set
         )
-    }
-
-    private func syncSessionFromQueue(_ item: SyncQueueEntity) async throws {
-        guard let session = try? JSONDecoder().decode(Session.self, from: item.payload) else {
-            throw SyncError.decodingFailed
-        }
-        switch item.action {
-        case .create, .update:
-            try await firestoreService.saveSession(session)
-        case .delete:
-            try await firestoreService.deleteSession(session.id)
-        }
-    }
-
-    private func syncModuleFromQueue(_ item: SyncQueueEntity) async throws {
-        guard let module = try? JSONDecoder().decode(Module.self, from: item.payload) else {
-            throw SyncError.decodingFailed
-        }
-        switch item.action {
-        case .create, .update:
-            try await firestoreService.saveModule(module)
-        case .delete:
-            try await firestoreService.deleteModule(module.id)
-        }
-    }
-
-    private func syncWorkoutFromQueue(_ item: SyncQueueEntity) async throws {
-        guard let workout = try? JSONDecoder().decode(Workout.self, from: item.payload) else {
-            throw SyncError.decodingFailed
-        }
-        switch item.action {
-        case .create, .update:
-            try await firestoreService.saveWorkout(workout)
-        case .delete:
-            try await firestoreService.deleteWorkout(workout.id)
-        }
-    }
-
-    private func syncProgramFromQueue(_ item: SyncQueueEntity) async throws {
-        guard let program = try? JSONDecoder().decode(Program.self, from: item.payload) else {
-            throw SyncError.decodingFailed
-        }
-        switch item.action {
-        case .create, .update:
-            try await firestoreService.saveProgram(program)
-        case .delete:
-            try await firestoreService.deleteProgram(program.id)
-        }
-    }
-
-    private func syncScheduledWorkoutFromQueue(_ item: SyncQueueEntity) async throws {
-        guard let scheduled = try? JSONDecoder().decode(ScheduledWorkout.self, from: item.payload) else {
-            throw SyncError.decodingFailed
-        }
-        switch item.action {
-        case .create, .update:
-            try await firestoreService.saveScheduledWorkout(scheduled)
-        case .delete:
-            try await firestoreService.deleteScheduledWorkout(scheduled.id)
-        }
-    }
-
-    private func syncCustomExerciseFromQueue(_ item: SyncQueueEntity) async throws {
-        guard let exercise = try? JSONDecoder().decode(ExerciseTemplate.self, from: item.payload) else {
-            throw SyncError.decodingFailed
-        }
-        switch item.action {
-        case .create, .update:
-            try await firestoreService.saveCustomExercise(exercise)
-        case .delete:
-            try await firestoreService.deleteCustomExercise(exercise.id)
-        }
     }
 
     private func syncUserProfileFromQueue(_ item: SyncQueueEntity) async throws {
@@ -561,66 +500,60 @@ class SyncManager: ObservableObject {
         await dataRepository.pushAllToCloud()
     }
 
-    // MARK: - Queue Helpers (delegate to background processor)
+    // MARK: - Generic Queue Method
 
-    func queueModule(_ module: Module, action: SyncAction) {
-        guard let payload = try? JSONEncoder().encode(module) else { return }
-        Task {
-            _ = await queueProcessor.queueItem(entityType: .module, entityId: module.id, action: action, payload: payload)
-            await updatePendingCounts()
+    /// Queue any Codable entity for sync
+    private func queue<T: Codable & Identifiable>(
+        _ entity: T,
+        entityType: SyncEntityType,
+        action: SyncAction,
+        processImmediately: Bool = false
+    ) where T.ID == UUID {
+        guard let payload = try? JSONEncoder().encode(entity) else {
+            logger.error("Failed to encode \(entityType.rawValue) for sync", context: "SyncManager")
+            return
         }
-    }
-
-    func queueWorkout(_ workout: Workout, action: SyncAction) {
-        guard let payload = try? JSONEncoder().encode(workout) else { return }
-        Task {
-            _ = await queueProcessor.queueItem(entityType: .workout, entityId: workout.id, action: action, payload: payload)
-            await updatePendingCounts()
-        }
-    }
-
-    func queueProgram(_ program: Program, action: SyncAction) {
-        guard let payload = try? JSONEncoder().encode(program) else { return }
-        Task {
-            _ = await queueProcessor.queueItem(entityType: .program, entityId: program.id, action: action, payload: payload)
-            await updatePendingCounts()
-        }
-    }
-
-    func queueScheduledWorkout(_ scheduled: ScheduledWorkout, action: SyncAction) {
-        guard let payload = try? JSONEncoder().encode(scheduled) else { return }
         Task {
             let queued = await queueProcessor.queueItem(
-                entityType: .scheduledWorkout,
-                entityId: scheduled.id,
+                entityType: entityType,
+                entityId: entity.id,
                 action: action,
                 payload: payload
             )
-
-            // Process immediately if online - now safe since it runs on background thread
-            if queued && isOnline {
+            if queued && processImmediately && isOnline {
                 await queueProcessor.processQueue()
             }
             await updatePendingCounts()
         }
     }
 
+    // MARK: - Type-Safe Queue Methods
+
+    func queueModule(_ module: Module, action: SyncAction) {
+        queue(module, entityType: .module, action: action)
+    }
+
+    func queueWorkout(_ workout: Workout, action: SyncAction) {
+        queue(workout, entityType: .workout, action: action)
+    }
+
+    func queueProgram(_ program: Program, action: SyncAction) {
+        queue(program, entityType: .program, action: action)
+    }
+
     func queueSession(_ session: Session, action: SyncAction) {
-        guard let payload = try? JSONEncoder().encode(session) else { return }
-        Task {
-            _ = await queueProcessor.queueItem(entityType: .session, entityId: session.id, action: action, payload: payload)
-            await updatePendingCounts()
-        }
+        queue(session, entityType: .session, action: action)
+    }
+
+    func queueScheduledWorkout(_ scheduled: ScheduledWorkout, action: SyncAction) {
+        queue(scheduled, entityType: .scheduledWorkout, action: action, processImmediately: true)
     }
 
     func queueCustomExercise(_ exercise: ExerciseTemplate, action: SyncAction) {
-        guard let payload = try? JSONEncoder().encode(exercise) else { return }
-        Task {
-            _ = await queueProcessor.queueItem(entityType: .customExercise, entityId: exercise.id, action: action, payload: payload)
-            await updatePendingCounts()
-        }
+        queue(exercise, entityType: .customExercise, action: action)
     }
 
+    /// UserProfile has special handling (no ID from entity, no delete action)
     func queueUserProfile(_ profile: UserProfile) {
         guard let payload = try? JSONEncoder().encode(profile) else { return }
         Task {

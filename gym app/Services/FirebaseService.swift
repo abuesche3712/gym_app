@@ -224,6 +224,18 @@ class FirestoreService: ObservableObject {
         try await messaging.markMessageRead(conversationId: conversationId, messageId: messageId, at: date)
     }
 
+    func updateConversationOnNewMessage(conversationId: UUID, recipientId: String, preview: String) async throws {
+        try await messaging.updateConversationOnNewMessage(conversationId: conversationId, recipientId: recipientId, preview: preview)
+    }
+
+    func resetUnreadCount(conversationId: UUID, userId: String) async throws {
+        try await messaging.resetUnreadCount(conversationId: conversationId, userId: userId)
+    }
+
+    func fetchConversation(id: UUID, for userId: String? = nil) async throws -> Conversation? {
+        try await messaging.fetchConversation(id: id, for: userId)
+    }
+
     // MARK: - Fetch All User Data
 
     func fetchAllUserData() async throws -> (

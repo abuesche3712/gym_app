@@ -360,11 +360,12 @@ struct SessionDetailView: View {
                             date: session.date
                         )
                     },
-                    onShareSetWithFriend: { set, exerciseName, exerciseType in
+                    onShareSetWithFriend: { set, exerciseName, exerciseType, distanceUnit in
                         setToShare = ShareableSetPerformance(
                             set: set,
                             exerciseName: exerciseName,
                             exerciseType: exerciseType,
+                            distanceUnit: distanceUnit,
                             workoutName: session.workoutName,
                             date: session.date
                         )
@@ -376,11 +377,12 @@ struct SessionDetailView: View {
                             date: session.date
                         )
                     },
-                    onPostSetToFeed: { set, exerciseName, exerciseType in
+                    onPostSetToFeed: { set, exerciseName, exerciseType, distanceUnit in
                         setToPost = ShareableSetPerformance(
                             set: set,
                             exerciseName: exerciseName,
                             exerciseType: exerciseType,
+                            distanceUnit: distanceUnit,
                             workoutName: session.workoutName,
                             date: session.date
                         )
@@ -491,9 +493,9 @@ struct SessionModuleCard: View {
     let onShareModuleWithFriend: (CompletedModule) -> Void
     let onPostModuleToFeed: (CompletedModule) -> Void
     let onShareExerciseWithFriend: (SessionExercise) -> Void
-    let onShareSetWithFriend: (SetData, String, ExerciseType) -> Void
+    let onShareSetWithFriend: (SetData, String, ExerciseType, DistanceUnit) -> Void
     let onPostExerciseToFeed: (SessionExercise) -> Void
-    let onPostSetToFeed: (SetData, String, ExerciseType) -> Void
+    let onPostSetToFeed: (SetData, String, ExerciseType, DistanceUnit) -> Void
 
     @State private var isExpanded = true
 
@@ -597,11 +599,11 @@ struct SessionModuleCard: View {
                             onShareText: onShareText,
                             onShareWithFriend: { onShareExerciseWithFriend(exercise) },
                             onShareSetWithFriend: { set in
-                                onShareSetWithFriend(set, exercise.exerciseName, exercise.exerciseType)
+                                onShareSetWithFriend(set, exercise.exerciseName, exercise.exerciseType, exercise.distanceUnit)
                             },
                             onPostToFeed: { onPostExerciseToFeed(exercise) },
                             onPostSetToFeed: { set in
-                                onPostSetToFeed(set, exercise.exerciseName, exercise.exerciseType)
+                                onPostSetToFeed(set, exercise.exerciseName, exercise.exerciseType, exercise.distanceUnit)
                             }
                         )
 

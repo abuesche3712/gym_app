@@ -32,8 +32,13 @@ class ChatViewModel: ObservableObject {
     }
 
     var isBlocked: Bool {
-        guard let userId = currentUserId else { return false }
-        return friendshipRepo.isBlockedByOrBlocking(userId, otherParticipantFirebaseId)
+        guard let userId = currentUserId else {
+            Logger.debug("ChatViewModel.isBlocked: No current user ID, returning false")
+            return false
+        }
+        let blocked = friendshipRepo.isBlockedByOrBlocking(userId, otherParticipantFirebaseId)
+        Logger.debug("ChatViewModel.isBlocked: userId=\(Logger.redactUserID(userId)), otherId=\(Logger.redactUserID(otherParticipantFirebaseId)), blocked=\(blocked)")
+        return blocked
     }
 
     init(conversation: Conversation,
@@ -103,8 +108,17 @@ class ChatViewModel: ObservableObject {
         // Mark messages from the other person as read
         messageRepo.markAllAsRead(in: conversation.id, for: userId)
 
-        // Update conversation unread count
+        // Update conversation unread count locally
         conversationRepo.markConversationRead(conversation.id, for: userId)
+
+        // Reset unread count in Firestore
+        Task {
+            do {
+                try await firestoreService.resetUnreadCount(conversationId: conversation.id, userId: userId)
+            } catch {
+                Logger.error(error, context: "ChatViewModel.markMessagesAsRead.resetUnreadCount")
+            }
+        }
     }
 
     // MARK: - Sending Messages
@@ -147,10 +161,12 @@ class ChatViewModel: ObservableObject {
             // Then save message
             try await firestoreService.saveMessage(message)
 
-            // Update conversation with last message preview
-            if let updatedConversation = conversationRepo.getConversation(id: conversation.id) {
-                try await firestoreService.saveConversation(updatedConversation)
-            }
+            // Update conversation with last message preview and increment recipient's unread count
+            try await firestoreService.updateConversationOnNewMessage(
+                conversationId: conversation.id,
+                recipientId: otherParticipantFirebaseId,
+                preview: text.trimmingCharacters(in: .whitespacesAndNewlines)
+            )
         } catch {
             Logger.error(error, context: "ChatViewModel.sendMessage")
             // Message is saved locally, will sync when online
@@ -190,7 +206,18 @@ class ChatViewModel: ObservableObject {
 
         // Sync to cloud
         do {
+            // First ensure conversation exists in Firestore
+            try await firestoreService.saveConversation(conversation)
+
+            // Then save message
             try await firestoreService.saveMessage(message)
+
+            // Update conversation with last message preview and increment recipient's unread count
+            try await firestoreService.updateConversationOnNewMessage(
+                conversationId: conversation.id,
+                recipientId: otherParticipantFirebaseId,
+                preview: preview
+            )
         } catch {
             Logger.error(error, context: "ChatViewModel.sendSharedContent")
         }
@@ -285,6 +312,10 @@ class ChatViewModel: ObservableObject {
             guard let bundle = try? ModuleShareBundle.decode(from: snapshot) else { return [] }
             return sharingService.detectConflicts(from: bundle)
 
+        case .sharedExerciseInstance(let snapshot):
+            guard let bundle = try? ExerciseInstanceShareBundle.decode(from: snapshot) else { return [] }
+            return sharingService.detectConflicts(from: bundle)
+
         default:
             return []
         }
@@ -312,6 +343,12 @@ class ChatViewModel: ObservableObject {
                 return .failure("Invalid module data")
             }
             return sharingService.importModule(from: bundle, options: options)
+
+        case .sharedExerciseInstance(let snapshot):
+            guard let bundle = try? ExerciseInstanceShareBundle.decode(from: snapshot) else {
+                return .failure("Invalid exercise data")
+            }
+            return sharingService.importExerciseInstance(from: bundle, options: options)
 
         default:
             return .failure("Content cannot be imported")

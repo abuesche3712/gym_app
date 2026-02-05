@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseFirestore
+import Combine
 
 @MainActor
 class FeedViewModel: ObservableObject {
@@ -25,6 +26,7 @@ class FeedViewModel: ObservableObject {
     private var likedPostIds: Set<UUID> = []
     private var newPostObserver: Any?
     private var commentCountObserver: Any?
+    private var friendshipCancellable: AnyCancellable?
 
     var currentUserId: String? { authService.currentUser?.uid }
 
@@ -35,10 +37,12 @@ class FeedViewModel: ObservableObject {
         self.postRepo = postRepo
         self.friendshipRepo = friendshipRepo
         setupNotificationObserver()
+        setupFriendshipObserver()
     }
 
     deinit {
         feedListener?.remove()
+        friendshipCancellable?.cancel()
         if let observer = newPostObserver {
             NotificationCenter.default.removeObserver(observer)
         }
@@ -91,6 +95,49 @@ class FeedViewModel: ObservableObject {
         )
     }
 
+    private func setupFriendshipObserver() {
+        friendshipCancellable = friendshipRepo.$friendships
+            .dropFirst() // Skip initial value
+            .debounce(for: .milliseconds(500), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                // Friendships changed — restart feed listener with fresh friend IDs
+                self?.restartFeedListener()
+            }
+    }
+
+    private func restartFeedListener() {
+        guard let userId = currentUserId else { return }
+
+        // Remove old listener
+        feedListener?.remove()
+
+        // Get fresh friend IDs
+        let friends = friendshipRepo.getAcceptedFriends(for: userId)
+        var friendIds = friends.compactMap { $0.otherUserId(from: userId) }
+        friendIds.append(userId) // Include own posts
+
+        guard !friendIds.isEmpty else {
+            posts = []
+            return
+        }
+
+        // Start new listener with current friends
+        feedListener = firestoreService.listenToFeedPosts(
+            friendIds: friendIds,
+            limit: 50,
+            onChange: { [weak self] posts in
+                Task { @MainActor in
+                    await self?.processFeedPosts(posts, userId: userId)
+                }
+            },
+            onError: { [weak self] error in
+                Task { @MainActor in
+                    self?.error = error
+                }
+            }
+        )
+    }
+
     private func addNewPostToFeed(_ post: Post, userId: String) async {
         // Get author profile (current user)
         let profile: UserProfile
@@ -114,33 +161,11 @@ class FeedViewModel: ObservableObject {
     // MARK: - Loading Feed
 
     func loadFeed() {
-        guard let userId = currentUserId else { return }
+        guard currentUserId != nil else { return }
 
         isLoading = true
-
-        // Get friend IDs (including self for own posts)
-        let friends = friendshipRepo.getAcceptedFriends(for: userId)
-        var friendIds = friends.compactMap { $0.otherUserId(from: userId) }
-        friendIds.append(userId)  // Include own posts
-
-        // Set up real-time listener
-        feedListener?.remove()
-        feedListener = firestoreService.listenToFeedPosts(
-            friendIds: friendIds,
-            limit: 50,
-            onChange: { [weak self] posts in
-                Task { @MainActor in
-                    await self?.processFeedPosts(posts, userId: userId)
-                    self?.isLoading = false
-                }
-            },
-            onError: { [weak self] error in
-                Task { @MainActor in
-                    self?.error = error
-                    self?.isLoading = false
-                }
-            }
-        )
+        restartFeedListener()
+        isLoading = false
     }
 
     func refreshFeed() async {

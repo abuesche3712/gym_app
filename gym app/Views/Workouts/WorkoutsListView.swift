@@ -17,6 +17,12 @@ struct WorkoutsListView: View {
     @State private var searchText = ""
     @State private var editingWorkout: Workout?
 
+    // Selection mode support for share flow
+    var selectionMode: ViewSelectionMode? = nil
+    var onSelectForShare: ((Workout) -> Void)? = nil
+
+    private var isSelectionMode: Bool { selectionMode != nil }
+
     var filteredWorkouts: [Workout] {
         if searchText.isEmpty {
             return workoutViewModel.workouts
@@ -46,43 +52,63 @@ struct WorkoutsListView: View {
                     } else {
                         LazyVStack(spacing: AppSpacing.md) {
                             ForEach(Array(filteredWorkouts.enumerated()), id: \.element.id) { index, workout in
-                                WorkoutListCard(
-                                    workout: workout,
-                                    modules: workoutViewModel.getModulesForWorkout(workout, allModules: moduleViewModel.modules),
-                                    onTap: {
-                                        editingWorkout = workout
-                                    },
-                                    onStart: {
-                                        startWorkout(workout)
-                                    }
-                                )
-                                .transition(.asymmetric(
-                                    insertion: .opacity.combined(with: .move(edge: .trailing)),
-                                    removal: .opacity
-                                ))
-                                .animation(
-                                    .spring(response: 0.4, dampingFraction: 0.8).delay(Double(index) * 0.05),
-                                    value: filteredWorkouts.count
-                                )
-                                .contextMenu {
-                                    Button {
-                                        editingWorkout = workout
-                                    } label: {
-                                        Label("Edit", systemImage: "pencil")
-                                    }
+                                if isSelectionMode {
+                                    WorkoutListCard(
+                                        workout: workout,
+                                        modules: workoutViewModel.getModulesForWorkout(workout, allModules: moduleViewModel.modules),
+                                        showShareIcon: true,
+                                        onTap: {
+                                            onSelectForShare?(workout)
+                                        },
+                                        onStart: nil
+                                    )
+                                    .transition(.asymmetric(
+                                        insertion: .opacity.combined(with: .move(edge: .trailing)),
+                                        removal: .opacity
+                                    ))
+                                    .animation(
+                                        .spring(response: 0.4, dampingFraction: 0.8).delay(Double(index) * 0.05),
+                                        value: filteredWorkouts.count
+                                    )
+                                } else {
+                                    WorkoutListCard(
+                                        workout: workout,
+                                        modules: workoutViewModel.getModulesForWorkout(workout, allModules: moduleViewModel.modules),
+                                        onTap: {
+                                            editingWorkout = workout
+                                        },
+                                        onStart: {
+                                            startWorkout(workout)
+                                        }
+                                    )
+                                    .transition(.asymmetric(
+                                        insertion: .opacity.combined(with: .move(edge: .trailing)),
+                                        removal: .opacity
+                                    ))
+                                    .animation(
+                                        .spring(response: 0.4, dampingFraction: 0.8).delay(Double(index) * 0.05),
+                                        value: filteredWorkouts.count
+                                    )
+                                    .contextMenu {
+                                        Button {
+                                            editingWorkout = workout
+                                        } label: {
+                                            Label("Edit", systemImage: "pencil")
+                                        }
 
-                                    Button {
-                                        startWorkout(workout)
-                                    } label: {
-                                        Label("Start Workout", systemImage: "play.fill")
-                                    }
+                                        Button {
+                                            startWorkout(workout)
+                                        } label: {
+                                            Label("Start Workout", systemImage: "play.fill")
+                                        }
 
-                                    Divider()
+                                        Divider()
 
-                                    Button(role: .destructive) {
-                                        workoutViewModel.deleteWorkout(workout)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
+                                        Button(role: .destructive) {
+                                            workoutViewModel.deleteWorkout(workout)
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
                                     }
                                 }
                             }
@@ -147,21 +173,23 @@ struct WorkoutsListView: View {
 
                 Spacer()
 
-                Button {
-                    showingAddWorkout = true
-                } label: {
-                    Image(systemName: "plus")
-                        .body(color: AppColors.dominant)
-                        .fontWeight(.semibold)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            Circle()
-                                .fill(AppColors.dominant.opacity(0.1))
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(AppColors.dominant.opacity(0.2), lineWidth: 1)
-                        )
+                if !isSelectionMode {
+                    Button {
+                        showingAddWorkout = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .body(color: AppColors.dominant)
+                            .fontWeight(.semibold)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(AppColors.dominant.opacity(0.1))
+                            )
+                            .overlay(
+                                Circle()
+                                    .stroke(AppColors.dominant.opacity(0.2), lineWidth: 1)
+                            )
+                    }
                 }
             }
 
@@ -233,6 +261,7 @@ struct WorkoutsListView: View {
 struct WorkoutListCard: View {
     let workout: Workout
     let modules: [Module]
+    var showShareIcon: Bool = false
     var onTap: (() -> Void)? = nil
     var onStart: (() -> Void)? = nil
 
@@ -276,18 +305,23 @@ struct WorkoutListCard: View {
 
             Spacer()
 
-            // Play button
-            Button(action: { onStart?() }) {
-                Image(systemName: "play.fill")
-                    .subheadline(color: .white)
-                    .fontWeight(.semibold)
-                    .frame(width: 40, height: 40)
-                    .background(
-                        Circle()
-                            .fill(AppColors.dominant)
-                    )
+            // Show share icon or play button
+            if showShareIcon {
+                Image(systemName: "square.and.arrow.up")
+                    .subheadline(color: AppColors.dominant)
+            } else if let onStart = onStart {
+                Button(action: { onStart() }) {
+                    Image(systemName: "play.fill")
+                        .subheadline(color: .white)
+                        .fontWeight(.semibold)
+                        .frame(width: 40, height: 40)
+                        .background(
+                            Circle()
+                                .fill(AppColors.dominant)
+                        )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .padding(AppSpacing.cardPadding)
         .background(

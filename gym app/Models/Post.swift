@@ -53,6 +53,7 @@ enum PostContent: Codable, Hashable {
     case exercise(snapshot: Data)
     case set(snapshot: Data)
     case completedModule(snapshot: Data)  // CompletedModule from a session
+    case highlights(snapshot: Data)  // Multiple exercises/sets bundled together
     case program(id: UUID, name: String, snapshot: Data)
     case workout(id: UUID, name: String, snapshot: Data)
     case module(id: UUID, name: String, snapshot: Data)
@@ -77,6 +78,20 @@ enum PostContent: Codable, Hashable {
             self = .set(snapshot: snapshot)
         case .sharedCompletedModule(let snapshot):
             self = .completedModule(snapshot: snapshot)
+        case .sharedHighlights(let snapshot):
+            self = .highlights(snapshot: snapshot)
+        case .sharedExerciseInstance(let snapshot):
+            // ExerciseInstance sharing is currently DM-only, map to exercise for posts
+            self = .exercise(snapshot: snapshot)
+        case .sharedSetGroup(let snapshot):
+            // SetGroup sharing is currently DM-only, map to set for posts
+            self = .set(snapshot: snapshot)
+        case .sharedCompletedSetGroup(let snapshot):
+            // CompletedSetGroup sharing is currently DM-only, map to set for posts
+            self = .set(snapshot: snapshot)
+        case .decodeFailed(let originalType):
+            // Error state - show as text
+            self = .text("[Failed to load \(originalType ?? "content")]")
         }
     }
 
@@ -99,6 +114,8 @@ enum PostContent: Codable, Hashable {
             return .sharedSet(snapshot: snapshot)
         case .completedModule(let snapshot):
             return .sharedCompletedModule(snapshot: snapshot)
+        case .highlights(let snapshot):
+            return .sharedHighlights(snapshot: snapshot)
         }
     }
 
@@ -122,6 +139,12 @@ enum PostContent: Codable, Hashable {
                 return bundle.module.moduleName
             }
             return "Module"
+        case .highlights(let snapshot):
+            if let bundle = try? HighlightsShareBundle.decode(from: snapshot) {
+                let count = bundle.exercises.count + bundle.sets.count
+                return "\(count) Highlight\(count == 1 ? "" : "s")"
+            }
+            return "Highlights"
         case .program(_, let name, _):
             return name
         case .workout(_, let name, _):
@@ -140,10 +163,26 @@ enum PostContent: Codable, Hashable {
         case .exercise: return "figure.strengthtraining.traditional"
         case .set: return "flame.fill"
         case .completedModule: return "square.stack.3d.up.fill"
+        case .highlights: return "star.fill"
         case .program: return "doc.text.fill"
         case .workout: return "figure.run"
         case .module: return "square.stack.3d.up.fill"
         case .text: return "text.quote"
+        }
+    }
+
+    /// Label for content type display
+    var contentTypeLabel: String? {
+        switch self {
+        case .session: return "Workout"
+        case .exercise: return "Exercise"
+        case .set: return "Set"
+        case .completedModule: return "Module"
+        case .highlights: return "Highlights"
+        case .program: return "Program"
+        case .workout: return "Workout Template"
+        case .module: return "Module Template"
+        case .text: return nil
         }
     }
 }

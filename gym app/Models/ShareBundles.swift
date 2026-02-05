@@ -119,11 +119,18 @@ struct SessionShareBundle: Codable {
     let workoutName: String
     let date: Date
 
-    init(session: Session, workoutName: String, date: Date) {
+    /// User-selected exercise IDs to feature as highlights (nil = auto-generate)
+    let highlightedExerciseIds: [UUID]?
+    /// User-selected set IDs to feature as highlights
+    let highlightedSetIds: [UUID]?
+
+    init(session: Session, workoutName: String, date: Date, highlightedExerciseIds: [UUID]? = nil, highlightedSetIds: [UUID]? = nil) {
         self.schemaVersion = SchemaVersions.sessionShareBundle
         self.session = session
         self.workoutName = workoutName
         self.date = date
+        self.highlightedExerciseIds = highlightedExerciseIds
+        self.highlightedSetIds = highlightedSetIds
     }
 
     /// Encodes the bundle to Data for embedding in a message
@@ -146,13 +153,15 @@ struct ExerciseShareBundle: Codable {
     let setData: [SetData]
     let workoutName: String?
     let date: Date
+    let distanceUnit: DistanceUnit?
 
-    init(exerciseName: String, setData: [SetData], workoutName: String? = nil, date: Date = Date()) {
+    init(exerciseName: String, setData: [SetData], workoutName: String? = nil, date: Date = Date(), distanceUnit: DistanceUnit? = nil) {
         self.schemaVersion = SchemaVersions.exerciseShareBundle
         self.exerciseName = exerciseName
         self.setData = setData
         self.workoutName = workoutName
         self.date = date
+        self.distanceUnit = distanceUnit
     }
 
     /// Encodes the bundle to Data for embedding in a message
@@ -176,14 +185,16 @@ struct SetShareBundle: Codable {
     let isPR: Bool
     let workoutName: String?
     let date: Date
+    let distanceUnit: DistanceUnit?
 
-    init(exerciseName: String, setData: SetData, isPR: Bool = false, workoutName: String? = nil, date: Date = Date()) {
+    init(exerciseName: String, setData: SetData, isPR: Bool = false, workoutName: String? = nil, date: Date = Date(), distanceUnit: DistanceUnit? = nil) {
         self.schemaVersion = SchemaVersions.setShareBundle
         self.exerciseName = exerciseName
         self.setData = setData
         self.isPR = isPR
         self.workoutName = workoutName
         self.date = date
+        self.distanceUnit = distanceUnit
     }
 
     /// Encodes the bundle to Data for embedding in a message
@@ -254,5 +265,121 @@ struct MeasurableSnapshot: Codable, Identifiable, Hashable {
         self.name = name
         self.unit = unit
         self.isStringBased = isStringBased
+    }
+}
+
+// MARK: - Exercise Instance Share Bundle
+
+/// Complete exercise instance snapshot for sharing (importable)
+struct ExerciseInstanceShareBundle: Codable {
+    let schemaVersion: Int
+    let exerciseInstance: ExerciseInstance
+    let customTemplates: [ExerciseTemplate]  // Custom exercise templates used
+    let customImplements: [ImplementSnapshot]  // Custom implements used
+
+    init(
+        exerciseInstance: ExerciseInstance,
+        customTemplates: [ExerciseTemplate] = [],
+        customImplements: [ImplementSnapshot] = []
+    ) {
+        self.schemaVersion = SchemaVersions.exerciseInstanceShareBundle
+        self.exerciseInstance = exerciseInstance
+        self.customTemplates = customTemplates
+        self.customImplements = customImplements
+    }
+
+    /// Encodes the bundle to Data for embedding in a message
+    func encode() throws -> Data {
+        try JSONEncoder().encode(self)
+    }
+
+    /// Decodes a bundle from message data
+    static func decode(from data: Data) throws -> ExerciseInstanceShareBundle {
+        try JSONDecoder().decode(ExerciseInstanceShareBundle.self, from: data)
+    }
+}
+
+// MARK: - Set Group Share Bundle
+
+/// Snapshot of a set prescription for sharing (view-only, not importable standalone)
+struct SetGroupShareBundle: Codable {
+    let schemaVersion: Int
+    let setGroup: SetGroup
+    let exerciseName: String
+    let moduleName: String?
+
+    init(setGroup: SetGroup, exerciseName: String, moduleName: String? = nil) {
+        self.schemaVersion = SchemaVersions.setGroupShareBundle
+        self.setGroup = setGroup
+        self.exerciseName = exerciseName
+        self.moduleName = moduleName
+    }
+
+    /// Encodes the bundle to Data for embedding in a message
+    func encode() throws -> Data {
+        try JSONEncoder().encode(self)
+    }
+
+    /// Decodes a bundle from message data
+    static func decode(from data: Data) throws -> SetGroupShareBundle {
+        try JSONDecoder().decode(SetGroupShareBundle.self, from: data)
+    }
+}
+
+// MARK: - Completed Set Group Share Bundle
+
+/// Snapshot of completed sets from a session for sharing
+struct CompletedSetGroupShareBundle: Codable {
+    let schemaVersion: Int
+    let completedSetGroup: CompletedSetGroup
+    let exerciseName: String
+    let workoutName: String
+    let date: Date
+
+    init(completedSetGroup: CompletedSetGroup, exerciseName: String, workoutName: String, date: Date) {
+        self.schemaVersion = SchemaVersions.completedSetGroupShareBundle
+        self.completedSetGroup = completedSetGroup
+        self.exerciseName = exerciseName
+        self.workoutName = workoutName
+        self.date = date
+    }
+
+    /// Encodes the bundle to Data for embedding in a message
+    func encode() throws -> Data {
+        try JSONEncoder().encode(self)
+    }
+
+    /// Decodes a bundle from message data
+    static func decode(from data: Data) throws -> CompletedSetGroupShareBundle {
+        try JSONDecoder().decode(CompletedSetGroupShareBundle.self, from: data)
+    }
+}
+
+// MARK: - Highlights Share Bundle
+
+/// Bundle containing multiple exercise/set highlights for sharing
+struct HighlightsShareBundle: Codable {
+    let schemaVersion: Int
+    let workoutName: String
+    let date: Date
+    let exercises: [ExerciseShareBundle]  // Full exercises with all sets
+    let sets: [SetShareBundle]            // Individual sets (not from full exercises)
+
+    init(workoutName: String, date: Date, exercises: [ExerciseShareBundle] = [], sets: [SetShareBundle] = []) {
+        self.schemaVersion = SchemaVersions.highlightsShareBundle
+        self.workoutName = workoutName
+        self.date = date
+        self.exercises = exercises
+        self.sets = sets
+    }
+
+    /// Encodes the bundle to Data for embedding in a message
+    func encode() throws -> Data {
+        try JSONEncoder().encode(self)
+    }
+
+    /// Decodes a bundle from message data
+    static func decode(from data: Data) throws -> HighlightsShareBundle {
+        try JSONDecoder().decode(HighlightsShareBundle.self, from: data)
     }
 }

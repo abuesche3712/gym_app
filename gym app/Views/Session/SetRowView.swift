@@ -299,6 +299,7 @@ struct SetRowView: View {
             )
         case .mobility:
             MobilityInputs(
+                flatSet: flatSet,
                 exercise: exercise,
                 inputReps: $inputReps,
                 inputDuration: $inputDuration,
@@ -557,9 +558,23 @@ struct SetRowView: View {
                     ?? ""
                 inputReps = lastReps.map { "\($0)" } ?? ""
             } else {
-                inputWeight = lastWeight.map { formatWeight($0) }
-                    ?? flatSet.targetWeight.map { formatWeight($0) }
-                    ?? ""
+                // Check progression suggestion and recommendation for weight pre-fill
+                if let suggestion = exercise.progressionSuggestion,
+                   suggestion.metric == .weight {
+                    // If "progress" was selected, pre-fill with suggested progressive weight
+                    // If "stay" or nil (no choice), pre-fill with baseValue (previous weight)
+                    if exercise.progressionRecommendation == .progress {
+                        inputWeight = formatWeight(suggestion.suggestedValue)
+                    } else {
+                        // For "stay", "regress", or no selection: use baseValue (previous session weight)
+                        inputWeight = formatWeight(suggestion.baseValue)
+                    }
+                } else {
+                    // No progression suggestion - fall back to last session weight or target
+                    inputWeight = lastWeight.map { formatWeight($0) }
+                        ?? flatSet.targetWeight.map { formatWeight($0) }
+                        ?? ""
+                }
                 inputReps = lastReps.map { "\($0)" }
                     ?? flatSet.targetReps.map { "\($0)" }
                     ?? ""

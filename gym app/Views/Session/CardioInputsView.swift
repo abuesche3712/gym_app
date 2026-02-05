@@ -251,6 +251,9 @@ struct IsometricInputs: View {
 // MARK: - Mobility Inputs
 
 struct MobilityInputs: View {
+    @EnvironmentObject var sessionViewModel: SessionViewModel
+
+    let flatSet: FlatSet
     let exercise: SessionExercise
 
     @Binding var inputReps: String
@@ -258,6 +261,22 @@ struct MobilityInputs: View {
     @Binding var showTimePicker: Bool
 
     var focusedField: FocusState<SetRowFieldType?>.Binding
+
+    private var timerRunning: Bool {
+        sessionViewModel.isExerciseTimerRunning && sessionViewModel.exerciseTimerSetId == flatSet.id
+    }
+
+    private var timerSecondsRemaining: Int {
+        timerRunning && !sessionViewModel.exerciseTimerIsStopwatch ? sessionViewModel.exerciseTimerSeconds : 0
+    }
+
+    private var stopwatchSeconds: Int {
+        timerRunning && sessionViewModel.exerciseTimerIsStopwatch ? sessionViewModel.exerciseTimerSeconds : 0
+    }
+
+    private var targetTimerSeconds: Int {
+        flatSet.targetDuration ?? 0
+    }
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
@@ -285,25 +304,55 @@ struct MobilityInputs: View {
             // Show duration if tracking includes duration
             if exercise.mobilityTracking.tracksDuration {
                 VStack(spacing: 4) {
-                    Button {
-                        showTimePicker = true
-                    } label: {
-                        Text(formatDuration(inputDuration))
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
-                            .foregroundColor(inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary)
-                            .multilineTextAlignment(.center)
-                            .frame(width: 56, alignment: .center)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 6)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                    HStack(spacing: 6) {
+                        // Time display - tappable for manual entry
+                        Button {
+                            showTimePicker = true
+                        } label: {
+                            Text(timerRunning ? (targetTimerSeconds > 0 ? formatDuration(timerSecondsRemaining) : formatDuration(stopwatchSeconds)) : formatDuration(inputDuration))
+                                .monoMedium(color: timerRunning ? (timerSecondsRemaining <= 10 && targetTimerSeconds > 0 ? AppColors.warning : AppColors.dominant) : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
+                                .multilineTextAlignment(.center)
+                                .frame(width: 56, alignment: .center)
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 6)
+                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                        }
+                        .buttonStyle(.plain)
+
+                        // Timer/Stopwatch button
+                        Button {
+                            toggleTimer()
+                        } label: {
+                            Image(systemName: timerRunning ? "stop.fill" : (targetTimerSeconds > 0 ? "play.fill" : "stopwatch"))
+                                .subheadline(color: timerRunning ? AppColors.warning : AppColors.accent1)
+                                .fontWeight(.semibold)
+                                .frame(width: 32, height: 32)
+                                .background(Circle().fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accent1.opacity(0.12)))
+                        }
+                        .buttonStyle(.bouncy)
+                        .accessibilityLabel(timerRunning ? "Stop timer" : (targetTimerSeconds > 0 ? "Start countdown" : "Start stopwatch"))
                     }
-                    .buttonStyle(.plain)
 
                     Text("time")
                         .font(.caption2.weight(.medium))
                         .foregroundColor(AppColors.textTertiary)
                 }
                 .fixedSize(horizontal: true, vertical: false)
+            }
+        }
+    }
+
+    private func toggleTimer() {
+        if timerRunning {
+            let elapsed = sessionViewModel.stopExerciseTimer()
+            inputDuration = elapsed
+        } else {
+            if targetTimerSeconds > 0 {
+                // Use countdown timer if there's a target duration
+                sessionViewModel.startExerciseTimer(seconds: targetTimerSeconds, setId: flatSet.id)
+            } else {
+                // Use stopwatch if no target duration
+                sessionViewModel.startExerciseStopwatch(setId: flatSet.id)
             }
         }
     }

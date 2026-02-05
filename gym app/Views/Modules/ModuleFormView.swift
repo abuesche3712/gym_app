@@ -498,6 +498,15 @@ struct InlineExerciseEditor: View {
                         } else {
                             ForEach(Array(setGroups.enumerated()), id: \.element.id) { index, setGroup in
                                 setGroupRow(setGroup: setGroup, index: index)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                        Button(role: .destructive) {
+                                            withAnimation {
+                                                _ = setGroups.remove(at: index)
+                                            }
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
+                                    }
 
                                 if index < setGroups.count - 1 {
                                     FormDivider()
@@ -604,46 +613,41 @@ struct InlineExerciseEditor: View {
     }
 
     private func setGroupRow(setGroup: SetGroup, index: Int) -> some View {
-        HStack(spacing: AppSpacing.md) {
-            ZStack {
-                Circle()
-                    .fill(AppColors.dominant.opacity(0.15))
-                    .frame(width: 28, height: 28)
-                Text("\(index + 1)")
-                    .caption(color: AppColors.dominant)
+        Button {
+            editingSetGroupIndex = index
+        } label: {
+            HStack(spacing: AppSpacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(AppColors.dominant.opacity(0.15))
+                        .frame(width: 28, height: 28)
+                    Text("\(index + 1)")
+                        .caption(color: AppColors.dominant)
+                        .fontWeight(.semibold)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(setGroup.formattedTarget)
+                        .subheadline(color: AppColors.textPrimary)
+                        .fontWeight(.medium)
+
+                    if let rest = setGroup.formattedRest {
+                        Text("Rest: \(rest)")
+                            .caption(color: AppColors.textSecondary)
+                    }
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .caption(color: AppColors.textTertiary)
                     .fontWeight(.semibold)
             }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(setGroup.formattedTarget)
-                    .subheadline(color: AppColors.textPrimary)
-                    .fontWeight(.medium)
-
-                if let rest = setGroup.formattedRest {
-                    Text("Rest: \(rest)")
-                        .caption(color: AppColors.textSecondary)
-                }
-            }
-
-            Spacer()
-
-            Button {
-                editingSetGroupIndex = index
-            } label: {
-                Image(systemName: "pencil.circle.fill")
-                    .body(color: AppColors.textTertiary.opacity(0.6))
-            }
-
-            Button {
-                setGroups.remove(at: index)
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .body(color: AppColors.textTertiary.opacity(0.6))
-            }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.md)
+            .background(AppColors.surfacePrimary)
         }
-        .padding(.horizontal, AppSpacing.cardPadding)
-        .padding(.vertical, AppSpacing.md)
-        .background(AppColors.surfacePrimary)
+        .buttonStyle(.plain)
     }
 
     private func loadExercise() {

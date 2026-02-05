@@ -7,13 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		CDREP002BUILD02 /* CoreDataRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDREP001FILE001 /* CoreDataRepository.swift */; };
 		00FCCDDAC9AD41A7AAD9E386 /* gym app/Views/Library/ImplementPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67FA42E2E5A4400DBB4D6761 /* gym app/Views/Library/ImplementPickerView.swift */; };
-		QKLGSVC02BUILD /* QuickLogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKLGSVC01FILE /* QuickLogService.swift */; };
-		STGIMP02BUILD /* StrongImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = STGIMP01FILE /* StrongImportService.swift */; };
-		IMPDTV02BUILD /* ImportDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMPDTV01FILE /* ImportDataView.swift */; };
-		QKLGVM02BUILD /* QuickLogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKLGVM01FILE /* QuickLogViewModel.swift */; };
-		QKLGSHT02BUILD /* QuickLogSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKLGSHT01FILE /* QuickLogSheet.swift */; };
+		0637D22035CA595B39D501D2 /* FirestoreFeedService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A95B76FC49816E35CDDF867 /* FirestoreFeedService.swift */; };
+		0DAF3A6CC5EE6557FE86D3E0 /* FirestoreDeletionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */; };
 		0DE55B310BEE4A628944C240 /* gym app/Views/Library/LibraryExerciseEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05D2B6AD67E44647BABA141E /* gym app/Views/Library/LibraryExerciseEditView.swift */; };
 		196485342F25516E00078F82 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 196485332F25516E00078F82 /* GoogleService-Info.plist */; };
 		197B16192F2569D8006135E4 /* BackgroundSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197B16182F2569D8006135E4 /* BackgroundSessionManager.swift */; };
@@ -25,9 +21,13 @@
 		19AAB71A2F2ECA08003FFDE7 /* ImportConflictSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMPCSHT01FILE001 /* ImportConflictSheet.swift */; };
 		1C651C6390424CC3A0E14293 /* WorkoutSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96AA7ABE49544DD3B54CEF8B /* WorkoutSummaryView.swift */; };
 		3065561983B445E59E349151 /* gym app/Views/Library/MuscleGroupPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD6911EEDEB4BB9B215AFBD /* gym app/Views/Library/MuscleGroupPickerView.swift */; };
+		34A15C16E7C4C417F54DC7C1 /* SyncHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B47EA18754D362A6C72724 /* SyncHandlers.swift */; };
 		35C7751756E7434DA4FF3882 /* CompletedProgram.swift in Sources */ = {isa = PBXBuildFile; fileRef = 387043A6FC4F49ABB2403548 /* CompletedProgram.swift */; };
 		39DB3468001A45CEA0E01B1F /* EndSessionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C0101650AF44AEA8A6F8A1 /* EndSessionSheet.swift */; };
+		5752B2C149CBD12B3690CBBB /* FirestoreLibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBA7D111F1233C5EFE90EDA6 /* FirestoreLibraryService.swift */; };
+		7E1FF5EBF4BFBD7B730535A2 /* FirestoreMessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DB70BA70750F2B1167A8DC /* FirestoreMessagingService.swift */; };
 		7E3A26543EA449B5824C3A63 /* WorkoutOverviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */; };
+		7F3EC832EE57150180BE8044 /* FirestoreSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261588C9A91F154B9EB4D4AC /* FirestoreSyncService.swift */; };
 		809C1B452DCD4B8AB156DBCE /* RecentSetsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41BC86B3BCEE40829E96B24B /* RecentSetsSheet.swift */; };
 		827E4547CA7D42C1BCD2A93B /* SessionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7892D49050054B958D767C66 /* SessionModels.swift */; };
 		8D91368656994D20964FF8D1 /* gym app/Services/LibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F384AAD9014FF9A582680C /* gym app/Services/LibraryService.swift */; };
@@ -37,19 +37,10 @@
 		AC0ED3886796C115F34301E5 /* EditSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E042C6DBCCF889BD355F6AC1 /* EditSessionView.swift */; };
 		ACCPRVWBUILD001 /* AccountProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCPRVWFILE0001 /* AccountProfileView.swift */; };
 		ADDEXR02BUILD002 /* AddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDEXR01FILE001 /* AddExerciseSheet.swift */; };
-		FRSTYL02BUILD01 /* FreestyleAddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRSTYL01FILE01 /* FreestyleAddExerciseSheet.swift */; };
 		ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANIMCO001FILE001 /* AnimatedComponents.swift */; };
-		AVATVW02BUILD001 /* AvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AVATVW01FILE001 /* AvatarView.swift */; };
-		B6PHOTO052F2A000000D8C22D /* ProfilePhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6PHOTO042F2A000000D8C22D /* ProfilePhotoView.swift */; };
-		B6PHOTO072F2A000000D8C22D /* ProfilePhotoPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6PHOTO062F2A000000D8C22D /* ProfilePhotoPickerSheet.swift */; };
-		USRROW02BUILD001 /* UserRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = USRROW01FILE001 /* UserRowView.swift */; };
-		BLDREMT02BUILD002 /* BuilderEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDREMT01FILE001 /* BuilderEmptyState.swift */; };
-		BLDRQAB02BUILD002 /* BuilderQuickAddBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDRQAB01FILE001 /* BuilderQuickAddBar.swift */; };
-		BLDRSRR02BUILD002 /* BuilderSearchResultRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDRSRR01FILE001 /* BuilderSearchResultRow.swift */; };
-		BLDRITM02BUILD002 /* BuilderItemRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDRITM01FILE001 /* BuilderItemRow.swift */; };
-		BLDRACT02BUILD002 /* BuilderActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDRACT01FILE001 /* BuilderActionButton.swift */; };
 		ANLYT002BUILD002 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLYT001FILE001 /* AnalyticsView.swift */; };
 		APPCFG02BUILD002 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPCFG01FILE001 /* AppConfig.swift */; };
+		AVATVW02BUILD001 /* AvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AVATVW01FILE001 /* AvatarView.swift */; };
 		B610AC032F15B4DD008B2C15 /* gym_appApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC022F15B4DD008B2C15 /* gym_appApp.swift */; };
 		B610AC052F15B4DD008B2C15 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC042F15B4DD008B2C15 /* ContentView.swift */; };
 		B610AC072F15B4DE008B2C15 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B610AC062F15B4DE008B2C15 /* Assets.xcassets */; };
@@ -59,7 +50,6 @@
 		B610AC202F15B4DF008B2C15 /* gym_appUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC1F2F15B4DF008B2C15 /* gym_appUITestsLaunchTests.swift */; };
 		B63EBEE32F15E55600D8C22D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B63EBEE22F15E55600D8C22D /* FirebaseAuth */; };
 		B63EBEE52F15E55600D8C22D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = B63EBEE42F15E55600D8C22D /* FirebaseFirestore */; };
-		B6PHOTO012F2A000000D8C22D /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = B6PHOTO002F2A000000D8C22D /* FirebaseStorage */; };
 		B63EBF0F2F15E73700D8C22D /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEE62F15E73700D8C22D /* AppState.swift */; };
 		B63EBF102F15E73700D8C22D /* ModuleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEE72F15E73700D8C22D /* ModuleViewModel.swift */; };
 		B63EBF112F15E73700D8C22D /* SessionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEE82F15E73700D8C22D /* SessionViewModel.swift */; };
@@ -89,16 +79,6 @@
 		B63EBF2A2F15E73700D8C22D /* FirebaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF0B2F15E73700D8C22D /* FirebaseService.swift */; };
 		B63EBF2B2F15E73700D8C22D /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */; };
 		B63EBF2C2F15E73700D8C22D /* SyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBF0D2F15E73700D8C22D /* SyncManager.swift */; };
-		34A15C16E7C4C417F54DC7C1 /* SyncHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B47EA18754D362A6C72724 /* SyncHandlers.swift */; };
-		DB4505338C4FD921A7C6EBA4 /* FirestoreCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89217DA0F8957EE059AB3FF9 /* FirestoreCore.swift */; };
-		7F3EC832EE57150180BE8044 /* FirestoreSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261588C9A91F154B9EB4D4AC /* FirestoreSyncService.swift */; };
-		DA6EFC77B9DEDA4DC1F1671D /* FirestoreSocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF6E38FBE904533D715F6D3 /* FirestoreSocialService.swift */; };
-		B6PHOTO032F2A000000D8C22D /* ProfilePhotoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6PHOTO022F2A000000D8C22D /* ProfilePhotoService.swift */; };
-		7E1FF5EBF4BFBD7B730535A2 /* FirestoreMessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DB70BA70750F2B1167A8DC /* FirestoreMessagingService.swift */; };
-		0637D22035CA595B39D501D2 /* FirestoreFeedService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A95B76FC49816E35CDDF867 /* FirestoreFeedService.swift */; };
-		5752B2C149CBD12B3690CBBB /* FirestoreLibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBA7D111F1233C5EFE90EDA6 /* FirestoreLibraryService.swift */; };
-		D7BE18369D46FE792E6CE8B4 /* FirestoreConflictService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112F204E54595BC864A784E2 /* FirestoreConflictService.swift */; };
-		0DAF3A6CC5EE6557FE86D3E0 /* FirestoreDeletionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */; };
 		B63EBF302F15E73700D8C22D /* ExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEA02F15E73700D8C22D /* ExerciseLibrary.swift */; };
 		B63FFF3B2F22DF2300090EA5 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B6FFC4A12F22DC220007E03E /* WidgetKit.framework */; };
 		B63FFF3C2F22DF2300090EA5 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B6FFC4A32F22DC220007E03E /* SwiftUI.framework */; };
@@ -107,33 +87,43 @@
 		B658B09F2F16903C00B2F84E /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = B658B09C2F16903C00B2F84E /* Components.swift */; };
 		B6EXERC022F15E73700D8C22D /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6EXERC012F15E73700D8C22D /* ExerciseLibraryView.swift */; };
 		B6F5091E2F1F04DA007CA28A /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = B6F5091D2F1F04DA007CA28A /* FirebaseCrashlytics */; };
+		B6PHOTO012F2A000000D8C22D /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = B6PHOTO002F2A000000D8C22D /* FirebaseStorage */; };
+		B6PHOTO032F2A000000D8C22D /* ProfilePhotoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6PHOTO022F2A000000D8C22D /* ProfilePhotoService.swift */; };
+		B6PHOTO052F2A000000D8C22D /* ProfilePhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6PHOTO042F2A000000D8C22D /* ProfilePhotoView.swift */; };
+		B6PHOTO072F2A000000D8C22D /* ProfilePhotoPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6PHOTO062F2A000000D8C22D /* ProfilePhotoPickerSheet.swift */; };
 		B6SCHED010A526CF876534C /* ScheduledWorkout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6SCHED00DE514440E0A348 /* ScheduledWorkout.swift */; };
+		BLDRACT02BUILD002 /* BuilderActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDRACT01FILE001 /* BuilderActionButton.swift */; };
+		BLDREMT02BUILD002 /* BuilderEmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDREMT01FILE001 /* BuilderEmptyState.swift */; };
+		BLDRITM02BUILD002 /* BuilderItemRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDRITM01FILE001 /* BuilderItemRow.swift */; };
+		BLDRQAB02BUILD002 /* BuilderQuickAddBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDRQAB01FILE001 /* BuilderQuickAddBar.swift */; };
+		BLDRSRR02BUILD002 /* BuilderSearchResultRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLDRSRR01FILE001 /* BuilderSearchResultRow.swift */; };
 		C2D4E6F8A1B3C5D7E9F0A2B4 /* SetGroupFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3E5F7A9B1C3D5E7F9A1B3C5 /* SetGroupFormView.swift */; };
+		CAPTNINP02BUILD001 /* CaptionInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAPTNINP01FILE001 /* CaptionInputView.swift */; };
 		CARDIN02BUILD002 /* CardioInputsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CARDIN01FILE001 /* CardioInputsView.swift */; };
+		CDREP002BUILD02 /* CoreDataRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDREP001FILE001 /* CoreDataRepository.swift */; };
 		CHATVM002BUILD /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATVM001FILE /* ChatViewModel.swift */; };
 		CHATVW002BUILD /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CHATVW001FILE /* ChatView.swift */; };
 		CMPSHT02BUILD002 /* ComposePostSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMPSHT01FILE001 /* ComposePostSheet.swift */; };
-		HLTPKR02BUILD001 /* HighlightPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HLTPKR01FILE001 /* HighlightPickerView.swift */; };
-		EDTPST02BUILD001 /* EditPostSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDTPST01FILE001 /* EditPostSheet.swift */; };
-		HLTSLCR02BUILD001 /* HighlightSelectionCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = HLTSLCR01FILE001 /* HighlightSelectionCore.swift */; };
-		CAPTNINP02BUILD001 /* CaptionInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAPTNINP01FILE001 /* CaptionInputView.swift */; };
-		CNTPRVC02BUILD001 /* ContentPreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CNTPRVC01FILE001 /* ContentPreviewCard.swift */; };
-		PSTEDTLBR02BUILD001 /* PostEditorToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = PSTEDTLBR01FILE001 /* PostEditorToolbar.swift */; };
-		EDTPSTVM02BUILD001 /* EditPostViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDTPSTVM01FILE001 /* EditPostViewModel.swift */; };
 		CMPSTVM02BUILD002 /* ComposePostViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMPSTVM01FILE001 /* ComposePostViewModel.swift */; };
+		CNTPRVC02BUILD001 /* ContentPreviewCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CNTPRVC01FILE001 /* ContentPreviewCard.swift */; };
 		COMPMOD02BUILD002 /* CompletedModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = COMPMOD01FILE001 /* CompletedModule.swift */; };
 		COMPSTG02BUILD002 /* CompletedSetGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = COMPSTG01FILE001 /* CompletedSetGroup.swift */; };
 		CONVLST002BUILD /* ConversationsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CONVLST001FILE /* ConversationsListView.swift */; };
 		CONVMDL002BUILD /* Conversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CONVMDL001FILE /* Conversation.swift */; };
 		CONVREP002BUILD /* ConversationRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = CONVREP001FILE /* ConversationRepository.swift */; };
 		CONVVM002BUILD /* ConversationsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CONVVM001FILE /* ConversationsViewModel.swift */; };
+		D7BE18369D46FE792E6CE8B4 /* FirestoreConflictService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112F204E54595BC864A784E2 /* FirestoreConflictService.swift */; };
+		DA6EFC77B9DEDA4DC1F1671D /* FirestoreSocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF6E38FBE904533D715F6D3 /* FirestoreSocialService.swift */; };
 		DATAREPO02BUILD01 /* DataRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DATAREPO01FILE01 /* DataRepositoryTests.swift */; };
+		DB4505338C4FD921A7C6EBA4 /* FirestoreCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89217DA0F8957EE059AB3FF9 /* FirestoreCore.swift */; };
 		DBGSYN02BUILD002 /* DebugSyncLogsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBGSYN01FILE001 /* DebugSyncLogsView.swift */; };
 		DEBOUNCER002BUILD002 /* Debouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEBOUNCER001FILE001 /* Debouncer.swift */; };
 		DELTRC02BUILD002 /* DeletionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = DELTRC01FILE001 /* DeletionTracker.swift */; };
 		E3A1B2C3D4E5F60000000002 /* ExerciseMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A1B2C3D4E5F60000000001 /* ExerciseMetrics.swift */; };
 		E4F6A8C0B2D4E6F8A0C2D4E6 /* ExercisePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A7B9D1C3E5F7A9B1D3E5F7 /* ExercisePickerView.swift */; };
 		EDTEXR02BUILD002 /* EditExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDTEXR01FILE001 /* EditExerciseSheet.swift */; };
+		EDTPST02BUILD001 /* EditPostSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDTPST01FILE001 /* EditPostSheet.swift */; };
+		EDTPSTVM02BUILD001 /* EditPostViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDTPSTVM01FILE001 /* EditPostViewModel.swift */; };
 		EDTSET02BUILD002 /* EditSetGroupSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDTSET01FILE001 /* EditSetGroupSheet.swift */; };
 		EQUIPL002BUILD002 /* EquipmentLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EQUIPL001FILE001 /* EquipmentLibraryView.swift */; };
 		EXINST002BUILD002 /* ExerciseInstance.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXINST001FILE001 /* ExerciseInstance.swift */; };
@@ -141,9 +131,8 @@
 		EXRSLV002BUILD002 /* ExerciseResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXRSLV001FILE001 /* ExerciseResolver.swift */; };
 		F9E8D7C6B5A443218765432B /* IntervalTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F647890123456A /* IntervalTimerView.swift */; };
 		FB314B4CB2D940F6B27703FF /* DataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12D1154F7E74A3385D7FF2E /* DataSeeder.swift */; };
-		FEEDVM02BUILD002 /* FeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDVM01FILE001 /* FeedViewModel.swift */; };
 		FEEDPSTROW02BUILD002 /* FeedPostRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDPSTROW01FILE001 /* FeedPostRow.swift */; };
-		SOCLCMP02BUILD001 /* SocialComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = SOCLCMP01FILE001 /* SocialComponents.swift */; };
+		FEEDVM02BUILD002 /* FeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEEDVM01FILE001 /* FeedViewModel.swift */; };
 		FONTEXTENS1BUILD /* Font+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FONTEXTENS1FILE01 /* Font+Extensions.swift */; };
 		FORMATTING002HELPERS002 /* FormattingHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = FORMATTING001HELPERS001 /* FormattingHelpers.swift */; };
 		FRNDREPO02BUILD /* FriendshipRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDREPO01FILE /* FriendshipRepository.swift */; };
@@ -152,10 +141,14 @@
 		FRNDSLST02BUILD /* FriendsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDSLST01FILE /* FriendsListView.swift */; };
 		FRNDSRCH02BUILD /* UserSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDSRCH01FILE /* UserSearchView.swift */; };
 		FRNDSVMM02BUILD /* FriendsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDSVMM01FILE /* FriendsViewModel.swift */; };
+		FRSTYL02BUILD01 /* FreestyleAddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRSTYL01FILE01 /* FreestyleAddExerciseSheet.swift */; };
 		HAPTIC002BUILD002 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = HAPTIC001FILE001 /* HapticManager.swift */; };
+		HLTPKR02BUILD001 /* HighlightPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HLTPKR01FILE001 /* HighlightPickerView.swift */; };
+		HLTSLCR02BUILD001 /* HighlightSelectionCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = HLTSLCR01FILE001 /* HighlightSelectionCore.swift */; };
 		HOMESC002BUILD002 /* HomeScheduleSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = HOMESC001FILE001 /* HomeScheduleSheets.swift */; };
 		IMPCON02BUILD002 /* ImportConflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMPCON01FILE001 /* ImportConflict.swift */; };
 		IMPCSHT02BUILD002 /* ImportConflictSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMPCSHT01FILE001 /* ImportConflictSheet.swift */; };
+		IMPDTV02BUILD /* ImportDataView.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMPDTV01FILE /* ImportDataView.swift */; };
 		LOGGER02BUILD002 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = LOGGER01FILE001 /* Logger.swift */; };
 		MEASVAL02BUILD002 /* MeasurableValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = MEASVAL01FILE001 /* MeasurableValue.swift */; };
 		MODREP002BUILD002 /* ModuleRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = MODREP001FILE001 /* ModuleRepository.swift */; };
@@ -184,6 +177,10 @@
 		PROGVM002BUILD002 /* ProgramViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PROGVM001FILE001 /* ProgramViewModel.swift */; };
 		PSTDVM02BUILD002 /* PostDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = PSTDVM01FILE001 /* PostDetailViewModel.swift */; };
 		PSTDVW02BUILD002 /* PostDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PSTDVW01FILE001 /* PostDetailView.swift */; };
+		PSTEDTLBR02BUILD001 /* PostEditorToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = PSTEDTLBR01FILE001 /* PostEditorToolbar.swift */; };
+		QKLGSHT02BUILD /* QuickLogSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKLGSHT01FILE /* QuickLogSheet.swift */; };
+		QKLGSVC02BUILD /* QuickLogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKLGSVC01FILE /* QuickLogService.swift */; };
+		QKLGVM02BUILD /* QuickLogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = QKLGVM01FILE /* QuickLogViewModel.swift */; };
 		RESOLV002BUILD002 /* ResolvedExercise.swift in Sources */ = {isa = PBXBuildFile; fileRef = RESOLV001FILE001 /* ResolvedExercise.swift */; };
 		RSTBAR002BUILD002 /* RestTimerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = RSTBAR001FILE001 /* RestTimerBar.swift */; };
 		RVWCHG02BUILD002 /* ReviewChangesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RVWCHG01FILE001 /* ReviewChangesView.swift */; };
@@ -201,7 +198,9 @@
 		SHRFRN02BUILD002 /* ShareWithFriendSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRFRN01FILE001 /* ShareWithFriendSheet.swift */; };
 		SHRSER02BUILD002 /* SharingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRSER01FILE001 /* SharingService.swift */; };
 		SOCAL002BUILD002 /* SocialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SOCAL001FILE001 /* SocialView.swift */; };
+		SOCLCMP02BUILD001 /* SocialComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = SOCLCMP01FILE001 /* SocialComponents.swift */; };
 		SSNVTST02BUILD002 /* SessionNavigatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SSNVTST01FILE001 /* SessionNavigatorTests.swift */; };
+		STGIMP02BUILD /* StrongImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = STGIMP01FILE /* StrongImportService.swift */; };
 		STRCHG02BUILD002 /* StructuralChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = STRCHG01FILE001 /* StructuralChange.swift */; };
 		STRINP02BUILD002 /* StrengthInputsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = STRINP01FILE001 /* StrengthInputsView.swift */; };
 		SUPERSET002HELPER002 /* SupersetHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = SUPERSET001HELPER001 /* SupersetHelper.swift */; };
@@ -217,6 +216,7 @@
 		TIMPIK02BUILD002 /* TimeInputPickers.swift in Sources */ = {isa = PBXBuildFile; fileRef = TIMPIK01FILE001 /* TimeInputPickers.swift */; };
 		USNMVAL02BUILD01 /* UsernameValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = USNMVAL01FILE001 /* UsernameValidation.swift */; };
 		USRPFL002BUILD002 /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = USRPFL001FILE001 /* UserProfile.swift */; };
+		USRROW02BUILD001 /* UserRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = USRROW01FILE001 /* UserRowView.swift */; };
 		WDGSVC02BUILD002 /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = WDGSVC01FILE001 /* WidgetData.swift */; };
 		WKBLD002BUILD002 /* WorkoutBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WKBLD001FILE001 /* WorkoutBuilderView.swift */; };
 		WKDIFF02BUILD002 /* WorkoutDiffService.swift in Sources */ = {isa = PBXBuildFile; fileRef = WKDIFF01FILE001 /* WorkoutDiffService.swift */; };
@@ -262,35 +262,33 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		CDREP001FILE001 /* CoreDataRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataRepository.swift; sourceTree = "<group>"; };
+		00DB70BA70750F2B1167A8DC /* FirestoreMessagingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreMessagingService.swift; sourceTree = "<group>"; };
 		05D2B6AD67E44647BABA141E /* gym app/Views/Library/LibraryExerciseEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Views/Library/LibraryExerciseEditView.swift"; sourceTree = SOURCE_ROOT; };
 		09F384AAD9014FF9A582680C /* gym app/Services/LibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Services/LibraryService.swift"; sourceTree = SOURCE_ROOT; };
-		196485332F25516E00078F82 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; name = "GoogleService-Info.plist"; };
+		112F204E54595BC864A784E2 /* FirestoreConflictService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreConflictService.swift; sourceTree = "<group>"; };
+		196485332F25516E00078F82 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		197B16182F2569D8006135E4 /* BackgroundSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundSessionManager.swift; sourceTree = "<group>"; };
+		261588C9A91F154B9EB4D4AC /* FirestoreSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreSyncService.swift; sourceTree = "<group>"; };
 		387043A6FC4F49ABB2403548 /* CompletedProgram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedProgram.swift; sourceTree = "<group>"; };
 		41BC86B3BCEE40829E96B24B /* RecentSetsSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecentSetsSheet.swift; sourceTree = "<group>"; };
+		4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreDeletionService.swift; sourceTree = "<group>"; };
 		67FA42E2E5A4400DBB4D6761 /* gym app/Views/Library/ImplementPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Views/Library/ImplementPickerView.swift"; sourceTree = SOURCE_ROOT; };
+		73B47EA18754D362A6C72724 /* SyncHandlers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncHandlers.swift; sourceTree = "<group>"; };
 		7892D49050054B958D767C66 /* SessionModels.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionModels.swift; sourceTree = "<group>"; };
 		819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WorkoutOverviewSheet.swift; sourceTree = "<group>"; };
+		89217DA0F8957EE059AB3FF9 /* FirestoreCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreCore.swift; sourceTree = "<group>"; };
 		8D9B5EAEA83B489586ACDC15 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		96AA7ABE49544DD3B54CEF8B /* WorkoutSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSummaryView.swift; sourceTree = "<group>"; };
+		9A95B76FC49816E35CDDF867 /* FirestoreFeedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreFeedService.swift; sourceTree = "<group>"; };
+		9FF6E38FBE904533D715F6D3 /* FirestoreSocialService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreSocialService.swift; sourceTree = "<group>"; };
 		A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CustomExerciseLibrary.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F647890123456A /* IntervalTimerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IntervalTimerView.swift; sourceTree = "<group>"; };
 		ACCPRVWFILE0001 /* AccountProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountProfileView.swift; sourceTree = "<group>"; };
 		ADDEXR01FILE001 /* AddExerciseSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddExerciseSheet.swift; sourceTree = "<group>"; };
-		FRSTYL01FILE01 /* FreestyleAddExerciseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreestyleAddExerciseSheet.swift; sourceTree = "<group>"; };
 		ANIMCO001FILE001 /* AnimatedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedComponents.swift; sourceTree = "<group>"; };
-		AVATVW01FILE001 /* AvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarView.swift; sourceTree = "<group>"; };
-		B6PHOTO042F2A000000D8C22D /* ProfilePhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePhotoView.swift; sourceTree = "<group>"; };
-		B6PHOTO062F2A000000D8C22D /* ProfilePhotoPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePhotoPickerSheet.swift; sourceTree = "<group>"; };
-		USRROW01FILE001 /* UserRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRowView.swift; sourceTree = "<group>"; };
-		BLDREMT01FILE001 /* BuilderEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderEmptyState.swift; sourceTree = "<group>"; };
-		BLDRQAB01FILE001 /* BuilderQuickAddBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderQuickAddBar.swift; sourceTree = "<group>"; };
-		BLDRSRR01FILE001 /* BuilderSearchResultRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderSearchResultRow.swift; sourceTree = "<group>"; };
-		BLDRITM01FILE001 /* BuilderItemRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderItemRow.swift; sourceTree = "<group>"; };
-		BLDRACT01FILE001 /* BuilderActionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderActionButton.swift; sourceTree = "<group>"; };
 		ANLYT001FILE001 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
 		APPCFG01FILE001 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		AVATVW01FILE001 /* AvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarView.swift; sourceTree = "<group>"; };
 		B12D1154F7E74A3385D7FF2E /* DataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSeeder.swift; sourceTree = "<group>"; };
 		B610ABFF2F15B4DD008B2C15 /* gym app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "gym app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B610AC022F15B4DD008B2C15 /* gym_appApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = gym_appApp.swift; sourceTree = "<group>"; };
@@ -332,16 +330,6 @@
 		B63EBF0B2F15E73700D8C22D /* FirebaseService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FirebaseService.swift; sourceTree = "<group>"; };
 		B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		B63EBF0D2F15E73700D8C22D /* SyncManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncManager.swift; sourceTree = "<group>"; };
-		73B47EA18754D362A6C72724 /* SyncHandlers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncHandlers.swift; sourceTree = "<group>"; };
-		89217DA0F8957EE059AB3FF9 /* FirestoreCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreCore.swift; sourceTree = "<group>"; };
-		261588C9A91F154B9EB4D4AC /* FirestoreSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreSyncService.swift; sourceTree = "<group>"; };
-		9FF6E38FBE904533D715F6D3 /* FirestoreSocialService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreSocialService.swift; sourceTree = "<group>"; };
-		00DB70BA70750F2B1167A8DC /* FirestoreMessagingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreMessagingService.swift; sourceTree = "<group>"; };
-		9A95B76FC49816E35CDDF867 /* FirestoreFeedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreFeedService.swift; sourceTree = "<group>"; };
-		EBA7D111F1233C5EFE90EDA6 /* FirestoreLibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreLibraryService.swift; sourceTree = "<group>"; };
-		112F204E54595BC864A784E2 /* FirestoreConflictService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreConflictService.swift; sourceTree = "<group>"; };
-		4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreDeletionService.swift; sourceTree = "<group>"; };
-		B6PHOTO022F2A000000D8C22D /* ProfilePhotoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePhotoService.swift; sourceTree = "<group>"; };
 		B63FFF3A2F22DF2300090EA5 /* TodayWorkoutWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TodayWorkoutWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B63FFF502F22DFB200090EA5 /* TodayWorkoutWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TodayWorkoutWidgetExtension.entitlements; sourceTree = "<group>"; };
 		B658B09B2F16903C00B2F84E /* AppTheme.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
@@ -349,22 +337,26 @@
 		B6EXERC012F15E73700D8C22D /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
 		B6FFC4A12F22DC220007E03E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		B6FFC4A32F22DC220007E03E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		B6PHOTO022F2A000000D8C22D /* ProfilePhotoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePhotoService.swift; sourceTree = "<group>"; };
+		B6PHOTO042F2A000000D8C22D /* ProfilePhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePhotoView.swift; sourceTree = "<group>"; };
+		B6PHOTO062F2A000000D8C22D /* ProfilePhotoPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePhotoPickerSheet.swift; sourceTree = "<group>"; };
 		B6SCHED00DE514440E0A348 /* ScheduledWorkout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduledWorkout.swift; sourceTree = "<group>"; };
+		BLDRACT01FILE001 /* BuilderActionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderActionButton.swift; sourceTree = "<group>"; };
+		BLDREMT01FILE001 /* BuilderEmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderEmptyState.swift; sourceTree = "<group>"; };
+		BLDRITM01FILE001 /* BuilderItemRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderItemRow.swift; sourceTree = "<group>"; };
+		BLDRQAB01FILE001 /* BuilderQuickAddBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderQuickAddBar.swift; sourceTree = "<group>"; };
+		BLDRSRR01FILE001 /* BuilderSearchResultRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderSearchResultRow.swift; sourceTree = "<group>"; };
 		C36DDB57BAA44FEF866BE090 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		C8C0101650AF44AEA8A6F8A1 /* EndSessionSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EndSessionSheet.swift; sourceTree = "<group>"; };
+		CAPTNINP01FILE001 /* CaptionInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionInputView.swift; sourceTree = "<group>"; };
 		CARDIN01FILE001 /* CardioInputsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CardioInputsView.swift; sourceTree = "<group>"; };
 		CCD6911EEDEB4BB9B215AFBD /* gym app/Views/Library/MuscleGroupPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Views/Library/MuscleGroupPickerView.swift"; sourceTree = SOURCE_ROOT; };
+		CDREP001FILE001 /* CoreDataRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataRepository.swift; sourceTree = "<group>"; };
 		CHATVM001FILE /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		CHATVW001FILE /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		CMPSHT01FILE001 /* ComposePostSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposePostSheet.swift; sourceTree = "<group>"; };
-		HLTPKR01FILE001 /* HighlightPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightPickerView.swift; sourceTree = "<group>"; };
-		EDTPST01FILE001 /* EditPostSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPostSheet.swift; sourceTree = "<group>"; };
-		HLTSLCR01FILE001 /* HighlightSelectionCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightSelectionCore.swift; sourceTree = "<group>"; };
-		CAPTNINP01FILE001 /* CaptionInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionInputView.swift; sourceTree = "<group>"; };
-		CNTPRVC01FILE001 /* ContentPreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentPreviewCard.swift; sourceTree = "<group>"; };
-		PSTEDTLBR01FILE001 /* PostEditorToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostEditorToolbar.swift; sourceTree = "<group>"; };
-		EDTPSTVM01FILE001 /* EditPostViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPostViewModel.swift; sourceTree = "<group>"; };
 		CMPSTVM01FILE001 /* ComposePostViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposePostViewModel.swift; sourceTree = "<group>"; };
+		CNTPRVC01FILE001 /* ContentPreviewCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentPreviewCard.swift; sourceTree = "<group>"; };
 		COMPMOD01FILE001 /* CompletedModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedModule.swift; sourceTree = "<group>"; };
 		COMPSTG01FILE001 /* CompletedSetGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedSetGroup.swift; sourceTree = "<group>"; };
 		CONVLST001FILE /* ConversationsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsListView.swift; sourceTree = "<group>"; };
@@ -378,16 +370,18 @@
 		DELTRC01FILE001 /* DeletionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionTracker.swift; sourceTree = "<group>"; };
 		E042C6DBCCF889BD355F6AC1 /* EditSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditSessionView.swift; sourceTree = "<group>"; };
 		E3A1B2C3D4E5F60000000001 /* ExerciseMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseMetrics.swift; sourceTree = "<group>"; };
+		EBA7D111F1233C5EFE90EDA6 /* FirestoreLibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreLibraryService.swift; sourceTree = "<group>"; };
 		EDTEXR01FILE001 /* EditExerciseSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EditExerciseSheet.swift; sourceTree = "<group>"; };
+		EDTPST01FILE001 /* EditPostSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPostSheet.swift; sourceTree = "<group>"; };
+		EDTPSTVM01FILE001 /* EditPostViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditPostViewModel.swift; sourceTree = "<group>"; };
 		EDTSET01FILE001 /* EditSetGroupSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EditSetGroupSheet.swift; sourceTree = "<group>"; };
 		EQUIPL001FILE001 /* EquipmentLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquipmentLibraryView.swift; sourceTree = "<group>"; };
 		EXINST001FILE001 /* ExerciseInstance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseInstance.swift; sourceTree = "<group>"; };
 		EXINSTST01FILE /* ExerciseInstanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseInstanceTests.swift; sourceTree = "<group>"; };
 		EXRSLV001FILE001 /* ExerciseResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseResolver.swift; sourceTree = "<group>"; };
 		F5A7B9D1C3E5F7A9B1D3E5F7 /* ExercisePickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExercisePickerView.swift; sourceTree = "<group>"; };
-		FEEDVM01FILE001 /* FeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedViewModel.swift; sourceTree = "<group>"; };
 		FEEDPSTROW01FILE001 /* FeedPostRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedPostRow.swift; sourceTree = "<group>"; };
-		SOCLCMP01FILE001 /* SocialComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialComponents.swift; sourceTree = "<group>"; };
+		FEEDVM01FILE001 /* FeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedViewModel.swift; sourceTree = "<group>"; };
 		FONTEXTENS1FILE01 /* Font+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+Extensions.swift"; sourceTree = "<group>"; };
 		FORMATTING001HELPERS001 /* FormattingHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FormattingHelpers.swift; sourceTree = "<group>"; };
 		FRNDREPO01FILE /* FriendshipRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendshipRepository.swift; sourceTree = "<group>"; };
@@ -396,10 +390,14 @@
 		FRNDSLST01FILE /* FriendsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsListView.swift; sourceTree = "<group>"; };
 		FRNDSRCH01FILE /* UserSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSearchView.swift; sourceTree = "<group>"; };
 		FRNDSVMM01FILE /* FriendsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsViewModel.swift; sourceTree = "<group>"; };
+		FRSTYL01FILE01 /* FreestyleAddExerciseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreestyleAddExerciseSheet.swift; sourceTree = "<group>"; };
 		HAPTIC001FILE001 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
+		HLTPKR01FILE001 /* HighlightPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightPickerView.swift; sourceTree = "<group>"; };
+		HLTSLCR01FILE001 /* HighlightSelectionCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightSelectionCore.swift; sourceTree = "<group>"; };
 		HOMESC001FILE001 /* HomeScheduleSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScheduleSheets.swift; sourceTree = "<group>"; };
 		IMPCON01FILE001 /* ImportConflict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ImportConflict.swift; path = "gym app/Models/ImportConflict.swift"; sourceTree = "<group>"; };
 		IMPCSHT01FILE001 /* ImportConflictSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ImportConflictSheet.swift; path = "gym app/Views/Social/ImportConflictSheet.swift"; sourceTree = "<group>"; };
+		IMPDTV01FILE /* ImportDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportDataView.swift; sourceTree = "<group>"; };
 		LOGGER01FILE001 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		MEASVAL01FILE001 /* MeasurableValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasurableValue.swift; sourceTree = "<group>"; };
 		MODREP001FILE001 /* ModuleRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModuleRepository.swift; sourceTree = "<group>"; };
@@ -428,6 +426,10 @@
 		PROGVM001FILE001 /* ProgramViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramViewModel.swift; sourceTree = "<group>"; };
 		PSTDVM01FILE001 /* PostDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostDetailViewModel.swift; sourceTree = "<group>"; };
 		PSTDVW01FILE001 /* PostDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostDetailView.swift; sourceTree = "<group>"; };
+		PSTEDTLBR01FILE001 /* PostEditorToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostEditorToolbar.swift; sourceTree = "<group>"; };
+		QKLGSHT01FILE /* QuickLogSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogSheet.swift; sourceTree = "<group>"; };
+		QKLGSVC01FILE /* QuickLogService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogService.swift; sourceTree = "<group>"; };
+		QKLGVM01FILE /* QuickLogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogViewModel.swift; sourceTree = "<group>"; };
 		RESOLV001FILE001 /* ResolvedExercise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolvedExercise.swift; sourceTree = "<group>"; };
 		RSTBAR001FILE001 /* RestTimerBar.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RestTimerBar.swift; sourceTree = "<group>"; };
 		RVWCHG01FILE001 /* ReviewChangesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewChangesView.swift; sourceTree = "<group>"; };
@@ -445,7 +447,9 @@
 		SHRFRN01FILE001 /* ShareWithFriendSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShareWithFriendSheet.swift; path = "gym app/Views/Social/ShareWithFriendSheet.swift"; sourceTree = "<group>"; };
 		SHRSER01FILE001 /* SharingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SharingService.swift; path = "gym app/Services/SharingService.swift"; sourceTree = "<group>"; };
 		SOCAL001FILE001 /* SocialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialView.swift; sourceTree = "<group>"; };
+		SOCLCMP01FILE001 /* SocialComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialComponents.swift; sourceTree = "<group>"; };
 		SSNVTST01FILE001 /* SessionNavigatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNavigatorTests.swift; sourceTree = "<group>"; };
+		STGIMP01FILE /* StrongImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrongImportService.swift; sourceTree = "<group>"; };
 		STRCHG01FILE001 /* StructuralChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructuralChange.swift; sourceTree = "<group>"; };
 		STRINP01FILE001 /* StrengthInputsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StrengthInputsView.swift; sourceTree = "<group>"; };
 		SUPERSET001HELPER001 /* SupersetHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SupersetHelper.swift; sourceTree = "<group>"; };
@@ -461,19 +465,15 @@
 		TIMPIK01FILE001 /* TimeInputPickers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TimeInputPickers.swift; sourceTree = "<group>"; };
 		USNMVAL01FILE001 /* UsernameValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsernameValidation.swift; sourceTree = "<group>"; };
 		USRPFL001FILE001 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		USRROW01FILE001 /* UserRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRowView.swift; sourceTree = "<group>"; };
 		WDGSVC01FILE001 /* WidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetData.swift; sourceTree = "<group>"; };
 		WKBLD001FILE001 /* WorkoutBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutBuilderView.swift; sourceTree = "<group>"; };
 		WKDIFF01FILE001 /* WorkoutDiffService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDiffService.swift; sourceTree = "<group>"; };
 		WKREP001FILE001 /* WorkoutRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRepository.swift; sourceTree = "<group>"; };
-		QKLGSVC01FILE /* QuickLogService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogService.swift; sourceTree = "<group>"; };
-		STGIMP01FILE /* StrongImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrongImportService.swift; sourceTree = "<group>"; };
-		IMPDTV01FILE /* ImportDataView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportDataView.swift; sourceTree = "<group>"; };
-		QKLGVM01FILE /* QuickLogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogViewModel.swift; sourceTree = "<group>"; };
-		QKLGSHT01FILE /* QuickLogSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		B63FFF4A2F22DF2500090EA5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		B63FFF3D2F22DF23000EXCPT /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -483,7 +483,16 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		B63FFF3D2F22DF2300090EA5 /* TodayWorkoutWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B63FFF4A2F22DF2500090EA5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = TodayWorkoutWidget; sourceTree = "<group>"; };
+		B63FFF3D2F22DF2300090EA5 /* TodayWorkoutWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B63FFF3D2F22DF23000EXCPT /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
+			explicitFileTypes = {};
+			explicitFolders = ();
+			path = TodayWorkoutWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -524,6 +533,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		7A224F97F4BE8E23B7C532F9 /* Firebase */ = {
+			isa = PBXGroup;
+			children = (
+				89217DA0F8957EE059AB3FF9 /* FirestoreCore.swift */,
+				261588C9A91F154B9EB4D4AC /* FirestoreSyncService.swift */,
+				9FF6E38FBE904533D715F6D3 /* FirestoreSocialService.swift */,
+				00DB70BA70750F2B1167A8DC /* FirestoreMessagingService.swift */,
+				9A95B76FC49816E35CDDF867 /* FirestoreFeedService.swift */,
+				EBA7D111F1233C5EFE90EDA6 /* FirestoreLibraryService.swift */,
+				112F204E54595BC864A784E2 /* FirestoreConflictService.swift */,
+				4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */,
+				B6PHOTO022F2A000000D8C22D /* ProfilePhotoService.swift */,
+			);
+			path = Firebase;
+			sourceTree = "<group>";
+		};
 		ANLYTGRP001GROUP001 /* Analytics */ = {
 			isa = PBXGroup;
 			children = (
@@ -854,6 +879,18 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		BLDRGRP001GROUP001 /* Builder */ = {
+			isa = PBXGroup;
+			children = (
+				BLDREMT01FILE001 /* BuilderEmptyState.swift */,
+				BLDRQAB01FILE001 /* BuilderQuickAddBar.swift */,
+				BLDRSRR01FILE001 /* BuilderSearchResultRow.swift */,
+				BLDRITM01FILE001 /* BuilderItemRow.swift */,
+				BLDRACT01FILE001 /* BuilderActionButton.swift */,
+			);
+			path = Builder;
+			sourceTree = "<group>";
+		};
 		COMPGRP001GROUP001 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -865,18 +902,6 @@
 				BLDRGRP001GROUP001 /* Builder */,
 			);
 			path = Components;
-			sourceTree = "<group>";
-		};
-		BLDRGRP001GROUP001 /* Builder */ = {
-			isa = PBXGroup;
-			children = (
-				BLDREMT01FILE001 /* BuilderEmptyState.swift */,
-				BLDRQAB01FILE001 /* BuilderQuickAddBar.swift */,
-				BLDRSRR01FILE001 /* BuilderSearchResultRow.swift */,
-				BLDRITM01FILE001 /* BuilderItemRow.swift */,
-				BLDRACT01FILE001 /* BuilderActionButton.swift */,
-			);
-			path = Builder;
 			sourceTree = "<group>";
 		};
 		E3A1B2C3D4E5F60000000003 /* Protocols */ = {
@@ -929,6 +954,14 @@
 			path = Programs;
 			sourceTree = "<group>";
 		};
+		QKLGGRP001GROUP /* QuickLog */ = {
+			isa = PBXGroup;
+			children = (
+				QKLGSHT01FILE /* QuickLogSheet.swift */,
+			);
+			path = QuickLog;
+			sourceTree = "<group>";
+		};
 		SOCALGRP001GROUP001 /* Social */ = {
 			isa = PBXGroup;
 			children = (
@@ -979,57 +1012,7 @@
 			path = WorkoutBuilder;
 			sourceTree = "<group>";
 		};
-		QKLGGRP001GROUP /* QuickLog */ = {
-			isa = PBXGroup;
-			children = (
-				QKLGSHT01FILE /* QuickLogSheet.swift */,
-			);
-			path = QuickLog;
-			sourceTree = "<group>";
-		};
-		7A224F97F4BE8E23B7C532F9 /* Firebase */ = {
-			isa = PBXGroup;
-			children = (
-				89217DA0F8957EE059AB3FF9 /* FirestoreCore.swift */,
-				261588C9A91F154B9EB4D4AC /* FirestoreSyncService.swift */,
-				9FF6E38FBE904533D715F6D3 /* FirestoreSocialService.swift */,
-				00DB70BA70750F2B1167A8DC /* FirestoreMessagingService.swift */,
-				9A95B76FC49816E35CDDF867 /* FirestoreFeedService.swift */,
-				EBA7D111F1233C5EFE90EDA6 /* FirestoreLibraryService.swift */,
-				112F204E54595BC864A784E2 /* FirestoreConflictService.swift */,
-				4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */,
-				B6PHOTO022F2A000000D8C22D /* ProfilePhotoService.swift */
-			);
-			path = Firebase;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		CRASH01SCRIPT001 /* Upload dSYMs to Crashlytics */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
-				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}",
-				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist",
-				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
-				"$(SRCROOT)/GoogleService-Info.plist",
-			);
-			name = "Upload dSYMs to Crashlytics";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Upload dSYMs to Firebase Crashlytics - temporarily disabled\n# Uncomment to enable Crashlytics dSYM upload\n# if [[ \"${CONFIGURATION}\" == \"Release\" ]]; then\n#     \"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n# fi\nexit 0\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXNativeTarget section */
 		B610ABFE2F15B4DD008B2C15 /* gym app */ = {
@@ -1199,6 +1182,32 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		CRASH01SCRIPT001 /* Upload dSYMs to Crashlytics */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist",
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+				"$(SRCROOT)/GoogleService-Info.plist",
+			);
+			name = "Upload dSYMs to Crashlytics";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Upload dSYMs to Firebase Crashlytics - temporarily disabled\n# Uncomment to enable Crashlytics dSYM upload\n# if [[ \"${CONFIGURATION}\" == \"Release\" ]]; then\n#     \"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n# fi\nexit 0\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		B610ABFB2F15B4DD008B2C15 /* Sources */ = {
@@ -1718,7 +1727,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 32458MUSUC;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TodayWorkoutWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TodayWorkoutWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -1750,7 +1759,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 32458MUSUC;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TodayWorkoutWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = TodayWorkoutWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";

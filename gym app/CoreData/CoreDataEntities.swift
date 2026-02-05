@@ -1641,7 +1641,16 @@ public class MessageEntity: NSManagedObject, SyncableEntity {
     var content: MessageContent {
         get {
             guard let data = contentData else { return .text("") }
-            return (try? JSONDecoder().decode(MessageContent.self, from: data)) ?? .text("")
+            do {
+                return try JSONDecoder().decode(MessageContent.self, from: data)
+            } catch {
+                Logger.error(error, context: "MessageEntity.content decode")
+                // Try to extract the type from raw data for debugging
+                if let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    return .decodeFailed(originalType: dict["type"] as? String)
+                }
+                return .decodeFailed(originalType: nil)
+            }
         }
         set {
             contentData = try? JSONEncoder().encode(newValue)

@@ -90,6 +90,19 @@ class FriendsViewModel: ObservableObject {
     }
 
     private func handleFriendshipsUpdate(_ cloudFriendships: [Friendship], userId: String) {
+        // Get IDs that exist in cloud
+        let cloudIds = Set(cloudFriendships.map { $0.id })
+
+        // Get IDs that exist locally for this user
+        let localFriendships = friendshipRepo.getAllFriendships(for: userId)
+        let localIds = Set(localFriendships.map { $0.id })
+
+        // Delete local friendships that no longer exist in cloud
+        let deletedIds = localIds.subtracting(cloudIds)
+        for deletedId in deletedIds {
+            friendshipRepo.deleteFromCloud(id: deletedId)
+        }
+
         // Update local cache with cloud data
         for friendship in cloudFriendships {
             friendshipRepo.updateFromCloud(friendship)

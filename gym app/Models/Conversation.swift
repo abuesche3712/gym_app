@@ -73,4 +73,33 @@ extension Conversation {
     func hasParticipant(_ userId: String) -> Bool {
         participantIds.contains(userId)
     }
+
+    /// Generates a deterministic UUID for a conversation between two users.
+    /// This ensures the same conversation ID is created regardless of which device initiates.
+    static func canonicalId(for participantIds: [String]) -> UUID {
+        let sorted = participantIds.sorted()
+        let combined = sorted.joined(separator: "_")
+
+        // Create deterministic UUID using djb2 hash
+        var hash: UInt64 = 5381
+        for char in combined.utf8 {
+            hash = ((hash << 5) &+ hash) &+ UInt64(char)
+        }
+
+        // Convert hash to UUID bytes
+        var bytes = [UInt8](repeating: 0, count: 16)
+        for i in 0..<8 {
+            bytes[i] = UInt8((hash >> (i * 8)) & 0xFF)
+        }
+        // Fill second half with shifted hash
+        let hash2 = hash &* 31
+        for i in 0..<8 {
+            bytes[8 + i] = UInt8((hash2 >> (i * 8)) & 0xFF)
+        }
+
+        return UUID(uuid: (bytes[0], bytes[1], bytes[2], bytes[3],
+                          bytes[4], bytes[5], bytes[6], bytes[7],
+                          bytes[8], bytes[9], bytes[10], bytes[11],
+                          bytes[12], bytes[13], bytes[14], bytes[15]))
+    }
 }

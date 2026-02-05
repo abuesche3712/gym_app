@@ -768,6 +768,12 @@ class SessionViewModel: ObservableObject {
         }
     }
 
+    /// Trigger auto-save when the session is modified externally (e.g., from EditExerciseSheet)
+    /// Call this after directly modifying currentSession from views
+    func triggerAutoSave() {
+        autoSaveInProgressSession()
+    }
+
     // MARK: - Navigation (delegated to navigator)
 
     func advanceToNextSet() {

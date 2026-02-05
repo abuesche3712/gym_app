@@ -85,12 +85,24 @@ class ConversationRepository: ObservableObject {
 
     /// Get or create a conversation between two users
     func getOrCreateConversation(between userA: String, and userB: String) -> Conversation {
+        // Check if conversation already exists by participant match
         if let existing = getConversation(between: userA, and: userB) {
             return existing
         }
 
+        // Generate canonical ID from sorted participants
+        let participants = [userA, userB].sorted()
+        let canonicalId = Conversation.canonicalId(for: participants)
+
+        // Check if conversation with canonical ID exists locally
+        if let existingById = getConversation(id: canonicalId) {
+            return existingById
+        }
+
+        // Create new conversation with canonical ID
         let conversation = Conversation(
-            participantIds: [userA, userB],
+            id: canonicalId,
+            participantIds: participants,
             createdAt: Date()
         )
 

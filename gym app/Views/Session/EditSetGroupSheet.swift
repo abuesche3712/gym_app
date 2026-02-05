@@ -31,6 +31,15 @@ struct EditSetGroupSheet: View {
     @State private var isUnilateral: Bool = false
     @State private var trackRPE: Bool = true
 
+    // Interval mode
+    @State private var isInterval: Bool = false
+    @State private var workDuration: Int = 30
+    @State private var intervalRestDuration: Int = 30
+
+    // AMRAP mode
+    @State private var isAMRAP: Bool = false
+    @State private var amrapTimeLimit: Int? = nil
+
     // Equipment-specific measurable values
     @State private var implementMeasurableValues: [String: MeasurableValue] = [:]
 
@@ -89,21 +98,116 @@ struct EditSetGroupSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Sets") {
-                    Stepper("Total Sets: \(sets)", value: $sets, in: max(1, completedLogicalSetsMin)...20)
+                // Mode selection (for applicable exercise types)
+                if exerciseType == .strength || exerciseType == .explosive || exerciseType == .cardio {
+                    Section("Mode") {
+                        Toggle("Interval Mode", isOn: Binding(
+                            get: { isInterval },
+                            set: { newValue in
+                                isInterval = newValue
+                                if newValue { isAMRAP = false }
+                            }
+                        ))
+                        .tint(AppColors.dominant)
 
-                    if setGroup.completedSetsCount > 0 {
+                        if isInterval {
+                            Text("Timer auto-runs through all rounds with work/rest periods")
+                                .caption(color: AppColors.dominant)
+                        }
+
+                        if exerciseType == .strength || exerciseType == .explosive {
+                            Toggle("AMRAP Mode", isOn: Binding(
+                                get: { isAMRAP },
+                                set: { newValue in
+                                    isAMRAP = newValue
+                                    if newValue { isInterval = false }
+                                }
+                            ))
+                            .tint(AppColors.accent2)
+
+                            if isAMRAP {
+                                Text("As Many Reps As Possible - log max reps achieved")
+                                    .caption(color: AppColors.accent2)
+                            }
+                        }
+                    }
+                }
+
+                // Interval-specific settings
+                if isInterval {
+                    Section("Interval Settings") {
+                        Stepper("Rounds: \(sets)", value: $sets, in: max(1, completedLogicalSetsMin)...50)
+
                         HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(AppColors.success)
-                            Text("\(completedLogicalSetsMin) sets already completed")
+                            Text("Work Duration")
+                            Spacer()
+                            Picker("Work", selection: $workDuration) {
+                                ForEach([10, 15, 20, 25, 30, 35, 40, 45, 60, 90, 120], id: \.self) { seconds in
+                                    Text(formatRestTime(seconds)).tag(seconds)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                        }
+
+                        HStack {
+                            Text("Rest Duration")
+                            Spacer()
+                            Picker("Rest", selection: $intervalRestDuration) {
+                                ForEach([5, 10, 15, 20, 25, 30, 45, 60, 90], id: \.self) { seconds in
+                                    Text(formatRestTime(seconds)).tag(seconds)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                        }
+
+                        // Total duration preview
+                        HStack {
+                            Text("Total Duration")
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text(formatIntervalTotalDuration())
+                                .fontWeight(.medium)
+                                .foregroundColor(AppColors.dominant)
+                        }
+                    }
+                } else if isAMRAP {
+                    // AMRAP-specific settings
+                    Section("AMRAP Settings") {
+                        Stepper("Sets: \(sets)", value: $sets, in: max(1, completedLogicalSetsMin)...20)
+
+                        Picker("Time Limit", selection: $amrapTimeLimit) {
+                            Text("No Limit").tag(nil as Int?)
+                            Text("30 seconds").tag(30 as Int?)
+                            Text("45 seconds").tag(45 as Int?)
+                            Text("60 seconds").tag(60 as Int?)
+                            Text("90 seconds").tag(90 as Int?)
+                            Text("2 minutes").tag(120 as Int?)
+                            Text("3 minutes").tag(180 as Int?)
+                        }
+
+                        if amrapTimeLimit == nil {
+                            Text("Track max reps with no time constraint")
                                 .caption(color: .secondary)
+                        }
+                    }
+                } else {
+                    // Normal mode - show sets section
+                    Section("Sets") {
+                        Stepper("Total Sets: \(sets)", value: $sets, in: max(1, completedLogicalSetsMin)...20)
+
+                        if setGroup.completedSetsCount > 0 {
+                            HStack {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(AppColors.success)
+                                Text("\(completedLogicalSetsMin) sets already completed")
+                                    .caption(color: .secondary)
+                            }
                         }
                     }
                 }
 
                 // Show individual sets if available (history editing)
-                if hasIndividualSets {
+                if hasIndividualSets && !isInterval {
                     Section("Individual Sets") {
                         ForEach(Array(editableSets.enumerated()), id: \.element.id) { index, set in
                             Button {
@@ -116,8 +220,11 @@ struct EditSetGroupSheet: View {
                     }
                 }
 
-                Section("Targets") {
-                    targetFieldsForExerciseType
+                // Targets section (hide for interval mode)
+                if !isInterval {
+                    Section("Targets") {
+                        targetFieldsForExerciseType
+                    }
                 }
 
                 Section("Rest Between Sets") {
@@ -365,6 +472,28 @@ struct EditSetGroupSheet: View {
         isUnilateral = setGroup.isUnilateral
         trackRPE = setGroup.trackRPE
         editableSets = setGroup.allSets
+
+        // Load interval mode values
+        isInterval = setGroup.isInterval
+        workDuration = setGroup.workDuration ?? 30
+        intervalRestDuration = setGroup.intervalRestDuration ?? 30
+
+        // Load AMRAP mode values
+        isAMRAP = setGroup.isAMRAP
+        amrapTimeLimit = setGroup.amrapTimeLimit
+
+        // Load equipment measurable values
+        for target in setGroup.implementMeasurables {
+            guard let implement = libraryService.getImplement(id: target.implementId) else { continue }
+            let key = "\(implement.name)_\(target.measurableName)"
+            implementMeasurableValues[key] = MeasurableValue(
+                numericValue: target.targetValue.map { formatWeight($0) } ?? "",
+                stringValue: target.targetStringValue ?? "",
+                isStringBased: target.isStringBased,
+                unit: target.unit,
+                implementName: implement.name
+            )
+        }
     }
 
     private func saveChanges() {
@@ -377,6 +506,42 @@ struct EditSetGroupSheet: View {
         setGroup.restPeriod = restPeriod
         setGroup.isUnilateral = isUnilateral
         setGroup.trackRPE = trackRPE
+
+        // Save interval mode values
+        setGroup.isInterval = isInterval
+        setGroup.workDuration = isInterval ? workDuration : nil
+        setGroup.intervalRestDuration = isInterval ? intervalRestDuration : nil
+
+        // Save AMRAP mode values
+        setGroup.isAMRAP = isAMRAP
+        setGroup.amrapTimeLimit = isAMRAP ? amrapTimeLimit : nil
+
+        // Save equipment measurable values
+        var measurableTargets: [ImplementMeasurableTarget] = []
+        for (key, value) in implementMeasurableValues {
+            let hasValue = value.isStringBased ? !value.stringValue.isEmpty : !value.numericValue.isEmpty
+            if hasValue {
+                let components = key.components(separatedBy: "_")
+                guard components.count >= 2 else { continue }
+                let implementName = components.dropLast().joined(separator: "_")
+                let measurableName = components.last!
+
+                guard let implementId = implementIds.first(where: { id in
+                    libraryService.getImplement(id: id)?.name == implementName
+                }) else { continue }
+
+                measurableTargets.append(ImplementMeasurableTarget(
+                    implementId: implementId,
+                    measurableName: measurableName,
+                    unit: value.unit,
+                    isStringBased: value.isStringBased,
+                    targetValue: value.isStringBased ? nil : Double(value.numericValue),
+                    targetStringValue: value.isStringBased ? value.stringValue : nil
+                ))
+            }
+        }
+        setGroup.implementMeasurables = measurableTargets
+
         // Update allSets if we were editing individual sets
         if !editableSets.isEmpty {
             setGroup.allSets = editableSets
@@ -397,5 +562,17 @@ struct EditSetGroupSheet: View {
             let secs = seconds % 60
             return "\(minutes):\(String(format: "%02d", secs))"
         }
+    }
+
+    private func formatIntervalTotalDuration() -> String {
+        let total = (workDuration * sets) + (intervalRestDuration * max(0, sets - 1))
+        let mins = total / 60
+        let secs = total % 60
+        if mins > 0 && secs > 0 {
+            return "\(mins)m \(secs)s"
+        } else if mins > 0 {
+            return "\(mins) min"
+        }
+        return "\(secs)s"
     }
 }

@@ -576,6 +576,9 @@ struct ActiveSessionView: View {
         session.completedModules[moduleIndex].completedExercises[exerciseIndex] = exercise
         sessionViewModel.currentSession = session
 
+        // Trigger auto-save to persist the changes
+        sessionViewModel.triggerAutoSave()
+
         // Reset set indices if we're on the current exercise
         if moduleIndex == sessionViewModel.currentModuleIndex && exerciseIndex == sessionViewModel.currentExerciseIndex {
             // Find first incomplete set
@@ -663,6 +666,9 @@ struct ActiveSessionView: View {
         // Add to the specified module
         session.completedModules[moduleIndex].completedExercises.append(newExercise)
         sessionViewModel.currentSession = session
+
+        // Refresh the navigator so it sees the new exercise
+        sessionViewModel.refreshNavigator()
     }
 
     // MARK: - Reorder Exercise

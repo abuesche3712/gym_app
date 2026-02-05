@@ -210,3 +210,97 @@ func formatDurationMinutes(_ minutes: Int) -> String {
     }
     return "\(minutes) min"
 }
+
+// MARK: - Set Data Formatting
+
+/// Formats set data for display with full details including RPE
+/// Handles all exercise types: strength, cardio, isometric, explosive, mobility, recovery
+func formatSetData(_ set: SetData, exercise: SessionExercise) -> String {
+    switch exercise.exerciseType {
+    case .strength:
+        if exercise.isBodyweight {
+            if let reps = set.reps {
+                if let weight = set.weight, weight > 0 {
+                    var result = "BW + \(formatWeight(weight)) × \(reps)"
+                    if let rpe = set.rpe { result += " @ \(rpe)" }
+                    return result
+                } else {
+                    var result = "BW × \(reps)"
+                    if let rpe = set.rpe { result += " @ \(rpe)" }
+                    return result
+                }
+            }
+        } else if let band = set.bandColor, !band.isEmpty, let reps = set.reps {
+            var result = "\(band) × \(reps)"
+            if let rpe = set.rpe { result += " @ \(rpe)" }
+            return result
+        } else if let weight = set.weight, let reps = set.reps {
+            var result = "\(formatWeight(weight)) × \(reps)"
+            if let rpe = set.rpe { result += " @ \(rpe)" }
+            return result
+        } else if let reps = set.reps {
+            return "\(reps) reps"
+        }
+
+    case .cardio:
+        var parts: [String] = []
+        if let duration = set.duration, duration > 0 { parts.append(formatDuration(duration)) }
+        if let distance = set.distance, distance > 0 {
+            parts.append("\(formatDistanceValue(distance)) \(exercise.distanceUnit.abbreviation)")
+        }
+        return parts.isEmpty ? "—" : parts.joined(separator: " - ")
+
+    case .isometric:
+        if let holdTime = set.holdTime { return "\(formatDuration(holdTime)) hold" }
+
+    case .explosive:
+        var parts: [String] = []
+        if let reps = set.reps { parts.append("\(reps) reps") }
+        if let height = set.height { parts.append("@ \(formatHeight(height))") }
+        return parts.isEmpty ? "—" : parts.joined(separator: " ")
+
+    case .mobility:
+        if let reps = set.reps { return "\(reps) reps" }
+
+    case .recovery:
+        if let duration = set.duration { return formatDuration(duration) }
+    }
+
+    return "—"
+}
+
+/// Formats top set for compact display (without RPE)
+/// e.g., "185 × 8" or "BW × 12" or "5:30" for cardio
+func formatTopSet(_ set: SetData, exercise: SessionExercise) -> String {
+    switch exercise.exerciseType {
+    case .strength:
+        if exercise.isBodyweight {
+            if let reps = set.reps {
+                if let weight = set.weight, weight > 0 {
+                    return "BW + \(formatWeight(weight)) × \(reps)"
+                } else {
+                    return "BW × \(reps)"
+                }
+            }
+        } else if let weight = set.weight, let reps = set.reps {
+            return "\(formatWeight(weight)) × \(reps)"
+        } else if let band = set.bandColor, let reps = set.reps {
+            return "\(band) × \(reps)"
+        }
+    case .cardio:
+        if let distance = set.distance {
+            return "\(formatDistanceValue(distance)) \(exercise.distanceUnit.abbreviation)"
+        } else if let duration = set.duration {
+            return formatDuration(duration)
+        }
+    case .isometric:
+        if let holdTime = set.holdTime {
+            return "\(formatDuration(holdTime)) hold"
+        }
+    default:
+        if let reps = set.reps {
+            return "\(reps) reps"
+        }
+    }
+    return ""
+}

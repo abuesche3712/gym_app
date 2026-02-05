@@ -18,6 +18,12 @@ struct HistoryView: View {
     @State private var sessionToPost: Session?
     @State private var animateIn = false
 
+    // Selection mode support for share flow
+    var selectionMode: ViewSelectionMode? = nil
+    var onSelectForShare: ((Session) -> Void)? = nil
+
+    private var isSelectionMode: Bool { selectionMode != nil }
+
     enum HistoryFilter: String, CaseIterable {
         case all = "All"
         case thisWeek = "This Week"
@@ -297,30 +303,39 @@ struct HistoryView: View {
                     // Sessions in month
                     VStack(spacing: 0) {
                         ForEach(Array(sessions.enumerated()), id: \.element.id) { index, session in
-                            NavigationLink(destination: SessionDetailView(session: session)) {
-                                HistorySessionRow(session: session)
-                            }
-                            .buttonStyle(.plain)
-                            .contextMenu {
+                            if isSelectionMode {
                                 Button {
-                                    sessionToPost = session
+                                    onSelectForShare?(session)
                                 } label: {
-                                    Label("Post to Feed", systemImage: "rectangle.stack")
+                                    HistorySessionRow(session: session, showShareIcon: true)
                                 }
-
-                                Button {
-                                    sessionToShare = session
-                                } label: {
-                                    Label("Share with Friend", systemImage: "paperplane")
+                                .buttonStyle(.plain)
+                            } else {
+                                NavigationLink(destination: SessionDetailView(session: session)) {
+                                    HistorySessionRow(session: session)
                                 }
+                                .buttonStyle(.plain)
+                                .contextMenu {
+                                    Button {
+                                        sessionToPost = session
+                                    } label: {
+                                        Label("Post to Feed", systemImage: "rectangle.stack")
+                                    }
 
-                                Divider()
+                                    Button {
+                                        sessionToShare = session
+                                    } label: {
+                                        Label("Share with Friend", systemImage: "paperplane")
+                                    }
 
-                                Button(role: .destructive) {
-                                    sessionToDelete = session
-                                    showingDeleteConfirmation = true
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
+                                    Divider()
+
+                                    Button(role: .destructive) {
+                                        sessionToDelete = session
+                                        showingDeleteConfirmation = true
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
                                 }
                             }
 
@@ -406,6 +421,7 @@ struct HistoryFilterPill: View {
 
 struct HistorySessionRow: View {
     let session: Session
+    var showShareIcon: Bool = false
 
     private var totalVolume: Double {
         session.completedModules.filter { !$0.skipped }.reduce(0.0) { total, module in
@@ -503,8 +519,8 @@ struct HistorySessionRow: View {
                     HistoryFeelingBadge(feeling: feeling)
                 }
 
-                Image(systemName: "chevron.right")
-                    .caption(color: AppColors.textTertiary)
+                Image(systemName: showShareIcon ? "square.and.arrow.up" : "chevron.right")
+                    .caption(color: showShareIcon ? AppColors.dominant : AppColors.textTertiary)
                     .fontWeight(.semibold)
             }
         }

@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+// MARK: - View Selection Mode
+
+/// Selection mode for list views when used in sharing/selection contexts
+enum ViewSelectionMode {
+    case forSharing  // Single selection, dismiss on tap
+}
+
 // MARK: - Module Card
 
 struct ModuleCard: View {

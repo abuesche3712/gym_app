@@ -165,7 +165,17 @@ class ConversationsViewModel: ObservableObject {
             throw ConversationError.userBlocked
         }
 
-        // Get or create locally
+        // Generate canonical ID to check for existing conversation
+        let participants = [userId, friendId].sorted()
+        let canonicalId = Conversation.canonicalId(for: participants)
+
+        // Try to fetch from Firestore first (in case other device created it)
+        if let cloudConversation = try? await firestoreService.fetchConversation(id: canonicalId, for: userId) {
+            conversationRepo.updateFromCloud(cloudConversation)
+            return cloudConversation
+        }
+
+        // Get or create locally with canonical ID
         let conversation = conversationRepo.getOrCreateConversation(between: userId, and: friendId)
 
         // Sync to cloud

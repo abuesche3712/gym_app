@@ -11,6 +11,7 @@ struct ChatView: View {
     @StateObject private var viewModel: ChatViewModel
     @State private var messageText = ""
     @FocusState private var isInputFocused: Bool
+    @Environment(\.hideTabBar) private var hideTabBar
 
     // Import state
     @State private var selectedMessageForImport: Message?
@@ -30,23 +31,30 @@ struct ChatView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Messages
+            // Messages scroll view takes remaining space
             messagesScrollView
 
-            // Input bar
-            if viewModel.isBlocked {
-                blockedBanner
-            } else {
-                chatInputBar
+            // Input bar at bottom
+            Group {
+                if viewModel.isBlocked {
+                    blockedBanner
+                } else {
+                    chatInputBar
+                }
             }
+            .frame(minHeight: 50)  // Ensure minimum height for input area
         }
-        .background(AppColors.background.ignoresSafeArea())
+        .background(AppColors.background)
         .navigationTitle(viewModel.otherParticipant.displayName ?? viewModel.otherParticipant.username)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(AppColors.background, for: .navigationBar)
         .onAppear {
+            Logger.debug("ChatView.onAppear: isBlocked=\(viewModel.isBlocked), messagesCount=\(viewModel.messages.count), currentUserId=\(viewModel.currentUserId ?? "nil")")
+            hideTabBar.wrappedValue = true  // Hide custom tab bar
             viewModel.loadMessages()
         }
         .onDisappear {
+            hideTabBar.wrappedValue = false  // Show custom tab bar again
             viewModel.stopListening()
         }
         .sheet(isPresented: $showingImportConflicts) {
@@ -128,35 +136,46 @@ struct ChatView: View {
         .padding()
         .frame(maxWidth: .infinity)
         .background(AppColors.surfaceSecondary)
+        .onAppear {
+            Logger.debug("blockedBanner appeared - isBlocked=true")
+        }
     }
 
     // MARK: - Chat Input Bar
 
     private var chatInputBar: some View {
-        HStack(alignment: .bottom, spacing: AppSpacing.sm) {
-            // Text input
-            TextField("Message", text: $messageText, axis: .vertical)
-                .textFieldStyle(.plain)
-                .lineLimit(1...5)
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.vertical, AppSpacing.sm)
-                .background(AppColors.surfaceSecondary)
-                .cornerRadius(20)
-                .focused($isInputFocused)
+        VStack(spacing: 0) {
+            Divider()
+                .background(AppColors.dominant)
 
-            // Send button
-            Button {
-                sendMessage()
-            } label: {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.title)
-                    .foregroundColor(canSend ? AppColors.dominant : AppColors.textTertiary)
+            HStack(alignment: .bottom, spacing: AppSpacing.sm) {
+                // Text input
+                TextField("Message", text: $messageText, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .lineLimit(1...5)
+                    .padding(.horizontal, AppSpacing.md)
+                    .padding(.vertical, AppSpacing.sm)
+                    .background(AppColors.surfaceSecondary)
+                    .cornerRadius(20)
+                    .focused($isInputFocused)
+
+                // Send button
+                Button {
+                    sendMessage()
+                } label: {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.title)
+                        .foregroundColor(canSend ? AppColors.dominant : AppColors.textTertiary)
+                }
+                .disabled(!canSend || viewModel.isSending)
             }
-            .disabled(!canSend || viewModel.isSending)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
         }
-        .padding(.horizontal, AppSpacing.md)
-        .padding(.vertical, AppSpacing.sm)
-        .background(AppColors.background)
+        .background(AppColors.surfacePrimary)
+        .onAppear {
+            Logger.debug("chatInputBar appeared")
+        }
     }
 
     private var canSend: Bool {
@@ -288,6 +307,44 @@ struct MessageBubble: View {
             } else {
                 sharedContentView(icon: "star.fill", label: "Highlights", name: "Workout highlights")
             }
+
+        case .sharedExerciseInstance(let snapshot):
+            if let bundle = try? ExerciseInstanceShareBundle.decode(from: snapshot) {
+                sharedContentView(icon: "dumbbell.fill", label: "Exercise Config", name: bundle.exerciseInstance.name)
+            } else {
+                sharedContentView(icon: "dumbbell.fill", label: "Exercise Config", name: "Shared exercise")
+            }
+
+        case .sharedSetGroup(let snapshot):
+            if let bundle = try? SetGroupShareBundle.decode(from: snapshot) {
+                sharedContentView(icon: "list.bullet.rectangle", label: "Set Prescription", name: "\(bundle.setGroup.sets) sets of \(bundle.exerciseName)")
+            } else {
+                sharedContentView(icon: "list.bullet.rectangle", label: "Set Prescription", name: "Shared prescription")
+            }
+
+        case .sharedCompletedSetGroup(let snapshot):
+            if let bundle = try? CompletedSetGroupShareBundle.decode(from: snapshot) {
+                let completedCount = bundle.completedSetGroup.sets.filter(\.completed).count
+                sharedContentView(icon: "checkmark.rectangle.stack.fill", label: "Completed Sets", name: "\(completedCount) sets of \(bundle.exerciseName)")
+            } else {
+                sharedContentView(icon: "checkmark.rectangle.stack.fill", label: "Completed Sets", name: "Shared sets")
+            }
+
+        case .decodeFailed(let originalType):
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                HStack(spacing: AppSpacing.xs) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(AppColors.error)
+                    Text("Failed to load")
+                        .fontWeight(.medium)
+                }
+                if let type = originalType {
+                    Text("Content type: \(type)")
+                } else {
+                    Text("Unknown content type")
+                }
+            }
+            .subheadline(color: isFromCurrentUser ? .white : AppColors.textPrimary)
         }
     }
 
