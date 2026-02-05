@@ -14,6 +14,13 @@ struct ModulesListView: View {
     @State private var searchText = ""
     @State private var selectedType: ModuleType?
     @State private var navigateToModule: Module?
+    @State private var editingModule: Module?
+
+    // Selection mode support for share flow
+    var selectionMode: ViewSelectionMode? = nil
+    var onSelectForShare: ((Module) -> Void)? = nil
+
+    private var isSelectionMode: Bool { selectionMode != nil }
 
     var filteredModules: [Module] {
         var modules = moduleViewModel.modules
@@ -75,23 +82,42 @@ struct ModulesListView: View {
                     } else {
                         LazyVStack(spacing: AppSpacing.md) {
                             ForEach(Array(filteredModules.enumerated()), id: \.element.id) { index, module in
-                                NavigationLink(destination: ModuleDetailView(module: module)) {
-                                    ModuleListCard(module: module, showExercises: selectedType != nil)
-                                }
-                                .buttonStyle(.plain)
-                                .transition(.asymmetric(
-                                    insertion: .opacity.combined(with: .scale(scale: 0.95)),
-                                    removal: .opacity
-                                ))
-                                .animation(
-                                    .spring(response: 0.35, dampingFraction: 0.8).delay(Double(index) * 0.04),
-                                    value: filteredModules.count
-                                )
-                                .contextMenu {
-                                    Button(role: .destructive) {
-                                        moduleViewModel.deleteModule(module)
+                                if isSelectionMode {
+                                    Button {
+                                        onSelectForShare?(module)
                                     } label: {
-                                        Label("Delete", systemImage: "trash")
+                                        ModuleListCard(module: module, showExercises: selectedType != nil, showShareIcon: true)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .transition(.asymmetric(
+                                        insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                                        removal: .opacity
+                                    ))
+                                    .animation(
+                                        .spring(response: 0.35, dampingFraction: 0.8).delay(Double(index) * 0.04),
+                                        value: filteredModules.count
+                                    )
+                                } else {
+                                    Button {
+                                        editingModule = module
+                                    } label: {
+                                        ModuleListCard(module: module, showExercises: selectedType != nil)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .transition(.asymmetric(
+                                        insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                                        removal: .opacity
+                                    ))
+                                    .animation(
+                                        .spring(response: 0.35, dampingFraction: 0.8).delay(Double(index) * 0.04),
+                                        value: filteredModules.count
+                                    )
+                                    .contextMenu {
+                                        Button(role: .destructive) {
+                                            moduleViewModel.deleteModule(module)
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
                                     }
                                 }
                             }
@@ -126,6 +152,11 @@ struct ModulesListView: View {
             .navigationDestination(item: $navigateToModule) { module in
                 ModuleDetailView(module: module)
             }
+            .sheet(item: $editingModule) { module in
+                NavigationStack {
+                    ModuleFormView(module: module)
+                }
+            }
             .refreshable {
                 moduleViewModel.loadModules()
             }
@@ -142,36 +173,38 @@ struct ModulesListView: View {
                     dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .body(color: AppColors.accent1)
+                        .body(color: AppColors.accent3)
                         .fontWeight(.semibold)
                         .frame(width: 36, height: 36)
                         .background(
                             Circle()
-                                .fill(AppColors.accent1.opacity(0.1))
+                                .fill(AppColors.accent3.opacity(0.1))
                         )
                         .overlay(
                             Circle()
-                                .stroke(AppColors.accent1.opacity(0.2), lineWidth: 1)
+                                .stroke(AppColors.accent3.opacity(0.2), lineWidth: 1)
                         )
                 }
 
                 Spacer()
 
-                Button {
-                    showingAddModule = true
-                } label: {
-                    Image(systemName: "plus")
-                        .body(color: AppColors.accent1)
-                        .fontWeight(.semibold)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            Circle()
-                                .fill(AppColors.accent1.opacity(0.1))
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(AppColors.accent1.opacity(0.2), lineWidth: 1)
-                        )
+                if !isSelectionMode {
+                    Button {
+                        showingAddModule = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .body(color: AppColors.accent3)
+                            .fontWeight(.semibold)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(AppColors.accent3.opacity(0.1))
+                            )
+                            .overlay(
+                                Circle()
+                                    .stroke(AppColors.accent3.opacity(0.2), lineWidth: 1)
+                            )
+                    }
                 }
             }
 
@@ -179,7 +212,7 @@ struct ModulesListView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("MODULES")
-                        .elegantLabel(color: AppColors.accent1)
+                        .elegantLabel(color: AppColors.accent3)
 
                     Text("Your Modules")
                         .displayMedium(color: AppColors.textPrimary)
@@ -202,7 +235,7 @@ struct ModulesListView: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [AppColors.accent1.opacity(0.6), AppColors.accent1.opacity(0.1), Color.clear],
+                        colors: [AppColors.accent3.opacity(0.6), AppColors.accent3.opacity(0.1), Color.clear],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -245,6 +278,7 @@ struct FilterPill: View {
 struct ModuleListCard: View {
     let module: Module
     var showExercises: Bool = false
+    var showShareIcon: Bool = false
 
     private var moduleColor: Color {
         AppColors.moduleColor(module.type)
@@ -295,8 +329,8 @@ struct ModuleListCard: View {
 
                 Spacer()
 
-                Image(systemName: "chevron.right")
-                    .subheadline(color: AppColors.textTertiary)
+                Image(systemName: showShareIcon ? "square.and.arrow.up" : "chevron.right")
+                    .subheadline(color: showShareIcon ? AppColors.dominant : AppColors.textTertiary)
             }
             .padding(AppSpacing.cardPadding)
 

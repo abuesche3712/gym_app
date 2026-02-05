@@ -16,37 +16,44 @@ extension Date: Identifiable {
 struct ProgramsListView: View {
     @EnvironmentObject private var programViewModel: ProgramViewModel
     @EnvironmentObject private var workoutViewModel: WorkoutViewModel
+    @Environment(\.dismiss) private var dismiss
     @State private var showingCreateSheet = false
     @State private var showingProgramsSheet = false
     @State private var selectedMonth: Date = Date()
     @State private var selectedDate: Date?
     @State private var editingProgram: Program?
 
+    // Selection mode support for share flow
+    var selectionMode: ViewSelectionMode? = nil
+    var onSelectForShare: ((Program) -> Void)? = nil
+
+    private var isSelectionMode: Bool { selectionMode != nil }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                // Active Program Header
-                activeProgramHeader
+                if isSelectionMode {
+                    // Simplified view for selection mode - just show program list
+                    selectionModeContent
+                } else {
+                    // Custom header
+                    programsHeader
 
-                // Monthly Calendar
-                monthlyCalendarSection
+                    // Active Program Header
+                    activeProgramHeader
 
-                // Program List (collapsed)
-                programListSection
+                    // Monthly Calendar
+                    monthlyCalendarSection
+
+                    // Program List (collapsed)
+                    programListSection
+                }
             }
             .padding()
         }
-        .navigationTitle("Programs")
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    showingCreateSheet = true
-                } label: {
-                    Image(systemName: "plus")
-                        .foregroundColor(AppColors.accent2)
-                }
-            }
-        }
+        .background(AppColors.background.ignoresSafeArea())
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showingCreateSheet) {
             NavigationStack {
                 ProgramFormView(program: nil)
@@ -65,6 +72,38 @@ struct ProgramsListView: View {
         .sheet(item: $editingProgram) { program in
             NavigationStack {
                 ProgramFormView(program: program)
+            }
+        }
+    }
+
+    // MARK: - Selection Mode Content
+
+    @ViewBuilder
+    private var selectionModeContent: some View {
+        if programViewModel.programs.isEmpty {
+            VStack(spacing: AppSpacing.md) {
+                Image(systemName: "doc.text")
+                    .font(.largeTitle)
+                    .foregroundColor(AppColors.textTertiary)
+
+                Text("No Programs")
+                    .headline(color: AppColors.textPrimary)
+
+                Text("Create a program to share it")
+                    .subheadline(color: AppColors.textSecondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.top, AppSpacing.xxl)
+        } else {
+            VStack(spacing: AppSpacing.md) {
+                ForEach(programViewModel.programs) { program in
+                    Button {
+                        onSelectForShare?(program)
+                    } label: {
+                        ProgramSelectionRow(program: program)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
     }
@@ -269,6 +308,63 @@ struct ProgramsListView: View {
         .cornerRadius(12)
     }
 
+    // MARK: - Header
+
+    private var programsHeader: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            // Navigation row
+            HStack {
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                        .body(color: AppColors.accent2)
+                        .fontWeight(.semibold)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(AppColors.accent2.opacity(0.1)))
+                        .overlay(Circle().stroke(AppColors.accent2.opacity(0.2), lineWidth: 1))
+                }
+                Spacer()
+                if !isSelectionMode {
+                    Button { showingCreateSheet = true } label: {
+                        Image(systemName: "plus")
+                            .body(color: AppColors.accent2)
+                            .fontWeight(.semibold)
+                            .frame(width: 36, height: 36)
+                            .background(Circle().fill(AppColors.accent2.opacity(0.1)))
+                            .overlay(Circle().stroke(AppColors.accent2.opacity(0.2), lineWidth: 1))
+                    }
+                }
+            }
+
+            // Title section
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("PROGRAMS")
+                        .elegantLabel(color: AppColors.accent2)
+                    Text("Your Programs")
+                        .displayMedium(color: AppColors.textPrimary)
+                }
+                Spacer()
+                HStack(spacing: 4) {
+                    Image(systemName: "list.bullet")
+                        .caption(color: AppColors.textSecondary)
+                        .fontWeight(.medium)
+                    Text("\(programViewModel.programs.count) total")
+                        .subheadline(color: AppColors.textSecondary)
+                        .fontWeight(.medium)
+                }
+            }
+
+            // Gold accent line
+            Rectangle()
+                .fill(LinearGradient(
+                    colors: [AppColors.accent2.opacity(0.6), AppColors.accent2.opacity(0.1), Color.clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                ))
+                .frame(height: 2)
+        }
+    }
+
     // MARK: - Helpers
 
     private func programProgress(startDate: Date, durationWeeks: Int) -> Double {
@@ -360,6 +456,48 @@ struct MonthDayCell: View {
 
         // Scheduled workout (teal for both program and regular workouts)
         return AppColors.accent1
+    }
+}
+
+// MARK: - Program Selection Row (for share flow)
+
+struct ProgramSelectionRow: View {
+    let program: Program
+
+    var body: some View {
+        HStack(spacing: AppSpacing.md) {
+            ZStack {
+                RoundedRectangle(cornerRadius: AppCorners.small)
+                    .fill(AppColors.accent2.opacity(0.1))
+                    .frame(width: 48, height: 48)
+
+                Image(systemName: "doc.text.fill")
+                    .font(.title3.weight(.medium))
+                    .foregroundColor(AppColors.accent2)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(program.name)
+                    .headline(color: AppColors.textPrimary)
+
+                Text("\(program.durationWeeks) weeks • \(program.workoutSlots.count) slots")
+                    .caption(color: AppColors.textSecondary)
+            }
+
+            Spacer()
+
+            Image(systemName: "square.and.arrow.up")
+                .subheadline(color: AppColors.dominant)
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .fill(AppColors.surfacePrimary)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .stroke(AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
+        )
     }
 }
 

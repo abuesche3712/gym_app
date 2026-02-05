@@ -97,6 +97,7 @@ struct AnalyticsView: View {
                     }
                 }
                 .padding(AppSpacing.screenPadding)
+                .padding(.bottom, 56)  // Account for custom tab bar height
             }
             .background(AppColors.background.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)

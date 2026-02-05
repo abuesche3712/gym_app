@@ -31,6 +31,8 @@ struct WorkoutFormView: View {
     @State private var selectedForSuperset: Set<UUID> = []
     @State private var isSelectingForSuperset = false
     @State private var showingCreateExercise = false
+    @State private var showingShareSheet = false
+    @State private var showingPostToFeed = false
     @FocusState private var focusedField: Bool
 
     private var isEditing: Bool { workout != nil }
@@ -87,6 +89,26 @@ struct WorkoutFormView: View {
                 .foregroundColor(name.trimmingCharacters(in: .whitespaces).isEmpty ? AppColors.textTertiary : AppColors.dominant)
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
+
+            ToolbarItem(placement: .primaryAction) {
+                if isEditing, let existingWorkout = workout {
+                    Menu {
+                        Button {
+                            showingShareSheet = true
+                        } label: {
+                            Label("Share with Friend", systemImage: "paperplane")
+                        }
+                        Button {
+                            showingPostToFeed = true
+                        } label: {
+                            Label("Post to Feed", systemImage: "rectangle.stack")
+                        }
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .foregroundColor(AppColors.dominant)
+                    }
+                }
+            }
         }
         .sheet(isPresented: $showingModulePicker) {
             NavigationStack {
@@ -124,6 +146,26 @@ struct WorkoutFormView: View {
                 addExerciseFromTemplate(newTemplate)
             })
         }
+        .sheet(isPresented: $showingShareSheet) {
+            if let existingWorkout = workout,
+               let currentWorkout = workoutViewModel.getWorkout(id: existingWorkout.id) {
+                ShareWithFriendSheet(content: currentWorkout) { conversationWithProfile in
+                    let chatViewModel = ChatViewModel(
+                        conversation: conversationWithProfile.conversation,
+                        otherParticipant: conversationWithProfile.otherParticipant,
+                        otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+                    )
+                    let content = try currentWorkout.createMessageContent()
+                    try await chatViewModel.sendSharedContent(content)
+                }
+            }
+        }
+        .sheet(isPresented: $showingPostToFeed) {
+            if let existingWorkout = workout,
+               let currentWorkout = workoutViewModel.getWorkout(id: existingWorkout.id) {
+                ComposePostSheet(content: currentWorkout)
+            }
+        }
         .onAppear {
             loadWorkout()
         }
@@ -136,7 +178,7 @@ struct WorkoutFormView: View {
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(isEditing ? "EDITING" : "BUILDING")
-                        .elegantLabel(color: isEditing ? AppColors.warning : AppColors.dominant)
+                        .elegantLabel(color: AppColors.dominant)
 
                     Text(name.isEmpty ? "New Workout" : name)
                         .displaySmall(color: AppColors.textPrimary)
@@ -145,8 +187,6 @@ struct WorkoutFormView: View {
                 }
 
                 Spacer()
-
-                completionRing
             }
 
             // Stats
@@ -161,7 +201,7 @@ struct WorkoutFormView: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [(isEditing ? AppColors.warning : AppColors.dominant).opacity(0.6), Color.clear],
+                        colors: [AppColors.dominant.opacity(0.6), Color.clear],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -169,29 +209,6 @@ struct WorkoutFormView: View {
                 .frame(height: 2)
                 .padding(.top, AppSpacing.sm)
         }
-    }
-
-    private var completionRing: some View {
-        let progress = completionProgress
-        return ZStack {
-            Circle()
-                .stroke(AppColors.surfaceTertiary, lineWidth: 4)
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(progress >= 1.0 ? AppColors.success : AppColors.dominant, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-            Image(systemName: progress >= 1.0 ? "checkmark" : "hammer.fill")
-                .subheadline(color: progress >= 1.0 ? AppColors.success : AppColors.dominant)
-                .fontWeight(.semibold)
-        }
-        .frame(width: 44, height: 44)
-    }
-
-    private var completionProgress: Double {
-        var filled = 0.0
-        if !name.trimmingCharacters(in: .whitespaces).isEmpty { filled += 1 }
-        if !selectedModuleIds.isEmpty || !standaloneExercises.isEmpty { filled += 1 }
-        return filled / 2.0
     }
 
     private var totalExerciseCount: Int {

@@ -49,6 +49,7 @@ struct HomeView: View {
                     bestPerformancesSection
                 }
                 .padding(AppSpacing.screenPadding)
+                .padding(.bottom, 56)  // Account for custom tab bar height
             }
             .background(AppColors.background.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
@@ -400,27 +401,25 @@ struct HomeView: View {
                             .lineLimit(1)
 
                         // Module pills
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: AppSpacing.xs) {
-                                ForEach(workoutModules.prefix(4)) { module in
-                                    HStack(spacing: 4) {
-                                        Circle()
-                                            .fill(AppColors.moduleColor(module.type))
-                                            .frame(width: 8, height: 8)
-                                        Text(module.name)
-                                            .caption()
-                                    }
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(
-                                        Capsule()
-                                            .fill(AppColors.surfaceTertiary)
-                                    )
+                        HStack(spacing: AppSpacing.xs) {
+                            ForEach(workoutModules.prefix(4)) { module in
+                                HStack(spacing: 4) {
+                                    Circle()
+                                        .fill(AppColors.moduleColor(module.type))
+                                        .frame(width: 8, height: 8)
+                                    Text(module.name)
+                                        .caption()
                                 }
-                                if workoutModules.count > 4 {
-                                    Text("+\(workoutModules.count - 4)")
-                                        .caption(color: AppColors.textTertiary)
-                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(
+                                    Capsule()
+                                        .fill(AppColors.surfaceTertiary)
+                                )
+                            }
+                            if workoutModules.count > 4 {
+                                Text("+\(workoutModules.count - 4)")
+                                    .caption(color: AppColors.textTertiary)
                             }
                         }
                     }

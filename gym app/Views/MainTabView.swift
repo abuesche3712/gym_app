@@ -7,11 +7,24 @@
 
 import SwiftUI
 
+// Environment key for hiding the custom tab bar
+struct HideTabBarKey: EnvironmentKey {
+    static let defaultValue: Binding<Bool> = .constant(false)
+}
+
+extension EnvironmentValues {
+    var hideTabBar: Binding<Bool> {
+        get { self[HideTabBarKey.self] }
+        set { self[HideTabBarKey.self] = newValue }
+    }
+}
+
 struct MainTabView: View {
     @StateObject private var appState = AppState.shared
     @ObservedObject private var sessionViewModel: SessionViewModel = AppState.shared.sessionViewModel
     @State private var selectedTab = 0
     @State private var showingFullSession = false
+    @State private var hideTabBar = false
 
     // Pop-to-root triggers - increment to signal navigation reset
     @State private var homePopToRoot = 0
@@ -44,28 +57,27 @@ struct MainTabView: View {
                 HomeView()
                     .id("home-\(homePopToRoot)")
                     .tag(0)
-                    .simultaneousGesture(swipeGesture)
 
                 WorkoutBuilderView()
                     .id("training-\(trainingPopToRoot)")
                     .tag(1)
-                    .simultaneousGesture(swipeGesture)
 
                 SocialView()
                     .id("social-\(socialPopToRoot)")
                     .tag(2)
-                    .simultaneousGesture(swipeGesture)
 
                 AnalyticsView()
                     .id("analytics-\(analyticsPopToRoot)")
                     .tag(3)
-                    .simultaneousGesture(swipeGesture)
             }
             .toolbar(.hidden, for: .tabBar)
             .safeAreaInset(edge: .bottom) {
-                // Custom tab bar
-                customTabBar
+                // Custom tab bar - hide when requested (e.g., in chat view)
+                if !hideTabBar {
+                    customTabBar
+                }
             }
+            .environment(\.hideTabBar, $hideTabBar)
 
             // Sync error banner overlay (top)
             if let syncError = appState.syncError {
@@ -222,29 +234,6 @@ struct MainTabView: View {
         }
     }
 
-    private var swipeGesture: some Gesture {
-        DragGesture(minimumDistance: 50, coordinateSpace: .local)
-            .onEnded { value in
-                let horizontalAmount = value.translation.width
-                let verticalAmount = value.translation.height
-
-                // Only trigger on clearly horizontal swipes (3:1 ratio)
-                // and require significant horizontal movement to avoid conflicts with scroll gestures
-                guard abs(horizontalAmount) > abs(verticalAmount) * 3,
-                      abs(horizontalAmount) > 120 else { return }
-
-                // Use spring animation for smooth, natural feel
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.5)) {
-                    if horizontalAmount < 0 {
-                        // Swipe left - go to next tab
-                        selectedTab = min(selectedTab + 1, tabCount - 1)
-                    } else {
-                        // Swipe right - go to previous tab
-                        selectedTab = max(selectedTab - 1, 0)
-                    }
-                }
-            }
-    }
 }
 
 // MARK: - Mini Session Bar
