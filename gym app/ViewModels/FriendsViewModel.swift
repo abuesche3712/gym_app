@@ -25,6 +25,9 @@ class FriendsViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: Error?
 
+    @Published var suggestedFriends: [UserSearchResult] = []
+    @Published var isLoadingSuggestions = false
+
     @Published var searchQuery = ""
     @Published var searchResults: [UserSearchResult] = []
     @Published var isSearching = false
@@ -32,6 +35,7 @@ class FriendsViewModel: ObservableObject {
     private let friendshipRepo: FriendshipRepository
     private let firestoreService = FirestoreService.shared
     private let authService = AuthService.shared
+    private let activityService = FirestoreActivityService.shared
 
     private var friendshipListener: ListenerRegistration?
     private var searchTask: Task<Void, Never>?
@@ -237,6 +241,14 @@ class FriendsViewModel: ObservableObject {
         // Sync to cloud
         do {
             try await firestoreService.saveFriendship(friendship)
+
+            // Create activity for addressee
+            let activity = Activity(
+                recipientId: addresseeId,
+                actorId: requesterId,
+                type: .friendRequest
+            )
+            try? await activityService.createActivity(activity)
         } catch {
             // Revert on failure
             friendshipRepo.delete(friendship)
@@ -252,6 +264,16 @@ class FriendsViewModel: ObservableObject {
         if let updated = friendshipRepo.getFriendship(id: friendship.id) {
             do {
                 try await firestoreService.saveFriendship(updated)
+
+                // Create activity for requester
+                if let myId = currentUserId {
+                    let activity = Activity(
+                        recipientId: friendship.requesterId,
+                        actorId: myId,
+                        type: .friendAccepted
+                    )
+                    try? await activityService.createActivity(activity)
+                }
             } catch {
                 // Revert - restore pending status
                 var reverted = updated
@@ -339,6 +361,63 @@ class FriendsViewModel: ObservableObject {
         // Reload to update UI
         if let userId = currentUserId {
             await loadFromLocalCache(userId: userId)
+        }
+    }
+
+    // MARK: - Suggested Friends
+
+    func loadSuggestedFriends() {
+        guard let myId = currentUserId else { return }
+
+        isLoadingSuggestions = true
+
+        Task {
+            defer { isLoadingSuggestions = false }
+
+            // Get current friend IDs
+            let myFriends = friendshipRepo.getAcceptedFriends(for: myId)
+            let myFriendIds = Set(myFriends.compactMap { $0.otherUserId(from: myId) })
+
+            // Get all friendship IDs (including pending/blocked) to exclude
+            let allFriendships = friendshipRepo.getAllFriendships(for: myId)
+            let allRelatedIds = Set(allFriendships.compactMap { $0.otherUserId(from: myId) })
+
+            var candidateIds: Set<String> = []
+
+            // For each friend, fetch their friends (friends-of-friends)
+            for friendId in Array(myFriendIds.prefix(10)) {
+                do {
+                    let friendsFriendships = try await firestoreService.fetchFriendships(for: friendId)
+                    let friendsFriendIds = friendsFriendships
+                        .filter { $0.status == .accepted }
+                        .compactMap { $0.otherUserId(from: friendId) }
+
+                    for fofId in friendsFriendIds {
+                        // Exclude self, existing friends, and existing relationships
+                        if fofId != myId && !allRelatedIds.contains(fofId) {
+                            candidateIds.insert(fofId)
+                        }
+                    }
+                } catch {
+                    Logger.error(error, context: "FriendsViewModel.loadSuggestedFriends")
+                }
+
+                if candidateIds.count >= 10 { break }
+            }
+
+            // Fetch profiles for candidates (limit 5)
+            var suggestions: [UserSearchResult] = []
+            for candidateId in Array(candidateIds.prefix(5)) {
+                do {
+                    if let profile = try await firestoreService.fetchPublicProfile(userId: candidateId) {
+                        suggestions.append(UserSearchResult(firebaseUserId: candidateId, profile: profile))
+                    }
+                } catch {
+                    Logger.error(error, context: "FriendsViewModel.loadSuggestedFriends.fetchProfile")
+                }
+            }
+
+            suggestedFriends = suggestions
         }
     }
 

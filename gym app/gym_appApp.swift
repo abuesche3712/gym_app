@@ -32,6 +32,7 @@ struct gym_appApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var authService = AuthService.shared
     @StateObject private var dataRepository = DataRepository.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -46,8 +47,24 @@ struct gym_appApp: App {
                     if isAuthenticated {
                         Logger.debug("App launch: Auth restored, starting sync...")
                         await dataRepository.syncFromCloud()
+                        PresenceService.shared.goOnline()
+                        await ComposePostViewModel.publishScheduledPosts()
                     } else {
                         Logger.debug("App launch: Not authenticated, skipping sync")
+                    }
+                }
+                .onChange(of: scenePhase) { _, newPhase in
+                    switch newPhase {
+                    case .active:
+                        if authService.currentUser != nil {
+                            PresenceService.shared.goOnline()
+                        }
+                    case .inactive, .background:
+                        if authService.currentUser != nil {
+                            PresenceService.shared.goOffline()
+                        }
+                    @unknown default:
+                        break
                     }
                 }
         }

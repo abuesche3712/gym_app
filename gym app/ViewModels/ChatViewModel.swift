@@ -14,6 +14,9 @@ class ChatViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var isSending = false
     @Published var error: Error?
+    @Published var otherUserIsTyping = false
+    @Published var otherUserIsOnline = false
+    @Published var otherUserLastSeen: Date?
 
     let conversation: Conversation
     let otherParticipant: UserProfile
@@ -26,6 +29,10 @@ class ChatViewModel: ObservableObject {
     private let authService = AuthService.shared
 
     private var messageListener: ListenerRegistration?
+    private var typingListener: ListenerRegistration?
+    private var presenceListener: ListenerRegistration?
+    private let presenceService = PresenceService.shared
+    private var typingDebounceTask: Task<Void, Never>?
 
     var currentUserId: String? {
         authService.currentUser?.uid
@@ -57,6 +64,9 @@ class ChatViewModel: ObservableObject {
 
     deinit {
         messageListener?.remove()
+        typingListener?.remove()
+        presenceListener?.remove()
+        typingDebounceTask?.cancel()
     }
 
     // MARK: - Data Loading
@@ -85,6 +95,28 @@ class ChatViewModel: ObservableObject {
         // Load from local cache immediately
         loadFromLocalCache()
         isLoading = false
+
+        // Start typing indicator listener
+        typingListener?.remove()
+        typingListener = presenceService.listenToTypingStatus(
+            conversationId: conversation.id,
+            otherUserId: otherParticipantFirebaseId
+        ) { [weak self] isTyping in
+            Task { @MainActor in
+                self?.otherUserIsTyping = isTyping
+            }
+        }
+
+        // Start presence listener
+        presenceListener?.remove()
+        presenceListener = presenceService.listenToPresence(
+            userId: otherParticipantFirebaseId
+        ) { [weak self] isOnline, lastSeen in
+            Task { @MainActor in
+                self?.otherUserIsOnline = isOnline
+                self?.otherUserLastSeen = lastSeen
+            }
+        }
     }
 
     private func loadFromLocalCache() {
@@ -111,10 +143,20 @@ class ChatViewModel: ObservableObject {
         // Update conversation unread count locally
         conversationRepo.markConversationRead(conversation.id, for: userId)
 
-        // Reset unread count in Firestore
+        // Mark unread messages from the other user as read in Firestore
+        // so the sender's listener picks up the readAt update
         Task {
             do {
                 try await firestoreService.resetUnreadCount(conversationId: conversation.id, userId: userId)
+
+                // Mark individual messages as read in Firestore
+                let unreadFromOther = messages.filter { $0.senderId != userId && !$0.isRead }
+                for message in unreadFromOther {
+                    try await firestoreService.markMessageRead(
+                        conversationId: conversation.id,
+                        messageId: message.id
+                    )
+                }
             } catch {
                 Logger.error(error, context: "ChatViewModel.markMessagesAsRead.resetUnreadCount")
             }
@@ -223,6 +265,37 @@ class ChatViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Message Deletion
+
+    /// Delete a message for the current user only (hides locally)
+    func deleteMessage(_ message: Message) {
+        messages.removeAll { $0.id == message.id }
+    }
+
+    /// Unsend a message (own messages only, soft-deletes in Firestore)
+    func unsendMessage(_ message: Message) async {
+        guard message.senderId == currentUserId else { return }
+
+        // Optimistic local update
+        if let index = messages.firstIndex(where: { $0.id == message.id }) {
+            var updated = messages[index]
+            updated.isDeleted = true
+            updated.content = .text("This message was deleted")
+            messages[index] = updated
+        }
+
+        do {
+            try await firestoreService.deleteMessage(
+                conversationId: conversation.id,
+                messageId: message.id
+            )
+        } catch {
+            Logger.error(error, context: "ChatViewModel.unsendMessage")
+            // Reload on failure
+            loadFromLocalCache()
+        }
+    }
+
     // MARK: - Pagination
 
     func loadMoreMessages() async {
@@ -240,9 +313,38 @@ class ChatViewModel: ObservableObject {
         }
     }
 
+    func updateTypingStatus(_ text: String) {
+        guard let userId = currentUserId else { return }
+
+        let isTyping = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        presenceService.setTypingStatus(conversationId: conversation.id, userId: userId, isTyping: isTyping)
+
+        // Auto-clear after 2 seconds of no changes
+        typingDebounceTask?.cancel()
+        if isTyping {
+            typingDebounceTask = Task {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    self.presenceService.setTypingStatus(conversationId: self.conversation.id, userId: userId, isTyping: false)
+                }
+            }
+        }
+    }
+
     func stopListening() {
         messageListener?.remove()
         messageListener = nil
+        typingListener?.remove()
+        typingListener = nil
+        presenceListener?.remove()
+        presenceListener = nil
+        typingDebounceTask?.cancel()
+
+        // Clear typing status when leaving
+        if let userId = currentUserId {
+            presenceService.setTypingStatus(conversationId: conversation.id, userId: userId, isTyping: false)
+        }
     }
 
     // MARK: - Import Shared Content

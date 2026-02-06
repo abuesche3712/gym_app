@@ -195,6 +195,10 @@
 		SETROW02BUILD002 /* SetRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SETROW01FILE001 /* SetRowView.swift */; };
 		SHRBND02BUILD002 /* ShareBundles.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRBND01FILE001 /* ShareBundles.swift */; };
 		SHRCRD02BUILD002 /* SharedContentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRCRD01FILE001 /* SharedContentCard.swift */; };
+		SHRCNTPRV02BUILD /* SharedContentPreviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRCNTPRV01FILE /* SharedContentPreviewSheet.swift */; };
+		SHRMDLPRV02BUILD /* SharedModulePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRMDLPRV01FILE /* SharedModulePreviewView.swift */; };
+		SHRWKTPRV02BUILD /* SharedWorkoutPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRWKTPRV01FILE /* SharedWorkoutPreviewView.swift */; };
+		SHRPRGPRV02BUILD /* SharedProgramPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRPRGPRV01FILE /* SharedProgramPreviewView.swift */; };
 		SHRFRN02BUILD002 /* ShareWithFriendSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRFRN01FILE001 /* ShareWithFriendSheet.swift */; };
 		SHRSER02BUILD002 /* SharingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRSER01FILE001 /* SharingService.swift */; };
 		SOCAL002BUILD002 /* SocialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SOCAL001FILE001 /* SocialView.swift */; };
@@ -221,6 +225,17 @@
 		WKBLD002BUILD002 /* WorkoutBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = WKBLD001FILE001 /* WorkoutBuilderView.swift */; };
 		WKDIFF02BUILD002 /* WorkoutDiffService.swift in Sources */ = {isa = PBXBuildFile; fileRef = WKDIFF01FILE001 /* WorkoutDiffService.swift */; };
 		WKREP002BUILD002 /* WorkoutRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = WKREP001FILE001 /* WorkoutRepository.swift */; };
+		7DDCA2C505189CE3DB3CACC3 /* Activity.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF74810618039ACCAAEA3FCA /* Activity.swift */; };
+		F2AE89AB15CB3092F6F4F7A8 /* ActivityViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700932C12B5D85235A688B70 /* ActivityViewModel.swift */; };
+		29CC57FCAE2F50F9AA03FE2F /* ActivityFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E97682113C5D43548C7F565 /* ActivityFeedView.swift */; };
+		9A3179BD6043C2A129426335 /* FirestoreActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B6F8FF624F3F58D7C2AEC9B /* FirestoreActivityService.swift */; };
+		F92592D922191FE336C0B476 /* OtherUserProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90CD920837A850E936642FE /* OtherUserProfileView.swift */; };
+		5BB70F59AE96249D975470D6 /* OtherUserProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C1B430A886BE30C7C6285A9 /* OtherUserProfileViewModel.swift */; };
+		0FC31B87309C6B9AAF6C1F8E /* PresenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FE98423A878984E481AF73F /* PresenceService.swift */; };
+		RPRTMDL02BUILD01 /* Report.swift in Sources */ = {isa = PBXBuildFile; fileRef = RPRTMDL01FILE001 /* Report.swift */; };
+		RPRTSHT02BUILD01 /* ReportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = RPRTSHT01FILE001 /* ReportSheet.swift */; };
+		TXTPRS02BUILD01 /* TextParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = TXTPRS01FILE001 /* TextParser.swift */; };
+		RCHTXV02BUILD01 /* RichTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RCHTXV01FILE001 /* RichTextView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -444,6 +459,10 @@
 		SETROW01FILE001 /* SetRowView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetRowView.swift; sourceTree = "<group>"; };
 		SHRBND01FILE001 /* ShareBundles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShareBundles.swift; path = "gym app/Models/ShareBundles.swift"; sourceTree = "<group>"; };
 		SHRCRD01FILE001 /* SharedContentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SharedContentCard.swift; path = "gym app/Views/Social/SharedContentCard.swift"; sourceTree = "<group>"; };
+		SHRCNTPRV01FILE /* SharedContentPreviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedContentPreviewSheet.swift; sourceTree = "<group>"; };
+		SHRMDLPRV01FILE /* SharedModulePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedModulePreviewView.swift; sourceTree = "<group>"; };
+		SHRWKTPRV01FILE /* SharedWorkoutPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedWorkoutPreviewView.swift; sourceTree = "<group>"; };
+		SHRPRGPRV01FILE /* SharedProgramPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedProgramPreviewView.swift; sourceTree = "<group>"; };
 		SHRFRN01FILE001 /* ShareWithFriendSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShareWithFriendSheet.swift; path = "gym app/Views/Social/ShareWithFriendSheet.swift"; sourceTree = "<group>"; };
 		SHRSER01FILE001 /* SharingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SharingService.swift; path = "gym app/Services/SharingService.swift"; sourceTree = "<group>"; };
 		SOCAL001FILE001 /* SocialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialView.swift; sourceTree = "<group>"; };
@@ -470,6 +489,17 @@
 		WKBLD001FILE001 /* WorkoutBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutBuilderView.swift; sourceTree = "<group>"; };
 		WKDIFF01FILE001 /* WorkoutDiffService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDiffService.swift; sourceTree = "<group>"; };
 		WKREP001FILE001 /* WorkoutRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutRepository.swift; sourceTree = "<group>"; };
+		FF74810618039ACCAAEA3FCA /* Activity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Activity.swift; sourceTree = "<group>"; };
+		700932C12B5D85235A688B70 /* ActivityViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityViewModel.swift; sourceTree = "<group>"; };
+		7E97682113C5D43548C7F565 /* ActivityFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityFeedView.swift; sourceTree = "<group>"; };
+		3B6F8FF624F3F58D7C2AEC9B /* FirestoreActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreActivityService.swift; sourceTree = "<group>"; };
+		B90CD920837A850E936642FE /* OtherUserProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherUserProfileView.swift; sourceTree = "<group>"; };
+		2C1B430A886BE30C7C6285A9 /* OtherUserProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherUserProfileViewModel.swift; sourceTree = "<group>"; };
+		2FE98423A878984E481AF73F /* PresenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresenceService.swift; sourceTree = "<group>"; };
+		RPRTMDL01FILE001 /* Report.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Report.swift; sourceTree = "<group>"; };
+		RPRTSHT01FILE001 /* ReportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportSheet.swift; sourceTree = "<group>"; };
+		TXTPRS01FILE001 /* TextParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextParser.swift; sourceTree = "<group>"; };
+		RCHTXV01FILE001 /* RichTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -545,6 +575,7 @@
 				112F204E54595BC864A784E2 /* FirestoreConflictService.swift */,
 				4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */,
 				B6PHOTO022F2A000000D8C22D /* ProfilePhotoService.swift */,
+				3B6F8FF624F3F58D7C2AEC9B /* FirestoreActivityService.swift */,
 			);
 			path = Firebase;
 			sourceTree = "<group>";
@@ -647,6 +678,8 @@
 				CMPSTVM01FILE001 /* ComposePostViewModel.swift */,
 				QKLGVM01FILE /* QuickLogViewModel.swift */,
 				EDTPSTVM01FILE001 /* EditPostViewModel.swift */,
+				700932C12B5D85235A688B70 /* ActivityViewModel.swift */,
+				2C1B430A886BE30C7C6285A9 /* OtherUserProfileViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -681,6 +714,8 @@
 				CONVMDL001FILE /* Conversation.swift */,
 				MSGMDL001FILE /* Message.swift */,
 				POST001FILE001 /* Post.swift */,
+				FF74810618039ACCAAEA3FCA /* Activity.swift */,
+				RPRTMDL01FILE001 /* Report.swift */,
 				E3A1B2C3D4E5F60000000003 /* Protocols */,
 			);
 			path = Models;
@@ -821,6 +856,7 @@
 				C36DDB57BAA44FEF866BE090 /* AuthService.swift */,
 				EXRSLV001FILE001 /* ExerciseResolver.swift */,
 				B63EBF0B2F15E73700D8C22D /* FirebaseService.swift */,
+				2FE98423A878984E481AF73F /* PresenceService.swift */,
 				HAPTIC001FILE001 /* HapticManager.swift */,
 				LOGGER01FILE001 /* Logger.swift */,
 				B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */,
@@ -966,6 +1002,7 @@
 			isa = PBXGroup;
 			children = (
 				SOCLCMPGRP01 /* Components */,
+				SHRPRVGRP01 /* Previews */,
 				SOCAL001FILE001 /* SocialView.swift */,
 				CONVLST001FILE /* ConversationsListView.swift */,
 				CHATVW001FILE /* ChatView.swift */,
@@ -979,6 +1016,9 @@
 				CMPSHT01FILE001 /* ComposePostSheet.swift */,
 				HLTPKR01FILE001 /* HighlightPickerView.swift */,
 				EDTPST01FILE001 /* EditPostSheet.swift */,
+				7E97682113C5D43548C7F565 /* ActivityFeedView.swift */,
+				B90CD920837A850E936642FE /* OtherUserProfileView.swift */,
+				RPRTSHT01FILE001 /* ReportSheet.swift */,
 			);
 			path = Social;
 			sourceTree = "<group>";
@@ -990,8 +1030,20 @@
 				CAPTNINP01FILE001 /* CaptionInputView.swift */,
 				CNTPRVC01FILE001 /* ContentPreviewCard.swift */,
 				PSTEDTLBR01FILE001 /* PostEditorToolbar.swift */,
+				RCHTXV01FILE001 /* RichTextView.swift */,
 			);
 			path = Components;
+			sourceTree = "<group>";
+		};
+		SHRPRVGRP01 /* Previews */ = {
+			isa = PBXGroup;
+			children = (
+				SHRCNTPRV01FILE /* SharedContentPreviewSheet.swift */,
+				SHRMDLPRV01FILE /* SharedModulePreviewView.swift */,
+				SHRWKTPRV01FILE /* SharedWorkoutPreviewView.swift */,
+				SHRPRGPRV01FILE /* SharedProgramPreviewView.swift */,
+			);
+			path = Previews;
 			sourceTree = "<group>";
 		};
 		UTILITIES001GROUP001 /* Utilities */ = {
@@ -1000,6 +1052,7 @@
 				FORMATTING001HELPERS001 /* FormattingHelpers.swift */,
 				SUPERSET001HELPER001 /* SupersetHelper.swift */,
 				DEBOUNCER001FILE001 /* Debouncer.swift */,
+				TXTPRS01FILE001 /* TextParser.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -1220,6 +1273,10 @@
 				SHRSER02BUILD002 /* SharingService.swift in Sources */,
 				SHRFRN02BUILD002 /* ShareWithFriendSheet.swift in Sources */,
 				SHRCRD02BUILD002 /* SharedContentCard.swift in Sources */,
+				SHRCNTPRV02BUILD /* SharedContentPreviewSheet.swift in Sources */,
+				SHRMDLPRV02BUILD /* SharedModulePreviewView.swift in Sources */,
+				SHRWKTPRV02BUILD /* SharedWorkoutPreviewView.swift in Sources */,
+				SHRPRGPRV02BUILD /* SharedProgramPreviewView.swift in Sources */,
 				IMPCSHT02BUILD002 /* ImportConflictSheet.swift in Sources */,
 				B63EBF212F15E73700D8C22D /* SettingsView.swift in Sources */,
 				B6EXERC022F15E73700D8C22D /* ExerciseLibraryView.swift in Sources */,
@@ -1276,6 +1333,7 @@
 				197B16192F2569D8006135E4 /* BackgroundSessionManager.swift in Sources */,
 				FB314B4CB2D940F6B27703FF /* DataSeeder.swift in Sources */,
 				B63EBF2A2F15E73700D8C22D /* FirebaseService.swift in Sources */,
+				0FC31B87309C6B9AAF6C1F8E /* PresenceService.swift in Sources */,
 				B610AC052F15B4DD008B2C15 /* ContentView.swift in Sources */,
 				B63EBF222F15E73700D8C22D /* WorkoutDetailView.swift in Sources */,
 				B63EBF102F15E73700D8C22D /* ModuleViewModel.swift in Sources */,
@@ -1406,6 +1464,16 @@
 				IMPDTV02BUILD /* ImportDataView.swift in Sources */,
 				QKLGVM02BUILD /* QuickLogViewModel.swift in Sources */,
 				QKLGSHT02BUILD /* QuickLogSheet.swift in Sources */,
+				7DDCA2C505189CE3DB3CACC3 /* Activity.swift in Sources */,
+				F2AE89AB15CB3092F6F4F7A8 /* ActivityViewModel.swift in Sources */,
+				29CC57FCAE2F50F9AA03FE2F /* ActivityFeedView.swift in Sources */,
+				9A3179BD6043C2A129426335 /* FirestoreActivityService.swift in Sources */,
+				F92592D922191FE336C0B476 /* OtherUserProfileView.swift in Sources */,
+				5BB70F59AE96249D975470D6 /* OtherUserProfileViewModel.swift in Sources */,
+				RPRTMDL02BUILD01 /* Report.swift in Sources */,
+				RPRTSHT02BUILD01 /* ReportSheet.swift in Sources */,
+				TXTPRS02BUILD01 /* TextParser.swift in Sources */,
+				RCHTXV02BUILD01 /* RichTextView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -13,6 +13,7 @@ struct ConversationsListView: View {
     @State private var selectedConversation: ConversationWithProfile?
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var conversationToDelete: ConversationWithProfile?
 
     var body: some View {
         ScrollView {
@@ -113,6 +114,13 @@ struct ConversationsListView: View {
                         selectedConversation = convoWithProfile
                     }
                 )
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) {
+                        conversationToDelete = convoWithProfile
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
 
                 if convoWithProfile.id != viewModel.conversations.last?.id {
                     Divider()
@@ -122,6 +130,28 @@ struct ConversationsListView: View {
         }
         .background(AppColors.surfaceSecondary)
         .cornerRadius(AppCorners.large)
+        .confirmationDialog(
+            "Delete Conversation?",
+            isPresented: Binding(
+                get: { conversationToDelete != nil },
+                set: { if !$0 { conversationToDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let convo = conversationToDelete {
+                    Task {
+                        await viewModel.deleteConversation(convo.conversation)
+                    }
+                    conversationToDelete = nil
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                conversationToDelete = nil
+            }
+        } message: {
+            Text("This will permanently delete this conversation and all messages.")
+        }
     }
 }
 
@@ -131,13 +161,16 @@ struct ConversationRow: View {
     let conversationWithProfile: ConversationWithProfile
     let onTap: () -> Void
 
+    @State private var isOnline = false
+    @State private var lastSeen: Date?
+
     private var conversation: Conversation { conversationWithProfile.conversation }
     private var profile: UserProfile { conversationWithProfile.otherParticipant }
 
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: AppSpacing.md) {
-                // Avatar with unread indicator
+                // Avatar with unread indicator and online dot
                 ZStack(alignment: .topTrailing) {
                     ProfilePhotoView(profile: profile, size: 52)
 
@@ -151,6 +184,17 @@ struct ConversationRow: View {
                                     .foregroundColor(.white)
                             }
                             .offset(x: 2, y: -2)
+                    }
+
+                    // Online indicator
+                    if isOnline {
+                        Circle()
+                            .fill(AppColors.success)
+                            .frame(width: 12, height: 12)
+                            .overlay(
+                                Circle().stroke(AppColors.surfaceSecondary, lineWidth: 2)
+                            )
+                            .offset(x: 2, y: 38)
                     }
                 }
 
@@ -174,6 +218,9 @@ struct ConversationRow: View {
                             .subheadline(color: conversation.unreadCount > 0 ? AppColors.textPrimary : AppColors.textSecondary)
                             .fontWeight(conversation.unreadCount > 0 ? .medium : .regular)
                             .lineLimit(1)
+                    } else if !isOnline, let lastSeen = lastSeen {
+                        Text(PresenceService.formatLastSeen(lastSeen))
+                            .caption(color: AppColors.textTertiary)
                     } else {
                         Text("No messages yet")
                             .caption(color: AppColors.textTertiary)
@@ -190,6 +237,11 @@ struct ConversationRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .task {
+            let presence = await PresenceService.shared.fetchPresence(userId: conversationWithProfile.otherParticipantFirebaseId)
+            isOnline = presence.isOnline
+            lastSeen = presence.lastSeen
+        }
     }
 
     private var unreadBadgeText: String {

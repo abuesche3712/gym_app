@@ -11,7 +11,8 @@ import FirebaseFirestore
 @MainActor
 class PostDetailViewModel: ObservableObject {
     @Published var post: PostWithAuthor
-    @Published var comments: [CommentWithAuthor] = []
+    @Published var comments: [CommentWithAuthor] = []  // Top-level comments only
+    @Published var replies: [UUID: [CommentWithAuthor]] = [:]  // parentCommentId -> replies
     @Published var isLoading = false
     @Published var isSendingComment = false
     @Published var error: Error?
@@ -24,6 +25,7 @@ class PostDetailViewModel: ObservableObject {
     private var likeListener: ListenerRegistration?
     private var postListener: ListenerRegistration?
     private var profileCache: [String: UserProfile] = [:]
+    private let activityService = FirestoreActivityService.shared
 
     var currentUserId: String? { authService.currentUser?.uid }
 
@@ -81,7 +83,7 @@ class PostDetailViewModel: ObservableObject {
     }
 
     private func processComments(_ comments: [PostComment]) async {
-        var result: [CommentWithAuthor] = []
+        var allComments: [CommentWithAuthor] = []
 
         for comment in comments {
             let profile: UserProfile
@@ -95,10 +97,28 @@ class PostDetailViewModel: ObservableObject {
                 profile = UserProfile(id: UUID(), username: "unknown", displayName: "Unknown User")
             }
 
-            result.append(CommentWithAuthor(comment: comment, author: profile))
+            allComments.append(CommentWithAuthor(comment: comment, author: profile))
         }
 
-        self.comments = result
+        // Separate top-level comments from replies
+        var topLevel: [CommentWithAuthor] = []
+        var replyMap: [UUID: [CommentWithAuthor]] = [:]
+
+        for comment in allComments {
+            if let parentId = comment.comment.parentCommentId {
+                replyMap[parentId, default: []].append(comment)
+            } else {
+                topLevel.append(comment)
+            }
+        }
+
+        // Sort replies by createdAt ascending
+        for key in replyMap.keys {
+            replyMap[key]?.sort { $0.comment.createdAt < $1.comment.createdAt }
+        }
+
+        self.comments = topLevel
+        self.replies = replyMap
     }
 
     // MARK: - Actions
@@ -134,8 +154,89 @@ class PostDetailViewModel: ObservableObject {
                 object: ["postId": post.post.id, "commentCount": post.post.commentCount]
             )
 
+            // Create activity for post author
+            let activity = Activity(
+                recipientId: post.post.authorId,
+                actorId: userId,
+                type: .comment,
+                postId: post.post.id,
+                preview: String(text.prefix(50))
+            )
+            try? await activityService.createActivity(activity)
+
             HapticManager.shared.success()
         } catch {
+            self.error = error
+        }
+    }
+
+    func sendReply(to parentComment: CommentWithAuthor, text: String) async {
+        guard let userId = currentUserId, !text.isEmpty else { return }
+
+        isSendingComment = true
+        defer { isSendingComment = false }
+
+        let reply = PostComment(
+            postId: post.post.id,
+            authorId: userId,
+            text: text,
+            parentCommentId: parentComment.comment.id
+        )
+
+        do {
+            try await firestoreService.addComment(reply)
+            postRepo.saveComment(reply)
+
+            // Update local post comment count
+            var updatedPost = post.post
+            updatedPost.commentCount += 1
+            post = PostWithAuthor(
+                post: updatedPost,
+                author: post.author,
+                isLikedByCurrentUser: post.isLikedByCurrentUser
+            )
+
+            // Notify feed to update comment count
+            NotificationCenter.default.post(
+                name: .didUpdatePostCommentCount,
+                object: ["postId": post.post.id, "commentCount": post.post.commentCount]
+            )
+
+            // Create activity for comment author (the person being replied to)
+            let activity = Activity(
+                recipientId: parentComment.comment.authorId,
+                actorId: userId,
+                type: .comment,
+                postId: post.post.id,
+                preview: String(text.prefix(50))
+            )
+            try? await activityService.createActivity(activity)
+
+            HapticManager.shared.success()
+        } catch {
+            self.error = error
+        }
+    }
+
+    func updateComment(_ comment: CommentWithAuthor, newText: String) async {
+        guard comment.comment.authorId == currentUserId else { return }
+
+        // Optimistic update
+        if let index = comments.firstIndex(where: { $0.id == comment.id }) {
+            var updatedComment = comment.comment
+            updatedComment.text = newText
+            updatedComment.updatedAt = Date()
+            comments[index] = CommentWithAuthor(comment: updatedComment, author: comment.author)
+        }
+
+        do {
+            var updatedComment = comment.comment
+            updatedComment.text = newText
+            try await firestoreService.updateComment(updatedComment)
+            HapticManager.shared.tap()
+        } catch {
+            // Reload on failure
+            loadComments()
             self.error = error
         }
     }
@@ -173,7 +274,7 @@ class PostDetailViewModel: ObservableObject {
         }
     }
 
-    func toggleLike() async {
+    func toggleLike(reactionType: ReactionType = .heart) async {
         guard let userId = currentUserId else { return }
 
         let wasLiked = post.isLikedByCurrentUser
@@ -192,9 +293,18 @@ class PostDetailViewModel: ObservableObject {
                 try await firestoreService.unlikePost(postId: post.post.id, userId: userId)
                 postRepo.deleteLike(postId: post.post.id, userId: userId)
             } else {
-                try await firestoreService.likePost(postId: post.post.id, userId: userId)
-                let like = PostLike(postId: post.post.id, userId: userId)
+                try await firestoreService.likePost(postId: post.post.id, userId: userId, reactionType: reactionType)
+                let like = PostLike(postId: post.post.id, userId: userId, reactionType: reactionType)
                 postRepo.saveLike(like)
+
+                // Create activity for post author
+                let activity = Activity(
+                    recipientId: post.post.authorId,
+                    actorId: userId,
+                    type: .like,
+                    postId: post.post.id
+                )
+                try? await activityService.createActivity(activity)
             }
             HapticManager.shared.tap()
         } catch {
@@ -206,6 +316,39 @@ class PostDetailViewModel: ObservableObject {
                 author: post.author,
                 isLikedByCurrentUser: wasLiked
             )
+            self.error = error
+        }
+    }
+
+    func react(with reactionType: ReactionType) async {
+        guard let userId = currentUserId else { return }
+
+        // Optimistic update
+        var updatedPost = post.post
+        if !post.isLikedByCurrentUser {
+            updatedPost.likeCount += 1
+        }
+        post = PostWithAuthor(
+            post: updatedPost,
+            author: post.author,
+            isLikedByCurrentUser: true
+        )
+
+        do {
+            try await firestoreService.likePost(postId: post.post.id, userId: userId, reactionType: reactionType)
+            let like = PostLike(postId: post.post.id, userId: userId, reactionType: reactionType)
+            postRepo.saveLike(like)
+
+            // Create activity for post author
+            let activity = Activity(
+                recipientId: post.post.authorId,
+                actorId: userId,
+                type: .like,
+                postId: post.post.id
+            )
+            try? await activityService.createActivity(activity)
+            HapticManager.shared.tap()
+        } catch {
             self.error = error
         }
     }

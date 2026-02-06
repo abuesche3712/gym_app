@@ -9,12 +9,78 @@ import Foundation
 import FirebaseFirestore
 import Combine
 
+// MARK: - Feed Filter
+
+enum FeedFilter: String, CaseIterable, Identifiable {
+    case all = "All"
+    case workouts = "Workouts"
+    case prs = "PRs"
+    case programs = "Programs"
+    case text = "Text"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .all: return "square.stack"
+        case .workouts: return "figure.run"
+        case .prs: return "trophy.fill"
+        case .programs: return "doc.text.fill"
+        case .text: return "text.quote"
+        }
+    }
+
+    func matches(_ content: PostContent) -> Bool {
+        switch self {
+        case .all:
+            return true
+        case .workouts:
+            switch content {
+            case .session, .exercise, .completedModule, .highlights:
+                return true
+            default:
+                return false
+            }
+        case .prs:
+            if case .set = content {
+                return true
+            }
+            return false
+        case .programs:
+            switch content {
+            case .program, .workout, .module:
+                return true
+            default:
+                return false
+            }
+        case .text:
+            if case .text = content {
+                return true
+            }
+            return false
+        }
+    }
+}
+
+// MARK: - Feed Mode
+
+enum FeedMode: String, CaseIterable, Identifiable {
+    case feed = "Feed"
+    case discover = "Discover"
+
+    var id: String { rawValue }
+}
+
 @MainActor
 class FeedViewModel: ObservableObject {
     @Published var posts: [PostWithAuthor] = []
+    @Published var trendingPosts: [PostWithAuthor] = []
     @Published var isLoading = false
     @Published var isLoadingMore = false
+    @Published var isLoadingTrending = false
     @Published var error: Error?
+    @Published var activeFilter: FeedFilter = .all
+    @Published var feedMode: FeedMode = .feed
 
     private let postRepo: PostRepository
     private let friendshipRepo: FriendshipRepository
@@ -27,8 +93,14 @@ class FeedViewModel: ObservableObject {
     private var newPostObserver: Any?
     private var commentCountObserver: Any?
     private var friendshipCancellable: AnyCancellable?
+    private let activityService = FirestoreActivityService.shared
 
     var currentUserId: String? { authService.currentUser?.uid }
+
+    var filteredPosts: [PostWithAuthor] {
+        guard activeFilter != .all else { return posts }
+        return posts.filter { activeFilter.matches($0.post.content) }
+    }
 
     init(
         postRepo: PostRepository = PostRepository(),
@@ -257,7 +329,7 @@ class FeedViewModel: ObservableObject {
 
     // MARK: - Like Actions
 
-    func toggleLike(for post: PostWithAuthor) async {
+    func toggleLike(for post: PostWithAuthor, reactionType: ReactionType = .heart) async {
         guard let userId = currentUserId else { return }
 
         // Find index and get current state
@@ -280,10 +352,19 @@ class FeedViewModel: ObservableObject {
                 likedPostIds.remove(post.post.id)
                 postRepo.deleteLike(postId: post.post.id, userId: userId)
             } else {
-                try await firestoreService.likePost(postId: post.post.id, userId: userId)
+                try await firestoreService.likePost(postId: post.post.id, userId: userId, reactionType: reactionType)
                 likedPostIds.insert(post.post.id)
-                let like = PostLike(postId: post.post.id, userId: userId)
+                let like = PostLike(postId: post.post.id, userId: userId, reactionType: reactionType)
                 postRepo.saveLike(like)
+
+                // Create activity for post author
+                let activity = Activity(
+                    recipientId: post.post.authorId,
+                    actorId: userId,
+                    type: .like,
+                    postId: post.post.id
+                )
+                try? await activityService.createActivity(activity)
             }
             HapticManager.shared.tap()
         } catch {
@@ -296,6 +377,41 @@ class FeedViewModel: ObservableObject {
                 author: posts[index].author,
                 isLikedByCurrentUser: wasLiked
             )
+            self.error = error
+        }
+    }
+
+    func react(to post: PostWithAuthor, with reactionType: ReactionType) async {
+        guard let userId = currentUserId else { return }
+        guard let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
+
+        // Optimistic update
+        var updatedPost = posts[index].post
+        if !posts[index].isLikedByCurrentUser {
+            updatedPost.likeCount += 1
+        }
+        posts[index] = PostWithAuthor(
+            post: updatedPost,
+            author: posts[index].author,
+            isLikedByCurrentUser: true
+        )
+
+        do {
+            try await firestoreService.likePost(postId: post.post.id, userId: userId, reactionType: reactionType)
+            likedPostIds.insert(post.post.id)
+            let like = PostLike(postId: post.post.id, userId: userId, reactionType: reactionType)
+            postRepo.saveLike(like)
+
+            // Create activity for post author
+            let activity = Activity(
+                recipientId: post.post.authorId,
+                actorId: userId,
+                type: .like,
+                postId: post.post.id
+            )
+            try? await activityService.createActivity(activity)
+            HapticManager.shared.tap()
+        } catch {
             self.error = error
         }
     }
@@ -355,6 +471,24 @@ class FeedViewModel: ObservableObject {
         } catch {
             self.error = error
             return []
+        }
+    }
+
+    // MARK: - Trending Posts
+
+    func loadTrendingPosts() async {
+        guard let userId = currentUserId else { return }
+        guard !isLoadingTrending else { return }
+
+        isLoadingTrending = true
+        defer { isLoadingTrending = false }
+
+        do {
+            let since = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+            let posts = try await firestoreService.fetchTrendingPosts(since: since, limit: 20)
+            trendingPosts = await loadAuthorsForPosts(posts, userId: userId)
+        } catch {
+            self.error = error
         }
     }
 }

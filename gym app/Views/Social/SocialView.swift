@@ -13,11 +13,15 @@ struct SocialView: View {
     @StateObject private var feedViewModel = FeedViewModel()
     @StateObject private var friendsViewModel = FriendsViewModel()
     @StateObject private var conversationsViewModel = ConversationsViewModel()
+    @StateObject private var activityViewModel = ActivityViewModel()
 
     @State private var showingSignIn = false
     @State private var showingComposeSheet = false
     @State private var selectedPost: PostWithAuthor?
     @State private var postToEdit: PostWithAuthor?
+    @State private var postToShare: PostWithAuthor?
+    @State private var postToReport: PostWithAuthor?
+    @State private var profileToView: PostWithAuthor?
 
     private var profileRepo: ProfileRepository {
         dataRepository.profileRepo
@@ -40,6 +44,27 @@ struct SocialView: View {
         .sheet(item: $selectedPost) { post in
             PostDetailView(post: post)
         }
+        .sheet(item: $postToShare) { postWithAuthor in
+            ShareWithFriendSheet(
+                content: ShareablePostContent(post: postWithAuthor.post)
+            ) { conversationWithProfile in
+                let chatViewModel = ChatViewModel(
+                    conversation: conversationWithProfile.conversation,
+                    otherParticipant: conversationWithProfile.otherParticipant,
+                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+                )
+                let messageContent = postWithAuthor.post.content.toMessageContent()
+                try await chatViewModel.sendSharedContent(messageContent)
+            }
+        }
+        .sheet(item: $profileToView) { postWithAuthor in
+            NavigationStack {
+                OtherUserProfileView(
+                    profile: postWithAuthor.author,
+                    firebaseUserId: postWithAuthor.post.authorId
+                )
+            }
+        }
         .sheet(item: $postToEdit) { postWithAuthor in
             EditPostSheet(post: postWithAuthor.post) { updatedPost in
                 Task<Void, Never> { @MainActor in
@@ -47,11 +72,19 @@ struct SocialView: View {
                 }
             }
         }
+        .sheet(item: $postToReport) { postWithAuthor in
+            ReportSheet(
+                reportedUserId: postWithAuthor.post.authorId,
+                contentType: .post,
+                contentId: postWithAuthor.post.id.uuidString
+            )
+        }
         .onAppear {
             if authService.isAuthenticated {
                 friendsViewModel.loadFriendships()
                 conversationsViewModel.loadConversations()
                 feedViewModel.loadFeed()
+                activityViewModel.loadActivities()
             }
         }
         // Reload feed when friends list changes (ensures feed includes new friends' posts)
@@ -75,12 +108,28 @@ struct SocialView: View {
                         .padding(.top, AppSpacing.screenPadding)
                         .padding(.bottom, AppSpacing.md)
 
+                    // Feed / Discover segmented control
+                    feedModeSelector
+                        .padding(.horizontal, AppSpacing.screenPadding)
+                        .padding(.bottom, AppSpacing.xs)
+
+                    // Filter chips (only in feed mode)
+                    if feedViewModel.feedMode == .feed {
+                        feedFilterChips
+                            .padding(.horizontal, AppSpacing.screenPadding)
+                            .padding(.bottom, AppSpacing.sm)
+                    }
+
                     // Feed content
                     LazyVStack(spacing: 0) {
-                        if feedViewModel.isLoading && feedViewModel.posts.isEmpty {
+                        if feedViewModel.feedMode == .discover {
+                            discoverContent
+                        } else if feedViewModel.isLoading && feedViewModel.posts.isEmpty {
                             loadingView
                         } else if feedViewModel.posts.isEmpty {
                             emptyFeedState
+                        } else if feedViewModel.filteredPosts.isEmpty {
+                            noFilterResultsView
                         } else {
                             feedList
                         }
@@ -133,6 +182,23 @@ struct SocialView: View {
                             if friendsViewModel.pendingRequestCount > 0 {
                                 Circle()
                                     .fill(AppColors.warning)
+                                    .frame(width: 8, height: 8)
+                                    .offset(x: 2, y: -2)
+                            }
+                        }
+                    }
+
+                    // Activity/notifications button
+                    NavigationLink(destination: ActivityFeedView()) {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "bell")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundColor(AppColors.textSecondary)
+                                .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+
+                            if activityViewModel.unreadCount > 0 {
+                                Circle()
+                                    .fill(AppColors.error)
                                     .frame(width: 8, height: 8)
                                     .offset(x: 2, y: -2)
                             }
@@ -286,7 +352,7 @@ struct SocialView: View {
 
     private var feedList: some View {
         LazyVStack(spacing: 0) {
-            ForEach(feedViewModel.posts) { post in
+            ForEach(feedViewModel.filteredPosts) { post in
                 VStack(spacing: 0) {
                     // Divider at top of each post
                     Rectangle()
@@ -312,11 +378,24 @@ struct SocialView: View {
                             }
                         } : nil,
                         onProfileTap: {
-                            // Profile viewing can be added later
+                            if post.post.authorId != feedViewModel.currentUserId {
+                                profileToView = post
+                            }
+                        },
+                        onShare: {
+                            postToShare = post
                         },
                         onPostTap: {
                             selectedPost = post
-                        }
+                        },
+                        onReact: { reaction in
+                            Task<Void, Never> { @MainActor in
+                                await feedViewModel.react(to: post, with: reaction)
+                            }
+                        },
+                        onReport: post.post.authorId != feedViewModel.currentUserId ? {
+                            postToReport = post
+                        } : nil
                     )
                 }
                 .onAppear {
@@ -341,6 +420,194 @@ struct SocialView: View {
             }
         }
         .padding(.bottom, 80) // Space for FAB
+    }
+
+    // MARK: - No Filter Results
+
+    private var noFilterResultsView: some View {
+        VStack(spacing: AppSpacing.md) {
+            Spacer()
+                .frame(height: 60)
+
+            Image(systemName: "line.3.horizontal.decrease.circle")
+                .font(.system(size: 40))
+                .foregroundColor(AppColors.textTertiary)
+
+            Text("No \(feedViewModel.activeFilter.rawValue.lowercased()) posts")
+                .subheadline(color: AppColors.textSecondary)
+
+            Button {
+                feedViewModel.activeFilter = .all
+            } label: {
+                Text("Show All Posts")
+                    .subheadline(color: AppColors.accent2)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, AppSpacing.xl)
+    }
+
+    // MARK: - Feed Mode Selector
+
+    private var feedModeSelector: some View {
+        HStack(spacing: 0) {
+            ForEach(FeedMode.allCases) { mode in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        feedViewModel.feedMode = mode
+                    }
+                    if mode == .discover && feedViewModel.trendingPosts.isEmpty {
+                        Task {
+                            await feedViewModel.loadTrendingPosts()
+                        }
+                    }
+                } label: {
+                    Text(mode.rawValue)
+                        .font(.subheadline.weight(feedViewModel.feedMode == mode ? .bold : .medium))
+                        .foregroundColor(feedViewModel.feedMode == mode ? AppColors.textPrimary : AppColors.textTertiary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, AppSpacing.sm)
+                        .overlay(alignment: .bottom) {
+                            if feedViewModel.feedMode == mode {
+                                Rectangle()
+                                    .fill(AppColors.accent2)
+                                    .frame(height: 2)
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(AppColors.surfaceTertiary.opacity(0.5))
+                .frame(height: 0.5)
+        }
+    }
+
+    // MARK: - Discover Content
+
+    private var discoverContent: some View {
+        Group {
+            if feedViewModel.isLoadingTrending && feedViewModel.trendingPosts.isEmpty {
+                VStack(spacing: AppSpacing.lg) {
+                    ProgressView()
+                        .tint(AppColors.accent2)
+                    Text("Finding trending posts...")
+                        .subheadline(color: AppColors.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 100)
+            } else if feedViewModel.trendingPosts.isEmpty {
+                VStack(spacing: AppSpacing.md) {
+                    Spacer()
+                        .frame(height: 60)
+
+                    Image(systemName: "flame")
+                        .font(.system(size: 40))
+                        .foregroundColor(AppColors.textTertiary)
+
+                    Text("No trending posts yet")
+                        .subheadline(color: AppColors.textSecondary)
+
+                    Text("Check back later for popular posts from the community")
+                        .caption(color: AppColors.textTertiary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, AppSpacing.xl)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, AppSpacing.xl)
+            } else {
+                trendingFeedList
+            }
+        }
+    }
+
+    // MARK: - Trending Feed List
+
+    private var trendingFeedList: some View {
+        LazyVStack(spacing: 0) {
+            ForEach(feedViewModel.trendingPosts) { post in
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .fill(AppColors.surfaceTertiary.opacity(0.5))
+                        .frame(height: 0.5)
+
+                    FeedPostRow(
+                        post: post,
+                        onLike: {
+                            Task<Void, Never> { @MainActor in
+                                await feedViewModel.toggleLike(for: post)
+                            }
+                        },
+                        onComment: {
+                            selectedPost = post
+                        },
+                        onEdit: nil,
+                        onDelete: nil,
+                        onProfileTap: {
+                            if post.post.authorId != feedViewModel.currentUserId {
+                                profileToView = post
+                            }
+                        },
+                        onShare: {
+                            postToShare = post
+                        },
+                        onPostTap: {
+                            selectedPost = post
+                        },
+                        onReact: { reaction in
+                            Task<Void, Never> { @MainActor in
+                                await feedViewModel.react(to: post, with: reaction)
+                            }
+                        },
+                        onReport: post.post.authorId != feedViewModel.currentUserId ? {
+                            postToReport = post
+                        } : nil
+                    )
+                }
+            }
+
+            Rectangle()
+                .fill(AppColors.surfaceTertiary.opacity(0.5))
+                .frame(height: 0.5)
+        }
+        .padding(.bottom, 80)
+    }
+
+    // MARK: - Feed Filter Chips
+
+    private var feedFilterChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: AppSpacing.sm) {
+                ForEach(FeedFilter.allCases) { filter in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            feedViewModel.activeFilter = filter
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: filter.icon)
+                                .font(.caption2)
+                            Text(filter.rawValue)
+                                .font(.subheadline.weight(.medium))
+                        }
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.xs)
+                        .background(
+                            Capsule()
+                                .fill(feedViewModel.activeFilter == filter
+                                      ? AppColors.accent2
+                                      : AppColors.surfaceSecondary)
+                        )
+                        .foregroundColor(feedViewModel.activeFilter == filter
+                                         ? AppColors.background
+                                         : AppColors.textSecondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
     }
 
     // MARK: - Sign In Prompt

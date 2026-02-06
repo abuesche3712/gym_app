@@ -98,7 +98,7 @@ struct ModuleDetailView: View {
                                 }
                                 .buttonStyle(.plain)
                             } else {
-                                NavigationLink(destination: ExerciseFormView(instance: resolved.instance, moduleId: currentModule.id)) {
+                                NavigationLink(destination: ExerciseFormView(instance: resolved.instance, moduleId: currentModule.id, sessionExercise: nil, sessionModuleIndex: nil, sessionExerciseIndex: nil, onSessionSave: nil)) {
                                     ExerciseRow(exercise: resolved)
                                 }
                             }
@@ -191,7 +191,7 @@ struct ModuleDetailView: View {
         }
         .sheet(isPresented: $showingAddExercise) {
             NavigationStack {
-                ExerciseFormView(instance: nil, moduleId: currentModule.id)
+                ExerciseFormView(instance: nil, moduleId: currentModule.id, sessionExercise: nil, sessionModuleIndex: nil, sessionExerciseIndex: nil, onSessionSave: nil)
             }
         }
         .confirmationDialog(
@@ -351,7 +351,7 @@ struct SupersetGroupRow: View {
                             }
                             .buttonStyle(.plain)
                         } else {
-                            NavigationLink(destination: ExerciseFormView(instance: resolved.instance, moduleId: moduleId)) {
+                            NavigationLink(destination: ExerciseFormView(instance: resolved.instance, moduleId: moduleId, sessionExercise: nil, sessionModuleIndex: nil, sessionExerciseIndex: nil, onSessionSave: nil)) {
                                 CompactExerciseRow(exercise: resolved)
                             }
                         }

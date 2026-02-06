@@ -12,7 +12,13 @@ struct PostDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var commentText = ""
     @FocusState private var isCommentFieldFocused: Bool
+    @State private var editingComment: CommentWithAuthor?
+    @State private var editCommentText = ""
     @State private var isLikeAnimating = false
+    @State private var previewingContent: MessageContent?
+    @State private var showingShareSheet = false
+    @State private var replyingTo: CommentWithAuthor?
+    @State private var showReactionPicker = false
 
     init(post: PostWithAuthor) {
         _viewModel = StateObject(wrappedValue: PostDetailViewModel(post: post))
@@ -49,6 +55,45 @@ struct PostDetailView: View {
             .onAppear {
                 viewModel.loadComments()
             }
+            .alert("Edit Comment", isPresented: Binding(
+                get: { editingComment != nil },
+                set: { if !$0 { editingComment = nil } }
+            )) {
+                TextField("Comment", text: $editCommentText)
+                Button("Save") {
+                    if let comment = editingComment {
+                        let newText = editCommentText
+                        Task {
+                            await viewModel.updateComment(comment, newText: newText)
+                        }
+                    }
+                    editingComment = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    editingComment = nil
+                }
+            } message: {
+                Text("Edit your comment")
+            }
+            .sheet(isPresented: $showingShareSheet) {
+                ShareWithFriendSheet(
+                    content: ShareablePostContent(post: viewModel.post.post)
+                ) { conversationWithProfile in
+                    let chatViewModel = ChatViewModel(
+                        conversation: conversationWithProfile.conversation,
+                        otherParticipant: conversationWithProfile.otherParticipant,
+                        otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+                    )
+                    let messageContent = viewModel.post.post.content.toMessageContent()
+                    try await chatViewModel.sendSharedContent(messageContent)
+                }
+            }
+            .sheet(item: $previewingContent) { content in
+                SharedContentPreviewSheet(
+                    content: content,
+                    onImport: nil  // Posts are view-only from preview
+                )
+            }
         }
     }
 
@@ -84,10 +129,7 @@ struct PostDetailView: View {
 
             // Caption
             if let caption = viewModel.post.post.caption, !caption.isEmpty {
-                Text(caption)
-                    .font(.body)
-                    .foregroundColor(AppColors.textPrimary)
-                    .lineSpacing(4)
+                RichTextView(caption)
                     .padding(.horizontal, AppSpacing.cardPadding)
                     .padding(.bottom, AppSpacing.md)
             }
@@ -96,14 +138,39 @@ struct PostDetailView: View {
             if case .text = viewModel.post.post.content {
                 // Text-only post, caption is the content
             } else {
-                PostContentCard(content: viewModel.post.post.content)
+                PostContentCard(
+                    content: viewModel.post.post.content,
+                    onTap: viewModel.post.post.content.toMessageContent().isViewable ? {
+                        previewingContent = viewModel.post.post.content.toMessageContent()
+                    } : nil
+                )
                     .padding(.horizontal, AppSpacing.cardPadding)
                     .padding(.bottom, AppSpacing.md)
             }
 
+            // Reaction summary
+            if let counts = viewModel.post.post.reactionCounts, !counts.isEmpty {
+                let sorted = counts.sorted { $0.value > $1.value }
+                HStack(spacing: 4) {
+                    ForEach(sorted.prefix(5), id: \.key) { key, count in
+                        if let reaction = ReactionType(rawValue: key), count > 0 {
+                            HStack(spacing: 2) {
+                                Text(reaction.emoji)
+                                    .font(.caption)
+                                Text("\(count)")
+                                    .font(.caption)
+                                    .foregroundColor(AppColors.textTertiary)
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, AppSpacing.cardPadding)
+            }
+
             // Engagement stats
             HStack(spacing: AppSpacing.lg) {
-                // Like button
+                // Like button (tap = heart, long-press = reaction picker)
                 Button {
                     HapticManager.shared.impact()
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
@@ -134,6 +201,12 @@ struct PostDetailView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .onLongPressGesture(minimumDuration: 0.3) {
+                    HapticManager.shared.impact()
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        showReactionPicker = true
+                    }
+                }
 
                 // Comment count
                 HStack(spacing: AppSpacing.xs) {
@@ -146,9 +219,53 @@ struct PostDetailView: View {
                 .foregroundColor(AppColors.textSecondary)
 
                 Spacer()
+
+                // Share button
+                Button {
+                    showingShareSheet = true
+                } label: {
+                    Image(systemName: "paperplane")
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, AppSpacing.cardPadding)
             .padding(.bottom, AppSpacing.cardPadding)
+            .overlay(alignment: .topLeading) {
+                if showReactionPicker {
+                    HStack(spacing: AppSpacing.md) {
+                        ForEach(ReactionType.allCases, id: \.self) { reaction in
+                            Button {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    showReactionPicker = false
+                                }
+                                Task {
+                                    await viewModel.react(with: reaction)
+                                }
+                            } label: {
+                                Text(reaction.emoji)
+                                    .font(.title2)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, AppSpacing.md)
+                    .padding(.vertical, AppSpacing.sm)
+                    .background(
+                        Capsule()
+                            .fill(AppColors.surfacePrimary)
+                            .shadow(color: .black.opacity(0.2), radius: 12, x: 0, y: 4)
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
+                    )
+                    .offset(y: -44)
+                    .transition(.scale(scale: 0.5).combined(with: .opacity))
+                    .padding(.leading, AppSpacing.cardPadding)
+                }
+            }
         }
         .background(AppColors.surfacePrimary)
         .clipShape(RoundedRectangle(cornerRadius: AppCorners.large))
@@ -206,12 +323,49 @@ struct PostDetailView: View {
                             comment: comment,
                             canDelete: comment.comment.authorId == viewModel.currentUserId ||
                                        viewModel.post.post.authorId == viewModel.currentUserId,
+                            canEdit: comment.comment.authorId == viewModel.currentUserId,
                             onDelete: {
                                 Task {
                                     await viewModel.deleteComment(comment)
                                 }
+                            },
+                            onEdit: comment.comment.authorId == viewModel.currentUserId ? {
+                                editingComment = comment
+                                editCommentText = comment.comment.text
+                            } : nil,
+                            onReply: {
+                                replyingTo = comment
+                                isCommentFieldFocused = true
                             }
                         )
+
+                        // Show replies for this comment
+                        if let commentReplies = viewModel.replies[comment.comment.id], !commentReplies.isEmpty {
+                            ForEach(commentReplies) { reply in
+                                HStack(spacing: 0) {
+                                    Rectangle()
+                                        .fill(AppColors.surfaceTertiary.opacity(0.3))
+                                        .frame(width: 2)
+                                        .padding(.leading, 28)
+
+                                    CommentRow(
+                                        comment: reply,
+                                        canDelete: reply.comment.authorId == viewModel.currentUserId ||
+                                                   viewModel.post.post.authorId == viewModel.currentUserId,
+                                        canEdit: reply.comment.authorId == viewModel.currentUserId,
+                                        onDelete: {
+                                            Task {
+                                                await viewModel.deleteComment(reply)
+                                            }
+                                        },
+                                        onEdit: reply.comment.authorId == viewModel.currentUserId ? {
+                                            editingComment = reply
+                                            editCommentText = reply.comment.text
+                                        } : nil
+                                    )
+                                }
+                            }
+                        }
 
                         if comment.id != viewModel.comments.last?.id {
                             Divider()
@@ -234,34 +388,68 @@ struct PostDetailView: View {
     // MARK: - Comment Input Bar
 
     private var commentInputBar: some View {
-        HStack(spacing: AppSpacing.sm) {
-            // Text field
-            TextField("Add a comment...", text: $commentText)
-                .font(.body)
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.vertical, AppSpacing.sm)
-                .background(AppColors.surfaceSecondary)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-                .focused($isCommentFieldFocused)
+        VStack(spacing: 0) {
+            // Reply indicator
+            if let replyTarget = replyingTo {
+                HStack(spacing: AppSpacing.xs) {
+                    Image(systemName: "arrowshape.turn.up.left.fill")
+                        .font(.caption2)
+                        .foregroundColor(AppColors.dominant)
 
-            // Send button
-            Button {
-                Task {
-                    let text = commentText
-                    commentText = ""
-                    isCommentFieldFocused = false
-                    HapticManager.shared.tap()
-                    await viewModel.sendComment(text: text)
+                    Text("Replying to @\(replyTarget.author.username)")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
+
+                    Spacer()
+
+                    Button {
+                        replyingTo = nil
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
                 }
-            } label: {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.title2)
-                    .foregroundColor(commentText.isEmpty ? AppColors.textTertiary : AppColors.dominant)
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.vertical, AppSpacing.xs)
+                .background(AppColors.surfaceSecondary)
             }
-            .disabled(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isSendingComment)
+
+            HStack(spacing: AppSpacing.sm) {
+                // Text field
+                TextField(replyingTo != nil ? "Write a reply..." : "Add a comment...", text: $commentText)
+                    .font(.body)
+                    .padding(.horizontal, AppSpacing.md)
+                    .padding(.vertical, AppSpacing.sm)
+                    .background(AppColors.surfaceSecondary)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .focused($isCommentFieldFocused)
+
+                // Send button
+                Button {
+                    Task {
+                        let text = commentText
+                        let replyTarget = replyingTo
+                        commentText = ""
+                        replyingTo = nil
+                        isCommentFieldFocused = false
+                        HapticManager.shared.tap()
+                        if let replyTarget = replyTarget {
+                            await viewModel.sendReply(to: replyTarget, text: text)
+                        } else {
+                            await viewModel.sendComment(text: text)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(commentText.isEmpty ? AppColors.textTertiary : AppColors.dominant)
+                }
+                .disabled(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isSendingComment)
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
         }
-        .padding(.horizontal, AppSpacing.md)
-        .padding(.vertical, AppSpacing.sm)
         .background(
             AppColors.surfacePrimary
                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: -2)
@@ -282,12 +470,18 @@ struct PostDetailView: View {
 
 private struct PostContentCard: View {
     let content: PostContent
+    let onTap: (() -> Void)?
+
+    init(content: PostContent, onTap: (() -> Void)? = nil) {
+        self.content = content
+        self.onTap = onTap
+    }
 
     var body: some View {
         Group {
             switch content {
             case .session(_, let workoutName, let date, let snapshot):
-                SessionContentCard(workoutName: workoutName, date: date, snapshot: snapshot)
+                SessionContentCard(workoutName: workoutName, date: date, snapshot: snapshot, onTap: onTap)
 
             case .exercise(let snapshot):
                 ExerciseContentCard(snapshot: snapshot)
@@ -299,13 +493,13 @@ private struct PostContentCard: View {
                 ModuleContentCard(snapshot: snapshot)
 
             case .program(_, let name, let snapshot):
-                TemplateContentCard(type: "Program", name: name, icon: "doc.text.fill", color: AppColors.dominant, snapshot: snapshot)
+                TemplateContentCard(type: "Program", name: name, icon: "doc.text.fill", color: AppColors.dominant, snapshot: snapshot, onTap: onTap)
 
             case .workout(_, let name, let snapshot):
-                TemplateContentCard(type: "Workout", name: name, icon: "figure.run", color: AppColors.dominant, snapshot: snapshot)
+                TemplateContentCard(type: "Workout", name: name, icon: "figure.run", color: AppColors.dominant, snapshot: snapshot, onTap: onTap)
 
             case .module(_, let name, let snapshot):
-                TemplateContentCard(type: "Module", name: name, icon: "square.stack.3d.up.fill", color: AppColors.accent3, snapshot: snapshot)
+                TemplateContentCard(type: "Module", name: name, icon: "square.stack.3d.up.fill", color: AppColors.accent3, snapshot: snapshot, onTap: onTap)
 
             case .highlights(let snapshot):
                 HighlightsContentCard(snapshot: snapshot)
@@ -322,9 +516,14 @@ private struct SessionContentCard: View {
     let workoutName: String
     let date: Date
     let snapshot: Data
+    let onTap: (() -> Void)?
 
     var body: some View {
         SessionPostContent(workoutName: workoutName, date: date, snapshot: snapshot)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onTap?()
+            }
     }
 }
 
@@ -367,6 +566,16 @@ private struct TemplateContentCard: View {
     let icon: String
     let color: Color
     let snapshot: Data
+    let onTap: (() -> Void)?
+
+    init(type: String, name: String, icon: String, color: Color, snapshot: Data, onTap: (() -> Void)? = nil) {
+        self.type = type
+        self.name = name
+        self.icon = icon
+        self.color = color
+        self.snapshot = snapshot
+        self.onTap = onTap
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -382,6 +591,15 @@ private struct TemplateContentCard: View {
             Text(name)
                 .font(.headline.weight(.bold))
                 .foregroundColor(AppColors.textPrimary)
+
+            if onTap != nil {
+                HStack(spacing: 4) {
+                    Image(systemName: "eye")
+                    Text("Tap to preview")
+                }
+                .font(.caption)
+                .foregroundColor(AppColors.textTertiary)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.cardPadding)
@@ -393,6 +611,10 @@ private struct TemplateContentCard: View {
             RoundedRectangle(cornerRadius: AppCorners.medium)
                 .stroke(color.opacity(0.15), lineWidth: 1)
         )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onTap?()
+        }
     }
 }
 
@@ -479,7 +701,10 @@ private struct HighlightsContentCard: View {
 struct CommentRow: View {
     let comment: CommentWithAuthor
     let canDelete: Bool
+    let canEdit: Bool
     let onDelete: () -> Void
+    var onEdit: (() -> Void)? = nil
+    var onReply: (() -> Void)? = nil
 
     @State private var showingDeleteConfirmation = false
 
@@ -504,14 +729,38 @@ struct CommentRow: View {
                         .font(.caption2)
                         .foregroundColor(AppColors.textTertiary)
 
+                    if comment.comment.updatedAt != nil {
+                        Text("(edited)")
+                            .font(.caption2)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+
                     Spacer()
 
-                    if canDelete {
+                    if canDelete || canEdit {
                         Menu {
-                            Button(role: .destructive) {
-                                showingDeleteConfirmation = true
-                            } label: {
-                                Label("Delete", systemImage: "trash")
+                            if canEdit {
+                                Button {
+                                    onEdit?()
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                            }
+
+                            if let onReply = onReply {
+                                Button {
+                                    onReply()
+                                } label: {
+                                    Label("Reply", systemImage: "arrowshape.turn.up.left")
+                                }
+                            }
+
+                            if canDelete {
+                                Button(role: .destructive) {
+                                    showingDeleteConfirmation = true
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
                             }
                         } label: {
                             Image(systemName: "ellipsis")
@@ -523,9 +772,7 @@ struct CommentRow: View {
                 }
 
                 // Comment text
-                Text(comment.comment.text)
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textPrimary)
+                RichTextView(comment.comment.text, font: .subheadline)
                     .lineSpacing(2)
             }
         }

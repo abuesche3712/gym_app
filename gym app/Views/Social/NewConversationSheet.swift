@@ -140,8 +140,8 @@ struct NewConversationSheet: View {
                     otherParticipantFirebaseId: friendFirebaseId
                 )
 
-                dismiss()
                 onSelect(conversationWithProfile)
+                dismiss()
             } catch {
                 errorMessage = error.localizedDescription
                 showError = true

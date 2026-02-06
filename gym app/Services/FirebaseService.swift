@@ -27,6 +27,7 @@ class FirestoreService: ObservableObject {
     private let library = FirestoreLibraryService.shared
     private let conflict = FirestoreConflictService.shared
     private let deletion = FirestoreDeletionService.shared
+    private let activity = FirestoreActivityService.shared
 
     // MARK: - Published State (forwarded from sync service)
 
@@ -220,6 +221,10 @@ class FirestoreService: ObservableObject {
         messaging.listenToMessages(conversationId: conversationId, limit: limit, onChange: onChange, onError: onError)
     }
 
+    func deleteMessage(conversationId: UUID, messageId: UUID) async throws {
+        try await messaging.deleteMessage(conversationId: conversationId, messageId: messageId)
+    }
+
     func markMessageRead(conversationId: UUID, messageId: UUID, at date: Date = Date()) async throws {
         try await messaging.markMessageRead(conversationId: conversationId, messageId: messageId, at: date)
     }
@@ -359,6 +364,10 @@ class FirestoreService: ObservableObject {
         try await feed.fetchPostsByUser(userId: userId, limit: limit, before: before)
     }
 
+    func fetchTrendingPosts(since: Date, limit: Int = 20) async throws -> [Post] {
+        try await feed.fetchTrendingPosts(since: since, limit: limit)
+    }
+
     func listenToFeedPosts(friendIds: [String], limit: Int = 50, onChange: @escaping ([Post]) -> Void, onError: ((Error) -> Void)? = nil) -> ListenerRegistration {
         feed.listenToFeedPosts(friendIds: friendIds, limit: limit, onChange: onChange, onError: onError)
     }
@@ -377,8 +386,8 @@ class FirestoreService: ObservableObject {
 
     // MARK: - Post Like Operations
 
-    func likePost(postId: UUID, userId: String) async throws {
-        try await feed.likePost(postId: postId, userId: userId)
+    func likePost(postId: UUID, userId: String, reactionType: ReactionType = .heart) async throws {
+        try await feed.likePost(postId: postId, userId: userId, reactionType: reactionType)
     }
 
     func unlikePost(postId: UUID, userId: String) async throws {
@@ -401,6 +410,10 @@ class FirestoreService: ObservableObject {
 
     func addComment(_ comment: PostComment) async throws {
         try await feed.addComment(comment)
+    }
+
+    func updateComment(_ comment: PostComment) async throws {
+        try await feed.updateComment(comment)
     }
 
     func deleteComment(postId: UUID, commentId: UUID) async throws {
@@ -443,5 +456,27 @@ class FirestoreService: ObservableObject {
 
     func cleanupOldDeletionRecords(olderThan date: Date) async throws -> Int {
         try await deletion.cleanupOldDeletionRecords(olderThan: date)
+    }
+
+    // MARK: - Activity Operations
+
+    func createActivity(_ activityItem: Activity) async throws {
+        try await activity.createActivity(activityItem)
+    }
+
+    func listenToActivities(userId: String, limit: Int = 50, onChange: @escaping ([Activity]) -> Void, onError: ((Error) -> Void)? = nil) -> ListenerRegistration {
+        activity.listenToActivities(userId: userId, limit: limit, onChange: onChange, onError: onError)
+    }
+
+    func markActivityAsRead(userId: String, activityId: UUID) async throws {
+        try await activity.markAsRead(userId: userId, activityId: activityId)
+    }
+
+    func markAllActivitiesAsRead(userId: String) async throws {
+        try await activity.markAllAsRead(userId: userId)
+    }
+
+    func fetchUnreadActivityCount(userId: String) async throws -> Int {
+        try await activity.fetchUnreadCount(userId: userId)
     }
 }

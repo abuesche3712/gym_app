@@ -49,6 +49,12 @@ class BackgroundSessionManager: NSObject, ObservableObject {
         Task { @MainActor in
             guard AppState.shared.sessionViewModel.isSessionActive else { return }
 
+            // Immediately save the in-progress session before iOS suspends the app (non-debounced)
+            let sessionVM = AppState.shared.sessionViewModel
+            if let session = sessionVM.currentSession {
+                DataRepository.shared.saveInProgressSession(session)
+            }
+
             self.backgroundEntryTime = Date()
             self.startBackgroundTask()
             self.scheduleWarningNotification()

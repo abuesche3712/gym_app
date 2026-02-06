@@ -128,6 +128,25 @@ class FirestoreFeedService: ObservableObject {
         return CompositeListenerRegistration(listeners: listeners)
     }
 
+    /// Fetch trending posts (recent posts with most likes)
+    func fetchTrendingPosts(since: Date, limit: Int = 20) async throws -> [Post] {
+        let snapshot = try await core.db.collection("posts")
+            .whereField("createdAt", isGreaterThan: Timestamp(date: since))
+            .order(by: "createdAt", descending: true)
+            .limit(to: 100) // Fetch more, then sort by likes client-side
+            .getDocuments()
+
+        let posts = snapshot.documents.compactMap { doc in
+            decodePost(from: doc.data())
+        }
+
+        // Sort by likeCount descending, then take top N
+        return posts
+            .sorted { $0.likeCount > $1.likeCount }
+            .prefix(limit)
+            .map { $0 }
+    }
+
     /// Listen to a single post for live updates (counts, caption, content)
     func listenToPost(postId: UUID, onChange: @escaping (Post?) -> Void, onError: ((Error) -> Void)? = nil) -> ListenerRegistration {
         core.db.collection("posts").document(postId.uuidString)
@@ -189,19 +208,35 @@ class FirestoreFeedService: ObservableObject {
 
     // MARK: - Like Operations
 
-    /// Like a post
-    func likePost(postId: UUID, userId: String) async throws {
+    /// Like a post with a reaction type
+    func likePost(postId: UUID, userId: String, reactionType: ReactionType = .heart) async throws {
         let ref = core.db.collection("posts").document(postId.uuidString).collection("likes").document(userId)
 
-        // Only increment if not already liked
+        // Check if already liked
         let likeDoc = try await ref.getDocument()
-        guard !likeDoc.exists else { return }
+        let wasAlreadyLiked = likeDoc.exists
+        let previousReaction = likeDoc.data()?["reactionType"] as? String
 
-        let like = PostLike(postId: postId, userId: userId)
+        let like = PostLike(postId: postId, userId: userId, reactionType: reactionType)
         try await ref.setData(encodeLike(like))
 
         let postRef = core.db.collection("posts").document(postId.uuidString)
-        try await postRef.updateData(["likeCount": FieldValue.increment(Int64(1))])
+
+        if wasAlreadyLiked {
+            // Changing reaction — decrement old, increment new
+            if let previousReaction = previousReaction, previousReaction != reactionType.rawValue {
+                try await postRef.updateData([
+                    "reactionCounts.\(previousReaction)": FieldValue.increment(Int64(-1)),
+                    "reactionCounts.\(reactionType.rawValue)": FieldValue.increment(Int64(1))
+                ])
+            }
+        } else {
+            // New like
+            try await postRef.updateData([
+                "likeCount": FieldValue.increment(Int64(1)),
+                "reactionCounts.\(reactionType.rawValue)": FieldValue.increment(Int64(1))
+            ])
+        }
     }
 
     /// Unlike a post
@@ -212,10 +247,15 @@ class FirestoreFeedService: ObservableObject {
         let likeDoc = try await ref.getDocument()
         guard likeDoc.exists else { return }
 
+        let previousReaction = likeDoc.data()?["reactionType"] as? String ?? ReactionType.heart.rawValue
+
         try await ref.delete()
 
         let postRef = core.db.collection("posts").document(postId.uuidString)
-        try await postRef.updateData(["likeCount": FieldValue.increment(Int64(-1))])
+        try await postRef.updateData([
+            "likeCount": FieldValue.increment(Int64(-1)),
+            "reactionCounts.\(previousReaction)": FieldValue.increment(Int64(-1))
+        ])
     }
 
     /// Check if user has liked a post
@@ -264,6 +304,16 @@ class FirestoreFeedService: ObservableObject {
 
         let postRef = core.db.collection("posts").document(comment.postId.uuidString)
         try await postRef.updateData(["commentCount": FieldValue.increment(Int64(1))])
+    }
+
+    /// Update a comment's text
+    func updateComment(_ comment: PostComment) async throws {
+        let ref = core.db.collection("posts").document(comment.postId.uuidString)
+            .collection("comments").document(comment.id.uuidString)
+        try await ref.updateData([
+            "text": comment.text,
+            "updatedAt": FieldValue.serverTimestamp()
+        ])
     }
 
     /// Delete a comment
@@ -318,6 +368,10 @@ class FirestoreFeedService: ObservableObject {
             "createdAt": Timestamp(date: post.createdAt)
         ]
 
+        if let reactionCounts = post.reactionCounts {
+            data["reactionCounts"] = reactionCounts
+        }
+
         if let contentDict = encodePostContent(post.content) {
             data["content"] = contentDict
         }
@@ -328,6 +382,10 @@ class FirestoreFeedService: ObservableObject {
 
         if let updatedAt = post.updatedAt {
             data["updatedAt"] = Timestamp(date: updatedAt)
+        }
+
+        if let scheduledFor = post.scheduledFor {
+            data["scheduledFor"] = Timestamp(date: scheduledFor)
         }
 
         return data
@@ -396,6 +454,33 @@ class FirestoreFeedService: ObservableObject {
             commentCount = 0
         }
 
+        // Decode reaction counts
+        var reactionCounts: [String: Int]? = nil
+        if let countsDict = data["reactionCounts"] as? [String: Any] {
+            var counts: [String: Int] = [:]
+            for (key, value) in countsDict {
+                if let count = value as? Int {
+                    counts[key] = count
+                } else if let count = value as? Int64 {
+                    counts[key] = Int(count)
+                } else if let count = value as? NSNumber {
+                    counts[key] = count.intValue
+                }
+            }
+            // Only set if there are non-zero values
+            let nonZero = counts.filter { $0.value > 0 }
+            if !nonZero.isEmpty {
+                reactionCounts = nonZero
+            }
+        }
+
+        let scheduledFor: Date?
+        if let timestamp = data["scheduledFor"] as? Timestamp {
+            scheduledFor = timestamp.dateValue()
+        } else {
+            scheduledFor = nil
+        }
+
         return Post(
             id: id,
             authorId: authorId,
@@ -405,17 +490,21 @@ class FirestoreFeedService: ObservableObject {
             updatedAt: updatedAt,
             likeCount: likeCount,
             commentCount: commentCount,
+            reactionCounts: reactionCounts,
+            scheduledFor: scheduledFor,
             syncStatus: .synced
         )
     }
 
     private func encodeLike(_ like: PostLike) -> [String: Any] {
-        [
+        var data: [String: Any] = [
             "id": like.id.uuidString,
             "postId": like.postId.uuidString,
             "userId": like.userId,
             "createdAt": Timestamp(date: like.createdAt)
         ]
+        data["reactionType"] = like.effectiveReaction.rawValue
+        return data
     }
 
     private func encodeComment(_ comment: PostComment) -> [String: Any] {
@@ -429,6 +518,10 @@ class FirestoreFeedService: ObservableObject {
 
         if let updatedAt = comment.updatedAt {
             data["updatedAt"] = Timestamp(date: updatedAt)
+        }
+
+        if let parentCommentId = comment.parentCommentId {
+            data["parentCommentId"] = parentCommentId.uuidString
         }
 
         return data
@@ -456,11 +549,19 @@ class FirestoreFeedService: ObservableObject {
             updatedAt = nil
         }
 
+        let parentCommentId: UUID?
+        if let parentIdString = data["parentCommentId"] as? String {
+            parentCommentId = UUID(uuidString: parentIdString)
+        } else {
+            parentCommentId = nil
+        }
+
         return PostComment(
             id: id,
             postId: postId,
             authorId: authorId,
             text: text,
+            parentCommentId: parentCommentId,
             createdAt: createdAt,
             updatedAt: updatedAt,
             syncStatus: .synced

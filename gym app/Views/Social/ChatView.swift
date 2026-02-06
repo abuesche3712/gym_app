@@ -21,6 +21,9 @@ struct ChatView: View {
     @State private var importResult: ImportResult?
     @State private var showingImportResult = false
 
+    // Preview state
+    @State private var previewingMessage: Message?
+
     init(conversation: Conversation, otherParticipant: UserProfile, otherParticipantFirebaseId: String) {
         _viewModel = StateObject(wrappedValue: ChatViewModel(
             conversation: conversation,
@@ -33,6 +36,11 @@ struct ChatView: View {
         VStack(spacing: 0) {
             // Messages scroll view takes remaining space
             messagesScrollView
+
+            // Typing indicator
+            if viewModel.otherUserIsTyping {
+                typingIndicator
+            }
 
             // Input bar at bottom
             Group {
@@ -48,6 +56,28 @@ struct ChatView: View {
         .navigationTitle(viewModel.otherParticipant.displayName ?? viewModel.otherParticipant.username)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(AppColors.background, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 0) {
+                    Text(viewModel.otherParticipant.displayName ?? viewModel.otherParticipant.username)
+                        .font(.headline)
+                        .foregroundColor(AppColors.textPrimary)
+
+                    if viewModel.otherUserIsOnline {
+                        Text("Online")
+                            .font(.caption2)
+                            .foregroundColor(AppColors.success)
+                    } else if let lastSeen = viewModel.otherUserLastSeen {
+                        Text(PresenceService.formatLastSeen(lastSeen))
+                            .font(.caption2)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                }
+            }
+        }
+        .onChange(of: messageText) { _, newValue in
+            viewModel.updateTypingStatus(newValue)
+        }
         .onAppear {
             Logger.debug("ChatView.onAppear: isBlocked=\(viewModel.isBlocked), messagesCount=\(viewModel.messages.count), currentUserId=\(viewModel.currentUserId ?? "nil")")
             hideTabBar.wrappedValue = true  // Hide custom tab bar
@@ -84,6 +114,16 @@ struct ChatView: View {
                 Text(result.message)
             }
         }
+        .sheet(item: $previewingMessage) { previewMessage in
+            SharedContentPreviewSheet(
+                content: previewMessage.content,
+                onImport: { success in
+                    if success {
+                        // Optionally show success feedback
+                    }
+                }
+            )
+        }
     }
 
     // MARK: - Messages Scroll View
@@ -99,6 +139,17 @@ struct ChatView: View {
                             otherUserProfile: viewModel.otherParticipant,
                             onImport: message.content.isImportable && message.senderId != viewModel.currentUserId ? {
                                 handleImport(message: message)
+                            } : nil,
+                            onView: message.content.isViewable && message.senderId != viewModel.currentUserId ? {
+                                previewingMessage = message
+                            } : nil,
+                            onUnsend: message.senderId == viewModel.currentUserId && !message.isDeleted ? {
+                                Task<Void, Never> { @MainActor in
+                                    await viewModel.unsendMessage(message)
+                                }
+                            } : nil,
+                            onDeleteForMe: !message.isDeleted ? {
+                                viewModel.deleteMessage(message)
                             } : nil
                         )
                         .id(message.id)
@@ -139,6 +190,25 @@ struct ChatView: View {
         .onAppear {
             Logger.debug("blockedBanner appeared - isBlocked=true")
         }
+    }
+
+    // MARK: - Typing Indicator
+
+    private var typingIndicator: some View {
+        HStack(spacing: AppSpacing.xs) {
+            ProfilePhotoView(profile: viewModel.otherParticipant, size: 20, characterCount: 1)
+
+            Text("\(viewModel.otherParticipant.displayName ?? viewModel.otherParticipant.username) is typing")
+                .font(.caption)
+                .foregroundColor(AppColors.textTertiary)
+
+            TypingDotsView()
+        }
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.xs)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .transition(.opacity.combined(with: .move(edge: .bottom)))
+        .animation(.easeInOut(duration: 0.2), value: viewModel.otherUserIsTyping)
     }
 
     // MARK: - Chat Input Bar
@@ -222,6 +292,9 @@ struct MessageBubble: View {
     let isFromCurrentUser: Bool
     let otherUserProfile: UserProfile
     var onImport: (() -> Void)?
+    var onView: (() -> Void)?
+    var onUnsend: (() -> Void)?
+    var onDeleteForMe: (() -> Void)?
 
     var body: some View {
         HStack(alignment: .bottom, spacing: AppSpacing.xs) {
@@ -234,29 +307,78 @@ struct MessageBubble: View {
 
             VStack(alignment: isFromCurrentUser ? .trailing : .leading, spacing: 2) {
                 // Message content
-                if message.content.isSharedContent {
+                if message.isDeleted {
+                    Text("This message was deleted")
+                        .font(.subheadline)
+                        .italic()
+                        .foregroundColor(AppColors.textTertiary)
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.sm)
+                        .background(
+                            RoundedRectangle(cornerRadius: 18)
+                                .fill(AppColors.surfaceSecondary)
+                        )
+                } else if message.content.isSharedContent {
                     SharedContentCard(
                         content: message.content,
                         isFromCurrentUser: isFromCurrentUser,
-                        onImport: onImport
+                        onImport: onImport,
+                        onView: onView
                     )
+                    .contextMenu {
+                        messageContextMenu
+                    }
                 } else {
                     contentView
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, AppSpacing.sm)
                         .background(bubbleBackground)
                         .foregroundColor(isFromCurrentUser ? .white : AppColors.textPrimary)
+                        .contextMenu {
+                            messageContextMenu
+                        }
                 }
 
-                // Timestamp
-                Text(message.createdAt.messageTimeString)
-                    .font(.caption2)
-                    .foregroundColor(AppColors.textTertiary)
+                // Timestamp + read receipt
+                HStack(spacing: 4) {
+                    Text(message.createdAt.messageTimeString)
+                        .font(.caption2)
+                        .foregroundColor(AppColors.textTertiary)
+
+                    if isFromCurrentUser && !message.isDeleted {
+                        if message.isRead {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption2)
+                                .foregroundColor(AppColors.dominant)
+                        } else {
+                            Image(systemName: "checkmark.circle")
+                                .font(.caption2)
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                    }
+                }
             }
 
             if !isFromCurrentUser {
                 Spacer(minLength: 60)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var messageContextMenu: some View {
+        if isFromCurrentUser {
+            Button(role: .destructive) {
+                onUnsend?()
+            } label: {
+                Label("Unsend", systemImage: "arrow.uturn.backward")
+            }
+        }
+
+        Button(role: .destructive) {
+            onDeleteForMe?()
+        } label: {
+            Label("Delete for Me", systemImage: "trash")
         }
     }
 
@@ -370,6 +492,31 @@ struct MessageBubble: View {
                     .fill(AppColors.surfaceSecondary)
             }
         }
+    }
+}
+
+// MARK: - Typing Dots Animation
+
+struct TypingDotsView: View {
+    @State private var animating = false
+
+    var body: some View {
+        HStack(spacing: 3) {
+            ForEach(0..<3, id: \.self) { index in
+                Circle()
+                    .fill(AppColors.textTertiary)
+                    .frame(width: 4, height: 4)
+                    .scaleEffect(animating ? 1.0 : 0.5)
+                    .opacity(animating ? 1.0 : 0.3)
+                    .animation(
+                        .easeInOut(duration: 0.5)
+                            .repeatForever(autoreverses: true)
+                            .delay(Double(index) * 0.15),
+                        value: animating
+                    )
+            }
+        }
+        .onAppear { animating = true }
     }
 }
 

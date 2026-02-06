@@ -685,4 +685,14 @@ extension MessageContent {
             return true
         }
     }
+
+    /// Whether this content can be previewed in a detail view
+    var isViewable: Bool {
+        switch self {
+        case .sharedProgram, .sharedWorkout, .sharedModule, .sharedSession:
+            return true
+        default:
+            return false
+        }
+    }
 }

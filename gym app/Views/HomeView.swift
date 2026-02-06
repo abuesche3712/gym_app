@@ -409,6 +409,8 @@ struct HomeView: View {
                                         .frame(width: 8, height: 8)
                                     Text(module.name)
                                         .caption()
+                                        .lineLimit(1)
+                                        .truncationMode(.tail)
                                 }
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
@@ -422,6 +424,7 @@ struct HomeView: View {
                                     .caption(color: AppColors.textTertiary)
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
                 .buttonStyle(.plain)

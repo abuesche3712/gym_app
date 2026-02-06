@@ -162,14 +162,18 @@ struct EditableExerciseRow: View {
         .buttonStyle(.plain)
         .padding(.vertical, 4)
         .sheet(isPresented: $showEditSheet) {
-            EditExerciseSheet(
-                exercise: exercise,
-                moduleIndex: 0,  // Not used for history editing
-                exerciseIndex: 0,  // Not used for history editing
-                onSave: { _, _, updatedExercise in
-                    onChange(updatedExercise)
-                }
-            )
+            NavigationStack {
+                ExerciseFormView(
+                    instance: nil,
+                    moduleId: UUID(),
+                    sessionExercise: exercise,
+                    sessionModuleIndex: 0,
+                    sessionExerciseIndex: 0,
+                    onSessionSave: { _, _, updatedExercise in
+                        onChange(updatedExercise)
+                    }
+                )
+            }
         }
     }
 

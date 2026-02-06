@@ -313,14 +313,18 @@ struct ActiveSessionView: View {
             }
             .sheet(isPresented: $showEditExercise) {
                 if let exercise = sessionViewModel.currentExercise {
-                    EditExerciseSheet(
-                        exercise: exercise,
-                        moduleIndex: sessionViewModel.currentModuleIndex,
-                        exerciseIndex: sessionViewModel.currentExerciseIndex,
-                        onSave: { moduleIndex, exerciseIndex, updatedExercise in
-                            updateExerciseAt(moduleIndex: moduleIndex, exerciseIndex: exerciseIndex, exercise: updatedExercise)
-                        }
-                    )
+                    NavigationStack {
+                        ExerciseFormView(
+                            instance: nil,
+                            moduleId: UUID(),
+                            sessionExercise: exercise,
+                            sessionModuleIndex: sessionViewModel.currentModuleIndex,
+                            sessionExerciseIndex: sessionViewModel.currentExerciseIndex,
+                            onSessionSave: { moduleIndex, exerciseIndex, updatedExercise in
+                                updateExerciseAt(moduleIndex: moduleIndex, exerciseIndex: exerciseIndex, exercise: updatedExercise)
+                            }
+                        )
+                    }
                 }
             }
             .sheet(isPresented: $showFreestyleAddExercise) {

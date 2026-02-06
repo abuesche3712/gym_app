@@ -13,6 +13,12 @@ struct SessionDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     let session: Session
+    let readOnly: Bool
+
+    init(session: Session, readOnly: Bool = false) {
+        self.session = session
+        self.readOnly = readOnly
+    }
 
     @State private var showingDeleteConfirmation = false
     @State private var showingEditSession = false
@@ -29,7 +35,8 @@ struct SessionDetailView: View {
     @State private var setToPost: ShareableSetPerformance?
 
     private var currentSession: Session {
-        sessionViewModel.sessions.first { $0.id == session.id } ?? session
+        if readOnly { return session }
+        return sessionViewModel.sessions.first { $0.id == session.id } ?? session
     }
 
     // Computed stats
@@ -62,54 +69,56 @@ struct SessionDetailView: View {
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: AppSpacing.md) {
-                    // Share menu
-                    Menu {
-                        Button {
-                            showingPostToFeed = true
-                        } label: {
-                            Label("Post to Feed", systemImage: "rectangle.stack")
-                        }
+            if !readOnly {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    HStack(spacing: AppSpacing.md) {
+                        // Share menu
+                        Menu {
+                            Button {
+                                showingPostToFeed = true
+                            } label: {
+                                Label("Post to Feed", systemImage: "rectangle.stack")
+                            }
 
-                        Button {
-                            showingShareWithFriend = true
-                        } label: {
-                            Label("Share with Friend", systemImage: "paperplane")
-                        }
+                            Button {
+                                showingShareWithFriend = true
+                            } label: {
+                                Label("Share with Friend", systemImage: "paperplane")
+                            }
 
-                        Divider()
+                            Divider()
 
-                        Button {
-                            shareContent = generateSessionShareText()
-                            showingShareSheet = true
+                            Button {
+                                shareContent = generateSessionShareText()
+                                showingShareSheet = true
+                            } label: {
+                                Label("Share via...", systemImage: "square.and.arrow.up")
+                            }
                         } label: {
-                            Label("Share via...", systemImage: "square.and.arrow.up")
-                        }
-                    } label: {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.body.weight(.medium))
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-
-                    // Edit button (only shown if session is editable)
-                    if currentSession.isEditable {
-                        Button {
-                            showingEditSession = true
-                        } label: {
-                            Image(systemName: "pencil")
+                            Image(systemName: "square.and.arrow.up")
                                 .font(.body.weight(.medium))
                                 .foregroundColor(AppColors.textSecondary)
                         }
-                    }
 
-                    // Delete button
-                    Button {
-                        showingDeleteConfirmation = true
-                    } label: {
-                        Image(systemName: "trash")
-                            .font(.body.weight(.medium))
-                            .foregroundColor(AppColors.error)
+                        // Edit button (only shown if session is editable)
+                        if currentSession.isEditable {
+                            Button {
+                                showingEditSession = true
+                            } label: {
+                                Image(systemName: "pencil")
+                                    .font(.body.weight(.medium))
+                                    .foregroundColor(AppColors.textSecondary)
+                            }
+                        }
+
+                        // Delete button
+                        Button {
+                            showingDeleteConfirmation = true
+                        } label: {
+                            Image(systemName: "trash")
+                                .font(.body.weight(.medium))
+                                .foregroundColor(AppColors.error)
+                        }
                     }
                 }
             }

@@ -15,10 +15,14 @@ struct FeedPostRow: View {
     let onEdit: (() -> Void)?
     let onDelete: (() -> Void)?
     let onProfileTap: () -> Void
+    var onShare: (() -> Void)? = nil
     var onPostTap: (() -> Void)? = nil
+    var onReact: ((ReactionType) -> Void)? = nil
+    var onReport: (() -> Void)? = nil
 
     @State private var showingDeleteConfirmation = false
     @State private var isLikeAnimating = false
+    @State private var showReactionPicker = false
 
     private var isOwnPost: Bool {
         onDelete != nil
@@ -48,12 +52,7 @@ struct FeedPostRow: View {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     // Caption (if any) - left aligned, full width
                     if let caption = post.post.caption, !caption.isEmpty {
-                        Text(caption)
-                            .font(.body)
-                            .foregroundColor(AppColors.textPrimary)
-                            .lineSpacing(4)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .multilineTextAlignment(.leading)
+                        RichTextView(caption)
                     }
 
                     // Attachment card (centered on full width)
@@ -109,8 +108,8 @@ struct FeedPostRow: View {
 
             Spacer()
 
-            // More menu (for own posts)
-            if isOwnPost {
+            // More menu
+            if isOwnPost || onReport != nil {
                 Menu {
                     if let onEdit = onEdit {
                         Button {
@@ -120,10 +119,20 @@ struct FeedPostRow: View {
                         }
                     }
 
-                    Button(role: .destructive) {
-                        showingDeleteConfirmation = true
-                    } label: {
-                        Label("Delete", systemImage: "trash")
+                    if isOwnPost {
+                        Button(role: .destructive) {
+                            showingDeleteConfirmation = true
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+
+                    if !isOwnPost, let onReport = onReport {
+                        Button {
+                            onReport()
+                        } label: {
+                            Label("Report", systemImage: "flag")
+                        }
                     }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -169,7 +178,7 @@ struct FeedPostRow: View {
                 TemplateAttachmentCard(type: "MODULE", name: name, snapshot: snapshot)
 
             case .highlights(let snapshot):
-                HighlightsAttachmentCard(snapshot: snapshot)
+                HighlightsInlineCards(snapshot: snapshot)
             }
         }
     }
@@ -177,66 +186,146 @@ struct FeedPostRow: View {
     // MARK: - Engagement Bar
 
     private var engagementBar: some View {
-        HStack(spacing: 0) {
-            // Like button
-            Button {
-                HapticManager.shared.impact()
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                    isLikeAnimating = true
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
-                        isLikeAnimating = false
-                    }
-                }
-                onLike()
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: post.isLikedByCurrentUser ? "heart.fill" : "heart")
-                        .font(.subheadline)
-                        .foregroundColor(post.isLikedByCurrentUser ? AppColors.error : AppColors.textTertiary)
-                        .scaleEffect(isLikeAnimating ? 1.25 : 1.0)
-
-                    if post.post.likeCount > 0 {
-                        Text("\(post.post.likeCount)")
-                            .font(.caption)
-                            .foregroundColor(post.isLikedByCurrentUser ? AppColors.error : AppColors.textTertiary)
-                    }
-                }
-                .frame(maxWidth: .infinity)
+        VStack(spacing: AppSpacing.xs) {
+            // Reaction summary (shows emoji counts if any)
+            if let counts = post.post.reactionCounts, !counts.isEmpty {
+                reactionSummary(counts)
             }
-            .buttonStyle(.plain)
 
-            // Comment button
-            Button(action: onComment) {
-                HStack(spacing: 4) {
-                    Image(systemName: "bubble.left")
+            HStack(spacing: 0) {
+                // Like button (tap = heart, long-press = reaction picker)
+                Button {
+                    HapticManager.shared.impact()
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        isLikeAnimating = true
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                        withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                            isLikeAnimating = false
+                        }
+                    }
+                    onLike()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: post.isLikedByCurrentUser ? "heart.fill" : "heart")
+                            .font(.subheadline)
+                            .foregroundColor(post.isLikedByCurrentUser ? AppColors.error : AppColors.textTertiary)
+                            .scaleEffect(isLikeAnimating ? 1.25 : 1.0)
+
+                        if post.post.likeCount > 0 {
+                            Text("\(post.post.likeCount)")
+                                .font(.caption)
+                                .foregroundColor(post.isLikedByCurrentUser ? AppColors.error : AppColors.textTertiary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
+                .onLongPressGesture(minimumDuration: 0.3) {
+                    HapticManager.shared.impact()
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        showReactionPicker = true
+                    }
+                }
+
+                // Comment button
+                Button(action: onComment) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "bubble.left")
+                            .font(.subheadline)
+                            .foregroundColor(AppColors.textTertiary)
+
+                        if post.post.commentCount > 0 {
+                            Text("\(post.post.commentCount)")
+                                .font(.caption)
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
+
+                // Share/DM button
+                Button {
+                    onShare?()
+                } label: {
+                    Image(systemName: "paperplane")
                         .font(.subheadline)
                         .foregroundColor(AppColors.textTertiary)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .padding(.top, AppSpacing.sm)
+        .overlay(alignment: .topLeading) {
+            if showReactionPicker {
+                reactionPickerView
+                    .transition(.scale(scale: 0.5).combined(with: .opacity))
+            }
+        }
+    }
 
-                    if post.post.commentCount > 0 {
-                        Text("\(post.post.commentCount)")
-                            .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
+    private var reactionPickerView: some View {
+        HStack(spacing: AppSpacing.md) {
+            ForEach(ReactionType.allCases, id: \.self) { reaction in
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        showReactionPicker = false
+                    }
+                    onReact?(reaction)
+                } label: {
+                    Text(reaction.emoji)
+                        .font(.title2)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.sm)
+        .background(
+            Capsule()
+                .fill(AppColors.surfacePrimary)
+                .shadow(color: .black.opacity(0.2), radius: 12, x: 0, y: 4)
+        )
+        .overlay(
+            Capsule()
+                .stroke(AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
+        )
+        .offset(y: -44)
+        .onTapGesture {} // Prevent dismissal when tapping on picker itself
+        .background(
+            Color.clear
+                .contentShape(Rectangle())
+                .frame(width: 2000, height: 2000)
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                        showReactionPicker = false
                     }
                 }
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.plain)
+        )
+    }
 
-            // Share/DM button
-            Button {
-                // Share action
-            } label: {
-                Image(systemName: "paperplane")
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textTertiary)
-                    .frame(maxWidth: .infinity)
+    private func reactionSummary(_ counts: [String: Int]) -> some View {
+        HStack(spacing: 4) {
+            // Show emojis with counts, sorted by count descending
+            let sorted = counts.sorted { $0.value > $1.value }
+            ForEach(sorted.prefix(3), id: \.key) { key, count in
+                if let reaction = ReactionType(rawValue: key), count > 0 {
+                    HStack(spacing: 2) {
+                        Text(reaction.emoji)
+                            .font(.caption2)
+                        if count > 1 {
+                            Text("\(count)")
+                                .font(.caption2)
+                                .foregroundColor(AppColors.textTertiary)
+                        }
+                    }
+                }
             }
-            .buttonStyle(.plain)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.top, AppSpacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Helpers
@@ -733,81 +822,30 @@ private struct TemplateAttachmentCard: View {
     }
 }
 
-// MARK: - Highlights Attachment Card
+// MARK: - Highlights Inline Cards
 
-private struct HighlightsAttachmentCard: View {
+private struct HighlightsInlineCards: View {
     let snapshot: Data
 
     private var bundle: HighlightsShareBundle? {
         try? HighlightsShareBundle.decode(from: snapshot)
     }
 
-    private var totalCount: Int {
-        (bundle?.exercises.count ?? 0) + (bundle?.sets.count ?? 0)
-    }
-
     var body: some View {
         if let bundle = bundle {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                // Header
-                HStack(spacing: AppSpacing.xs) {
-                    Image(systemName: "star.fill")
-                        .font(.caption.weight(.bold))
-                        .foregroundColor(AppColors.warning)
-
-                    Text("\(totalCount) HIGHLIGHT\(totalCount == 1 ? "" : "S")")
-                        .font(.caption.weight(.bold))
-                        .tracking(0.5)
-                        .foregroundColor(AppColors.warning)
-
-                    Text("·")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
-
-                    Text(bundle.workoutName)
-                        .font(.caption)
-                        .foregroundColor(AppColors.textSecondary)
-                        .lineLimit(1)
-                }
-
-                // Show highlights
+            VStack(spacing: AppSpacing.md) {
                 ForEach(bundle.exercises.indices, id: \.self) { index in
-                    let exercise = bundle.exercises[index]
-                    highlightRow(name: exercise.exerciseName, icon: "dumbbell.fill", color: AppColors.dominant)
+                    if let data = try? bundle.exercises[index].encode() {
+                        ExerciseAttachmentCard(snapshot: data)
+                    }
                 }
 
                 ForEach(bundle.sets.indices, id: \.self) { index in
-                    let set = bundle.sets[index]
-                    highlightRow(
-                        name: set.exerciseName,
-                        icon: set.isPR ? "trophy.fill" : "flame.fill",
-                        color: set.isPR ? AppColors.warning : AppColors.accent1
-                    )
+                    if let data = try? bundle.sets[index].encode() {
+                        SetAttachmentCard(snapshot: data)
+                    }
                 }
             }
-            .padding(AppSpacing.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.warning.opacity(0.06))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .stroke(AppColors.warning.opacity(0.2), lineWidth: 1)
-            )
-        }
-    }
-
-    private func highlightRow(name: String, icon: String, color: Color) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            Image(systemName: icon)
-                .font(.caption)
-                .foregroundColor(color)
-                .frame(width: 16)
-
-            Text(name)
-                .font(.subheadline)
-                .foregroundColor(AppColors.textPrimary)
-                .lineLimit(1)
         }
     }
 }

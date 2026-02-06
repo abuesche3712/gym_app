@@ -35,10 +35,10 @@ struct HighlightPickerView: View {
         session.completedModules.filter { !$0.skipped }
     }
 
-    /// Button should be disabled if: sharing full workout with no highlights, OR sharing highlights with none selected
+    /// Button should be disabled if: sharing individual highlights with none selected. Full workout can be shared without highlights.
     private var isShareDisabled: Bool {
         if shareEntireSession {
-            return highlightCount == 0  // Full workout needs at least 1 highlight
+            return false  // Full workout can be shared without highlights
         } else {
             return highlightCount == 0  // Individual share needs at least 1 selection
         }
@@ -53,7 +53,7 @@ struct HighlightPickerView: View {
 
                     // Instructions
                     if shareEntireSession {
-                        Text("Select up to \(maxHighlights) highlights to feature on your workout card")
+                        Text("Optionally select up to \(maxHighlights) highlights to feature on your workout card")
                             .font(.caption)
                             .foregroundColor(AppColors.textSecondary)
                             .frame(maxWidth: .infinity, alignment: .leading)

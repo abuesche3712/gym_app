@@ -378,6 +378,9 @@ class SessionViewModel: ObservableObject {
         isSessionActive = true
 
         startSessionTimer()
+
+        // Save in-progress session immediately for crash/background recovery
+        autoSaveInProgressSession()
     }
 
     // MARK: - Session Recovery

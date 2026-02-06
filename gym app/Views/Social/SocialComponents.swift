@@ -110,6 +110,17 @@ struct SessionPostContent: View {
                 } else {
                     topExercisesSection(session: session)
                 }
+
+                // Tap hint
+                HStack(spacing: AppSpacing.xs) {
+                    Spacer()
+                    Text("Tap to view full workout")
+                        .font(.caption2)
+                        .foregroundColor(AppColors.textTertiary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundColor(AppColors.textTertiary)
+                }
             }
             .padding(AppSpacing.cardPadding)
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -19,6 +19,8 @@ struct Post: Identifiable, Codable, Hashable {
     var updatedAt: Date?
     var likeCount: Int
     var commentCount: Int
+    var reactionCounts: [String: Int]?  // ReactionType.rawValue -> count
+    var scheduledFor: Date?  // If set, post is scheduled for future publication
     var syncStatus: SyncStatus
 
     init(
@@ -30,6 +32,8 @@ struct Post: Identifiable, Codable, Hashable {
         updatedAt: Date? = nil,
         likeCount: Int = 0,
         commentCount: Int = 0,
+        reactionCounts: [String: Int]? = nil,
+        scheduledFor: Date? = nil,
         syncStatus: SyncStatus = .pendingSync
     ) {
         self.schemaVersion = SchemaVersions.post
@@ -41,6 +45,8 @@ struct Post: Identifiable, Codable, Hashable {
         self.updatedAt = updatedAt
         self.likeCount = likeCount
         self.commentCount = commentCount
+        self.reactionCounts = reactionCounts
+        self.scheduledFor = scheduledFor
         self.syncStatus = syncStatus
     }
 }
@@ -187,6 +193,36 @@ enum PostContent: Codable, Hashable {
     }
 }
 
+// MARK: - Reaction Type
+
+enum ReactionType: String, Codable, CaseIterable, Hashable {
+    case heart
+    case fire
+    case muscle
+    case clap
+    case hundred
+
+    var emoji: String {
+        switch self {
+        case .heart: return "\u{2764}\u{FE0F}"
+        case .fire: return "\u{1F525}"
+        case .muscle: return "\u{1F4AA}"
+        case .clap: return "\u{1F44F}"
+        case .hundred: return "\u{1F4AF}"
+        }
+    }
+
+    var sfSymbol: String {
+        switch self {
+        case .heart: return "heart.fill"
+        case .fire: return "flame.fill"
+        case .muscle: return "figure.strengthtraining.traditional"
+        case .clap: return "hands.clap.fill"
+        case .hundred: return "textformat.123"
+        }
+    }
+}
+
 // MARK: - Post Like
 
 struct PostLike: Identifiable, Codable, Hashable {
@@ -194,13 +230,19 @@ struct PostLike: Identifiable, Codable, Hashable {
     var id: UUID
     var postId: UUID
     var userId: String  // Firebase UID
+    var reactionType: ReactionType?  // nil = heart for backward compatibility
     var createdAt: Date
     var syncStatus: SyncStatus
+
+    var effectiveReaction: ReactionType {
+        reactionType ?? .heart
+    }
 
     init(
         id: UUID = UUID(),
         postId: UUID,
         userId: String,
+        reactionType: ReactionType? = nil,
         createdAt: Date = Date(),
         syncStatus: SyncStatus = .pendingSync
     ) {
@@ -208,6 +250,7 @@ struct PostLike: Identifiable, Codable, Hashable {
         self.id = id
         self.postId = postId
         self.userId = userId
+        self.reactionType = reactionType
         self.createdAt = createdAt
         self.syncStatus = syncStatus
     }
@@ -221,6 +264,7 @@ struct PostComment: Identifiable, Codable, Hashable {
     var postId: UUID
     var authorId: String  // Firebase UID
     var text: String
+    var parentCommentId: UUID?  // For threading (nil = top-level comment)
     var createdAt: Date
     var updatedAt: Date?
     var syncStatus: SyncStatus
@@ -230,6 +274,7 @@ struct PostComment: Identifiable, Codable, Hashable {
         postId: UUID,
         authorId: String,
         text: String,
+        parentCommentId: UUID? = nil,
         createdAt: Date = Date(),
         updatedAt: Date? = nil,
         syncStatus: SyncStatus = .pendingSync
@@ -239,6 +284,7 @@ struct PostComment: Identifiable, Codable, Hashable {
         self.postId = postId
         self.authorId = authorId
         self.text = text
+        self.parentCommentId = parentCommentId
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.syncStatus = syncStatus

@@ -396,6 +396,7 @@ struct ShareWithFriendSheet: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var friendsViewModel = FriendsViewModel()
     @StateObject private var conversationsViewModel = ConversationsViewModel()
+    @State private var personalMessage = ""
     @State private var isSharing = false
     @State private var error: Error?
     @State private var showingError = false
@@ -408,6 +409,17 @@ struct ShareWithFriendSheet: View {
                 SharePreviewHeader(content: content)
                     .padding()
                     .background(AppColors.surfaceSecondary)
+
+                // Personal message input
+                HStack(spacing: AppSpacing.sm) {
+                    TextField("Add a message...", text: $personalMessage, axis: .vertical)
+                        .textFieldStyle(.plain)
+                        .lineLimit(1...3)
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.sm)
+                }
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.vertical, AppSpacing.xs)
 
                 Divider()
 
@@ -522,6 +534,18 @@ struct ShareWithFriendSheet: View {
             )
 
             try await onShare(conversationWithProfile)
+
+            // Send personal message if provided
+            let trimmedMessage = personalMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedMessage.isEmpty {
+                let chatVM = ChatViewModel(
+                    conversation: conversation,
+                    otherParticipant: friend.profile,
+                    otherParticipantFirebaseId: friendFirebaseId
+                )
+                try await chatVM.sendMessage(text: trimmedMessage)
+            }
+
             shareSuccess = true
         } catch {
             self.error = error
@@ -582,6 +606,27 @@ struct SharePreviewHeader: View {
 
             Spacer()
         }
+    }
+}
+
+// MARK: - Shareable Post Content
+
+/// Wrapper for sharing a Post via DM
+struct ShareablePostContent: ShareableContent, Identifiable {
+    let id: UUID
+    let post: Post
+
+    init(post: Post) {
+        self.id = post.id
+        self.post = post
+    }
+
+    var shareTitle: String { post.content.displayTitle }
+    var shareSubtitle: String? { post.caption.flatMap { String($0.prefix(60)) } }
+    var shareIcon: String { post.content.icon }
+
+    func createMessageContent() throws -> MessageContent {
+        return post.content.toMessageContent()
     }
 }
 

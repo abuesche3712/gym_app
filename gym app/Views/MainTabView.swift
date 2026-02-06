@@ -74,7 +74,17 @@ struct MainTabView: View {
             .safeAreaInset(edge: .bottom) {
                 // Custom tab bar - hide when requested (e.g., in chat view)
                 if !hideTabBar {
-                    customTabBar
+                    VStack(spacing: 0) {
+                        if showMiniBar {
+                            MiniSessionBar(sessionViewModel: sessionViewModel) {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    showingFullSession = true
+                                }
+                            }
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                        customTabBar
+                    }
                 }
             }
             .environment(\.hideTabBar, $hideTabBar)
@@ -97,19 +107,6 @@ struct MainTabView: View {
                 .padding(.top, 50) // Below safe area
             }
 
-            // Mini session bar overlay (bottom, above tab bar)
-            if showMiniBar {
-                VStack {
-                    Spacer()
-                    MiniSessionBar(sessionViewModel: sessionViewModel) {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            showingFullSession = true
-                        }
-                    }
-                    .padding(.bottom, 56) // Custom tab bar height
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
         }
         .environmentObject(appState)
         .environmentObject(appState.moduleViewModel)
@@ -185,10 +182,6 @@ struct MainTabView: View {
             }
             .padding(.horizontal, AppSpacing.md)
 
-            // Mini bar spacer when active
-            if showMiniBar {
-                Color.clear.frame(height: 60)
-            }
         }
         .background(
             ZStack {
@@ -245,7 +238,7 @@ struct MiniSessionBar: View {
     private var elapsedTimeString: String {
         let minutes = sessionViewModel.sessionElapsedSeconds / 60
         let seconds = sessionViewModel.sessionElapsedSeconds % 60
-        return String(format: "%d:%02d", minutes, seconds)
+        return String(format: "%02d:%02d", minutes, seconds)
     }
 
     private var currentExerciseName: String? {
@@ -287,7 +280,10 @@ struct MiniSessionBar: View {
                         .caption(color: .white)
                     Text(elapsedTimeString)
                         .monoSmall(color: .white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
+                .fixedSize()
 
                 // Expand indicator
                 Image(systemName: "chevron.up")

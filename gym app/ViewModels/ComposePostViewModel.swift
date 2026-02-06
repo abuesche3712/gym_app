@@ -19,6 +19,7 @@ class ComposePostViewModel: ObservableObject {
     @Published var caption: String = ""
     @Published var isPosting = false
     @Published var error: Error?
+    @Published var scheduledDate: Date?
 
     @Published private(set) var content: PostContent
     private(set) var contentCreationError: Error?
@@ -53,6 +54,7 @@ class ComposePostViewModel: ObservableObject {
     init(postRepo: PostRepository = PostRepository()) {
         self.content = .text("")
         self.postRepo = postRepo
+        loadDraft()
     }
 
     // MARK: - Content Management
@@ -77,6 +79,10 @@ class ComposePostViewModel: ObservableObject {
 
     // MARK: - Actions
 
+    var isScheduled: Bool {
+        scheduledDate != nil
+    }
+
     func createPost() async -> Bool {
         guard let userId = currentUserId else {
             error = PostError.notAuthenticated
@@ -97,13 +103,23 @@ class ComposePostViewModel: ObservableObject {
         let post = Post(
             authorId: userId,
             content: finalContent,
-            caption: caption.isEmpty ? nil : caption
+            caption: caption.isEmpty ? nil : caption,
+            scheduledFor: scheduledDate
         )
+
+        // If scheduled for the future, save locally only
+        if let scheduled = scheduledDate, scheduled > Date() {
+            Self.saveScheduledPost(post)
+            HapticManager.shared.success()
+            clearDraft()
+            return true
+        }
 
         do {
             try await firestoreService.savePost(post)
             postRepo.save(post)
             HapticManager.shared.success()
+            clearDraft()
 
             // Notify that a new post was created so feed can refresh
             NotificationCenter.default.post(name: .didCreatePost, object: post)
@@ -113,6 +129,67 @@ class ComposePostViewModel: ObservableObject {
             self.error = error
             return false
         }
+    }
+
+    // MARK: - Scheduled Posts
+
+    private static let scheduledPostsKey = "scheduled_posts"
+
+    static func saveScheduledPost(_ post: Post) {
+        var posts = loadScheduledPosts()
+        posts.append(post)
+        if let data = try? JSONEncoder().encode(posts) {
+            UserDefaults.standard.set(data, forKey: scheduledPostsKey)
+        }
+    }
+
+    static func loadScheduledPosts() -> [Post] {
+        guard let data = UserDefaults.standard.data(forKey: scheduledPostsKey),
+              let posts = try? JSONDecoder().decode([Post].self, from: data) else {
+            return []
+        }
+        return posts
+    }
+
+    private static func saveScheduledPosts(_ posts: [Post]) {
+        if posts.isEmpty {
+            UserDefaults.standard.removeObject(forKey: scheduledPostsKey)
+        } else if let data = try? JSONEncoder().encode(posts) {
+            UserDefaults.standard.set(data, forKey: scheduledPostsKey)
+        }
+    }
+
+    /// Publish any scheduled posts that are due. Called on app launch.
+    static func publishScheduledPosts() async {
+        let posts = loadScheduledPosts()
+        guard !posts.isEmpty else { return }
+
+        let now = Date()
+        var remaining: [Post] = []
+        let firestoreService = FirestoreService.shared
+        let postRepo = PostRepository()
+
+        for post in posts {
+            if let scheduledFor = post.scheduledFor, scheduledFor <= now {
+                // Time to publish
+                var publishPost = post
+                publishPost.scheduledFor = nil
+                publishPost.createdAt = Date() // Use current time
+                do {
+                    try await firestoreService.savePost(publishPost)
+                    postRepo.save(publishPost)
+                    NotificationCenter.default.post(name: .didCreatePost, object: publishPost)
+                    Logger.debug("Published scheduled post: \(publishPost.id)")
+                } catch {
+                    Logger.error(error, context: "publishScheduledPosts")
+                    remaining.append(post) // Keep for retry
+                }
+            } else {
+                remaining.append(post) // Not yet due
+            }
+        }
+
+        saveScheduledPosts(remaining)
     }
 
     var contentPreview: String {
@@ -156,6 +233,33 @@ class ComposePostViewModel: ObservableObject {
 
     var contentIcon: String {
         content.icon
+    }
+
+    // MARK: - Draft Management
+
+    private static let draftCaptionKey = "compose_post_draft_caption"
+
+    var hasDraft: Bool {
+        !caption.isEmpty
+    }
+
+    func saveDraft() {
+        let trimmed = caption.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            UserDefaults.standard.removeObject(forKey: Self.draftCaptionKey)
+        } else {
+            UserDefaults.standard.set(trimmed, forKey: Self.draftCaptionKey)
+        }
+    }
+
+    func loadDraft() {
+        if let saved = UserDefaults.standard.string(forKey: Self.draftCaptionKey), !saved.isEmpty {
+            caption = saved
+        }
+    }
+
+    func clearDraft() {
+        UserDefaults.standard.removeObject(forKey: Self.draftCaptionKey)
     }
 }
 

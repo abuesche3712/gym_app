@@ -114,6 +114,27 @@ class FirestoreMessagingService: ObservableObject {
             }
     }
 
+    /// Soft-delete a message (marks as deleted, replaces content)
+    func deleteMessage(conversationId: UUID, messageId: UUID) async throws {
+        let ref = core.db.collection("conversations")
+            .document(conversationId.uuidString)
+            .collection("messages")
+            .document(messageId.uuidString)
+
+        // Encode a placeholder text content
+        let placeholderContent = MessageContent.text("This message was deleted")
+        var contentDict: [String: Any] = [:]
+        if let contentData = try? JSONEncoder().encode(placeholderContent),
+           let dict = try? JSONSerialization.jsonObject(with: contentData) as? [String: Any] {
+            contentDict = dict
+        }
+
+        try await ref.updateData([
+            "isDeleted": true,
+            "content": contentDict
+        ])
+    }
+
     /// Mark a message as read
     func markMessageRead(conversationId: UUID, messageId: UUID, at date: Date = Date()) async throws {
         let ref = core.db.collection("conversations")
@@ -238,6 +259,10 @@ class FirestoreMessagingService: ObservableObject {
             data["readAt"] = Timestamp(date: readAt)
         }
 
+        if message.isDeleted {
+            data["isDeleted"] = true
+        }
+
         return data
     }
 
@@ -275,6 +300,8 @@ class FirestoreMessagingService: ObservableObject {
             content = .text("")
         }
 
+        let isDeleted = data["isDeleted"] as? Bool ?? false
+
         return Message(
             id: id,
             conversationId: conversationId,
@@ -282,6 +309,7 @@ class FirestoreMessagingService: ObservableObject {
             content: content,
             createdAt: createdAt,
             readAt: readAt,
+            isDeleted: isDeleted,
             syncStatus: .synced
         )
     }

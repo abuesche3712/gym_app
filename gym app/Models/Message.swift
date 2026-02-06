@@ -16,6 +16,7 @@ struct Message: Identifiable, Codable, Hashable {
     var content: MessageContent
     var createdAt: Date
     var readAt: Date?  // nil = unread by recipient
+    var isDeleted: Bool
     var syncStatus: SyncStatus
 
     init(
@@ -25,6 +26,7 @@ struct Message: Identifiable, Codable, Hashable {
         content: MessageContent,
         createdAt: Date = Date(),
         readAt: Date? = nil,
+        isDeleted: Bool = false,
         syncStatus: SyncStatus = .pendingSync
     ) {
         self.id = id
@@ -33,6 +35,7 @@ struct Message: Identifiable, Codable, Hashable {
         self.content = content
         self.createdAt = createdAt
         self.readAt = readAt
+        self.isDeleted = isDeleted
         self.syncStatus = syncStatus
     }
 
@@ -46,11 +49,12 @@ struct Message: Identifiable, Codable, Hashable {
         content = try container.decode(MessageContent.self, forKey: .content)
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         readAt = try container.decodeIfPresent(Date.self, forKey: .readAt)
+        isDeleted = try container.decodeIfPresent(Bool.self, forKey: .isDeleted) ?? false
         syncStatus = try container.decodeIfPresent(SyncStatus.self, forKey: .syncStatus) ?? .pendingSync
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, id, conversationId, senderId, content, createdAt, readAt, syncStatus
+        case schemaVersion, id, conversationId, senderId, content, createdAt, readAt, isDeleted, syncStatus
     }
 }
 
@@ -266,5 +270,40 @@ extension MessageContent {
     var textValue: String? {
         if case .text(let str) = self { return str }
         return nil
+    }
+}
+
+// MARK: - Identifiable Conformance (for sheet bindings)
+
+extension MessageContent: Identifiable {
+    var id: String {
+        switch self {
+        case .text(let str):
+            return "text-\(str.hashValue)"
+        case .sharedProgram(let id, _, _):
+            return "program-\(id.uuidString)"
+        case .sharedWorkout(let id, _, _):
+            return "workout-\(id.uuidString)"
+        case .sharedModule(let id, _, _):
+            return "module-\(id.uuidString)"
+        case .sharedSession(let id, _, _, _):
+            return "session-\(id.uuidString)"
+        case .sharedExercise(let snapshot):
+            return "exercise-\(snapshot.hashValue)"
+        case .sharedSet(let snapshot):
+            return "set-\(snapshot.hashValue)"
+        case .sharedCompletedModule(let snapshot):
+            return "completedModule-\(snapshot.hashValue)"
+        case .sharedHighlights(let snapshot):
+            return "highlights-\(snapshot.hashValue)"
+        case .sharedExerciseInstance(let snapshot):
+            return "exerciseInstance-\(snapshot.hashValue)"
+        case .sharedSetGroup(let snapshot):
+            return "setGroup-\(snapshot.hashValue)"
+        case .sharedCompletedSetGroup(let snapshot):
+            return "completedSetGroup-\(snapshot.hashValue)"
+        case .decodeFailed(let originalType):
+            return "decodeFailed-\(originalType ?? "unknown")"
+        }
     }
 }

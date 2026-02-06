@@ -22,6 +22,12 @@ struct ExerciseFormView: View {
     let instance: ExerciseInstance?
     let moduleId: UUID
 
+    // Session mode parameters (optional - when editing an exercise during an active session)
+    let sessionExercise: SessionExercise?
+    let sessionModuleIndex: Int?
+    let sessionExerciseIndex: Int?
+    let onSessionSave: ((Int, Int, SessionExercise) -> Void)?
+
     @State private var name: String = ""
     @State private var selectedTemplate: ExerciseTemplate?
     @State private var exerciseType: ExerciseType = .strength
@@ -47,7 +53,12 @@ struct ExerciseFormView: View {
     @State private var editingSetGroup: EditingIndex?
     @State private var showingExercisePicker = false
 
-    private var isEditing: Bool { instance != nil }
+    // Session mode: preserve completed set data per set group
+    @State private var completedSetsMap: [UUID: [SetData]] = [:]  // setGroupId -> completed sets
+    @State private var allSetsMap: [UUID: [SetData]] = [:]  // setGroupId -> all sets (for history editing)
+
+    private var isSessionMode: Bool { sessionExercise != nil }
+    private var isEditing: Bool { instance != nil || isSessionMode }
 
     /// Check if exercise is bodyweight-based
     private var isBodyweight: Bool {
@@ -79,6 +90,9 @@ struct ExerciseFormView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: AppSpacing.xl) {
+                if isSessionMode {
+                    sessionInfoBanner
+                }
                 exerciseSection
                 musclesAndEquipmentSection
                 setsSection
@@ -534,6 +548,20 @@ struct ExerciseFormView: View {
         }
     }
 
+    // MARK: - Session Info Banner
+
+    private var sessionInfoBanner: some View {
+        HStack(spacing: AppSpacing.sm) {
+            Image(systemName: "info.circle")
+                .foregroundColor(AppColors.dominant)
+            Text("Completed sets are preserved. Changes apply to remaining sets.")
+                .caption(color: AppColors.textSecondary)
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(AppColors.surfacePrimary)
+        .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
+    }
+
     // MARK: - Helpers
 
     private func binding(for index: Int) -> Binding<SetGroup> {
@@ -552,8 +580,60 @@ struct ExerciseFormView: View {
     }
 
     private func loadExistingExercise() {
-        if let instance = instance {
-            // Load basic data from instance
+        if let exercise = sessionExercise {
+            // Session mode: load from SessionExercise
+            name = exercise.exerciseName
+            exerciseType = exercise.exerciseType
+            trackTime = exercise.cardioMetric.tracksTime
+            trackDistance = exercise.cardioMetric.tracksDistance
+            trackReps = exercise.mobilityTracking.tracksReps
+            trackDuration = exercise.mobilityTracking.tracksDuration
+            distanceUnit = exercise.distanceUnit
+            notes = exercise.notes ?? ""
+            primaryMuscles = exercise.primaryMuscles
+            secondaryMuscles = exercise.secondaryMuscles
+            selectedImplementIds = exercise.implementIds
+
+            // Convert CompletedSetGroups to SetGroups, preserving completed set data
+            setGroups = exercise.completedSetGroups.map { group in
+                let completedSets = group.sets.filter { $0.completed }
+                let firstSet = group.sets.first
+
+                // For unilateral exercises, the logical set count is half the SetData count
+                let logicalSetCount = group.isUnilateral ? group.sets.count / 2 : group.sets.count
+
+                // Store completed sets and all sets for later reconstruction
+                completedSetsMap[group.setGroupId] = completedSets
+                allSetsMap[group.setGroupId] = group.sets
+
+                return SetGroup(
+                    id: group.setGroupId,
+                    sets: logicalSetCount,
+                    targetReps: firstSet?.reps,
+                    targetWeight: firstSet?.weight,
+                    targetDuration: firstSet?.duration,
+                    targetDistance: firstSet?.distance,
+                    targetHoldTime: firstSet?.holdTime,
+                    restPeriod: group.restPeriod,
+                    isInterval: group.isInterval,
+                    workDuration: group.workDuration,
+                    intervalRestDuration: group.intervalRestDuration,
+                    isAMRAP: group.isAMRAP,
+                    amrapTimeLimit: group.amrapTimeLimit,
+                    isUnilateral: group.isUnilateral,
+                    trackRPE: group.trackRPE,
+                    implementMeasurables: group.implementMeasurables
+                )
+            }
+
+            // Determine isUnilateral from first set group
+            isUnilateral = exercise.completedSetGroups.first?.isUnilateral ?? false
+
+            if setGroups.isEmpty {
+                showingAddSetGroup = true
+            }
+        } else if let instance = instance {
+            // Builder mode: load from ExerciseInstance
             name = instance.name
             exerciseType = instance.exerciseType
             trackTime = instance.cardioMetric.tracksTime
@@ -602,6 +682,99 @@ struct ExerciseFormView: View {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         let trimmedNotes = notes.trimmingCharacters(in: .whitespaces)
 
+        // Session mode: convert SetGroups back to CompletedSetGroups and save via callback
+        if isSessionMode, var updatedExercise = sessionExercise,
+           let moduleIndex = sessionModuleIndex, let exerciseIndex = sessionExerciseIndex {
+            updatedExercise.exerciseName = trimmedName
+            updatedExercise.exerciseType = exerciseType
+            updatedExercise.cardioMetric = cardioMetric
+            updatedExercise.mobilityTracking = mobilityTracking
+            updatedExercise.distanceUnit = distanceUnit
+            updatedExercise.primaryMuscles = primaryMuscles
+            updatedExercise.secondaryMuscles = secondaryMuscles
+            updatedExercise.implementIds = selectedImplementIds
+            updatedExercise.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
+
+            // Convert SetGroups back to CompletedSetGroups, preserving completed sets
+            var newSetGroups: [CompletedSetGroup] = []
+            for setGroup in setGroups {
+                var sets: [SetData] = []
+
+                // Check if we have preserved all sets from history editing
+                if let allSets = allSetsMap[setGroup.id], !allSets.isEmpty {
+                    sets = allSets
+                } else {
+                    // Use preserved completed sets, then add remaining incomplete sets
+                    let completedSets = completedSetsMap[setGroup.id] ?? []
+                    sets.append(contentsOf: completedSets)
+
+                    let completedLogicalSets = setGroup.isUnilateral
+                        ? completedSets.count / 2
+                        : completedSets.count
+                    let remainingLogicalSets = setGroup.sets - completedLogicalSets
+
+                    for i in 0..<remainingLogicalSets {
+                        let setNumber = completedLogicalSets + i + 1
+
+                        if setGroup.isUnilateral {
+                            sets.append(SetData(
+                                setNumber: setNumber,
+                                weight: setGroup.targetWeight,
+                                reps: setGroup.targetReps,
+                                completed: false,
+                                duration: setGroup.targetDuration,
+                                distance: setGroup.targetDistance,
+                                holdTime: setGroup.targetHoldTime,
+                                side: .left
+                            ))
+                            sets.append(SetData(
+                                setNumber: setNumber,
+                                weight: setGroup.targetWeight,
+                                reps: setGroup.targetReps,
+                                completed: false,
+                                duration: setGroup.targetDuration,
+                                distance: setGroup.targetDistance,
+                                holdTime: setGroup.targetHoldTime,
+                                side: .right
+                            ))
+                        } else {
+                            sets.append(SetData(
+                                setNumber: setNumber,
+                                weight: setGroup.targetWeight,
+                                reps: setGroup.targetReps,
+                                completed: false,
+                                duration: setGroup.targetDuration,
+                                distance: setGroup.targetDistance,
+                                holdTime: setGroup.targetHoldTime
+                            ))
+                        }
+                    }
+                }
+
+                if !sets.isEmpty {
+                    newSetGroups.append(CompletedSetGroup(
+                        setGroupId: setGroup.id,
+                        restPeriod: setGroup.restPeriod,
+                        sets: sets,
+                        isInterval: setGroup.isInterval,
+                        workDuration: setGroup.workDuration,
+                        intervalRestDuration: setGroup.intervalRestDuration,
+                        isAMRAP: setGroup.isAMRAP,
+                        amrapTimeLimit: setGroup.amrapTimeLimit,
+                        isUnilateral: setGroup.isUnilateral,
+                        trackRPE: setGroup.trackRPE,
+                        implementMeasurables: setGroup.implementMeasurables
+                    ))
+                }
+            }
+
+            updatedExercise.completedSetGroups = newSetGroups
+            onSessionSave?(moduleIndex, exerciseIndex, updatedExercise)
+            dismiss()
+            return
+        }
+
+        // Builder mode: save to module
         guard var module = moduleViewModel.getModule(id: moduleId) else { return }
 
         if var existingInstance = instance {
@@ -837,7 +1010,7 @@ struct MuscleEnumChip: View {
 
 #Preview {
     NavigationStack {
-        ExerciseFormView(instance: nil, moduleId: UUID())
+        ExerciseFormView(instance: nil, moduleId: UUID(), sessionExercise: nil, sessionModuleIndex: nil, sessionExerciseIndex: nil, onSessionSave: nil)
             .environmentObject(ModuleViewModel())
     }
 }

@@ -105,7 +105,7 @@ struct ExerciseDetailView: View {
         }
         .sheet(isPresented: $showingEditExercise) {
             NavigationStack {
-                ExerciseFormView(instance: currentInstance, moduleId: moduleId)
+                ExerciseFormView(instance: currentInstance, moduleId: moduleId, sessionExercise: nil, sessionModuleIndex: nil, sessionExerciseIndex: nil, onSessionSave: nil)
             }
         }
     }

@@ -27,6 +27,11 @@ struct FriendsListView: View {
                     outgoingRequestsSection
                 }
 
+                // Suggested Friends Section (if any)
+                if !viewModel.suggestedFriends.isEmpty {
+                    suggestedFriendsSection
+                }
+
                 // Friends Section
                 friendsSection
 
@@ -61,6 +66,7 @@ struct FriendsListView: View {
         }
         .onAppear {
             viewModel.loadFriendships()
+            viewModel.loadSuggestedFriends()
         }
         .refreshable {
             viewModel.loadFriendships()
@@ -211,6 +217,37 @@ struct FriendsListView: View {
         .padding(.vertical, AppSpacing.xl)
     }
 
+    // MARK: - Suggested Friends Section
+
+    private var suggestedFriendsSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack {
+                Text("Suggested Friends")
+                    .headline(color: AppColors.textPrimary)
+
+                Spacer()
+            }
+
+            VStack(spacing: 0) {
+                ForEach(viewModel.suggestedFriends) { suggestion in
+                    SuggestedFriendRow(
+                        searchResult: suggestion,
+                        onAdd: {
+                            addSuggestedFriend(suggestion.firebaseUserId)
+                        }
+                    )
+
+                    if suggestion.id != viewModel.suggestedFriends.last?.id {
+                        Divider()
+                            .padding(.leading, 64)
+                    }
+                }
+            }
+            .background(AppColors.surfaceSecondary)
+            .cornerRadius(AppCorners.large)
+        }
+    }
+
     // MARK: - Blocked Section
 
     private var blockedSection: some View {
@@ -288,6 +325,19 @@ struct FriendsListView: View {
         Task {
             do {
                 try await viewModel.blockUser(userId)
+            } catch {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+        }
+    }
+
+    private func addSuggestedFriend(_ userId: String) {
+        Task {
+            do {
+                try await viewModel.sendRequest(to: userId)
+                // Remove from suggestions after sending request
+                viewModel.suggestedFriends.removeAll { $0.firebaseUserId == userId }
             } catch {
                 errorMessage = error.localizedDescription
                 showError = true
@@ -451,6 +501,28 @@ struct BlockedUserRow: View {
             }
             .buttonStyle(.bordered)
             .tint(AppColors.textSecondary)
+        }
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.sm)
+    }
+}
+
+// MARK: - Suggested Friend Row
+
+struct SuggestedFriendRow: View {
+    let searchResult: UserSearchResult
+    let onAdd: () -> Void
+
+    var body: some View {
+        UserRowView(profile: searchResult.profile, avatarSize: 48) {
+            Button {
+                onAdd()
+            } label: {
+                Image(systemName: "person.badge.plus")
+                    .font(.body.weight(.medium))
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(AppColors.dominant)
         }
         .padding(.horizontal, AppSpacing.md)
         .padding(.vertical, AppSpacing.sm)
