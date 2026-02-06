@@ -309,13 +309,13 @@ struct WorkoutSummaryView: View {
             // Top set display
             HStack(spacing: AppSpacing.xs) {
                 Text(formatWeight(highlight.topWeight))
-                    .monoMedium()
+                    .font(.title3.weight(.medium)).monospacedDigit()
 
                 Text("×")
                     .foregroundColor(AppColors.textTertiary)
 
                 Text("\(highlight.topReps)")
-                    .monoMedium()
+                    .font(.title3.weight(.medium)).monospacedDigit()
             }
         }
         .padding(AppSpacing.cardPadding)

@@ -22,7 +22,7 @@ struct AppColors {
     static let textTertiary = Color(hex: "5A5662")     // Dark purple-gray
 
     // MARK: - Dominant Color (THE hero color - use sparingly!)
-    static let dominant = Color(hex: "00D9FF")         // VIBRANT electric cyan
+    static let dominant = Color(hex: "33C4E8")         // Softer cyan (less electric)
     static let dominantMuted = dominant.opacity(0.20)  // Subtle backgrounds (increased visibility)
     static let dominantSubtle = dominant.opacity(0.12) // Very subtle highlights
 
@@ -39,7 +39,7 @@ struct AppColors {
     static let error = Color(hex: "FF5252")            // Bright red (delete, errors)
 
     // MARK: - Special (Reward moments!)
-    static let reward = Color(hex: "00FFF0")           // ELECTRIC bright cyan (PR celebration!)
+    static let reward = Color(hex: "4DE8DC")           // Softer cyan (PR celebration)
 
     // MARK: - Program Color
     static let programAccent = accent2                 // Gold for programs

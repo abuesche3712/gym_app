@@ -62,7 +62,7 @@ struct StrengthInputs: View {
                 // String-based implement input (e.g., band color)
                 VStack(spacing: 4) {
                     TextField(stringMeasurable.measurableName, text: $inputBandColor)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 60)
@@ -81,7 +81,7 @@ struct StrengthInputs: View {
                 VStack(spacing: 4) {
                     TextField("0", text: $inputHeight)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 48)
@@ -101,17 +101,17 @@ struct StrengthInputs: View {
                     // Show "BW +" with added weight input
                     HStack(spacing: 4) {
                         Text("BW")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundColor(AppColors.dominant)
 
                         Text("+")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(AppColors.textTertiary)
 
                         VStack(spacing: 4) {
                             TextField("0", text: $inputWeight)
                                 .keyboardType(.decimalPad)
-                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(AppColors.textPrimary)
                                 .multilineTextAlignment(.center)
                                 .frame(width: 44)
@@ -130,7 +130,7 @@ struct StrengthInputs: View {
                     // Just show "BW" badge without added weight input
                     VStack(spacing: 4) {
                         Text("BW")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
                             .frame(width: 44, height: 36)
                             .background(
@@ -149,7 +149,7 @@ struct StrengthInputs: View {
                 VStack(spacing: 4) {
                     TextField("0", text: $inputWeight)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 48)
@@ -182,7 +182,7 @@ struct StrengthInputs: View {
             VStack(spacing: 4) {
                 TextField("0", text: $inputReps)
                     .keyboardType(.numberPad)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 44)
@@ -207,7 +207,7 @@ struct StrengthInputs: View {
                 VStack(spacing: 4) {
                     TextField("-", text: $inputRPE)
                         .keyboardType(.numberPad)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 36)
@@ -241,7 +241,7 @@ struct StrengthInputs: View {
                 set: { inputMeasurableValues[measurable.measurableName] = $0 }
             ))
             .keyboardType(measurable.isStringBased ? .default : .decimalPad)
-            .font(.system(size: 16, weight: .semibold, design: .rounded))
+            .font(.system(size: 16, weight: .semibold))
             .foregroundColor(AppColors.textPrimary)
             .multilineTextAlignment(.center)
             .frame(width: measurable.isStringBased ? 60 : 48)
@@ -271,7 +271,7 @@ struct StrengthInputs: View {
 
                     if timerRunning {
                         Text("\(timerSecondsRemaining)")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.white)
                     } else {
                         Image(systemName: "timer")

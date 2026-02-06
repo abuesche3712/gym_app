@@ -52,7 +52,7 @@ struct RestTimerBar: View {
                         .animation(.linear(duration: 0.3), value: sessionViewModel.restTimerSeconds)
 
                     Text(timeDisplay)
-                        .font(.system(size: fontSize, weight: .bold, design: .rounded))
+                        .font(.system(size: fontSize, weight: .bold))
                         .monospacedDigit()
                         .foregroundColor(AppColors.textPrimary)
                         .minimumScaleFactor(0.7)

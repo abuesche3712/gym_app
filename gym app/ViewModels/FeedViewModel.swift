@@ -9,59 +9,6 @@ import Foundation
 import FirebaseFirestore
 import Combine
 
-// MARK: - Feed Filter
-
-enum FeedFilter: String, CaseIterable, Identifiable {
-    case all = "All"
-    case workouts = "Workouts"
-    case prs = "PRs"
-    case programs = "Programs"
-    case text = "Text"
-
-    var id: String { rawValue }
-
-    var icon: String {
-        switch self {
-        case .all: return "square.stack"
-        case .workouts: return "figure.run"
-        case .prs: return "trophy.fill"
-        case .programs: return "doc.text.fill"
-        case .text: return "text.quote"
-        }
-    }
-
-    func matches(_ content: PostContent) -> Bool {
-        switch self {
-        case .all:
-            return true
-        case .workouts:
-            switch content {
-            case .session, .exercise, .completedModule, .highlights:
-                return true
-            default:
-                return false
-            }
-        case .prs:
-            if case .set = content {
-                return true
-            }
-            return false
-        case .programs:
-            switch content {
-            case .program, .workout, .module:
-                return true
-            default:
-                return false
-            }
-        case .text:
-            if case .text = content {
-                return true
-            }
-            return false
-        }
-    }
-}
-
 // MARK: - Feed Mode
 
 enum FeedMode: String, CaseIterable, Identifiable {
@@ -79,7 +26,6 @@ class FeedViewModel: ObservableObject {
     @Published var isLoadingMore = false
     @Published var isLoadingTrending = false
     @Published var error: Error?
-    @Published var activeFilter: FeedFilter = .all
     @Published var feedMode: FeedMode = .feed
 
     private let postRepo: PostRepository
@@ -90,17 +36,13 @@ class FeedViewModel: ObservableObject {
     private var feedListener: ListenerRegistration?
     private let profileCache = ProfileCacheService.shared
     private var likedPostIds: Set<UUID> = []
+    private var pendingLikePostIds: Set<UUID> = []
     private var newPostObserver: Any?
     private var commentCountObserver: Any?
     private var friendshipCancellable: AnyCancellable?
     private let activityService = FirestoreActivityService.shared
 
     var currentUserId: String? { authService.currentUser?.uid }
-
-    var filteredPosts: [PostWithAuthor] {
-        guard activeFilter != .all else { return posts }
-        return posts.filter { activeFilter.matches($0.post.content) }
-    }
 
     init(
         postRepo: PostRepository = PostRepository(),
@@ -274,6 +216,14 @@ class FeedViewModel: ObservableObject {
     // MARK: - Processing Posts
 
     private func processFeedPosts(_ posts: [Post], userId: String) async {
+        // Snapshot current optimistic state for posts with pending like operations
+        var pendingState: [UUID: (isLiked: Bool, likeCount: Int)] = [:]
+        for postId in pendingLikePostIds {
+            if let existing = self.posts.first(where: { $0.post.id == postId }) {
+                pendingState[postId] = (existing.isLikedByCurrentUser, existing.post.likeCount)
+            }
+        }
+
         // Load liked status from Firestore (primary source of truth)
         let postIds = posts.map { $0.id }
         likedPostIds = await firestoreService.fetchLikedPostIds(postIds: postIds, userId: userId)
@@ -285,7 +235,21 @@ class FeedViewModel: ObservableObject {
         }
 
         // Load authors and create PostWithAuthor objects
-        let postsWithAuthors = await loadAuthorsForPosts(posts, userId: userId)
+        var postsWithAuthors = await loadAuthorsForPosts(posts, userId: userId)
+
+        // Restore optimistic state for posts with pending like operations
+        for (index, postWithAuthor) in postsWithAuthors.enumerated() {
+            if let state = pendingState[postWithAuthor.post.id] {
+                var post = postWithAuthor.post
+                post.likeCount = state.likeCount
+                postsWithAuthors[index] = PostWithAuthor(
+                    post: post,
+                    author: postWithAuthor.author,
+                    isLikedByCurrentUser: state.isLiked
+                )
+            }
+        }
+
         self.posts = postsWithAuthors
     }
 
@@ -323,6 +287,7 @@ class FeedViewModel: ObservableObject {
             isLikedByCurrentUser: !wasLiked
         )
 
+        pendingLikePostIds.insert(post.post.id)
         do {
             if wasLiked {
                 try await firestoreService.unlikePost(postId: post.post.id, userId: userId)
@@ -346,16 +311,18 @@ class FeedViewModel: ObservableObject {
             HapticManager.shared.tap()
         } catch {
             // Revert on failure
-            posts[index].isLikedByCurrentUser = wasLiked
-            var revertedPost = posts[index].post
-            revertedPost.likeCount += wasLiked ? 1 : -1
-            posts[index] = PostWithAuthor(
-                post: revertedPost,
-                author: posts[index].author,
-                isLikedByCurrentUser: wasLiked
-            )
+            if let index = posts.firstIndex(where: { $0.id == post.id }) {
+                var revertedPost = posts[index].post
+                revertedPost.likeCount += wasLiked ? 1 : -1
+                posts[index] = PostWithAuthor(
+                    post: revertedPost,
+                    author: posts[index].author,
+                    isLikedByCurrentUser: wasLiked
+                )
+            }
             self.error = error
         }
+        pendingLikePostIds.remove(post.post.id)
     }
 
     func react(to post: PostWithAuthor, with reactionType: ReactionType) async {
@@ -373,6 +340,7 @@ class FeedViewModel: ObservableObject {
             isLikedByCurrentUser: true
         )
 
+        pendingLikePostIds.insert(post.post.id)
         do {
             try await firestoreService.likePost(postId: post.post.id, userId: userId, reactionType: reactionType)
             likedPostIds.insert(post.post.id)
@@ -391,6 +359,7 @@ class FeedViewModel: ObservableObject {
         } catch {
             self.error = error
         }
+        pendingLikePostIds.remove(post.post.id)
     }
 
     // MARK: - Delete Post

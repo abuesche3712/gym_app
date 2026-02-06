@@ -113,13 +113,6 @@ struct SocialView: View {
                         .padding(.horizontal, AppSpacing.screenPadding)
                         .padding(.bottom, AppSpacing.xs)
 
-                    // Filter chips (only in feed mode)
-                    if feedViewModel.feedMode == .feed {
-                        feedFilterChips
-                            .padding(.horizontal, AppSpacing.screenPadding)
-                            .padding(.bottom, AppSpacing.sm)
-                    }
-
                     // Feed content (no wrapping LazyVStack - each branch handles its own lazy loading)
                     if feedViewModel.feedMode == .discover {
                         discoverContent
@@ -127,8 +120,6 @@ struct SocialView: View {
                         loadingView
                     } else if feedViewModel.posts.isEmpty {
                         emptyFeedState
-                    } else if feedViewModel.filteredPosts.isEmpty {
-                        noFilterResultsView
                     } else {
                         feedList
                     }
@@ -359,7 +350,7 @@ struct SocialView: View {
 
     private var feedList: some View {
         LazyVStack(spacing: 0) {
-            ForEach(feedViewModel.filteredPosts) { post in
+            ForEach(feedViewModel.posts) { post in
                 VStack(spacing: 0) {
                     // Divider at top of each post
                     Rectangle()
@@ -427,31 +418,6 @@ struct SocialView: View {
             }
         }
         .padding(.bottom, 80) // Space for FAB
-    }
-
-    // MARK: - No Filter Results
-
-    private var noFilterResultsView: some View {
-        VStack(spacing: AppSpacing.md) {
-            Spacer()
-                .frame(height: 60)
-
-            Image(systemName: "line.3.horizontal.decrease.circle")
-                .font(.system(size: 40))
-                .foregroundColor(AppColors.textTertiary)
-
-            Text("No \(feedViewModel.activeFilter.rawValue.lowercased()) posts")
-                .subheadline(color: AppColors.textSecondary)
-
-            Button {
-                feedViewModel.activeFilter = .all
-            } label: {
-                Text("Show All Posts")
-                    .subheadline(color: AppColors.accent2)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, AppSpacing.xl)
     }
 
     // MARK: - Feed Mode Selector
@@ -580,41 +546,6 @@ struct SocialView: View {
                 .frame(height: 0.5)
         }
         .padding(.bottom, 80)
-    }
-
-    // MARK: - Feed Filter Chips
-
-    private var feedFilterChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.sm) {
-                ForEach(FeedFilter.allCases) { filter in
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            feedViewModel.activeFilter = filter
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: filter.icon)
-                                .font(.caption2)
-                            Text(filter.rawValue)
-                                .font(.subheadline.weight(.medium))
-                        }
-                        .padding(.horizontal, AppSpacing.md)
-                        .padding(.vertical, AppSpacing.xs)
-                        .background(
-                            Capsule()
-                                .fill(feedViewModel.activeFilter == filter
-                                      ? AppColors.accent2
-                                      : AppColors.surfaceSecondary)
-                        )
-                        .foregroundColor(feedViewModel.activeFilter == filter
-                                         ? AppColors.background
-                                         : AppColors.textSecondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
     }
 
     // MARK: - Sign In Prompt

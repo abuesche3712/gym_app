@@ -48,7 +48,7 @@ struct CardioInputs: View {
                                 showTimePicker = true
                             } label: {
                                 Text(timerRunning ? formatDuration(timerSecondsRemaining) : formatDuration(inputDuration))
-                                    .monoMedium(color: timerRunning ? (timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.dominant) : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
+                                    .font(.title3.weight(.medium)).monospacedDigit().foregroundColor( timerRunning ? (timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.dominant) : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
                                     .multilineTextAlignment(.center)
                                     .frame(width: 56, alignment: .center)
                                     .padding(.vertical, 8)
@@ -74,7 +74,7 @@ struct CardioInputs: View {
                                 showTimePicker = true
                             } label: {
                                 Text(timerRunning ? formatDuration(stopwatchSeconds) : formatDuration(inputDuration))
-                                    .font(.system(size: 16, weight: timerRunning ? .bold : .semibold, design: .rounded))
+                                    .font(.system(size: 16, weight: timerRunning ? .bold : .semibold))
                                     .foregroundColor(timerRunning ? AppColors.dominant : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
                                     .monospacedDigit()
                                     .multilineTextAlignment(.center)
@@ -113,7 +113,7 @@ struct CardioInputs: View {
                     HStack(spacing: 4) {
                         TextField("0", text: $inputDistance)
                             .keyboardType(.decimalPad)
-                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(AppColors.textPrimary)
                             .multilineTextAlignment(.center)
                             .frame(width: 56)
@@ -207,7 +207,7 @@ struct IsometricInputs: View {
                         showHoldTimePicker = true
                     } label: {
                         Text(timerRunning ? formatDuration(timerSecondsRemaining) : formatDuration(inputHoldTime))
-                            .monoMedium(color: timerRunning ? (timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.dominant) : (inputHoldTime > 0 ? AppColors.textPrimary : AppColors.textTertiary))
+                            .font(.title3.weight(.medium)).monospacedDigit().foregroundColor( timerRunning ? (timerSecondsRemaining <= 10 ? AppColors.warning : AppColors.dominant) : (inputHoldTime > 0 ? AppColors.textPrimary : AppColors.textTertiary))
                             .multilineTextAlignment(.center)
                             .frame(width: 56, alignment: .center)
                             .padding(.vertical, 8)
@@ -285,7 +285,7 @@ struct MobilityInputs: View {
                 VStack(spacing: 4) {
                     TextField("0", text: $inputReps)
                         .keyboardType(.numberPad)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 44)
@@ -310,7 +310,7 @@ struct MobilityInputs: View {
                             showTimePicker = true
                         } label: {
                             Text(timerRunning ? (targetTimerSeconds > 0 ? formatDuration(timerSecondsRemaining) : formatDuration(stopwatchSeconds)) : formatDuration(inputDuration))
-                                .monoMedium(color: timerRunning ? (timerSecondsRemaining <= 10 && targetTimerSeconds > 0 ? AppColors.warning : AppColors.dominant) : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
+                                .font(.title3.weight(.medium)).monospacedDigit().foregroundColor( timerRunning ? (timerSecondsRemaining <= 10 && targetTimerSeconds > 0 ? AppColors.warning : AppColors.dominant) : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
                                 .multilineTextAlignment(.center)
                                 .frame(width: 56, alignment: .center)
                                 .padding(.vertical, 8)
@@ -372,7 +372,7 @@ struct ExplosiveInputs: View {
             VStack(spacing: 4) {
                 TextField("0", text: $inputReps)
                     .keyboardType(.numberPad)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 44)
@@ -391,7 +391,7 @@ struct ExplosiveInputs: View {
             VStack(spacing: 4) {
                 TextField("0", text: $inputHeight)
                     .keyboardType(.decimalPad)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 44)
@@ -455,7 +455,7 @@ struct RecoveryInputs: View {
                         showTimePicker = true
                     } label: {
                         Text(timerRunning ? formatDuration(stopwatchSeconds) : formatDuration(inputDuration))
-                            .monoMedium(color: timerRunning ? AppColors.dominant : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
+                            .font(.title3.weight(.medium)).monospacedDigit().foregroundColor( timerRunning ? AppColors.dominant : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
                             .multilineTextAlignment(.center)
                             .frame(width: 56, alignment: .center)
                             .padding(.vertical, 8)
@@ -489,7 +489,7 @@ struct RecoveryInputs: View {
                 VStack(spacing: 4) {
                     TextField(activityType == .sauna ? "180" : "50", text: $inputTemperature)
                         .keyboardType(.numberPad)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 44)

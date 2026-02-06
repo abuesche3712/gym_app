@@ -359,10 +359,26 @@ struct UnilateralSetPairView: View {
             // Left and Right rows nested
             VStack(spacing: AppSpacing.xs) {
                 if let left = leftSet {
-                    unilateralRow(flatSet: left, side: .left, isFirstIncomplete: isFirstIncompleteLeft)
+                    UnilateralSideRow(
+                        flatSet: left,
+                        side: .left,
+                        exercise: exercise,
+                        highlightNextSet: highlightNextSet,
+                        isFirstIncomplete: isFirstIncompleteLeft,
+                        onLog: onLog,
+                        onUncheck: onUncheck
+                    )
                 }
                 if let right = rightSet {
-                    unilateralRow(flatSet: right, side: .right, isFirstIncomplete: isFirstIncompleteRight)
+                    UnilateralSideRow(
+                        flatSet: right,
+                        side: .right,
+                        exercise: exercise,
+                        highlightNextSet: highlightNextSet,
+                        isFirstIncomplete: isFirstIncompleteRight,
+                        onLog: onLog,
+                        onUncheck: onUncheck
+                    )
                 }
             }
             .padding(.horizontal, AppSpacing.sm)
@@ -373,9 +389,25 @@ struct UnilateralSetPairView: View {
                 .fill(AppColors.surfaceTertiary)
         )
     }
+}
 
-    @ViewBuilder
-    private func unilateralRow(flatSet: FlatSet, side: Side, isFirstIncomplete: Bool) -> some View {
+// MARK: - Unilateral Side Row
+
+/// Individual L or R row within a unilateral set pair, with its own input state
+struct UnilateralSideRow: View {
+    let flatSet: FlatSet
+    let side: Side
+    let exercise: SessionExercise
+    let highlightNextSet: Bool
+    let isFirstIncomplete: Bool
+    let onLog: (FlatSet, Double?, Int?, Int?, Int?, Int?, Double?, Double?, Int?, Int?, String?, [String: String]?) -> Void
+    var onUncheck: ((FlatSet) -> Void)?
+
+    @State private var inputWeight: String = ""
+    @State private var inputReps: String = ""
+    @State private var inputRPE: String = ""
+
+    var body: some View {
         HStack(spacing: AppSpacing.sm) {
             // Side indicator
             Text(side.abbreviation)
@@ -389,7 +421,7 @@ struct UnilateralSetPairView: View {
                     onUncheck?(flatSet)
                 } label: {
                     HStack {
-                        Text(completedSummary(for: flatSet))
+                        Text(completedSummary)
                             .caption(color: AppColors.textPrimary)
                             .fontWeight(.medium)
                         Spacer()
@@ -401,14 +433,14 @@ struct UnilateralSetPairView: View {
                 .buttonStyle(.plain)
             } else {
                 // Input fields
-                compactInputFields(for: flatSet)
+                inputFields
                     .layoutPriority(-1)
 
                 Spacer(minLength: 0)
 
                 // Log button
                 Button {
-                    logSet(flatSet)
+                    logSet()
                 } label: {
                     Image(systemName: "checkmark")
                         .caption(color: .white)
@@ -430,49 +462,108 @@ struct UnilateralSetPairView: View {
                       ? AppColors.success.opacity(0.08)
                       : (highlightNextSet && isFirstIncomplete ? AppColors.dominant.opacity(0.1) : AppColors.surfacePrimary))
         )
+        .onAppear { loadDefaults() }
+    }
+
+    private func loadDefaults() {
+        if let w = flatSet.setData.weight { inputWeight = formatWeight(w) }
+        if let r = flatSet.setData.reps { inputReps = "\(r)" }
+        if let rpe = flatSet.setData.rpe { inputRPE = "\(rpe)" }
     }
 
     @ViewBuilder
-    private func compactInputFields(for flatSet: FlatSet) -> some View {
-        switch exercise.exerciseType {
-        case .strength:
-            HStack(spacing: 4) {
+    private var inputFields: some View {
+        HStack(spacing: 4) {
+            switch exercise.exerciseType {
+            case .strength:
                 if !exercise.isBodyweight {
-                    CompactTextField(placeholder: "0", keyboardType: .decimalPad, width: 40)
+                    TextField("0", text: $inputWeight)
+                        .keyboardType(.decimalPad)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .frame(width: 40)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 4)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
                     Text("×")
                         .caption(color: AppColors.textTertiary)
                 }
-                CompactTextField(placeholder: "0", keyboardType: .numberPad, width: 36)
+                TextField("0", text: $inputReps)
+                    .keyboardType(.numberPad)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 36)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 4)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                Text("reps")
+                    .caption2(color: AppColors.textTertiary)
+            default:
+                TextField("0", text: $inputReps)
+                    .keyboardType(.numberPad)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 36)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 4)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
                 Text("reps")
                     .caption2(color: AppColors.textTertiary)
             }
-        default:
-            CompactTextField(placeholder: "0", keyboardType: .numberPad, width: 36)
-            Text("reps")
-                .caption2(color: AppColors.textTertiary)
+
+            if flatSet.trackRPE && (exercise.exerciseType == .strength || exercise.exerciseType == .explosive) {
+                TextField("-", text: $inputRPE)
+                    .keyboardType(.numberPad)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 32)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 4)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    .onChange(of: inputRPE) { _, newValue in
+                        if let rpe = Int(newValue), rpe > 10 { inputRPE = "10" }
+                    }
+                Text("RPE")
+                    .caption2(color: AppColors.textTertiary)
+            }
         }
     }
 
-    private func completedSummary(for flatSet: FlatSet) -> String {
+    private var completedSummary: String {
         let set = flatSet.setData
+        var summary: String
         switch exercise.exerciseType {
         case .strength:
             if let weight = set.weight, let reps = set.reps {
-                return exercise.isBodyweight ? "BW+\(formatWeight(weight)) × \(reps)" : "\(formatWeight(weight)) × \(reps)"
+                summary = exercise.isBodyweight ? "BW+\(formatWeight(weight)) × \(reps)" : "\(formatWeight(weight)) × \(reps)"
             } else if let reps = set.reps {
-                return exercise.isBodyweight ? "BW × \(reps)" : "\(reps) reps"
+                summary = exercise.isBodyweight ? "BW × \(reps)" : "\(reps) reps"
+            } else {
+                summary = "Done"
             }
         default:
             if let reps = set.reps {
-                return "\(reps) reps"
+                summary = "\(reps) reps"
+            } else {
+                summary = "Done"
             }
         }
-        return "Done"
+        if let rpe = set.rpe {
+            summary += " @ RPE \(rpe)"
+        }
+        return summary
     }
 
-    private func logSet(_ flatSet: FlatSet) {
-        // For now, log with nil values - the actual input fields need to be wired up
-        onLog(flatSet, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+    private func logSet() {
+        let weight = Double(inputWeight)
+        let reps = Int(inputReps)
+        let rpeValue = Int(inputRPE)
+        let validRPE = rpeValue.flatMap { $0 >= 1 && $0 <= 10 ? $0 : nil }
+        onLog(flatSet, weight, reps, validRPE, nil, nil, nil, nil, nil, nil, nil, nil)
     }
 }
 
@@ -488,7 +579,7 @@ struct CompactTextField: View {
     var body: some View {
         TextField(placeholder, text: $text)
             .keyboardType(keyboardType)
-            .font(.system(size: 14, weight: .semibold, design: .rounded))
+            .font(.system(size: 14, weight: .semibold))
             .foregroundColor(AppColors.textPrimary)
             .multilineTextAlignment(.center)
             .frame(width: width)

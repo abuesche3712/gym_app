@@ -150,8 +150,8 @@ struct PostDetailView: View {
                     .padding(.bottom, AppSpacing.md)
             }
 
-            // Reaction summary
-            if let counts = viewModel.post.post.reactionCounts, !counts.isEmpty {
+            // Reaction summary (excluding heart, which is shown by the like button)
+            if let counts = viewModel.post.post.reactionCounts?.filter({ $0.key != ReactionType.heart.rawValue && $0.value > 0 }), !counts.isEmpty {
                 let sorted = counts.sorted { $0.value > $1.value }
                 HStack(spacing: 4) {
                     ForEach(sorted.prefix(5), id: \.key) { key, count in

@@ -209,13 +209,47 @@ struct EditSetGroupSheet: View {
                 // Show individual sets if available (history editing)
                 if hasIndividualSets && !isInterval {
                     Section("Individual Sets") {
-                        ForEach(Array(editableSets.enumerated()), id: \.element.id) { index, set in
-                            Button {
-                                editingSetIndex = index
-                            } label: {
-                                individualSetRow(set, index: index)
+                        if isUnilateral {
+                            // Group by set number so L/R pairs are shown together
+                            let pairedSets = groupEditableSetsForDisplay()
+                            ForEach(Array(pairedSets.enumerated()), id: \.offset) { pairIndex, pair in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Set \(pairIndex + 1)")
+                                        .subheadline()
+                                        .fontWeight(.medium)
+                                    ForEach(pair, id: \.id) { set in
+                                        let setIndex = editableSets.firstIndex(where: { $0.id == set.id }) ?? 0
+                                        Button {
+                                            editingSetIndex = setIndex
+                                        } label: {
+                                            HStack(spacing: 8) {
+                                                Text(set.side?.abbreviation ?? "?")
+                                                    .caption(color: set.side == .left ? AppColors.dominant : AppColors.accent2)
+                                                    .fontWeight(.bold)
+                                                    .frame(width: 20)
+                                                Image(systemName: set.completed ? "checkmark.circle.fill" : "circle")
+                                                    .foregroundColor(set.completed ? AppColors.success : .secondary)
+                                                Text(setDataPreview(set))
+                                                    .subheadline(color: .secondary)
+                                                Spacer()
+                                                Image(systemName: "chevron.right")
+                                                    .caption(color: AppColors.textTertiary)
+                                            }
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                .padding(.vertical, 4)
                             }
-                            .buttonStyle(.plain)
+                        } else {
+                            ForEach(Array(editableSets.enumerated()), id: \.element.id) { index, set in
+                                Button {
+                                    editingSetIndex = index
+                                } label: {
+                                    individualSetRow(set, index: index)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
                 }
@@ -562,6 +596,21 @@ struct EditSetGroupSheet: View {
             let secs = seconds % 60
             return "\(minutes):\(String(format: "%02d", secs))"
         }
+    }
+
+    /// Groups editable sets into L/R pairs for unilateral display
+    private func groupEditableSetsForDisplay() -> [[SetData]] {
+        var pairs: [[SetData]] = []
+        var currentPair: [SetData] = []
+        for set in editableSets {
+            currentPair.append(set)
+            if set.side == .right || set.side == nil {
+                pairs.append(currentPair)
+                currentPair = []
+            }
+        }
+        if !currentPair.isEmpty { pairs.append(currentPair) }
+        return pairs
     }
 
     private func formatIntervalTotalDuration() -> String {

@@ -199,8 +199,8 @@ struct FeedPostRow: View {
 
     private var engagementBar: some View {
         VStack(spacing: AppSpacing.xs) {
-            // Reaction summary (shows emoji counts if any)
-            if let counts = post.post.reactionCounts, !counts.isEmpty {
+            // Reaction summary (shows emoji counts, excluding heart which is shown by the like button)
+            if let counts = post.post.reactionCounts?.filter({ $0.key != ReactionType.heart.rawValue && $0.value > 0 }), !counts.isEmpty {
                 reactionSummary(counts)
             }
 

@@ -45,7 +45,9 @@ struct SessionProgressHeader: View {
                             Image(systemName: "clock")
                                 .caption(color: AppColors.textTertiary)
                             Text(formatTime(sessionViewModel.sessionElapsedSeconds))
-                                .monoSmall(color: AppColors.textSecondary)
+                                .font(.body.weight(.medium))
+                                .monospacedDigit()
+                                .foregroundColor(AppColors.textSecondary)
                         }
 
                         Spacer()

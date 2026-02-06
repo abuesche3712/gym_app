@@ -56,20 +56,12 @@ struct WeekDayCell: View {
         Button(action: onTap) {
             VStack(spacing: AppSpacing.xs) {
                 Text(dayName)
-                    .caption2(color: isToday ? AppColors.accent1 : AppColors.textTertiary)
+                    .caption2(color: isToday ? AppColors.textPrimary : AppColors.textTertiary)
                     .fontWeight(.medium)
 
-                ZStack {
-                    if isToday {
-                        Circle()
-                            .fill(AppColors.accent1)
-                            .frame(width: 32, height: 32)
-                    }
-
-                    Text(dayNumber)
-                        .subheadline(color: isToday ? .white : (isPast ? AppColors.textTertiary : AppColors.textPrimary))
-                        .fontWeight(isToday ? .bold : .medium)
-                }
+                Text(dayNumber)
+                    .subheadline(color: isToday ? AppColors.textPrimary : (isPast ? AppColors.textTertiary : AppColors.textPrimary))
+                    .fontWeight(isToday ? .bold : .medium)
 
                 // Indicators
                 HStack(spacing: 3) {
@@ -96,6 +88,12 @@ struct WeekDayCell: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, AppSpacing.sm)
+            .overlay {
+                if isToday {
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .stroke(AppColors.accent2, lineWidth: 1.5)
+                }
+            }
         }
         .buttonStyle(.plain)
     }
