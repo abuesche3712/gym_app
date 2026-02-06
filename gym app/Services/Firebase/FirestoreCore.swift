@@ -36,7 +36,7 @@ class FirestoreCore {
         guard let uid = userId else {
             throw FirestoreError.notAuthenticated
         }
-        return db.collection("users").document(uid)
+        return db.collection(FirestoreCollections.users).document(uid)
     }
 
     /// Get reference to a subcollection under current user
@@ -92,6 +92,53 @@ class FirestoreCore {
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(type, from: jsonData)
     }
+}
+
+// MARK: - Collection Constants
+
+/// Centralized Firestore collection name constants
+enum FirestoreCollections {
+    // Top-level collections
+    static let users = "users"
+    static let usernames = "usernames"
+    static let friendships = "friendships"
+    static let posts = "posts"
+    static let conversations = "conversations"
+    static let reports = "reports"
+    static let libraries = "libraries"
+    static let presence = "presence"
+
+    // User-scoped subcollections (under users/{uid}/)
+    static let profile = "profile"
+    static let modules = "modules"
+    static let workouts = "workouts"
+    static let sessions = "sessions"
+    static let programs = "programs"
+    static let scheduledWorkouts = "scheduledWorkouts"
+    static let customExercises = "customExercises"
+    static let exerciseLibrary = "exerciseLibrary"
+    static let deletions = "deletions"
+    static let activities = "activities"
+
+    // Nested subcollections
+    static let liveSets = "livesets"
+    static let likes = "likes"
+    static let comments = "comments"
+    static let messages = "messages"
+    static let typing = "typing"
+
+    // Library subcollections
+    static let exercises = "exercises"
+    static let equipment = "equipment"
+    static let schemes = "schemes"
+
+    // Library document IDs
+    static let exerciseLibraryDoc = "exerciseLibrary"
+    static let equipmentLibraryDoc = "equipmentLibrary"
+    static let progressionSchemesDoc = "progressionSchemes"
+
+    // Profile document ID
+    static let profileSettings = "settings"
 }
 
 // MARK: - Supporting Types

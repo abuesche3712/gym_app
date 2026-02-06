@@ -44,7 +44,7 @@ class FirestoreConflictService {
 
     /// Fetch cloud timestamp for a specific module
     func fetchModuleTimestamp(_ moduleId: UUID) async throws -> Date? {
-        let doc = try await core.userCollection("modules").document(moduleId.uuidString).getDocument()
+        let doc = try await core.userCollection(FirestoreCollections.modules).document(moduleId.uuidString).getDocument()
         guard let data = doc.data(),
               let timestamp = data["updatedAt"] as? Timestamp else {
             return nil
@@ -54,7 +54,7 @@ class FirestoreConflictService {
 
     /// Fetch cloud timestamp for a specific workout
     func fetchWorkoutTimestamp(_ workoutId: UUID) async throws -> Date? {
-        let doc = try await core.userCollection("workouts").document(workoutId.uuidString).getDocument()
+        let doc = try await core.userCollection(FirestoreCollections.workouts).document(workoutId.uuidString).getDocument()
         guard let data = doc.data(),
               let timestamp = data["updatedAt"] as? Timestamp else {
             return nil
@@ -64,7 +64,7 @@ class FirestoreConflictService {
 
     /// Fetch cloud timestamp for a specific session
     func fetchSessionTimestamp(_ sessionId: UUID) async throws -> Date? {
-        let doc = try await core.userCollection("sessions").document(sessionId.uuidString).getDocument()
+        let doc = try await core.userCollection(FirestoreCollections.sessions).document(sessionId.uuidString).getDocument()
         guard let data = doc.data(),
               let timestamp = data["updatedAt"] as? Timestamp else {
             return nil
@@ -74,7 +74,7 @@ class FirestoreConflictService {
 
     /// Fetch cloud timestamp for a specific program
     func fetchProgramTimestamp(_ programId: UUID) async throws -> Date? {
-        let doc = try await core.userCollection("programs").document(programId.uuidString).getDocument()
+        let doc = try await core.userCollection(FirestoreCollections.programs).document(programId.uuidString).getDocument()
         guard let data = doc.data(),
               let timestamp = data["updatedAt"] as? Timestamp else {
             return nil
@@ -84,7 +84,7 @@ class FirestoreConflictService {
 
     /// Fetch cloud timestamp for a custom exercise
     func fetchCustomExerciseTimestamp(_ exerciseId: UUID) async throws -> Date? {
-        let doc = try await core.userCollection("customExercises").document(exerciseId.uuidString).getDocument()
+        let doc = try await core.userCollection(FirestoreCollections.customExercises).document(exerciseId.uuidString).getDocument()
         guard let data = doc.data(),
               let timestamp = data["updatedAt"] as? Timestamp else {
             return nil
@@ -160,7 +160,7 @@ class FirestoreConflictService {
 
     /// Fetch modules with their cloud timestamps
     func fetchModulesWithTimestamps() async throws -> [CloudEntity<Module>] {
-        let snapshot = try await core.userCollection("modules").getDocuments()
+        let snapshot = try await core.userCollection(FirestoreCollections.modules).getDocuments()
         return snapshot.documents.compactMap { doc -> CloudEntity<Module>? in
             guard let module = try? core.decode(Module.self, from: doc.data()) else { return nil }
             let timestamp = (doc.data()["updatedAt"] as? Timestamp)?.dateValue()
@@ -170,7 +170,7 @@ class FirestoreConflictService {
 
     /// Fetch workouts with their cloud timestamps
     func fetchWorkoutsWithTimestamps() async throws -> [CloudEntity<Workout>] {
-        let snapshot = try await core.userCollection("workouts").getDocuments()
+        let snapshot = try await core.userCollection(FirestoreCollections.workouts).getDocuments()
         return snapshot.documents.compactMap { doc -> CloudEntity<Workout>? in
             guard let workout = try? core.decode(Workout.self, from: doc.data()) else { return nil }
             let timestamp = (doc.data()["updatedAt"] as? Timestamp)?.dateValue()
@@ -180,7 +180,7 @@ class FirestoreConflictService {
 
     /// Fetch sessions with their cloud timestamps
     func fetchSessionsWithTimestamps() async throws -> [CloudEntity<Session>] {
-        let snapshot = try await core.userCollection("sessions").getDocuments()
+        let snapshot = try await core.userCollection(FirestoreCollections.sessions).getDocuments()
         return snapshot.documents.compactMap { doc -> CloudEntity<Session>? in
             guard let session = try? core.decode(Session.self, from: doc.data()) else { return nil }
             let timestamp = (doc.data()["updatedAt"] as? Timestamp)?.dateValue()
@@ -190,7 +190,7 @@ class FirestoreConflictService {
 
     /// Fetch programs with their cloud timestamps
     func fetchProgramsWithTimestamps() async throws -> [CloudEntity<Program>] {
-        let snapshot = try await core.userCollection("programs").getDocuments()
+        let snapshot = try await core.userCollection(FirestoreCollections.programs).getDocuments()
         return snapshot.documents.compactMap { doc -> CloudEntity<Program>? in
             guard let program = try? core.decode(Program.self, from: doc.data()) else { return nil }
             let timestamp = (doc.data()["updatedAt"] as? Timestamp)?.dateValue()

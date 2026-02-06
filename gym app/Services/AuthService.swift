@@ -157,7 +157,7 @@ class AuthService: NSObject, ObservableObject {
 
     private func createUserDocumentIfNeeded(uid: String, email: String?, fullName: PersonNameComponents?) async {
         let db = Firestore.firestore()
-        let userRef = db.collection("users").document(uid)
+        let userRef = db.collection(FirestoreCollections.users).document(uid)
 
         do {
             let document = try await userRef.getDocument()
@@ -209,10 +209,10 @@ class AuthService: NSObject, ObservableObject {
 
         // Delete user data from Firestore
         let db = Firestore.firestore()
-        let userRef = db.collection("users").document(user.uid)
+        let userRef = db.collection(FirestoreCollections.users).document(user.uid)
 
         // Delete subcollections
-        let subcollections = ["modules", "workouts", "sessions", "customExercises", "programs", "scheduledWorkouts"]
+        let subcollections = [FirestoreCollections.modules, FirestoreCollections.workouts, FirestoreCollections.sessions, FirestoreCollections.customExercises, FirestoreCollections.programs, FirestoreCollections.scheduledWorkouts]
         for collection in subcollections {
             let snapshot = try await userRef.collection(collection).getDocuments()
             for doc in snapshot.documents {

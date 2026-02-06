@@ -20,29 +20,29 @@ class FirestoreSocialService: ObservableObject {
     // MARK: - User Profile Operations
 
     func saveUserProfile(_ profile: UserProfile) async throws {
-        let ref = try core.userCollection("profile").document("settings")
+        let ref = try core.userCollection(FirestoreCollections.profile).document(FirestoreCollections.profileSettings)
         let data = encodeUserProfile(profile)
         try await ref.setData(data, merge: true)
     }
 
     func fetchUserProfile() async throws -> UserProfile? {
-        let doc = try await core.userCollection("profile").document("settings").getDocument()
+        let doc = try await core.userCollection(FirestoreCollections.profile).document(FirestoreCollections.profileSettings).getDocument()
         guard let data = doc.data() else { return nil }
         return decodeUserProfile(from: data)
     }
 
     /// Fetch another user's profile by their Firebase user ID
     func fetchUserProfile(firebaseUserId: String) async throws -> UserProfile? {
-        let doc = try await core.db.collection("users").document(firebaseUserId)
-            .collection("profile").document("settings").getDocument()
+        let doc = try await core.db.collection(FirestoreCollections.users).document(firebaseUserId)
+            .collection(FirestoreCollections.profile).document(FirestoreCollections.profileSettings).getDocument()
         guard let data = doc.data() else { return nil }
         return decodeUserProfile(from: data)
     }
 
     /// Fetch a user's public profile by their Firebase UID
     func fetchPublicProfile(userId: String) async throws -> UserProfile? {
-        let doc = try await core.db.collection("users").document(userId)
-            .collection("profile").document("settings").getDocument()
+        let doc = try await core.db.collection(FirestoreCollections.users).document(userId)
+            .collection(FirestoreCollections.profile).document(FirestoreCollections.profileSettings).getDocument()
         guard let data = doc.data() else { return nil }
         return decodeUserProfile(from: data)
     }
@@ -52,7 +52,7 @@ class FirestoreSocialService: ObservableObject {
     /// Check if a username is available globally
     func isUsernameAvailable(_ username: String) async throws -> Bool {
         let normalized = UsernameValidator.normalize(username)
-        let doc = try await core.db.collection("usernames").document(normalized).getDocument()
+        let doc = try await core.db.collection(FirestoreCollections.usernames).document(normalized).getDocument()
         return !doc.exists
     }
 
@@ -68,7 +68,7 @@ class FirestoreSocialService: ObservableObject {
             throw ProfileError.usernameTaken
         }
 
-        let usernameRef = core.db.collection("usernames").document(normalized)
+        let usernameRef = core.db.collection(FirestoreCollections.usernames).document(normalized)
         try await usernameRef.setData([
             "userId": uid,
             "claimedAt": FieldValue.serverTimestamp()
@@ -82,7 +82,7 @@ class FirestoreSocialService: ObservableObject {
         }
 
         let normalized = UsernameValidator.normalize(username)
-        let usernameRef = core.db.collection("usernames").document(normalized)
+        let usernameRef = core.db.collection(FirestoreCollections.usernames).document(normalized)
 
         let doc = try await usernameRef.getDocument()
         if let data = doc.data(), data["userId"] as? String == uid {
@@ -97,7 +97,7 @@ class FirestoreSocialService: ObservableObject {
         let normalized = prefix.lowercased()
         let endPrefix = normalized + "\u{f8ff}"
 
-        let snapshot = try await core.db.collection("usernames")
+        let snapshot = try await core.db.collection(FirestoreCollections.usernames)
             .whereField(FieldPath.documentID(), isGreaterThanOrEqualTo: normalized)
             .whereField(FieldPath.documentID(), isLessThan: endPrefix)
             .limit(to: limit)
@@ -108,8 +108,8 @@ class FirestoreSocialService: ObservableObject {
         for doc in snapshot.documents {
             guard let firebaseUserId = doc.data()["userId"] as? String else { continue }
 
-            let profileDoc = try await core.db.collection("users").document(firebaseUserId)
-                .collection("profile").document("settings").getDocument()
+            let profileDoc = try await core.db.collection(FirestoreCollections.users).document(firebaseUserId)
+                .collection(FirestoreCollections.profile).document(FirestoreCollections.profileSettings).getDocument()
 
             if let data = profileDoc.data(),
                let profile = decodeUserProfile(from: data) {
@@ -124,23 +124,23 @@ class FirestoreSocialService: ObservableObject {
 
     /// Save a friendship to Firestore (global collection)
     func saveFriendship(_ friendship: Friendship) async throws {
-        let ref = core.db.collection("friendships").document(friendship.id.uuidString)
+        let ref = core.db.collection(FirestoreCollections.friendships).document(friendship.id.uuidString)
         let data = encodeFriendship(friendship)
         try await ref.setData(data, merge: true)
     }
 
     /// Delete a friendship from Firestore
     func deleteFriendship(id: UUID) async throws {
-        try await core.db.collection("friendships").document(id.uuidString).delete()
+        try await core.db.collection(FirestoreCollections.friendships).document(id.uuidString).delete()
     }
 
     /// Fetch all friendships involving a user
     func fetchFriendships(for userId: String) async throws -> [Friendship] {
-        let requesterSnapshot = try await core.db.collection("friendships")
+        let requesterSnapshot = try await core.db.collection(FirestoreCollections.friendships)
             .whereField("requesterId", isEqualTo: userId)
             .getDocuments()
 
-        let addresseeSnapshot = try await core.db.collection("friendships")
+        let addresseeSnapshot = try await core.db.collection(FirestoreCollections.friendships)
             .whereField("addresseeId", isEqualTo: userId)
             .getDocuments()
 
@@ -168,7 +168,7 @@ class FirestoreSocialService: ObservableObject {
         var allFriendships: [UUID: Friendship] = [:]
         let lock = NSLock()
 
-        let requesterListener = core.db.collection("friendships")
+        let requesterListener = core.db.collection(FirestoreCollections.friendships)
             .whereField("requesterId", isEqualTo: userId)
             .addSnapshotListener { [weak self] snapshot, error in
                 if let error = error {
@@ -189,7 +189,7 @@ class FirestoreSocialService: ObservableObject {
                 onChange(result)
             }
 
-        let addresseeListener = core.db.collection("friendships")
+        let addresseeListener = core.db.collection(FirestoreCollections.friendships)
             .whereField("addresseeId", isEqualTo: userId)
             .addSnapshotListener { [weak self] snapshot, error in
                 if let error = error {

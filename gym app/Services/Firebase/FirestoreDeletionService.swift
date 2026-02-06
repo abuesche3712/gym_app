@@ -21,14 +21,14 @@ class FirestoreDeletionService {
 
     /// Save a deletion record to Firebase
     func saveDeletionRecord(_ record: DeletionRecord) async throws {
-        try await core.userCollection("deletions").document(record.id.uuidString).setData(record.firestoreData)
+        try await core.userCollection(FirestoreCollections.deletions).document(record.id.uuidString).setData(record.firestoreData)
     }
 
     /// Save multiple deletion records to Firebase
     func saveDeletionRecords(_ records: [DeletionRecord]) async throws {
         let batch = core.db.batch()
         for record in records {
-            let docRef = try core.userCollection("deletions").document(record.id.uuidString)
+            let docRef = try core.userCollection(FirestoreCollections.deletions).document(record.id.uuidString)
             batch.setData(record.firestoreData, forDocument: docRef)
         }
         try await batch.commit()
@@ -38,7 +38,7 @@ class FirestoreDeletionService {
 
     /// Fetch all deletion records from Firebase
     func fetchDeletionRecords() async throws -> [DeletionRecord] {
-        let snapshot = try await core.userCollection("deletions").getDocuments()
+        let snapshot = try await core.userCollection(FirestoreCollections.deletions).getDocuments()
         return snapshot.documents.compactMap { doc -> DeletionRecord? in
             DeletionRecord(from: doc.data())
         }
@@ -46,7 +46,7 @@ class FirestoreDeletionService {
 
     /// Fetch deletion records newer than a given date
     func fetchDeletionRecords(since date: Date) async throws -> [DeletionRecord] {
-        let snapshot = try await core.userCollection("deletions")
+        let snapshot = try await core.userCollection(FirestoreCollections.deletions)
             .whereField("deletedAt", isGreaterThan: date)
             .getDocuments()
         return snapshot.documents.compactMap { doc -> DeletionRecord? in
@@ -58,14 +58,14 @@ class FirestoreDeletionService {
 
     /// Delete a deletion record from Firebase (for cleanup)
     func deleteDeletionRecord(_ recordId: UUID) async throws {
-        try await core.userCollection("deletions").document(recordId.uuidString).delete()
+        try await core.userCollection(FirestoreCollections.deletions).document(recordId.uuidString).delete()
     }
 
     /// Delete multiple deletion records from Firebase (for batch cleanup)
     func deleteDeletionRecords(_ recordIds: [UUID]) async throws {
         let batch = core.db.batch()
         for id in recordIds {
-            let docRef = try core.userCollection("deletions").document(id.uuidString)
+            let docRef = try core.userCollection(FirestoreCollections.deletions).document(id.uuidString)
             batch.deleteDocument(docRef)
         }
         try await batch.commit()
@@ -73,7 +73,7 @@ class FirestoreDeletionService {
 
     /// Cleanup old deletion records from Firebase (older than retention date)
     func cleanupOldDeletionRecords(olderThan date: Date) async throws -> Int {
-        let snapshot = try await core.userCollection("deletions")
+        let snapshot = try await core.userCollection(FirestoreCollections.deletions)
             .whereField("deletedAt", isLessThan: date)
             .getDocuments()
 

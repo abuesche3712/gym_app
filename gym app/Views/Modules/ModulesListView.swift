@@ -73,11 +73,12 @@ struct ModulesListView: View {
                         EmptyStateView(
                             icon: "square.stack.3d.up",
                             title: "No Modules",
-                            message: "Create a module to organize your exercises",
-                            buttonTitle: "Create Module"
-                        ) {
-                            showingAddModule = true
-                        }
+                            subtitle: "Create a module to organize your exercises",
+                            buttonTitle: "Create Module",
+                            onButtonTap: {
+                                showingAddModule = true
+                            }
+                        )
                         .padding(.top, AppSpacing.xxl)
                     } else {
                         LazyVStack(spacing: AppSpacing.md) {

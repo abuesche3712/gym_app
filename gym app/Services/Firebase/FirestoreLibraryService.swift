@@ -22,9 +22,9 @@ class FirestoreLibraryService {
 
     /// Fetch exercise library templates from cloud (root-level, read-only)
     func fetchExerciseLibrary() async throws -> [ExerciseTemplate] {
-        let snapshot = try await core.db.collection("libraries")
-            .document("exerciseLibrary")
-            .collection("exercises")
+        let snapshot = try await core.db.collection(FirestoreCollections.libraries)
+            .document(FirestoreCollections.exerciseLibraryDoc)
+            .collection(FirestoreCollections.exercises)
             .getDocuments()
 
         return snapshot.documents.compactMap { doc in
@@ -36,9 +36,9 @@ class FirestoreLibraryService {
 
     /// Fetch equipment library from cloud (root-level, read-only)
     func fetchEquipmentLibrary() async throws -> [[String: Any]] {
-        let snapshot = try await core.db.collection("libraries")
-            .document("equipmentLibrary")
-            .collection("equipment")
+        let snapshot = try await core.db.collection(FirestoreCollections.libraries)
+            .document(FirestoreCollections.equipmentLibraryDoc)
+            .collection(FirestoreCollections.equipment)
             .getDocuments()
 
         return snapshot.documents.map { $0.data() }
@@ -48,9 +48,9 @@ class FirestoreLibraryService {
 
     /// Fetch progression schemes from cloud (root-level, read-only)
     func fetchProgressionSchemes() async throws -> [[String: Any]] {
-        let snapshot = try await core.db.collection("libraries")
-            .document("progressionSchemes")
-            .collection("schemes")
+        let snapshot = try await core.db.collection(FirestoreCollections.libraries)
+            .document(FirestoreCollections.progressionSchemesDoc)
+            .collection(FirestoreCollections.schemes)
             .getDocuments()
 
         return snapshot.documents.map { $0.data() }

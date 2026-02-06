@@ -43,11 +43,12 @@ struct WorkoutsListView: View {
                         EmptyStateView(
                             icon: "figure.strengthtraining.traditional",
                             title: "No Workouts",
-                            message: "Create a workout by combining modules into a routine",
-                            buttonTitle: "Create Workout"
-                        ) {
-                            showingAddWorkout = true
-                        }
+                            subtitle: "Create a workout by combining modules into a routine",
+                            buttonTitle: "Create Workout",
+                            onButtonTap: {
+                                showingAddWorkout = true
+                            }
+                        )
                         .padding(.top, AppSpacing.xl)
                     } else {
                         LazyVStack(spacing: AppSpacing.md) {

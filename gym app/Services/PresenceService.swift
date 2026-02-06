@@ -22,7 +22,7 @@ class PresenceService: ObservableObject {
     func goOnline() {
         guard let userId = currentUserId else { return }
 
-        let ref = core.db.collection("presence").document(userId)
+        let ref = core.db.collection(FirestoreCollections.presence).document(userId)
         ref.setData([
             "isOnline": true,
             "lastSeen": FieldValue.serverTimestamp()
@@ -32,7 +32,7 @@ class PresenceService: ObservableObject {
     func goOffline() {
         guard let userId = currentUserId else { return }
 
-        let ref = core.db.collection("presence").document(userId)
+        let ref = core.db.collection(FirestoreCollections.presence).document(userId)
         ref.setData([
             "isOnline": false,
             "lastSeen": FieldValue.serverTimestamp()
@@ -43,7 +43,7 @@ class PresenceService: ObservableObject {
 
     func fetchPresence(userId: String) async -> (isOnline: Bool, lastSeen: Date?) {
         do {
-            let doc = try await core.db.collection("presence").document(userId).getDocument()
+            let doc = try await core.db.collection(FirestoreCollections.presence).document(userId).getDocument()
             guard let data = doc.data() else { return (false, nil) }
 
             let isOnline = data["isOnline"] as? Bool ?? false
@@ -56,7 +56,7 @@ class PresenceService: ObservableObject {
     }
 
     func listenToPresence(userId: String, onChange: @escaping (Bool, Date?) -> Void) -> ListenerRegistration {
-        core.db.collection("presence").document(userId)
+        core.db.collection(FirestoreCollections.presence).document(userId)
             .addSnapshotListener { snapshot, error in
                 if let error = error {
                     Logger.error(error, context: "PresenceService.listenToPresence")
@@ -77,9 +77,9 @@ class PresenceService: ObservableObject {
     // MARK: - Typing Indicators
 
     func setTypingStatus(conversationId: UUID, userId: String, isTyping: Bool) {
-        let ref = core.db.collection("conversations")
+        let ref = core.db.collection(FirestoreCollections.conversations)
             .document(conversationId.uuidString)
-            .collection("typing")
+            .collection(FirestoreCollections.typing)
             .document(userId)
 
         ref.setData([
@@ -89,9 +89,9 @@ class PresenceService: ObservableObject {
     }
 
     func listenToTypingStatus(conversationId: UUID, otherUserId: String, onChange: @escaping (Bool) -> Void) -> ListenerRegistration {
-        core.db.collection("conversations")
+        core.db.collection(FirestoreCollections.conversations)
             .document(conversationId.uuidString)
-            .collection("typing")
+            .collection(FirestoreCollections.typing)
             .document(otherUserId)
             .addSnapshotListener { snapshot, error in
                 if let error = error {

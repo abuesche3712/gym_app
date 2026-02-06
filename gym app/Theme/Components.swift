@@ -286,43 +286,6 @@ extension View {
     }
 }
 
-// MARK: - Empty State
-
-struct EmptyStateView: View {
-    let icon: String
-    let title: String
-    let message: String
-    var buttonTitle: String? = nil
-    var action: (() -> Void)? = nil
-
-    var body: some View {
-        VStack(spacing: AppSpacing.lg) {
-            Image(systemName: icon)
-                .font(.system(size: 48))
-                .foregroundColor(AppColors.textTertiary)
-
-            VStack(spacing: AppSpacing.sm) {
-                Text(title)
-                    .font(.title3.bold())
-                    .foregroundColor(AppColors.textPrimary)
-
-                Text(message)
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            if let buttonTitle = buttonTitle, let action = action {
-                Button(action: action) {
-                    Text(buttonTitle)
-                }
-                .buttonStyle(AccentButtonStyle())
-            }
-        }
-        .padding(AppSpacing.xl)
-    }
-}
-
 // MARK: - Section Header
 
 struct SectionHeader: View {

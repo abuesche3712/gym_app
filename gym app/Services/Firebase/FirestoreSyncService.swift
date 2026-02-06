@@ -44,13 +44,13 @@ class FirestoreSyncService: ObservableObject {
     // MARK: - Module Operations
 
     func saveModule(_ module: Module) async throws {
-        let ref = try core.userCollection("modules").document(module.id.uuidString)
+        let ref = try core.userCollection(FirestoreCollections.modules).document(module.id.uuidString)
         let data = try encodeModule(module)
         try await ref.setData(data, merge: true)
     }
 
     func fetchModules() async throws -> [Module] {
-        let snapshot = try await core.userCollection("modules").getDocuments()
+        let snapshot = try await core.userCollection(FirestoreCollections.modules).getDocuments()
         return snapshot.documents.compactMap { doc in
             do {
                 return try decodeModule(from: doc.data())
@@ -62,19 +62,19 @@ class FirestoreSyncService: ObservableObject {
     }
 
     func deleteModule(_ moduleId: UUID) async throws {
-        try await core.userCollection("modules").document(moduleId.uuidString).delete()
+        try await core.userCollection(FirestoreCollections.modules).document(moduleId.uuidString).delete()
     }
 
     // MARK: - Workout Operations
 
     func saveWorkout(_ workout: Workout) async throws {
-        let ref = try core.userCollection("workouts").document(workout.id.uuidString)
+        let ref = try core.userCollection(FirestoreCollections.workouts).document(workout.id.uuidString)
         let data = try encodeWorkout(workout)
         try await ref.setData(data, merge: true)
     }
 
     func fetchWorkouts() async throws -> [Workout] {
-        let snapshot = try await core.userCollection("workouts").getDocuments()
+        let snapshot = try await core.userCollection(FirestoreCollections.workouts).getDocuments()
         return snapshot.documents.compactMap { doc in
             do {
                 return try decodeWorkout(from: doc.data())
@@ -86,19 +86,19 @@ class FirestoreSyncService: ObservableObject {
     }
 
     func deleteWorkout(_ workoutId: UUID) async throws {
-        try await core.userCollection("workouts").document(workoutId.uuidString).delete()
+        try await core.userCollection(FirestoreCollections.workouts).document(workoutId.uuidString).delete()
     }
 
     // MARK: - Session Operations
 
     func saveSession(_ session: Session) async throws {
-        let ref = try core.userCollection("sessions").document(session.id.uuidString)
+        let ref = try core.userCollection(FirestoreCollections.sessions).document(session.id.uuidString)
         let data = try encodeSession(session)
         try await ref.setData(data, merge: true)
     }
 
     func fetchSessions() async throws -> [Session] {
-        let snapshot = try await core.userCollection("sessions").getDocuments()
+        let snapshot = try await core.userCollection(FirestoreCollections.sessions).getDocuments()
         return snapshot.documents.compactMap { doc in
             do {
                 return try decodeSession(from: doc.data())
@@ -110,13 +110,13 @@ class FirestoreSyncService: ObservableObject {
     }
 
     func deleteSession(_ sessionId: UUID) async throws {
-        try await core.userCollection("sessions").document(sessionId.uuidString).delete()
+        try await core.userCollection(FirestoreCollections.sessions).document(sessionId.uuidString).delete()
     }
 
     /// Incremental update for a single set during active workout
     func updateSessionSet(sessionId: UUID, exerciseId: UUID, set: SetData) async throws {
-        let ref = try core.userCollection("sessions").document(sessionId.uuidString)
-            .collection("livesets").document(set.id.uuidString)
+        let ref = try core.userCollection(FirestoreCollections.sessions).document(sessionId.uuidString)
+            .collection(FirestoreCollections.liveSets).document(set.id.uuidString)
 
         let data: [String: Any] = [
             "id": set.id.uuidString,
@@ -145,13 +145,13 @@ class FirestoreSyncService: ObservableObject {
     // MARK: - Program Operations
 
     func saveProgram(_ program: Program) async throws {
-        let ref = try core.userCollection("programs").document(program.id.uuidString)
+        let ref = try core.userCollection(FirestoreCollections.programs).document(program.id.uuidString)
         let data = try encodeProgram(program)
         try await ref.setData(data, merge: true)
     }
 
     func fetchPrograms() async throws -> [Program] {
-        let snapshot = try await core.userCollection("programs").getDocuments()
+        let snapshot = try await core.userCollection(FirestoreCollections.programs).getDocuments()
         Logger.debug("fetchPrograms: Found \(snapshot.documents.count) program documents in Firebase")
 
         return snapshot.documents.compactMap { doc in
@@ -170,19 +170,19 @@ class FirestoreSyncService: ObservableObject {
     }
 
     func deleteProgram(_ programId: UUID) async throws {
-        try await core.userCollection("programs").document(programId.uuidString).delete()
+        try await core.userCollection(FirestoreCollections.programs).document(programId.uuidString).delete()
     }
 
     // MARK: - Scheduled Workout Operations
 
     func saveScheduledWorkout(_ scheduled: ScheduledWorkout) async throws {
-        let ref = try core.userCollection("scheduledWorkouts").document(scheduled.id.uuidString)
+        let ref = try core.userCollection(FirestoreCollections.scheduledWorkouts).document(scheduled.id.uuidString)
         let data = try encodeScheduledWorkout(scheduled)
         try await ref.setData(data, merge: true)
     }
 
     func fetchScheduledWorkouts() async throws -> [ScheduledWorkout] {
-        let snapshot = try await core.userCollection("scheduledWorkouts").getDocuments()
+        let snapshot = try await core.userCollection(FirestoreCollections.scheduledWorkouts).getDocuments()
         return snapshot.documents.compactMap { doc in
             do {
                 return try decodeScheduledWorkout(from: doc.data())
@@ -194,11 +194,11 @@ class FirestoreSyncService: ObservableObject {
     }
 
     func deleteScheduledWorkout(_ scheduledId: UUID) async throws {
-        try await core.userCollection("scheduledWorkouts").document(scheduledId.uuidString).delete()
+        try await core.userCollection(FirestoreCollections.scheduledWorkouts).document(scheduledId.uuidString).delete()
     }
 
     func deleteScheduledWorkoutsForProgram(_ programId: UUID) async throws {
-        let snapshot = try await core.userCollection("scheduledWorkouts")
+        let snapshot = try await core.userCollection(FirestoreCollections.scheduledWorkouts)
             .whereField("programId", isEqualTo: programId.uuidString)
             .getDocuments()
 
@@ -210,28 +210,28 @@ class FirestoreSyncService: ObservableObject {
     // MARK: - Custom Exercise Operations
 
     func saveCustomExercise(_ template: ExerciseTemplate) async throws {
-        let ref = try core.userCollection("customExercises").document(template.id.uuidString)
+        let ref = try core.userCollection(FirestoreCollections.customExercises).document(template.id.uuidString)
         let data = encodeExerciseTemplate(template)
         try await ref.setData(data, merge: true)
     }
 
     func fetchCustomExercises() async throws -> [ExerciseTemplate] {
-        let snapshot = try await core.userCollection("customExercises").getDocuments()
+        let snapshot = try await core.userCollection(FirestoreCollections.customExercises).getDocuments()
         return snapshot.documents.compactMap { doc in
             decodeExerciseTemplate(from: doc.data())
         }
     }
 
     func deleteCustomExercise(_ exerciseId: UUID) async throws {
-        try await core.userCollection("customExercises").document(exerciseId.uuidString).delete()
+        try await core.userCollection(FirestoreCollections.customExercises).document(exerciseId.uuidString).delete()
     }
 
     /// One-time migration from legacy per-user exerciseLibrary to customExercises
     @discardableResult
     func migrateExerciseLibraryToCustomExercises() async throws -> Int {
         let userReference = try core.userRef()
-        let oldCollection = userReference.collection("exerciseLibrary")
-        let newCollection = userReference.collection("customExercises")
+        let oldCollection = userReference.collection(FirestoreCollections.exerciseLibrary)
+        let newCollection = userReference.collection(FirestoreCollections.customExercises)
 
         let oldSnapshot = try await oldCollection.getDocuments()
         guard !oldSnapshot.documents.isEmpty else {

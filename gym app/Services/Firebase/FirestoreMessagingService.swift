@@ -21,14 +21,14 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Save a conversation to Firestore
     func saveConversation(_ conversation: Conversation) async throws {
-        let ref = core.db.collection("conversations").document(conversation.id.uuidString)
+        let ref = core.db.collection(FirestoreCollections.conversations).document(conversation.id.uuidString)
         let data = encodeConversation(conversation)
         try await ref.setData(data, merge: true)
     }
 
     /// Fetch conversations for a user
     func fetchConversations(for userId: String) async throws -> [Conversation] {
-        let snapshot = try await core.db.collection("conversations")
+        let snapshot = try await core.db.collection(FirestoreCollections.conversations)
             .whereField("participantIds", arrayContains: userId)
             .order(by: "lastMessageAt", descending: true)
             .getDocuments()
@@ -40,7 +40,7 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Listen to conversation changes in real-time
     func listenToConversations(for userId: String, onChange: @escaping ([Conversation]) -> Void, onError: ((Error) -> Void)? = nil) -> ListenerRegistration {
-        core.db.collection("conversations")
+        core.db.collection(FirestoreCollections.conversations)
             .whereField("participantIds", arrayContains: userId)
             .order(by: "lastMessageAt", descending: true)
             .addSnapshotListener { [weak self] snapshot, error in
@@ -59,16 +59,16 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Delete a conversation
     func deleteConversation(id: UUID) async throws {
-        try await core.db.collection("conversations").document(id.uuidString).delete()
+        try await core.db.collection(FirestoreCollections.conversations).document(id.uuidString).delete()
     }
 
     // MARK: - Message Operations
 
     /// Save a message to Firestore
     func saveMessage(_ message: Message) async throws {
-        let ref = core.db.collection("conversations")
+        let ref = core.db.collection(FirestoreCollections.conversations)
             .document(message.conversationId.uuidString)
-            .collection("messages")
+            .collection(FirestoreCollections.messages)
             .document(message.id.uuidString)
         let data = encodeMessage(message)
         try await ref.setData(data, merge: true)
@@ -76,9 +76,9 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Fetch messages for a conversation with pagination
     func fetchMessages(conversationId: UUID, limit: Int = 50, before: Date? = nil) async throws -> [Message] {
-        var query = core.db.collection("conversations")
+        var query = core.db.collection(FirestoreCollections.conversations)
             .document(conversationId.uuidString)
-            .collection("messages")
+            .collection(FirestoreCollections.messages)
             .order(by: "createdAt", descending: true)
             .limit(to: limit)
 
@@ -95,9 +95,9 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Listen to messages in real-time
     func listenToMessages(conversationId: UUID, limit: Int = 100, onChange: @escaping ([Message]) -> Void, onError: ((Error) -> Void)? = nil) -> ListenerRegistration {
-        core.db.collection("conversations")
+        core.db.collection(FirestoreCollections.conversations)
             .document(conversationId.uuidString)
-            .collection("messages")
+            .collection(FirestoreCollections.messages)
             .order(by: "createdAt", descending: false)
             .limit(toLast: limit)
             .addSnapshotListener { [weak self] snapshot, error in
@@ -116,9 +116,9 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Soft-delete a message (marks as deleted, replaces content)
     func deleteMessage(conversationId: UUID, messageId: UUID) async throws {
-        let ref = core.db.collection("conversations")
+        let ref = core.db.collection(FirestoreCollections.conversations)
             .document(conversationId.uuidString)
-            .collection("messages")
+            .collection(FirestoreCollections.messages)
             .document(messageId.uuidString)
 
         // Encode a placeholder text content
@@ -137,9 +137,9 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Mark a message as read
     func markMessageRead(conversationId: UUID, messageId: UUID, at date: Date = Date()) async throws {
-        let ref = core.db.collection("conversations")
+        let ref = core.db.collection(FirestoreCollections.conversations)
             .document(conversationId.uuidString)
-            .collection("messages")
+            .collection(FirestoreCollections.messages)
             .document(messageId.uuidString)
         try await ref.updateData(["readAt": Timestamp(date: date)])
     }
@@ -150,7 +150,7 @@ class FirestoreMessagingService: ObservableObject {
         recipientId: String,
         preview: String
     ) async throws {
-        let ref = core.db.collection("conversations").document(conversationId.uuidString)
+        let ref = core.db.collection(FirestoreCollections.conversations).document(conversationId.uuidString)
         try await ref.updateData([
             "lastMessageAt": FieldValue.serverTimestamp(),
             "lastMessagePreview": String(preview.prefix(50)),
@@ -160,7 +160,7 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Reset unread count for a user when they open a conversation
     func resetUnreadCount(conversationId: UUID, userId: String) async throws {
-        let ref = core.db.collection("conversations").document(conversationId.uuidString)
+        let ref = core.db.collection(FirestoreCollections.conversations).document(conversationId.uuidString)
         try await ref.updateData([
             "unreadCounts.\(userId)": 0
         ])
@@ -168,7 +168,7 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Fetch a single conversation by ID
     func fetchConversation(id: UUID, for userId: String? = nil) async throws -> Conversation? {
-        let doc = try await core.db.collection("conversations").document(id.uuidString).getDocument()
+        let doc = try await core.db.collection(FirestoreCollections.conversations).document(id.uuidString).getDocument()
         guard let data = doc.data() else { return nil }
         return decodeConversation(from: data, for: userId)
     }

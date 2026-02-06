@@ -193,28 +193,14 @@ struct FriendsListView: View {
     }
 
     private var emptyFriendsView: some View {
-        VStack(spacing: AppSpacing.md) {
-            Image(systemName: "person.2")
-                .font(.largeTitle)
-                .foregroundColor(AppColors.textTertiary)
-
-            Text("No friends yet")
-                .headline(color: AppColors.textSecondary)
-
-            Text("Search for friends to connect with")
-                .caption(color: AppColors.textTertiary)
-
-            Button {
-                showingSearch = true
-            } label: {
-                Label("Find Friends", systemImage: "magnifyingglass")
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(AppColors.dominant)
-            .padding(.top, AppSpacing.sm)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.xl)
+        EmptyStateView(
+            icon: "person.2",
+            title: "No friends yet",
+            subtitle: "Search for friends to connect with",
+            buttonTitle: "Find Friends",
+            buttonIcon: "magnifyingglass",
+            onButtonTap: { showingSearch = true }
+        )
     }
 
     // MARK: - Suggested Friends Section
@@ -399,22 +385,12 @@ struct OutgoingRequestRow: View {
     let onCancel: () -> Void
 
     var body: some View {
-        HStack(spacing: AppSpacing.md) {
-            ProfilePhotoView.muted(profile: friendWithProfile.profile, size: 44)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(friendWithProfile.profile.displayName ?? friendWithProfile.profile.username)
-                    .headline(color: AppColors.textPrimary)
-
-                Text("@\(friendWithProfile.profile.username)")
-                    .caption(color: AppColors.textSecondary)
-
-                Text("Pending")
-                    .caption(color: AppColors.textTertiary)
-            }
-
-            Spacer()
-
+        UserRowView(
+            profile: friendWithProfile.profile,
+            avatarSize: 44,
+            avatarColor: AppColors.textTertiary,
+            subtitle: "Pending"
+        ) {
             Button {
                 onCancel()
             } label: {
@@ -469,30 +445,12 @@ struct BlockedUserRow: View {
     let friendWithProfile: FriendWithProfile
     let onUnblock: () -> Void
 
-    private var profile: UserProfile { friendWithProfile.profile }
-
     var body: some View {
-        HStack(spacing: AppSpacing.md) {
-            // Avatar
-            Circle()
-                .fill(AppColors.error.opacity(0.2))
-                .frame(width: 48, height: 48)
-                .overlay {
-                    Image(systemName: "hand.raised.slash")
-                        .foregroundColor(AppColors.error)
-                }
-
-            // Info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(profile.displayName ?? profile.username)
-                    .headline(color: AppColors.textSecondary)
-
-                Text("@\(profile.username)")
-                    .caption(color: AppColors.textTertiary)
-            }
-
-            Spacer()
-
+        UserRowView(
+            profile: friendWithProfile.profile,
+            avatarSize: 48,
+            avatarColor: AppColors.error
+        ) {
             Button {
                 onUnblock()
             } label: {

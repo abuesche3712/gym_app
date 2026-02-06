@@ -44,23 +44,11 @@ struct FriendRequestsView: View {
     // MARK: - Empty View
 
     private var emptyView: some View {
-        VStack(spacing: AppSpacing.md) {
-            Spacer()
-
-            Image(systemName: "person.badge.clock")
-                .font(.largeTitle)
-                .foregroundColor(AppColors.textTertiary)
-
-            Text("No pending requests")
-                .headline(color: AppColors.textSecondary)
-
-            Text("When someone sends you a friend request, it will appear here")
-                .caption(color: AppColors.textTertiary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, AppSpacing.xl)
-
-            Spacer()
-        }
+        EmptyStateView(
+            icon: "person.badge.clock",
+            title: "No pending requests",
+            subtitle: "When someone sends you a friend request, it will appear here"
+        )
     }
 
     // MARK: - Requests List

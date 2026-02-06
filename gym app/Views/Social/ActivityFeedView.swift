@@ -60,24 +60,11 @@ struct ActivityFeedView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: AppSpacing.md) {
-            Spacer().frame(height: 100)
-
-            Image(systemName: "bell.slash")
-                .font(.system(size: 48))
-                .foregroundColor(AppColors.textTertiary)
-
-            Text("No Notifications")
-                .headline(color: AppColors.textSecondary)
-
-            Text("When friends interact with your posts, you'll see it here")
-                .subheadline(color: AppColors.textTertiary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, AppSpacing.xl)
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
+        EmptyStateView(
+            icon: "bell.slash",
+            title: "No Notifications",
+            subtitle: "When friends interact with your posts, you'll see it here"
+        )
     }
 }
 

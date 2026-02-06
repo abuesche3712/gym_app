@@ -8,10 +8,29 @@
 
 import Foundation
 
+// MARK: - ShareBundle Protocol
+
+/// Protocol for all share bundles providing default encode/decode
+protocol ShareBundleProtocol: Codable {
+    var schemaVersion: Int { get }
+}
+
+extension ShareBundleProtocol {
+    /// Encodes the bundle to Data for embedding in a message
+    func encode() throws -> Data {
+        try JSONEncoder().encode(self)
+    }
+
+    /// Decodes a bundle from message data
+    static func decode(from data: Data) throws -> Self {
+        try JSONDecoder().decode(Self.self, from: data)
+    }
+}
+
 // MARK: - Program Share Bundle
 
 /// Complete program snapshot with all dependencies for sharing
-struct ProgramShareBundle: Codable {
+struct ProgramShareBundle: ShareBundleProtocol {
     let schemaVersion: Int
     let program: Program
     let workouts: [Workout]           // All workouts referenced by program slots
@@ -34,21 +53,13 @@ struct ProgramShareBundle: Codable {
         self.customImplements = customImplements
     }
 
-    /// Encodes the bundle to Data for embedding in a message
-    func encode() throws -> Data {
-        try JSONEncoder().encode(self)
-    }
-
-    /// Decodes a bundle from message data
-    static func decode(from data: Data) throws -> ProgramShareBundle {
-        try JSONDecoder().decode(ProgramShareBundle.self, from: data)
-    }
+    // encode()/decode() provided by ShareBundleProtocol
 }
 
 // MARK: - Workout Share Bundle
 
 /// Complete workout snapshot with all dependencies for sharing
-struct WorkoutShareBundle: Codable {
+struct WorkoutShareBundle: ShareBundleProtocol {
     let schemaVersion: Int
     let workout: Workout
     let modules: [Module]             // All modules referenced by workout
@@ -67,22 +78,12 @@ struct WorkoutShareBundle: Codable {
         self.customTemplates = customTemplates
         self.customImplements = customImplements
     }
-
-    /// Encodes the bundle to Data for embedding in a message
-    func encode() throws -> Data {
-        try JSONEncoder().encode(self)
-    }
-
-    /// Decodes a bundle from message data
-    static func decode(from data: Data) throws -> WorkoutShareBundle {
-        try JSONDecoder().decode(WorkoutShareBundle.self, from: data)
-    }
 }
 
 // MARK: - Module Share Bundle
 
 /// Complete module snapshot with all dependencies for sharing
-struct ModuleShareBundle: Codable {
+struct ModuleShareBundle: ShareBundleProtocol {
     let schemaVersion: Int
     let module: Module
     let customTemplates: [ExerciseTemplate]  // Custom exercise templates used
@@ -98,22 +99,12 @@ struct ModuleShareBundle: Codable {
         self.customTemplates = customTemplates
         self.customImplements = customImplements
     }
-
-    /// Encodes the bundle to Data for embedding in a message
-    func encode() throws -> Data {
-        try JSONEncoder().encode(self)
-    }
-
-    /// Decodes a bundle from message data
-    static func decode(from data: Data) throws -> ModuleShareBundle {
-        try JSONDecoder().decode(ModuleShareBundle.self, from: data)
-    }
 }
 
 // MARK: - Session Share Bundle
 
 /// Snapshot of a completed session for sharing workout results
-struct SessionShareBundle: Codable {
+struct SessionShareBundle: ShareBundleProtocol {
     let schemaVersion: Int
     let session: Session
     let workoutName: String
@@ -132,22 +123,12 @@ struct SessionShareBundle: Codable {
         self.highlightedExerciseIds = highlightedExerciseIds
         self.highlightedSetIds = highlightedSetIds
     }
-
-    /// Encodes the bundle to Data for embedding in a message
-    func encode() throws -> Data {
-        try JSONEncoder().encode(self)
-    }
-
-    /// Decodes a bundle from message data
-    static func decode(from data: Data) throws -> SessionShareBundle {
-        try JSONDecoder().decode(SessionShareBundle.self, from: data)
-    }
 }
 
 // MARK: - Exercise Share Bundle
 
 /// Snapshot of an exercise performance for sharing
-struct ExerciseShareBundle: Codable {
+struct ExerciseShareBundle: ShareBundleProtocol {
     let schemaVersion: Int
     let exerciseName: String
     let setData: [SetData]
@@ -163,22 +144,12 @@ struct ExerciseShareBundle: Codable {
         self.date = date
         self.distanceUnit = distanceUnit
     }
-
-    /// Encodes the bundle to Data for embedding in a message
-    func encode() throws -> Data {
-        try JSONEncoder().encode(self)
-    }
-
-    /// Decodes a bundle from message data
-    static func decode(from data: Data) throws -> ExerciseShareBundle {
-        try JSONDecoder().decode(ExerciseShareBundle.self, from: data)
-    }
 }
 
 // MARK: - Set Share Bundle
 
 /// Snapshot of a single set (typically a PR) for sharing
-struct SetShareBundle: Codable {
+struct SetShareBundle: ShareBundleProtocol {
     let schemaVersion: Int
     let exerciseName: String
     let setData: SetData
@@ -196,22 +167,12 @@ struct SetShareBundle: Codable {
         self.date = date
         self.distanceUnit = distanceUnit
     }
-
-    /// Encodes the bundle to Data for embedding in a message
-    func encode() throws -> Data {
-        try JSONEncoder().encode(self)
-    }
-
-    /// Decodes a bundle from message data
-    static func decode(from data: Data) throws -> SetShareBundle {
-        try JSONDecoder().decode(SetShareBundle.self, from: data)
-    }
 }
 
 // MARK: - Completed Module Share Bundle
 
 /// Snapshot of a completed module (from a session) for sharing
-struct CompletedModuleShareBundle: Codable {
+struct CompletedModuleShareBundle: ShareBundleProtocol {
     let schemaVersion: Int
     let module: CompletedModule
     let workoutName: String
@@ -222,16 +183,6 @@ struct CompletedModuleShareBundle: Codable {
         self.module = module
         self.workoutName = workoutName
         self.date = date
-    }
-
-    /// Encodes the bundle to Data for embedding in a message
-    func encode() throws -> Data {
-        try JSONEncoder().encode(self)
-    }
-
-    /// Decodes a bundle from message data
-    static func decode(from data: Data) throws -> CompletedModuleShareBundle {
-        try JSONDecoder().decode(CompletedModuleShareBundle.self, from: data)
     }
 }
 
@@ -271,7 +222,7 @@ struct MeasurableSnapshot: Codable, Identifiable, Hashable {
 // MARK: - Exercise Instance Share Bundle
 
 /// Complete exercise instance snapshot for sharing (importable)
-struct ExerciseInstanceShareBundle: Codable {
+struct ExerciseInstanceShareBundle: ShareBundleProtocol {
     let schemaVersion: Int
     let exerciseInstance: ExerciseInstance
     let customTemplates: [ExerciseTemplate]  // Custom exercise templates used
@@ -287,22 +238,12 @@ struct ExerciseInstanceShareBundle: Codable {
         self.customTemplates = customTemplates
         self.customImplements = customImplements
     }
-
-    /// Encodes the bundle to Data for embedding in a message
-    func encode() throws -> Data {
-        try JSONEncoder().encode(self)
-    }
-
-    /// Decodes a bundle from message data
-    static func decode(from data: Data) throws -> ExerciseInstanceShareBundle {
-        try JSONDecoder().decode(ExerciseInstanceShareBundle.self, from: data)
-    }
 }
 
 // MARK: - Set Group Share Bundle
 
 /// Snapshot of a set prescription for sharing (view-only, not importable standalone)
-struct SetGroupShareBundle: Codable {
+struct SetGroupShareBundle: ShareBundleProtocol {
     let schemaVersion: Int
     let setGroup: SetGroup
     let exerciseName: String
@@ -314,22 +255,12 @@ struct SetGroupShareBundle: Codable {
         self.exerciseName = exerciseName
         self.moduleName = moduleName
     }
-
-    /// Encodes the bundle to Data for embedding in a message
-    func encode() throws -> Data {
-        try JSONEncoder().encode(self)
-    }
-
-    /// Decodes a bundle from message data
-    static func decode(from data: Data) throws -> SetGroupShareBundle {
-        try JSONDecoder().decode(SetGroupShareBundle.self, from: data)
-    }
 }
 
 // MARK: - Completed Set Group Share Bundle
 
 /// Snapshot of completed sets from a session for sharing
-struct CompletedSetGroupShareBundle: Codable {
+struct CompletedSetGroupShareBundle: ShareBundleProtocol {
     let schemaVersion: Int
     let completedSetGroup: CompletedSetGroup
     let exerciseName: String
@@ -343,22 +274,12 @@ struct CompletedSetGroupShareBundle: Codable {
         self.workoutName = workoutName
         self.date = date
     }
-
-    /// Encodes the bundle to Data for embedding in a message
-    func encode() throws -> Data {
-        try JSONEncoder().encode(self)
-    }
-
-    /// Decodes a bundle from message data
-    static func decode(from data: Data) throws -> CompletedSetGroupShareBundle {
-        try JSONDecoder().decode(CompletedSetGroupShareBundle.self, from: data)
-    }
 }
 
 // MARK: - Highlights Share Bundle
 
 /// Bundle containing multiple exercise/set highlights for sharing
-struct HighlightsShareBundle: Codable {
+struct HighlightsShareBundle: ShareBundleProtocol {
     let schemaVersion: Int
     let workoutName: String
     let date: Date
@@ -371,15 +292,5 @@ struct HighlightsShareBundle: Codable {
         self.date = date
         self.exercises = exercises
         self.sets = sets
-    }
-
-    /// Encodes the bundle to Data for embedding in a message
-    func encode() throws -> Data {
-        try JSONEncoder().encode(self)
-    }
-
-    /// Decodes a bundle from message data
-    static func decode(from data: Data) throws -> HighlightsShareBundle {
-        try JSONDecoder().decode(HighlightsShareBundle.self, from: data)
     }
 }

@@ -24,7 +24,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Save a post to the global posts collection
     func savePost(_ post: Post) async throws {
-        let ref = core.db.collection("posts").document(post.id.uuidString)
+        let ref = core.db.collection(FirestoreCollections.posts).document(post.id.uuidString)
         let data = encodePost(post)
         try await ref.setData(data, merge: true)
     }
@@ -41,7 +41,7 @@ class FirestoreFeedService: ObservableObject {
         var allPosts: [Post] = []
 
         for chunk in chunks {
-            var query = core.db.collection("posts")
+            var query = core.db.collection(FirestoreCollections.posts)
                 .whereField("authorId", in: chunk)
                 .order(by: "createdAt", descending: true)
                 .limit(to: limit)
@@ -66,7 +66,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Fetch posts by a specific user
     func fetchPostsByUser(userId: String, limit: Int = 50, before: Date? = nil) async throws -> [Post] {
-        var query = core.db.collection("posts")
+        var query = core.db.collection(FirestoreCollections.posts)
             .whereField("authorId", isEqualTo: userId)
             .order(by: "createdAt", descending: true)
             .limit(to: limit)
@@ -98,7 +98,7 @@ class FirestoreFeedService: ObservableObject {
         var listeners: [ListenerRegistration] = []
 
         for (index, chunk) in chunks.enumerated() {
-            let listener = core.db.collection("posts")
+            let listener = core.db.collection(FirestoreCollections.posts)
                 .whereField("authorId", in: chunk)
                 .order(by: "createdAt", descending: true)
                 .limit(to: limit)
@@ -130,7 +130,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Fetch trending posts (recent posts with most likes)
     func fetchTrendingPosts(since: Date, limit: Int = 20) async throws -> [Post] {
-        let snapshot = try await core.db.collection("posts")
+        let snapshot = try await core.db.collection(FirestoreCollections.posts)
             .whereField("createdAt", isGreaterThan: Timestamp(date: since))
             .order(by: "createdAt", descending: true)
             .limit(to: 100) // Fetch more, then sort by likes client-side
@@ -149,7 +149,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Listen to a single post for live updates (counts, caption, content)
     func listenToPost(postId: UUID, onChange: @escaping (Post?) -> Void, onError: ((Error) -> Void)? = nil) -> ListenerRegistration {
-        core.db.collection("posts").document(postId.uuidString)
+        core.db.collection(FirestoreCollections.posts).document(postId.uuidString)
             .addSnapshotListener { [weak self] snapshot, error in
                 if let error = error {
                     Logger.error(error, context: "listenToPost")
@@ -169,7 +169,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Update an existing post
     func updatePost(_ post: Post) async throws {
-        let ref = core.db.collection("posts").document(post.id.uuidString)
+        let ref = core.db.collection(FirestoreCollections.posts).document(post.id.uuidString)
         var data: [String: Any] = [
             "updatedAt": FieldValue.serverTimestamp()
         ]
@@ -191,10 +191,10 @@ class FirestoreFeedService: ObservableObject {
 
     /// Delete a post and associated likes/comments
     func deletePost(_ postId: UUID) async throws {
-        try await core.db.collection("posts").document(postId.uuidString).delete()
+        try await core.db.collection(FirestoreCollections.posts).document(postId.uuidString).delete()
 
-        let likesSnapshot = try await core.db.collection("posts").document(postId.uuidString).collection("likes").getDocuments()
-        let commentsSnapshot = try await core.db.collection("posts").document(postId.uuidString).collection("comments").getDocuments()
+        let likesSnapshot = try await core.db.collection(FirestoreCollections.posts).document(postId.uuidString).collection(FirestoreCollections.likes).getDocuments()
+        let commentsSnapshot = try await core.db.collection(FirestoreCollections.posts).document(postId.uuidString).collection(FirestoreCollections.comments).getDocuments()
 
         let batch = core.db.batch()
         for doc in likesSnapshot.documents {
@@ -210,7 +210,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Like a post with a reaction type
     func likePost(postId: UUID, userId: String, reactionType: ReactionType = .heart) async throws {
-        let ref = core.db.collection("posts").document(postId.uuidString).collection("likes").document(userId)
+        let ref = core.db.collection(FirestoreCollections.posts).document(postId.uuidString).collection(FirestoreCollections.likes).document(userId)
 
         // Check if already liked
         let likeDoc = try await ref.getDocument()
@@ -220,7 +220,7 @@ class FirestoreFeedService: ObservableObject {
         let like = PostLike(postId: postId, userId: userId, reactionType: reactionType)
         try await ref.setData(encodeLike(like))
 
-        let postRef = core.db.collection("posts").document(postId.uuidString)
+        let postRef = core.db.collection(FirestoreCollections.posts).document(postId.uuidString)
 
         if wasAlreadyLiked {
             // Changing reaction — decrement old, increment new
@@ -241,7 +241,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Unlike a post
     func unlikePost(postId: UUID, userId: String) async throws {
-        let ref = core.db.collection("posts").document(postId.uuidString).collection("likes").document(userId)
+        let ref = core.db.collection(FirestoreCollections.posts).document(postId.uuidString).collection(FirestoreCollections.likes).document(userId)
 
         // Only decrement if the like actually exists
         let likeDoc = try await ref.getDocument()
@@ -251,7 +251,7 @@ class FirestoreFeedService: ObservableObject {
 
         try await ref.delete()
 
-        let postRef = core.db.collection("posts").document(postId.uuidString)
+        let postRef = core.db.collection(FirestoreCollections.posts).document(postId.uuidString)
         try await postRef.updateData([
             "likeCount": FieldValue.increment(Int64(-1)),
             "reactionCounts.\(previousReaction)": FieldValue.increment(Int64(-1))
@@ -260,13 +260,13 @@ class FirestoreFeedService: ObservableObject {
 
     /// Check if user has liked a post
     func isPostLiked(postId: UUID, userId: String) async throws -> Bool {
-        let doc = try await core.db.collection("posts").document(postId.uuidString).collection("likes").document(userId).getDocument()
+        let doc = try await core.db.collection(FirestoreCollections.posts).document(postId.uuidString).collection(FirestoreCollections.likes).document(userId).getDocument()
         return doc.exists
     }
 
     /// Listen to like status for a post
     func listenToPostLikeStatus(postId: UUID, userId: String, onChange: @escaping (Bool) -> Void) -> ListenerRegistration {
-        core.db.collection("posts").document(postId.uuidString).collection("likes").document(userId)
+        core.db.collection(FirestoreCollections.posts).document(postId.uuidString).collection(FirestoreCollections.likes).document(userId)
             .addSnapshotListener { snapshot, _ in
                 onChange(snapshot?.exists ?? false)
             }
@@ -299,17 +299,17 @@ class FirestoreFeedService: ObservableObject {
 
     /// Add a comment to a post
     func addComment(_ comment: PostComment) async throws {
-        let ref = core.db.collection("posts").document(comment.postId.uuidString).collection("comments").document(comment.id.uuidString)
+        let ref = core.db.collection(FirestoreCollections.posts).document(comment.postId.uuidString).collection(FirestoreCollections.comments).document(comment.id.uuidString)
         try await ref.setData(encodeComment(comment))
 
-        let postRef = core.db.collection("posts").document(comment.postId.uuidString)
+        let postRef = core.db.collection(FirestoreCollections.posts).document(comment.postId.uuidString)
         try await postRef.updateData(["commentCount": FieldValue.increment(Int64(1))])
     }
 
     /// Update a comment's text
     func updateComment(_ comment: PostComment) async throws {
-        let ref = core.db.collection("posts").document(comment.postId.uuidString)
-            .collection("comments").document(comment.id.uuidString)
+        let ref = core.db.collection(FirestoreCollections.posts).document(comment.postId.uuidString)
+            .collection(FirestoreCollections.comments).document(comment.id.uuidString)
         try await ref.updateData([
             "text": comment.text,
             "updatedAt": FieldValue.serverTimestamp()
@@ -318,17 +318,17 @@ class FirestoreFeedService: ObservableObject {
 
     /// Delete a comment
     func deleteComment(postId: UUID, commentId: UUID) async throws {
-        let ref = core.db.collection("posts").document(postId.uuidString).collection("comments").document(commentId.uuidString)
+        let ref = core.db.collection(FirestoreCollections.posts).document(postId.uuidString).collection(FirestoreCollections.comments).document(commentId.uuidString)
         try await ref.delete()
 
-        let postRef = core.db.collection("posts").document(postId.uuidString)
+        let postRef = core.db.collection(FirestoreCollections.posts).document(postId.uuidString)
         try await postRef.updateData(["commentCount": FieldValue.increment(Int64(-1))])
     }
 
     /// Fetch comments for a post
     func fetchComments(postId: UUID, limit: Int = 100) async throws -> [PostComment] {
-        let snapshot = try await core.db.collection("posts").document(postId.uuidString)
-            .collection("comments")
+        let snapshot = try await core.db.collection(FirestoreCollections.posts).document(postId.uuidString)
+            .collection(FirestoreCollections.comments)
             .order(by: "createdAt", descending: false)
             .limit(to: limit)
             .getDocuments()
@@ -340,8 +340,8 @@ class FirestoreFeedService: ObservableObject {
 
     /// Listen to comments for a post
     func listenToComments(postId: UUID, limit: Int = 100, onChange: @escaping ([PostComment]) -> Void) -> ListenerRegistration {
-        core.db.collection("posts").document(postId.uuidString)
-            .collection("comments")
+        core.db.collection(FirestoreCollections.posts).document(postId.uuidString)
+            .collection(FirestoreCollections.comments)
             .order(by: "createdAt", descending: false)
             .limit(to: limit)
             .addSnapshotListener { [weak self] snapshot, error in

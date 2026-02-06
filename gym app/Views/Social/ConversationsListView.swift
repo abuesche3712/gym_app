@@ -78,28 +78,14 @@ struct ConversationsListView: View {
     // MARK: - Empty View
 
     private var emptyView: some View {
-        VStack(spacing: AppSpacing.md) {
-            Image(systemName: "bubble.left.and.bubble.right")
-                .font(.largeTitle)
-                .foregroundColor(AppColors.textTertiary)
-
-            Text("No messages yet")
-                .headline(color: AppColors.textSecondary)
-
-            Text("Start a conversation with a friend")
-                .caption(color: AppColors.textTertiary)
-
-            Button {
-                showingNewConversation = true
-            } label: {
-                Label("New Message", systemImage: "plus")
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(AppColors.dominant)
-            .padding(.top, AppSpacing.sm)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.xl)
+        EmptyStateView(
+            icon: "bubble.left.and.bubble.right",
+            title: "No messages yet",
+            subtitle: "Start a conversation with a friend",
+            buttonTitle: "New Message",
+            buttonIcon: "plus",
+            onButtonTap: { showingNewConversation = true }
+        )
     }
 
     // MARK: - Conversations List

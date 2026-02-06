@@ -40,7 +40,7 @@
 		ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANIMCO001FILE001 /* AnimatedComponents.swift */; };
 		ANLYT002BUILD002 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLYT001FILE001 /* AnalyticsView.swift */; };
 		APPCFG02BUILD002 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPCFG01FILE001 /* AppConfig.swift */; };
-		AVATVW02BUILD001 /* AvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AVATVW01FILE001 /* AvatarView.swift */; };
+		EMPTST02BUILD001 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EMPTST01FILE001 /* EmptyStateView.swift */; };
 		B610AC032F15B4DD008B2C15 /* gym_appApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC022F15B4DD008B2C15 /* gym_appApp.swift */; };
 		B610AC052F15B4DD008B2C15 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC042F15B4DD008B2C15 /* ContentView.swift */; };
 		B610AC072F15B4DE008B2C15 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B610AC062F15B4DE008B2C15 /* Assets.xcassets */; };
@@ -303,7 +303,7 @@
 		ANIMCO001FILE001 /* AnimatedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedComponents.swift; sourceTree = "<group>"; };
 		ANLYT001FILE001 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
 		APPCFG01FILE001 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
-		AVATVW01FILE001 /* AvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarView.swift; sourceTree = "<group>"; };
+		EMPTST01FILE001 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		B12D1154F7E74A3385D7FF2E /* DataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSeeder.swift; sourceTree = "<group>"; };
 		B610ABFF2F15B4DD008B2C15 /* gym app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "gym app.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B610AC022F15B4DD008B2C15 /* gym_appApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = gym_appApp.swift; sourceTree = "<group>"; };
@@ -931,7 +931,7 @@
 			isa = PBXGroup;
 			children = (
 				ANIMCO001FILE001 /* AnimatedComponents.swift */,
-				AVATVW01FILE001 /* AvatarView.swift */,
+				EMPTST01FILE001 /* EmptyStateView.swift */,
 				B6PHOTO042F2A000000D8C22D /* ProfilePhotoView.swift */,
 				USRROW01FILE001 /* UserRowView.swift */,
 				SYCERR001FILE001 /* SyncErrorBanner.swift */,
@@ -1385,7 +1385,7 @@
 				EXRSLV002BUILD002 /* ExerciseResolver.swift in Sources */,
 				HAPTIC002BUILD002 /* HapticManager.swift in Sources */,
 				ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */,
-				AVATVW02BUILD001 /* AvatarView.swift in Sources */,
+				EMPTST02BUILD001 /* EmptyStateView.swift in Sources */,
 				B6PHOTO052F2A000000D8C22D /* ProfilePhotoView.swift in Sources */,
 				B6PHOTO072F2A000000D8C22D /* ProfilePhotoPickerSheet.swift in Sources */,
 				USRROW02BUILD001 /* UserRowView.swift in Sources */,

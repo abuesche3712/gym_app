@@ -7,53 +7,6 @@
 
 import SwiftUI
 
-// MARK: - Post Avatar View
-
-@available(*, deprecated, message: "Use ProfilePhotoView instead for photo support")
-struct PostAvatarView: View {
-    let displayName: String?
-    let username: String
-    let size: CGFloat
-
-    private var initials: String {
-        let name = displayName ?? username
-        let components = name.split(separator: " ")
-        if components.count >= 2 {
-            return String(components[0].prefix(1) + components[1].prefix(1)).uppercased()
-        }
-        return String(name.prefix(2)).uppercased()
-    }
-
-    private var gradientColors: [Color] {
-        // Generate consistent colors based on username hash
-        let hash = abs(username.hashValue)
-        let hue1 = Double(hash % 360) / 360.0
-        let hue2 = Double((hash / 360) % 360) / 360.0
-        return [
-            Color(hue: hue1, saturation: 0.6, brightness: 0.8),
-            Color(hue: hue2, saturation: 0.7, brightness: 0.7)
-        ]
-    }
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: gradientColors,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-
-            Text(initials)
-                .font(.system(size: size * 0.4, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
-        }
-        .frame(width: size, height: size)
-    }
-}
-
 // MARK: - Session Post Content
 
 struct SessionPostContent: View {
@@ -122,16 +75,7 @@ struct SessionPostContent: View {
                         .foregroundColor(AppColors.textTertiary)
                 }
             }
-            .padding(AppSpacing.cardPadding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.surfacePrimary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
-            )
+            .flatCardStyle()
         }
     }
 

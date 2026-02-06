@@ -24,9 +24,9 @@ class FirestoreActivityService: ObservableObject {
         // Don't create activity for self-actions
         guard activity.actorId != activity.recipientId else { return }
 
-        let ref = core.db.collection("users")
+        let ref = core.db.collection(FirestoreCollections.users)
             .document(activity.recipientId)
-            .collection("activities")
+            .collection(FirestoreCollections.activities)
             .document(activity.id.uuidString)
 
         let data = encodeActivity(activity)
@@ -42,9 +42,9 @@ class FirestoreActivityService: ObservableObject {
         onChange: @escaping ([Activity]) -> Void,
         onError: ((Error) -> Void)? = nil
     ) -> ListenerRegistration {
-        core.db.collection("users")
+        core.db.collection(FirestoreCollections.users)
             .document(userId)
-            .collection("activities")
+            .collection(FirestoreCollections.activities)
             .order(by: "createdAt", descending: true)
             .limit(to: limit)
             .addSnapshotListener { [weak self] snapshot, error in
@@ -65,18 +65,18 @@ class FirestoreActivityService: ObservableObject {
 
     /// Mark a single activity as read
     func markAsRead(userId: String, activityId: UUID) async throws {
-        let ref = core.db.collection("users")
+        let ref = core.db.collection(FirestoreCollections.users)
             .document(userId)
-            .collection("activities")
+            .collection(FirestoreCollections.activities)
             .document(activityId.uuidString)
         try await ref.updateData(["isRead": true])
     }
 
     /// Mark all activities as read for a user
     func markAllAsRead(userId: String) async throws {
-        let snapshot = try await core.db.collection("users")
+        let snapshot = try await core.db.collection(FirestoreCollections.users)
             .document(userId)
-            .collection("activities")
+            .collection(FirestoreCollections.activities)
             .whereField("isRead", isEqualTo: false)
             .getDocuments()
 
@@ -89,9 +89,9 @@ class FirestoreActivityService: ObservableObject {
 
     /// Fetch unread count
     func fetchUnreadCount(userId: String) async throws -> Int {
-        let snapshot = try await core.db.collection("users")
+        let snapshot = try await core.db.collection(FirestoreCollections.users)
             .document(userId)
-            .collection("activities")
+            .collection(FirestoreCollections.activities)
             .whereField("isRead", isEqualTo: false)
             .getDocuments()
 
@@ -102,7 +102,7 @@ class FirestoreActivityService: ObservableObject {
 
     /// Submit a report to the global reports collection
     func submitReport(_ report: Report) async throws {
-        let ref = core.db.collection("reports").document(report.id.uuidString)
+        let ref = core.db.collection(FirestoreCollections.reports).document(report.id.uuidString)
         let data: [String: Any] = [
             "id": report.id.uuidString,
             "reporterId": report.reporterId,

@@ -418,16 +418,7 @@ private struct ExerciseAttachmentCard: View {
                 // Sets summary based on type
                 exerciseSummary(completedSets: completedSets, type: detectedType, distanceUnit: bundle.distanceUnit)
             }
-            .padding(AppSpacing.cardPadding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.surfacePrimary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
-            )
+            .flatCardStyle()
         }
     }
 
@@ -765,16 +756,7 @@ private struct ModuleAttachmentCard: View {
                 .font(.caption)
                 .foregroundColor(AppColors.textSecondary)
             }
-            .padding(AppSpacing.cardPadding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.surfacePrimary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
-            )
+            .flatCardStyle()
         }
     }
 }
@@ -801,16 +783,7 @@ private struct TemplateAttachmentCard: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundColor(AppColors.textPrimary)
         }
-        .padding(AppSpacing.cardPadding)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.surfacePrimary)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppCorners.large)
-                .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
-        )
+        .flatCardStyle()
     }
 
     private var iconForType: String {

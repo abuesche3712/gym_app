@@ -78,7 +78,7 @@ struct ReportSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: AppCorners.large))
                     .overlay(
                         RoundedRectangle(cornerRadius: AppCorners.large)
-                            .stroke(AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
+                            .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
                     )
 
                     // Additional details
