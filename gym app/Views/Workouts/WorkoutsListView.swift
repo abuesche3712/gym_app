@@ -253,7 +253,11 @@ struct WorkoutsListView: View {
             .sorted { $0.order < $1.order }
             .compactMap { ref in moduleViewModel.getModule(id: ref.moduleId) }
 
-        sessionViewModel.startSession(workout: workout, modules: modules)
+        let scheduledContext = workoutViewModel.getScheduledWorkouts(for: Date()).first {
+            $0.workoutId == workout.id && !$0.isRestDay && $0.completedSessionId == nil
+        }
+
+        sessionViewModel.startSession(workout: workout, modules: modules, scheduledWorkout: scheduledContext)
         // MainTabView will auto-show full session when isSessionActive becomes true
     }
 }

@@ -193,7 +193,10 @@ struct WorkoutDetailView: View {
 
         // Re-fetch modules after refresh
         let freshModules = workoutViewModel.getModulesForWorkout(currentWorkout, allModules: moduleViewModel.modules)
-        sessionViewModel.startSession(workout: currentWorkout, modules: freshModules)
+        let scheduledContext = workoutViewModel.getScheduledWorkouts(for: Date()).first {
+            $0.workoutId == currentWorkout.id && !$0.isRestDay && $0.completedSessionId == nil
+        }
+        sessionViewModel.startSession(workout: currentWorkout, modules: freshModules, scheduledWorkout: scheduledContext)
         // MainTabView will auto-show full session when isSessionActive becomes true
     }
 }

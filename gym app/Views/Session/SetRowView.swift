@@ -558,26 +558,54 @@ struct SetRowView: View {
                     ?? ""
                 inputReps = lastReps.map { "\($0)" } ?? ""
             } else {
-                // Check progression suggestion and recommendation for weight pre-fill
-                if let suggestion = exercise.progressionSuggestion,
-                   suggestion.metric == .weight {
-                    // If "progress" was selected, pre-fill with suggested progressive weight
-                    // If "stay" or nil (no choice), pre-fill with baseValue (previous weight)
-                    if exercise.progressionRecommendation == .progress {
-                        inputWeight = formatWeight(suggestion.suggestedValue)
+                if let suggestion = exercise.progressionSuggestion {
+                    if suggestion.metric == .weight {
+                        let delta = max(suggestion.suggestedValue - suggestion.baseValue, 0)
+
+                        switch exercise.progressionRecommendation {
+                        case .progress:
+                            inputWeight = formatWeight(suggestion.suggestedValue)
+                        case .regress:
+                            // Regress by the same step used for progression (fallback to 2.5 lbs).
+                            let regressionStep = delta > 0 ? delta : 2.5
+                            inputWeight = formatWeight(max(0, suggestion.baseValue - regressionStep))
+                        case .stay, nil:
+                            inputWeight = formatWeight(suggestion.baseValue)
+                        }
+
+                        inputReps = lastReps.map { "\($0)" }
+                            ?? flatSet.targetReps.map { "\($0)" }
+                            ?? ""
                     } else {
-                        // For "stay", "regress", or no selection: use baseValue (previous session weight)
-                        inputWeight = formatWeight(suggestion.baseValue)
+                        inputWeight = lastWeight.map { formatWeight($0) }
+                            ?? flatSet.targetWeight.map { formatWeight($0) }
+                            ?? ""
+
+                        let baseReps = Int(round(suggestion.baseValue))
+                        let progressedReps = Int(round(suggestion.suggestedValue))
+                        let repDelta = max(progressedReps - baseReps, 0)
+                        let regressedReps = max(1, baseReps - max(repDelta, 1))
+
+                        let prefilledReps: Int
+                        switch exercise.progressionRecommendation {
+                        case .progress:
+                            prefilledReps = max(1, progressedReps)
+                        case .regress:
+                            prefilledReps = regressedReps
+                        case .stay, nil:
+                            prefilledReps = max(1, baseReps)
+                        }
+
+                        inputReps = "\(prefilledReps)"
                     }
                 } else {
-                    // No progression suggestion - fall back to last session weight or target
                     inputWeight = lastWeight.map { formatWeight($0) }
                         ?? flatSet.targetWeight.map { formatWeight($0) }
                         ?? ""
+                    inputReps = lastReps.map { "\($0)" }
+                        ?? flatSet.targetReps.map { "\($0)" }
+                        ?? ""
                 }
-                inputReps = lastReps.map { "\($0)" }
-                    ?? flatSet.targetReps.map { "\($0)" }
-                    ?? ""
             }
             inputHoldTime = lastHoldTime ?? flatSet.targetHoldTime ?? 0
             if !durationManuallySet {

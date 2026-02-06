@@ -20,6 +20,7 @@ struct HomeView: View {
     @State private var showingQuickLog = false
     @State private var showingFreestyleNameSheet = false
     @State private var freestyleSessionName = ""
+    private let analyticsService = AnalyticsService()
 
     // Session recovery state
     @State private var showingRecoveryAlert = false
@@ -74,7 +75,7 @@ struct HomeView: View {
                     onStartWorkout: { workout in
                         dayToSchedule = nil
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            startWorkout(workout)
+                            startWorkout(workout, scheduledDate: date)
                         }
                     },
                     onDeleteSession: { session in
@@ -434,7 +435,7 @@ struct HomeView: View {
                 // Start button
                 if scheduled.completedSessionId == nil {
                     Button {
-                        startWorkout(workout)
+                        startWorkout(workout, scheduledDate: scheduled.scheduledDate)
                     } label: {
                         Text("Start")
                             .subheadline()
@@ -794,28 +795,71 @@ struct HomeView: View {
     // MARK: - Best Performances Section
 
     private var bestPerformancesSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            SectionHeader(title: "Best Performances")
+        let recentPRs = analyticsService.recentPRs(sessions: sessionViewModel.sessions, limit: 3)
 
-            // TODO: Show recent PRs and best performances
-            HStack(spacing: AppSpacing.md) {
-                Image(systemName: "trophy.fill")
-                    .displaySmall(color: AppColors.warning.opacity(0.5))
-
-                Text("Coming soon - track your PRs and best performances")
-                    .subheadline(color: AppColors.textTertiary)
+        return VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack {
+                SectionHeader(title: "Best Performances")
+                Spacer()
+                NavigationLink(destination: AnalyticsView()) {
+                    Text("View All")
+                        .caption(color: AppColors.dominant)
+                        .fontWeight(.semibold)
+                }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(AppSpacing.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.surfacePrimary)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppCorners.large)
-                            .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [8]))
-                            .foregroundColor(AppColors.surfaceTertiary.opacity(0.5))
-                    )
-            )
+
+            if recentPRs.isEmpty {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "trophy.fill")
+                        .displaySmall(color: AppColors.warning.opacity(0.5))
+
+                    Text("No PRs yet. Keep logging sets and your records will show up here.")
+                        .subheadline(color: AppColors.textTertiary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(AppSpacing.cardPadding)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .fill(AppColors.surfacePrimary)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppCorners.large)
+                                .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [8]))
+                                .foregroundColor(AppColors.surfaceTertiary.opacity(0.5))
+                        )
+                )
+            } else {
+                VStack(spacing: AppSpacing.sm) {
+                    ForEach(recentPRs) { pr in
+                        HStack(spacing: AppSpacing.sm) {
+                            Image(systemName: "trophy.fill")
+                                .foregroundColor(AppColors.warning)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(pr.exerciseName)
+                                    .subheadline(color: AppColors.textPrimary)
+                                    .fontWeight(.semibold)
+                                Text(pr.summary)
+                                    .caption(color: AppColors.textSecondary)
+                            }
+
+                            Spacer()
+
+                            Text(formatMonthDay(pr.date))
+                                .caption(color: AppColors.textTertiary)
+                        }
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.sm)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppCorners.medium)
+                                .fill(AppColors.surfacePrimary)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                                        .stroke(AppColors.surfaceTertiary.opacity(0.4), lineWidth: 1)
+                                )
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -911,7 +955,7 @@ struct HomeView: View {
 
     // MARK: - Helper Functions
 
-    private func startWorkout(_ workout: Workout) {
+    private func startWorkout(_ workout: Workout, scheduledDate: Date = Date()) {
         // Refresh modules to ensure we have the latest data (picks up any recently added exercises)
         moduleViewModel.loadModules()
 
@@ -919,7 +963,11 @@ struct HomeView: View {
             .sorted { $0.order < $1.order }
             .compactMap { ref in moduleViewModel.getModule(id: ref.moduleId) }
 
-        sessionViewModel.startSession(workout: workout, modules: modules)
+        let scheduledContext = workoutViewModel.getScheduledWorkouts(for: scheduledDate).first {
+            $0.workoutId == workout.id && !$0.isRestDay && $0.completedSessionId == nil
+        }
+
+        sessionViewModel.startSession(workout: workout, modules: modules, scheduledWorkout: scheduledContext)
         // MainTabView will auto-show full session when isSessionActive becomes true
     }
 }

@@ -13,12 +13,6 @@
 		0DE55B310BEE4A628944C240 /* gym app/Views/Library/LibraryExerciseEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05D2B6AD67E44647BABA141E /* gym app/Views/Library/LibraryExerciseEditView.swift */; };
 		196485342F25516E00078F82 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 196485332F25516E00078F82 /* GoogleService-Info.plist */; };
 		197B16192F2569D8006135E4 /* BackgroundSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197B16182F2569D8006135E4 /* BackgroundSessionManager.swift */; };
-		19AAB7152F2ECA08003FFDE7 /* ShareBundles.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRBND01FILE001 /* ShareBundles.swift */; };
-		19AAB7162F2ECA08003FFDE7 /* ImportConflict.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMPCON01FILE001 /* ImportConflict.swift */; };
-		19AAB7172F2ECA08003FFDE7 /* SharingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRSER01FILE001 /* SharingService.swift */; };
-		19AAB7182F2ECA08003FFDE7 /* ShareWithFriendSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRFRN01FILE001 /* ShareWithFriendSheet.swift */; };
-		19AAB7192F2ECA08003FFDE7 /* SharedContentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRCRD01FILE001 /* SharedContentCard.swift */; };
-		19AAB71A2F2ECA08003FFDE7 /* ImportConflictSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMPCSHT01FILE001 /* ImportConflictSheet.swift */; };
 		1C651C6390424CC3A0E14293 /* WorkoutSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96AA7ABE49544DD3B54CEF8B /* WorkoutSummaryView.swift */; };
 		3065561983B445E59E349151 /* gym app/Views/Library/MuscleGroupPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD6911EEDEB4BB9B215AFBD /* gym app/Views/Library/MuscleGroupPickerView.swift */; };
 		34A15C16E7C4C417F54DC7C1 /* SyncHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B47EA18754D362A6C72724 /* SyncHandlers.swift */; };
@@ -1552,12 +1546,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				19AAB7152F2ECA08003FFDE7 /* ShareBundles.swift in Sources */,
-				19AAB7162F2ECA08003FFDE7 /* ImportConflict.swift in Sources */,
-				19AAB7172F2ECA08003FFDE7 /* SharingService.swift in Sources */,
-				19AAB7182F2ECA08003FFDE7 /* ShareWithFriendSheet.swift in Sources */,
-				19AAB7192F2ECA08003FFDE7 /* SharedContentCard.swift in Sources */,
-				19AAB71A2F2ECA08003FFDE7 /* ImportConflictSheet.swift in Sources */,
 				B610AC202F15B4DF008B2C15 /* gym_appUITestsLaunchTests.swift in Sources */,
 				B610AC1E2F15B4DF008B2C15 /* gym_appUITests.swift in Sources */,
 			);
