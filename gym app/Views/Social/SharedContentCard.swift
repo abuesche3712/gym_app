@@ -35,15 +35,15 @@ struct SharedContentCard: View {
 
             // Content name
             Text(contentName)
-                .font(.headline.weight(.semibold))
-                .foregroundColor(isFromCurrentUser ? .white : AppColors.textPrimary)
+                .font(.subheadline.weight(.semibold))
+                .foregroundColor(AppColors.textPrimary)
                 .lineLimit(2)
 
             // Subtitle if available
             if let subtitle = contentSubtitle {
                 Text(subtitle)
                     .font(.caption)
-                    .foregroundColor(isFromCurrentUser ? .white.opacity(0.7) : AppColors.textSecondary)
+                    .foregroundColor(AppColors.textSecondary)
             }
 
             // Stats for workouts/sessions
@@ -57,7 +57,7 @@ struct SharedContentCard: View {
                             Text(stat.label)
                                 .font(.caption)
                         }
-                        .foregroundColor(isFromCurrentUser ? .white.opacity(0.9) : AppColors.textSecondary)
+                        .foregroundColor(AppColors.textSecondary)
                     }
                 }
                 .padding(.top, 2)
@@ -99,38 +99,10 @@ struct SharedContentCard: View {
                 .padding(.top, AppSpacing.xs)
             }
         }
-        .padding(AppSpacing.cardPadding)
-        .background(cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
-        .overlay(
-            RoundedRectangle(cornerRadius: AppCorners.medium)
-                .stroke(borderColor, lineWidth: 1)
-        )
-    }
-
-    // MARK: - Background
-
-    private var cardBackground: some View {
-        Group {
-            if isFromCurrentUser {
-                AppColors.dominant
-            } else {
-                typeColor.opacity(0.06)
-            }
-        }
-    }
-
-    private var borderColor: Color {
-        if isFromCurrentUser {
-            return AppColors.dominant.opacity(0.8)
-        } else {
-            return typeColor.opacity(0.15)
-        }
+        .flatCardStyle()
     }
 
     private var typeColor: Color {
-        if isFromCurrentUser { return .white.opacity(0.9) }
-
         switch content {
         case .sharedProgram:
             return AppColors.dominant

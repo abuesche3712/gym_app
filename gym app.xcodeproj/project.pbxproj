@@ -237,6 +237,20 @@
 		RPRTSHT02BUILD01 /* ReportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = RPRTSHT01FILE001 /* ReportSheet.swift */; };
 		TXTPRS02BUILD01 /* TextParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = TXTPRS01FILE001 /* TextParser.swift */; };
 		RCHTXV02BUILD01 /* RichTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RCHTXV01FILE001 /* RichTextView.swift */; };
+		ATCHHLP02BUILD01 /* AttachmentHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = ATCHHLP01FILE01 /* AttachmentHelpers.swift */; };
+		EXRATCD02BUILD01 /* ExerciseAttachmentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXRATCD01FILE01 /* ExerciseAttachmentCard.swift */; };
+		SETATCD02BUILD01 /* SetAttachmentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = SETATCD01FILE01 /* SetAttachmentCard.swift */; };
+		MDLATCD02BUILD01 /* ModuleAttachmentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = MDLATCD01FILE01 /* ModuleAttachmentCard.swift */; };
+		TMPLATCD02BUILD01 /* TemplateAttachmentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPLATCD01FILE01 /* TemplateAttachmentCard.swift */; };
+		HLTINLN02BUILD01 /* HighlightsInlineCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = HLTINLN01FILE01 /* HighlightsInlineCards.swift */; };
+		PSTCNCD02BUILD01 /* PostContentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = PSTCNCD01FILE01 /* PostContentCard.swift */; };
+		SSNCNCD02BUILD01 /* SessionContentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = SSNCNCD01FILE01 /* SessionContentCard.swift */; };
+		EXRCNCD02BUILD01 /* ExerciseContentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXRCNCD01FILE01 /* ExerciseContentCard.swift */; };
+		SETCNCD02BUILD01 /* SetContentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = SETCNCD01FILE01 /* SetContentCard.swift */; };
+		MDLCNCD02BUILD01 /* ModuleContentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = MDLCNCD01FILE01 /* ModuleContentCard.swift */; };
+		TMPCNCD02BUILD01 /* TemplateContentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = TMPCNCD01FILE01 /* TemplateContentCard.swift */; };
+		HLTCNCD02BUILD01 /* HighlightsContentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = HLTCNCD01FILE01 /* HighlightsContentCard.swift */; };
+		CMNTROW02BUILD01 /* CommentRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMNTROW01FILE01 /* CommentRow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -502,6 +516,20 @@
 		RPRTSHT01FILE001 /* ReportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportSheet.swift; sourceTree = "<group>"; };
 		TXTPRS01FILE001 /* TextParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextParser.swift; sourceTree = "<group>"; };
 		RCHTXV01FILE001 /* RichTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextView.swift; sourceTree = "<group>"; };
+		ATCHHLP01FILE01 /* AttachmentHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentHelpers.swift; sourceTree = "<group>"; };
+		EXRATCD01FILE01 /* ExerciseAttachmentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseAttachmentCard.swift; sourceTree = "<group>"; };
+		SETATCD01FILE01 /* SetAttachmentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetAttachmentCard.swift; sourceTree = "<group>"; };
+		MDLATCD01FILE01 /* ModuleAttachmentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModuleAttachmentCard.swift; sourceTree = "<group>"; };
+		TMPLATCD01FILE01 /* TemplateAttachmentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateAttachmentCard.swift; sourceTree = "<group>"; };
+		HLTINLN01FILE01 /* HighlightsInlineCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightsInlineCards.swift; sourceTree = "<group>"; };
+		PSTCNCD01FILE01 /* PostContentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostContentCard.swift; sourceTree = "<group>"; };
+		SSNCNCD01FILE01 /* SessionContentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionContentCard.swift; sourceTree = "<group>"; };
+		EXRCNCD01FILE01 /* ExerciseContentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseContentCard.swift; sourceTree = "<group>"; };
+		SETCNCD01FILE01 /* SetContentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetContentCard.swift; sourceTree = "<group>"; };
+		MDLCNCD01FILE01 /* ModuleContentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModuleContentCard.swift; sourceTree = "<group>"; };
+		TMPCNCD01FILE01 /* TemplateContentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateContentCard.swift; sourceTree = "<group>"; };
+		HLTCNCD01FILE01 /* HighlightsContentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightsContentCard.swift; sourceTree = "<group>"; };
+		CMNTROW01FILE01 /* CommentRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentRow.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -1034,6 +1062,20 @@
 				CNTPRVC01FILE001 /* ContentPreviewCard.swift */,
 				PSTEDTLBR01FILE001 /* PostEditorToolbar.swift */,
 				RCHTXV01FILE001 /* RichTextView.swift */,
+				ATCHHLP01FILE01 /* AttachmentHelpers.swift */,
+				EXRATCD01FILE01 /* ExerciseAttachmentCard.swift */,
+				SETATCD01FILE01 /* SetAttachmentCard.swift */,
+				MDLATCD01FILE01 /* ModuleAttachmentCard.swift */,
+				TMPLATCD01FILE01 /* TemplateAttachmentCard.swift */,
+				HLTINLN01FILE01 /* HighlightsInlineCards.swift */,
+				PSTCNCD01FILE01 /* PostContentCard.swift */,
+				SSNCNCD01FILE01 /* SessionContentCard.swift */,
+				EXRCNCD01FILE01 /* ExerciseContentCard.swift */,
+				SETCNCD01FILE01 /* SetContentCard.swift */,
+				MDLCNCD01FILE01 /* ModuleContentCard.swift */,
+				TMPCNCD01FILE01 /* TemplateContentCard.swift */,
+				HLTCNCD01FILE01 /* HighlightsContentCard.swift */,
+				CMNTROW01FILE01 /* CommentRow.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -1478,6 +1520,20 @@
 				RPRTSHT02BUILD01 /* ReportSheet.swift in Sources */,
 				TXTPRS02BUILD01 /* TextParser.swift in Sources */,
 				RCHTXV02BUILD01 /* RichTextView.swift in Sources */,
+				ATCHHLP02BUILD01 /* AttachmentHelpers.swift in Sources */,
+				EXRATCD02BUILD01 /* ExerciseAttachmentCard.swift in Sources */,
+				SETATCD02BUILD01 /* SetAttachmentCard.swift in Sources */,
+				MDLATCD02BUILD01 /* ModuleAttachmentCard.swift in Sources */,
+				TMPLATCD02BUILD01 /* TemplateAttachmentCard.swift in Sources */,
+				HLTINLN02BUILD01 /* HighlightsInlineCards.swift in Sources */,
+				PSTCNCD02BUILD01 /* PostContentCard.swift in Sources */,
+				SSNCNCD02BUILD01 /* SessionContentCard.swift in Sources */,
+				EXRCNCD02BUILD01 /* ExerciseContentCard.swift in Sources */,
+				SETCNCD02BUILD01 /* SetContentCard.swift in Sources */,
+				MDLCNCD02BUILD01 /* ModuleContentCard.swift in Sources */,
+				TMPCNCD02BUILD01 /* TemplateContentCard.swift in Sources */,
+				HLTCNCD02BUILD01 /* HighlightsContentCard.swift in Sources */,
+				CMNTROW02BUILD01 /* CommentRow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
