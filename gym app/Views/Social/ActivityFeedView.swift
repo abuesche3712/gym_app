@@ -117,18 +117,5 @@ struct ActivityRow: View {
         }
     }
 
-    private var relativeTime: String {
-        let now = Date()
-        let seconds = now.timeIntervalSince(activity.activity.createdAt)
-
-        if seconds < 60 { return "now" }
-        else if seconds < 3600 { return "\(Int(seconds / 60))m" }
-        else if seconds < 86400 { return "\(Int(seconds / 3600))h" }
-        else if seconds < 604800 { return "\(Int(seconds / 86400))d" }
-        else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMM d"
-            return formatter.string(from: activity.activity.createdAt)
-        }
-    }
+    private var relativeTime: String { formatRelativeTimeShort(activity.activity.createdAt) }
 }

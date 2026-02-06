@@ -107,6 +107,7 @@ struct WorkoutFormView: View {
                         Image(systemName: "square.and.arrow.up")
                             .foregroundColor(AppColors.dominant)
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }

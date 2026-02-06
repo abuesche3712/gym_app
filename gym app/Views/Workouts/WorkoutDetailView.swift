@@ -146,6 +146,7 @@ struct WorkoutDetailView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
+                .buttonStyle(.plain)
             }
         }
         .sheet(isPresented: $showingEditWorkout) {

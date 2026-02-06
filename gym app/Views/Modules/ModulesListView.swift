@@ -141,6 +141,7 @@ struct ModulesListView: View {
                         Image(systemName: "plus.circle.fill")
                             .displaySmall(color: AppColors.dominant)
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .sheet(isPresented: $showingAddModule) {

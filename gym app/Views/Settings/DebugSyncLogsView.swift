@@ -54,6 +54,7 @@ struct DebugSyncLogsView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
+                .buttonStyle(.plain)
             }
         }
         .onAppear {

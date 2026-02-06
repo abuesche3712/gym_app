@@ -139,6 +139,7 @@ struct ExerciseLibraryView: View {
                     Image(systemName: "plus")
                         .foregroundColor(AppColors.dominant)
                 }
+                .buttonStyle(.plain)
             }
         }
         .sheet(isPresented: $showingAddExercise) {

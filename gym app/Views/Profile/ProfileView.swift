@@ -42,6 +42,7 @@ struct ProfileView: View {
                     } label: {
                         Image(systemName: "gearshape")
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .sheet(isPresented: $showingEditProfile) {

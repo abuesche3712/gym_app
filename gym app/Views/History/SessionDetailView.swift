@@ -99,6 +99,7 @@ struct SessionDetailView: View {
                                 .font(.body.weight(.medium))
                                 .foregroundColor(AppColors.textSecondary)
                         }
+                        .buttonStyle(.plain)
 
                         // Edit button (only shown if session is editable)
                         if currentSession.isEditable {
@@ -109,6 +110,7 @@ struct SessionDetailView: View {
                                     .font(.body.weight(.medium))
                                     .foregroundColor(AppColors.textSecondary)
                             }
+                            .buttonStyle(.plain)
                         }
 
                         // Delete button
@@ -119,6 +121,7 @@ struct SessionDetailView: View {
                                 .font(.body.weight(.medium))
                                 .foregroundColor(AppColors.error)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
             }

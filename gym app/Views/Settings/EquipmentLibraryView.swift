@@ -127,6 +127,7 @@ struct EquipmentLibraryView: View {
                     Image(systemName: "plus")
                         .foregroundColor(AppColors.dominant)
                 }
+                .buttonStyle(.plain)
             }
         }
         .sheet(isPresented: $showingAddEquipment) {

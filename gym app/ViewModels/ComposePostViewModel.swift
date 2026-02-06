@@ -22,7 +22,7 @@ class ComposePostViewModel: ObservableObject {
     @Published var scheduledDate: Date?
 
     @Published private(set) var content: PostContent
-    private(set) var contentCreationError: Error?
+    @Published private(set) var contentCreationError: Error?
 
     private let postRepo: PostRepository
     private let firestoreService = FirestoreService.shared
@@ -195,9 +195,7 @@ class ComposePostViewModel: ObservableObject {
     var contentPreview: String {
         switch content {
         case .session(_, let workoutName, let date, _):
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            return "Workout: \(workoutName) - \(formatter.string(from: date))"
+            return "Workout: \(workoutName) - \(DateFormatters.mediumDate.string(from: date))"
         case .exercise(let snapshot):
             if let bundle = try? ExerciseShareBundle.decode(from: snapshot) {
                 return "Exercise: \(bundle.exerciseName)"

@@ -331,27 +331,7 @@ struct FeedPostRow: View {
 
     // MARK: - Helpers
 
-    private var relativeTime: String {
-        let now = Date()
-        let seconds = now.timeIntervalSince(post.post.createdAt)
-
-        if seconds < 60 {
-            return "now"
-        } else if seconds < 3600 {
-            let minutes = Int(seconds / 60)
-            return "\(minutes)m"
-        } else if seconds < 86400 {
-            let hours = Int(seconds / 3600)
-            return "\(hours)h"
-        } else if seconds < 604800 {
-            let days = Int(seconds / 86400)
-            return "\(days)d"
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMM d"
-            return formatter.string(from: post.post.createdAt)
-        }
-    }
+    private var relativeTime: String { formatRelativeTimeShort(post.post.createdAt) }
 
     private func decodeSession(from snapshot: Data) -> Session? {
         guard let bundle = try? SessionShareBundle.decode(from: snapshot) else { return nil }

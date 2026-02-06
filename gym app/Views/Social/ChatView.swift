@@ -157,6 +157,7 @@ struct ChatView: View {
                 }
                 .padding(AppSpacing.md)
             }
+            .scrollDismissesKeyboard(.interactively)
             .onChange(of: viewModel.messages.count) { _, _ in
                 // Scroll to bottom when new messages arrive
                 if let lastMessage = viewModel.messages.last {
@@ -341,7 +342,7 @@ struct MessageBubble: View {
 
                 // Timestamp + read receipt
                 HStack(spacing: 4) {
-                    Text(message.createdAt.messageTimeString)
+                    Text(formatMessageTime(message.createdAt))
                         .font(.caption2)
                         .foregroundColor(AppColors.textTertiary)
 
@@ -517,33 +518,6 @@ struct TypingDotsView: View {
             }
         }
         .onAppear { animating = true }
-    }
-}
-
-// MARK: - Message Time Extension
-
-private extension Date {
-    var messageTimeString: String {
-        let calendar = Calendar.current
-        let now = Date()
-
-        if calendar.isDateInToday(self) {
-            let formatter = DateFormatter()
-            formatter.timeStyle = .short
-            return formatter.string(from: self)
-        } else if calendar.isDateInYesterday(self) {
-            let formatter = DateFormatter()
-            formatter.timeStyle = .short
-            return "Yesterday, \(formatter.string(from: self))"
-        } else if let daysAgo = calendar.dateComponents([.day], from: self, to: now).day, daysAgo < 7 {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "EEEE, h:mm a"
-            return formatter.string(from: self)
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMM d, h:mm a"
-            return formatter.string(from: self)
-        }
     }
 }
 

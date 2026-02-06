@@ -37,6 +37,7 @@ struct ConversationsListView: View {
                 } label: {
                     Image(systemName: "square.and.pencil")
                 }
+                .buttonStyle(.plain)
             }
         }
         .sheet(isPresented: $showingNewConversation) {
@@ -194,7 +195,7 @@ struct ConversationRow: View {
                         Spacer()
 
                         if let lastMessageAt = conversation.lastMessageAt {
-                            Text(lastMessageAt.relativeTimeString)
+                            Text(formatRelativeTimeShort(lastMessageAt))
                                 .caption(color: AppColors.textTertiary)
                         }
                     }
@@ -232,29 +233,6 @@ struct ConversationRow: View {
 
     private var unreadBadgeText: String {
         conversation.unreadCount > 9 ? "9+" : "\(conversation.unreadCount)"
-    }
-}
-
-// MARK: - Relative Time Extension
-
-private extension Date {
-    var relativeTimeString: String {
-        let now = Date()
-        let components = Calendar.current.dateComponents([.minute, .hour, .day], from: self, to: now)
-
-        if let days = components.day, days >= 7 {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMM d"
-            return formatter.string(from: self)
-        } else if let days = components.day, days >= 1 {
-            return "\(days)d"
-        } else if let hours = components.hour, hours >= 1 {
-            return "\(hours)h"
-        } else if let minutes = components.minute, minutes >= 1 {
-            return "\(minutes)m"
-        } else {
-            return "now"
-        }
     }
 }
 

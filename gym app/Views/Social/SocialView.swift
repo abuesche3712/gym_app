@@ -286,6 +286,7 @@ struct SocialView: View {
                         .shadow(color: AppColors.accent2.opacity(0.4), radius: 8, x: 0, y: 4)
                 )
         }
+        .buttonStyle(.plain)
         .padding(.trailing, AppSpacing.screenPadding)
         .padding(.bottom, 80) // Clear the custom tab bar
     }

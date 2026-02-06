@@ -165,6 +165,28 @@ enum DateFormatters {
         formatter.dateFormat = "MMM d"
         return formatter
     }()
+
+    /// Day of week with time (e.g., "Monday, 3:45 PM")
+    static let dayOfWeekWithTime: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, h:mm a"
+        return formatter
+    }()
+
+    /// Month, day with time (e.g., "Jan 19, 3:45 PM")
+    static let monthDayWithTime: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, h:mm a"
+        return formatter
+    }()
+
+    /// Medium date with short time (e.g., "Jan 19, 2026 at 3:45 PM")
+    static let mediumDateTime: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
 }
 
 /// Formats a date in medium style (e.g., "Jan 19, 2026")
@@ -195,6 +217,30 @@ func formatDayOfWeek(_ date: Date) -> String {
 /// Formats month and day (e.g., "Jan 19")
 func formatMonthDay(_ date: Date) -> String {
     DateFormatters.monthDay.string(from: date)
+}
+
+/// Short relative time (e.g., "now", "5m", "3h", "2d", "Jan 19")
+func formatRelativeTimeShort(_ date: Date) -> String {
+    let seconds = Date().timeIntervalSince(date)
+    if seconds < 60 { return "now" }
+    else if seconds < 3600 { return "\(Int(seconds / 60))m" }
+    else if seconds < 86400 { return "\(Int(seconds / 3600))h" }
+    else if seconds < 604800 { return "\(Int(seconds / 86400))d" }
+    else { return DateFormatters.monthDay.string(from: date) }
+}
+
+/// Message timestamp with context (e.g., "3:45 PM", "Yesterday, 3:45 PM", "Monday, 3:45 PM", "Jan 19, 3:45 PM")
+func formatMessageTime(_ date: Date) -> String {
+    let calendar = Calendar.current
+    if calendar.isDateInToday(date) {
+        return DateFormatters.time.string(from: date)
+    } else if calendar.isDateInYesterday(date) {
+        return "Yesterday, \(DateFormatters.time.string(from: date))"
+    } else if let daysAgo = calendar.dateComponents([.day], from: date, to: Date()).day, daysAgo < 7 {
+        return DateFormatters.dayOfWeekWithTime.string(from: date)
+    } else {
+        return DateFormatters.monthDayWithTime.string(from: date)
+    }
 }
 
 /// Formats a duration in minutes as human-readable string

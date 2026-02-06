@@ -38,6 +38,7 @@ struct PostDetailView: View {
                     .padding(.vertical, AppSpacing.md)
                 }
                 .refreshable { viewModel.loadComments() }
+                .scrollDismissesKeyboard(.interactively)
 
                 // Comment input bar
                 commentInputBar
@@ -460,10 +461,7 @@ struct PostDetailView: View {
     // MARK: - Helpers
 
     private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: viewModel.post.post.createdAt)
+        DateFormatters.mediumDateTime.string(from: viewModel.post.post.createdAt)
     }
 }
 
@@ -790,27 +788,7 @@ struct CommentRow: View {
         }
     }
 
-    private var relativeTime: String {
-        let now = Date()
-        let seconds = now.timeIntervalSince(comment.comment.createdAt)
-
-        if seconds < 60 {
-            return "now"
-        } else if seconds < 3600 {
-            let minutes = Int(seconds / 60)
-            return "\(minutes)m"
-        } else if seconds < 86400 {
-            let hours = Int(seconds / 3600)
-            return "\(hours)h"
-        } else if seconds < 604800 {
-            let days = Int(seconds / 86400)
-            return "\(days)d"
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMM d"
-            return formatter.string(from: comment.comment.createdAt)
-        }
-    }
+    private var relativeTime: String { formatRelativeTimeShort(comment.comment.createdAt) }
 }
 
 // MARK: - Preview
