@@ -124,30 +124,15 @@ class FriendsViewModel: ObservableObject {
         var outgoing: [FriendWithProfile] = []
         var blocked: [FriendWithProfile] = []
 
-        // Profile cache to avoid duplicate fetches
-        var profileCache: [String: UserProfile] = [:]
+        // Prefetch all profiles in parallel
+        let profileCache = ProfileCacheService.shared
+        let otherUserIds = friendships.compactMap { $0.otherUserId(from: userId) }
+        await profileCache.prefetch(userIds: otherUserIds)
 
         for friendship in friendships {
             guard let otherUserId = friendship.otherUserId(from: userId) else { continue }
 
-            // Get or fetch profile
-            let profile: UserProfile?
-            if let cached = profileCache[otherUserId] {
-                profile = cached
-            } else {
-                do {
-                    profile = try await firestoreService.fetchPublicProfile(userId: otherUserId)
-                    if let p = profile {
-                        profileCache[otherUserId] = p
-                    }
-                } catch {
-                    Logger.error(error, context: "FriendsViewModel.fetchProfile")
-                    profile = nil
-                }
-            }
-
-            guard let userProfile = profile else { continue }
-
+            let userProfile = await profileCache.profile(for: otherUserId)
             let friendWithProfile = FriendWithProfile(friendship: friendship, profile: userProfile)
 
             switch friendship.status {
@@ -384,36 +369,41 @@ class FriendsViewModel: ObservableObject {
 
             var candidateIds: Set<String> = []
 
-            // For each friend, fetch their friends (friends-of-friends)
-            for friendId in Array(myFriendIds.prefix(10)) {
-                do {
-                    let friendsFriendships = try await firestoreService.fetchFriendships(for: friendId)
-                    let friendsFriendIds = friendsFriendships
-                        .filter { $0.status == .accepted }
-                        .compactMap { $0.otherUserId(from: friendId) }
+            // Fetch friends-of-friends in parallel
+            await withTaskGroup(of: [String].self) { group in
+                for friendId in Array(myFriendIds.prefix(10)) {
+                    group.addTask {
+                        do {
+                            let friendsFriendships = try await self.firestoreService.fetchFriendships(for: friendId)
+                            return friendsFriendships
+                                .filter { $0.status == .accepted }
+                                .compactMap { $0.otherUserId(from: friendId) }
+                        } catch {
+                            Logger.error(error, context: "FriendsViewModel.loadSuggestedFriends")
+                            return []
+                        }
+                    }
+                }
 
-                    for fofId in friendsFriendIds {
-                        // Exclude self, existing friends, and existing relationships
+                for await friendIds in group {
+                    for fofId in friendIds {
                         if fofId != myId && !allRelatedIds.contains(fofId) {
                             candidateIds.insert(fofId)
                         }
                     }
-                } catch {
-                    Logger.error(error, context: "FriendsViewModel.loadSuggestedFriends")
                 }
-
-                if candidateIds.count >= 10 { break }
             }
 
-            // Fetch profiles for candidates (limit 5)
+            // Fetch profiles for candidates using ProfileCacheService (parallel)
+            let candidateList = Array(candidateIds.prefix(5))
+            let profileCache = ProfileCacheService.shared
+            await profileCache.prefetch(userIds: candidateList)
+
             var suggestions: [UserSearchResult] = []
-            for candidateId in Array(candidateIds.prefix(5)) {
-                do {
-                    if let profile = try await firestoreService.fetchPublicProfile(userId: candidateId) {
-                        suggestions.append(UserSearchResult(firebaseUserId: candidateId, profile: profile))
-                    }
-                } catch {
-                    Logger.error(error, context: "FriendsViewModel.loadSuggestedFriends.fetchProfile")
+            for candidateId in candidateList {
+                let profile = await profileCache.profile(for: candidateId)
+                if profile.username != "unknown" {
+                    suggestions.append(UserSearchResult(firebaseUserId: candidateId, profile: profile))
                 }
             }
 

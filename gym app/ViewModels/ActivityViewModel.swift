@@ -20,7 +20,7 @@ class ActivityViewModel: ObservableObject {
     private let authService = AuthService.shared
 
     private var activityListener: ListenerRegistration?
-    private var profileCache: [String: UserProfile] = [:]
+    private let profileCache = ProfileCacheService.shared
 
     var currentUserId: String? { authService.currentUser?.uid }
 
@@ -55,22 +55,15 @@ class ActivityViewModel: ObservableObject {
     }
 
     private func processActivities(_ activities: [Activity]) async {
-        var result: [ActivityWithActor] = []
-
         unreadCount = activities.filter { !$0.isRead }.count
 
+        // Prefetch all unique actor profiles in parallel
+        let uniqueActorIds = Array(Set(activities.map { $0.actorId }))
+        await profileCache.prefetch(userIds: uniqueActorIds)
+
+        var result: [ActivityWithActor] = []
         for activity in activities {
-            let profile: UserProfile
-
-            if let cached = profileCache[activity.actorId] {
-                profile = cached
-            } else if let fetched = try? await firestoreService.fetchPublicProfile(userId: activity.actorId) {
-                profileCache[activity.actorId] = fetched
-                profile = fetched
-            } else {
-                profile = UserProfile(id: UUID(), username: "unknown", displayName: "Unknown User")
-            }
-
+            let profile = await profileCache.profile(for: activity.actorId)
             result.append(ActivityWithActor(activity: activity, actor: profile))
         }
 

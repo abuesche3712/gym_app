@@ -37,6 +37,7 @@ struct PostDetailView: View {
                     }
                     .padding(.vertical, AppSpacing.md)
                 }
+                .refreshable { viewModel.loadComments() }
 
                 // Comment input bar
                 commentInputBar

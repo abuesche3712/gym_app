@@ -32,6 +32,7 @@
 		827E4547CA7D42C1BCD2A93B /* SessionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7892D49050054B958D767C66 /* SessionModels.swift */; };
 		8D91368656994D20964FF8D1 /* gym app/Services/LibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F384AAD9014FF9A582680C /* gym app/Services/LibraryService.swift */; };
 		9245BCBAC81C4E3C9670553C /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C36DDB57BAA44FEF866BE090 /* AuthService.swift */; };
+		PRFCCH01BUILD01 /* ProfileCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRFCCH01FILE001 /* ProfileCacheService.swift */; };
 		A0B1C2D3E4F5067890123457 /* CustomExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */; };
 		AB8059E04FED4CAC94B1D5DB /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D9B5EAEA83B489586ACDC15 /* SignInView.swift */; };
 		AC0ED3886796C115F34301E5 /* EditSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E042C6DBCCF889BD355F6AC1 /* EditSessionView.swift */; };
@@ -362,6 +363,7 @@
 		BLDRQAB01FILE001 /* BuilderQuickAddBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderQuickAddBar.swift; sourceTree = "<group>"; };
 		BLDRSRR01FILE001 /* BuilderSearchResultRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderSearchResultRow.swift; sourceTree = "<group>"; };
 		C36DDB57BAA44FEF866BE090 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		PRFCCH01FILE001 /* ProfileCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileCacheService.swift; sourceTree = "<group>"; };
 		C8C0101650AF44AEA8A6F8A1 /* EndSessionSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EndSessionSheet.swift; sourceTree = "<group>"; };
 		CAPTNINP01FILE001 /* CaptionInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionInputView.swift; sourceTree = "<group>"; };
 		CARDIN01FILE001 /* CardioInputsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CardioInputsView.swift; sourceTree = "<group>"; };
@@ -854,6 +856,7 @@
 				197B16182F2569D8006135E4 /* BackgroundSessionManager.swift */,
 				APPCFG01FILE001 /* AppConfig.swift */,
 				C36DDB57BAA44FEF866BE090 /* AuthService.swift */,
+				PRFCCH01FILE001 /* ProfileCacheService.swift */,
 				EXRSLV001FILE001 /* ExerciseResolver.swift */,
 				B63EBF0B2F15E73700D8C22D /* FirebaseService.swift */,
 				2FE98423A878984E481AF73F /* PresenceService.swift */,
@@ -1379,6 +1382,7 @@
 				SUPERSET002HELPER002 /* SupersetHelper.swift in Sources */,
 				DEBOUNCER002BUILD002 /* Debouncer.swift in Sources */,
 				9245BCBAC81C4E3C9670553C /* AuthService.swift in Sources */,
+				PRFCCH01BUILD01 /* ProfileCacheService.swift in Sources */,
 				AB8059E04FED4CAC94B1D5DB /* SignInView.swift in Sources */,
 				EXINST002BUILD002 /* ExerciseInstance.swift in Sources */,
 				RESOLV002BUILD002 /* ResolvedExercise.swift in Sources */,

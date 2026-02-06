@@ -106,38 +106,27 @@ class ConversationsViewModel: ObservableObject {
     }
 
     private func loadProfilesAndFilter(_ convos: [Conversation], userId: String) async {
-        var result: [ConversationWithProfile] = []
-        var profileCache: [String: UserProfile] = [:]
+        // Collect other participant IDs (excluding blocked users)
+        let profileCache = ProfileCacheService.shared
+        var validConvos: [(Conversation, String)] = []
 
         for conversation in convos {
-            // Find the other participant
             guard let otherUserId = conversation.participantIds.first(where: { $0 != userId }) else {
                 continue
             }
-
-            // Filter out blocked users
             if friendshipRepo.isBlockedByOrBlocking(userId, otherUserId) {
                 continue
             }
+            validConvos.append((conversation, otherUserId))
+        }
 
-            // Get or fetch profile
-            let profile: UserProfile?
-            if let cached = profileCache[otherUserId] {
-                profile = cached
-            } else {
-                do {
-                    profile = try await firestoreService.fetchPublicProfile(userId: otherUserId)
-                    if let p = profile {
-                        profileCache[otherUserId] = p
-                    }
-                } catch {
-                    Logger.error(error, context: "ConversationsViewModel.fetchProfile")
-                    profile = nil
-                }
-            }
+        // Prefetch all profiles in parallel
+        let otherUserIds = validConvos.map { $0.1 }
+        await profileCache.prefetch(userIds: otherUserIds)
 
-            guard let userProfile = profile else { continue }
-
+        var result: [ConversationWithProfile] = []
+        for (conversation, otherUserId) in validConvos {
+            let userProfile = await profileCache.profile(for: otherUserId)
             result.append(ConversationWithProfile(
                 conversation: conversation,
                 otherParticipant: userProfile,

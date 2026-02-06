@@ -39,6 +39,7 @@ struct ActivityFeedView: View {
                 }
             }
         }
+        .refreshable { viewModel.loadActivities() }
         .background(AppColors.background.ignoresSafeArea())
         .navigationTitle("Notifications")
         .navigationBarTitleDisplayMode(.inline)

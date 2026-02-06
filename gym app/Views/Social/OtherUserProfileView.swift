@@ -47,6 +47,7 @@ struct OtherUserProfileView: View {
             }
             .padding(.top, AppSpacing.md)
         }
+        .refreshable { await viewModel.loadProfile() }
         .background(AppColors.background.ignoresSafeArea())
         .navigationTitle("@\(viewModel.profile.username)")
         .navigationBarTitleDisplayMode(.inline)

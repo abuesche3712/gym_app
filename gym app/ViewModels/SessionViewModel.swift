@@ -201,48 +201,6 @@ class SessionViewModel: ObservableObject {
 
     var supersetTotal: Int? { currentSupersetExercises?.count }
 
-    var overallProgress: Double {
-        guard let session = currentSession else { return 0 }
-        let modules = session.completedModules
-
-        let totalSets = modules.reduce(0) { moduleSum, module in
-            moduleSum + module.completedExercises.reduce(0) { exerciseSum, exercise in
-                exerciseSum + exercise.completedSetGroups.reduce(0) { setGroupSum, setGroup in
-                    setGroupSum + setGroup.sets.count
-                }
-            }
-        }
-
-        guard totalSets > 0 else { return 0 }
-
-        var completedSets = 0
-
-        for i in 0..<currentModuleIndex {
-            for exercise in modules[i].completedExercises {
-                for setGroup in exercise.completedSetGroups {
-                    completedSets += setGroup.sets.count
-                }
-            }
-        }
-
-        if let module = currentModule {
-            for i in 0..<currentExerciseIndex {
-                for setGroup in module.completedExercises[i].completedSetGroups {
-                    completedSets += setGroup.sets.count
-                }
-            }
-
-            if let exercise = currentExercise {
-                for i in 0..<currentSetGroupIndex {
-                    completedSets += exercise.completedSetGroups[i].sets.count
-                }
-                completedSets += currentSetIndex
-            }
-        }
-
-        return Double(completedSets) / Double(totalSets)
-    }
-
     // MARK: - Session Management
 
     /// Start a new workout session

@@ -24,7 +24,7 @@ class PostDetailViewModel: ObservableObject {
     private var commentsListener: ListenerRegistration?
     private var likeListener: ListenerRegistration?
     private var postListener: ListenerRegistration?
-    private var profileCache: [String: UserProfile] = [:]
+    private let profileCache = ProfileCacheService.shared
     private let activityService = FirestoreActivityService.shared
 
     var currentUserId: String? { authService.currentUser?.uid }
@@ -83,20 +83,13 @@ class PostDetailViewModel: ObservableObject {
     }
 
     private func processComments(_ comments: [PostComment]) async {
+        // Prefetch all unique author profiles in parallel
+        let uniqueAuthorIds = Array(Set(comments.map { $0.authorId }))
+        await profileCache.prefetch(userIds: uniqueAuthorIds)
+
         var allComments: [CommentWithAuthor] = []
-
         for comment in comments {
-            let profile: UserProfile
-
-            if let cached = profileCache[comment.authorId] {
-                profile = cached
-            } else if let fetched = try? await firestoreService.fetchUserProfile(firebaseUserId: comment.authorId) {
-                profileCache[comment.authorId] = fetched
-                profile = fetched
-            } else {
-                profile = UserProfile(id: UUID(), username: "unknown", displayName: "Unknown User")
-            }
-
+            let profile = await profileCache.profile(for: comment.authorId)
             allComments.append(CommentWithAuthor(comment: comment, author: profile))
         }
 

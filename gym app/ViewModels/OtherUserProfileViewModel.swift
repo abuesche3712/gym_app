@@ -21,7 +21,6 @@ class OtherUserProfileViewModel: ObservableObject {
     private let firestoreService = FirestoreService.shared
     private let authService = AuthService.shared
     private let friendshipRepo: FriendshipRepository
-    private var profileCache: [String: UserProfile] = [:]
 
     var currentUserId: String? { authService.currentUser?.uid }
 

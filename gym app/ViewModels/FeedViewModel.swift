@@ -88,7 +88,7 @@ class FeedViewModel: ObservableObject {
     private let authService = AuthService.shared
 
     private var feedListener: ListenerRegistration?
-    private var profileCache: [String: UserProfile] = [:]
+    private let profileCache = ProfileCacheService.shared
     private var likedPostIds: Set<UUID> = []
     private var newPostObserver: Any?
     private var commentCountObserver: Any?
@@ -211,17 +211,7 @@ class FeedViewModel: ObservableObject {
     }
 
     private func addNewPostToFeed(_ post: Post, userId: String) async {
-        // Get author profile (current user)
-        let profile: UserProfile
-        if let cached = profileCache[post.authorId] {
-            profile = cached
-        } else if let fetched = try? await firestoreService.fetchUserProfile(firebaseUserId: post.authorId) {
-            profileCache[post.authorId] = fetched
-            profile = fetched
-        } else {
-            profile = UserProfile(id: UUID(), username: "me", displayName: "Me")
-        }
-
+        let profile = await profileCache.profile(for: post.authorId)
         let newPost = PostWithAuthor(post: post, author: profile, isLikedByCurrentUser: false)
 
         // Add to top of feed if not already there
@@ -300,26 +290,13 @@ class FeedViewModel: ObservableObject {
     }
 
     private func loadAuthorsForPosts(_ posts: [Post], userId: String) async -> [PostWithAuthor] {
+        // Prefetch all unique author profiles in parallel
+        let uniqueAuthorIds = Array(Set(posts.map { $0.authorId }))
+        await profileCache.prefetch(userIds: uniqueAuthorIds)
+
         var result: [PostWithAuthor] = []
-
         for post in posts {
-            let profile: UserProfile
-
-            // Check cache first
-            if let cached = profileCache[post.authorId] {
-                profile = cached
-            } else if let fetched = try? await firestoreService.fetchUserProfile(firebaseUserId: post.authorId) {
-                profileCache[post.authorId] = fetched
-                profile = fetched
-            } else {
-                // Fallback for unknown users
-                profile = UserProfile(
-                    id: UUID(),
-                    username: "unknown",
-                    displayName: "Unknown User"
-                )
-            }
-
+            let profile = await profileCache.profile(for: post.authorId)
             let isLiked = likedPostIds.contains(post.id)
             result.append(PostWithAuthor(post: post, author: profile, isLikedByCurrentUser: isLiked))
         }
