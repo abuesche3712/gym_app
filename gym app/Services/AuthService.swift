@@ -153,6 +153,9 @@ class AuthService: NSObject, ObservableObject {
             email: appleIDCredential.email,
             fullName: appleIDCredential.fullName
         )
+
+        // Save FCM token for push notifications
+        await PushNotificationService.shared.saveFCMToken()
     }
 
     private func createUserDocumentIfNeeded(uid: String, email: String?, fullName: PersonNameComponents?) async {
@@ -195,6 +198,9 @@ class AuthService: NSObject, ObservableObject {
     // MARK: - Sign Out
 
     func signOut() throws {
+        // Clear FCM token before signing out (fire-and-forget)
+        Task { await PushNotificationService.shared.clearFCMToken() }
+
         try Auth.auth().signOut()
         currentUser = nil
         isAuthenticated = false
@@ -206,6 +212,9 @@ class AuthService: NSObject, ObservableObject {
         guard let user = Auth.auth().currentUser else {
             throw AuthError.notAuthenticated
         }
+
+        // Clear FCM token
+        await PushNotificationService.shared.clearFCMToken()
 
         // Delete user data from Firestore
         let db = Firestore.firestore()

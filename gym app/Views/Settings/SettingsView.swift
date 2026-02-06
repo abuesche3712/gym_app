@@ -11,6 +11,7 @@ struct SettingsView: View {
     @EnvironmentObject var appState: AppState
     @ObservedObject private var authService = AuthService.shared
     @ObservedObject private var dataRepository = DataRepository.shared
+    @ObservedObject private var pushService = PushNotificationService.shared
     @State private var showingAbout = false
     @State private var showingSignIn = false
     @State private var showingDeleteConfirmation = false
@@ -58,6 +59,11 @@ struct SettingsView: View {
                     // Cloud Sync Section (only show when signed in)
                     if authService.isAuthenticated {
                         cloudSyncSection
+                    }
+
+                    // Notifications Section (only show when signed in)
+                    if authService.isAuthenticated {
+                        notificationsSection
                     }
 
                     // Recovery Mode Section (show when in recovery mode or debug)
@@ -306,6 +312,93 @@ struct SettingsView: View {
             }
             .disabled(dataRepository.isSyncing)
             .padding(.vertical, AppSpacing.sm)
+        }
+    }
+
+    // MARK: - Notifications Section
+
+    private var notificationsSection: some View {
+        SettingsSection(
+            title: "Notifications",
+            footer: notificationsFooter
+        ) {
+            switch pushService.authorizationStatus {
+            case .authorized, .provisional, .ephemeral:
+                SettingsRow(icon: "bell.badge.fill", title: "Push Notifications") {
+                    HStack(spacing: AppSpacing.xs) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(AppColors.success)
+                        Text("Enabled")
+                            .subheadline(color: AppColors.success)
+                    }
+                }
+
+            case .denied:
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: "bell.slash")
+                            .font(.body)
+                            .foregroundColor(AppColors.textTertiary)
+                            .frame(width: 28)
+
+                        Text("Push Notifications")
+                            .body()
+
+                        Spacer()
+
+                        Text("Open Settings")
+                            .caption(color: AppColors.dominant)
+                    }
+                    .padding(.vertical, AppSpacing.md)
+                }
+                .buttonStyle(.plain)
+
+            case .notDetermined:
+                Button {
+                    Task {
+                        await pushService.requestPermissionIfNeeded()
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: "bell")
+                            .font(.body)
+                            .foregroundColor(AppColors.dominant)
+                            .frame(width: 28)
+
+                        Text("Enable Notifications")
+                            .body()
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .caption(color: AppColors.textTertiary)
+                            .fontWeight(.semibold)
+                    }
+                    .padding(.vertical, AppSpacing.md)
+                }
+                .buttonStyle(.plain)
+
+            @unknown default:
+                EmptyView()
+            }
+        }
+        .onAppear {
+            Task { await pushService.refreshAuthorizationStatus() }
+        }
+    }
+
+    private var notificationsFooter: String? {
+        switch pushService.authorizationStatus {
+        case .denied:
+            return "Notifications are disabled. Open Settings to enable them."
+        case .notDetermined:
+            return "Get notified about likes, comments, and friend requests."
+        default:
+            return nil
         }
     }
 }

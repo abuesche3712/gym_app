@@ -7,6 +7,7 @@
 
 import SwiftUI
 import FirebaseCore
+import FirebaseMessaging
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
@@ -17,6 +18,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
         FirebaseApp.configure()
 
+        // Set up push notification delegates (before registering for remote notifications)
+        PushNotificationService.shared.setup()
+
         // Initialize background session manager for workout persistence
         _ = BackgroundSessionManager.shared
 
@@ -24,6 +28,20 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         BackgroundSessionManager.shared.requestNotificationPermission()
 
         return true
+    }
+
+    // MARK: - Remote Notification Registration
+
+    func application(_ application: UIApplication,
+                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        // Pass APNs token to Firebase Messaging
+        Messaging.messaging().apnsToken = deviceToken
+        Logger.debug("AppDelegate: APNs token registered")
+    }
+
+    func application(_ application: UIApplication,
+                     didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        Logger.error(error, context: "AppDelegate.didFailToRegisterForRemoteNotifications")
     }
 }
 
@@ -49,6 +67,7 @@ struct gym_appApp: App {
                         await dataRepository.syncFromCloud()
                         PresenceService.shared.goOnline()
                         await ComposePostViewModel.publishScheduledPosts()
+                        await PushNotificationService.shared.saveFCMToken()
                     } else {
                         Logger.debug("App launch: Not authenticated, skipping sync")
                     }

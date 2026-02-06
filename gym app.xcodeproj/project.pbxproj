@@ -227,6 +227,7 @@
 		F92592D922191FE336C0B476 /* OtherUserProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90CD920837A850E936642FE /* OtherUserProfileView.swift */; };
 		5BB70F59AE96249D975470D6 /* OtherUserProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C1B430A886BE30C7C6285A9 /* OtherUserProfileViewModel.swift */; };
 		0FC31B87309C6B9AAF6C1F8E /* PresenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FE98423A878984E481AF73F /* PresenceService.swift */; };
+		PSHNTF02BUILD01 /* PushNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = PSHNTF01FILE01 /* PushNotificationService.swift */; };
 		RPRTMDL02BUILD01 /* Report.swift in Sources */ = {isa = PBXBuildFile; fileRef = RPRTMDL01FILE001 /* Report.swift */; };
 		RPRTSHT02BUILD01 /* ReportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = RPRTSHT01FILE001 /* ReportSheet.swift */; };
 		TXTPRS02BUILD01 /* TextParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = TXTPRS01FILE001 /* TextParser.swift */; };
@@ -506,6 +507,7 @@
 		B90CD920837A850E936642FE /* OtherUserProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherUserProfileView.swift; sourceTree = "<group>"; };
 		2C1B430A886BE30C7C6285A9 /* OtherUserProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherUserProfileViewModel.swift; sourceTree = "<group>"; };
 		2FE98423A878984E481AF73F /* PresenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresenceService.swift; sourceTree = "<group>"; };
+		PSHNTF01FILE01 /* PushNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationService.swift; sourceTree = "<group>"; };
 		RPRTMDL01FILE001 /* Report.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Report.swift; sourceTree = "<group>"; };
 		RPRTSHT01FILE001 /* ReportSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportSheet.swift; sourceTree = "<group>"; };
 		TXTPRS01FILE001 /* TextParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextParser.swift; sourceTree = "<group>"; };
@@ -882,6 +884,7 @@
 				EXRSLV001FILE001 /* ExerciseResolver.swift */,
 				B63EBF0B2F15E73700D8C22D /* FirebaseService.swift */,
 				2FE98423A878984E481AF73F /* PresenceService.swift */,
+				PSHNTF01FILE01 /* PushNotificationService.swift */,
 				HAPTIC001FILE001 /* HapticManager.swift */,
 				LOGGER01FILE001 /* Logger.swift */,
 				B63EBF0C2F15E73700D8C22D /* NetworkMonitor.swift */,
@@ -1128,6 +1131,7 @@
 				B63EBEE42F15E55600D8C22D /* FirebaseFirestore */,
 				B6F5091D2F1F04DA007CA28A /* FirebaseCrashlytics */,
 				B6PHOTO002F2A000000D8C22D /* FirebaseStorage */,
+				FCMSG0012F2A000000D8C22D /* FirebaseMessaging */,
 			);
 			productName = "gym app";
 			productReference = B610ABFF2F15B4DD008B2C15 /* gym app.app */;
@@ -1373,6 +1377,7 @@
 				FB314B4CB2D940F6B27703FF /* DataSeeder.swift in Sources */,
 				B63EBF2A2F15E73700D8C22D /* FirebaseService.swift in Sources */,
 				0FC31B87309C6B9AAF6C1F8E /* PresenceService.swift in Sources */,
+				PSHNTF02BUILD01 /* PushNotificationService.swift in Sources */,
 				B610AC052F15B4DD008B2C15 /* ContentView.swift in Sources */,
 				B63EBF222F15E73700D8C22D /* WorkoutDetailView.swift in Sources */,
 				B63EBF102F15E73700D8C22D /* ModuleViewModel.swift in Sources */,
@@ -1979,6 +1984,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B63EBEE12F15E55600D8C22D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
+		};
+		FCMSG0012F2A000000D8C22D /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B63EBEE12F15E55600D8C22D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
