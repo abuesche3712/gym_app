@@ -69,6 +69,18 @@ struct FeedPostRow: View {
         .padding(.horizontal, AppSpacing.screenPadding)
         .padding(.vertical, AppSpacing.md)
         .background(AppColors.background)
+        .overlay {
+            // Tap-to-dismiss overlay for reaction picker (bounded to row, not 2000x2000)
+            if showReactionPicker {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                            showReactionPicker = false
+                        }
+                    }
+            }
+        }
         .confirmationDialog(
             "Delete Post?",
             isPresented: $showingDeleteConfirmation,
@@ -294,17 +306,6 @@ struct FeedPostRow: View {
                 .stroke(AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
         )
         .offset(y: -44)
-        .onTapGesture {} // Prevent dismissal when tapping on picker itself
-        .background(
-            Color.clear
-                .contentShape(Rectangle())
-                .frame(width: 2000, height: 2000)
-                .onTapGesture {
-                    withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
-                        showReactionPicker = false
-                    }
-                }
-        )
     }
 
     private func reactionSummary(_ counts: [String: Int]) -> some View {

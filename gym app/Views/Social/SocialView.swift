@@ -120,21 +120,20 @@ struct SocialView: View {
                             .padding(.bottom, AppSpacing.sm)
                     }
 
-                    // Feed content
-                    LazyVStack(spacing: 0) {
-                        if feedViewModel.feedMode == .discover {
-                            discoverContent
-                        } else if feedViewModel.isLoading && feedViewModel.posts.isEmpty {
-                            loadingView
-                        } else if feedViewModel.posts.isEmpty {
-                            emptyFeedState
-                        } else if feedViewModel.filteredPosts.isEmpty {
-                            noFilterResultsView
-                        } else {
-                            feedList
-                        }
+                    // Feed content (no wrapping LazyVStack - each branch handles its own lazy loading)
+                    if feedViewModel.feedMode == .discover {
+                        discoverContent
+                    } else if feedViewModel.isLoading && feedViewModel.posts.isEmpty {
+                        loadingView
+                    } else if feedViewModel.posts.isEmpty {
+                        emptyFeedState
+                    } else if feedViewModel.filteredPosts.isEmpty {
+                        noFilterResultsView
+                    } else {
+                        feedList
                     }
                 }
+                .frame(maxWidth: .infinity)
             }
             .refreshable {
                 await feedViewModel.refreshFeed()
@@ -145,6 +144,7 @@ struct SocialView: View {
             // Floating compose button
             composeButton
         }
+        .frame(maxWidth: .infinity)
         .background(AppColors.background.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
     }
@@ -158,6 +158,7 @@ struct SocialView: View {
                 NavigationLink(destination: AccountProfileView()) {
                     profileAvatar
                 }
+                .buttonStyle(.plain)
 
                 Spacer()
 
@@ -169,6 +170,7 @@ struct SocialView: View {
                             .foregroundColor(AppColors.textSecondary)
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                     }
+                    .buttonStyle(.plain)
 
                     // Friends button
                     NavigationLink(destination: FriendsListView()) {
@@ -187,6 +189,7 @@ struct SocialView: View {
                             }
                         }
                     }
+                    .buttonStyle(.plain)
 
                     // Activity/notifications button
                     NavigationLink(destination: ActivityFeedView()) {
@@ -204,6 +207,7 @@ struct SocialView: View {
                             }
                         }
                     }
+                    .buttonStyle(.plain)
 
                     // Messages button
                     NavigationLink(destination: ConversationsListView()) {
@@ -222,6 +226,7 @@ struct SocialView: View {
                             }
                         }
                     }
+                    .buttonStyle(.plain)
 
                     // Settings button
                     NavigationLink(destination: SettingsView()) {
@@ -230,6 +235,7 @@ struct SocialView: View {
                             .foregroundColor(AppColors.textSecondary)
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                     }
+                    .buttonStyle(.plain)
                 }
             }
 
