@@ -63,16 +63,50 @@ class FirestoreSocialService: ObservableObject {
         }
 
         let normalized = UsernameValidator.normalize(username)
+        let usernameRef = core.db.collection(FirestoreCollections.usernames).document(normalized)
 
-        guard try await isUsernameAvailable(normalized) else {
+        // Check if already claimed
+        let doc = try await usernameRef.getDocument()
+        if doc.exists {
+            // If we already own it, nothing to do
+            if doc.data()?["userId"] as? String == uid { return }
+            // Someone else owns it
             throw ProfileError.usernameTaken
         }
 
-        let usernameRef = core.db.collection(FirestoreCollections.usernames).document(normalized)
         try await usernameRef.setData([
             "userId": uid,
             "claimedAt": FieldValue.serverTimestamp()
         ])
+    }
+
+    /// Ensure the current user's username is registered in the usernames collection.
+    /// Repairs missing entries without overwriting others' claims.
+    func ensureUsernameClaimed() async {
+        guard let uid = core.userId else { return }
+
+        do {
+            guard let profile = try await fetchUserProfile(),
+                  !profile.username.isEmpty else { return }
+
+            let normalized = UsernameValidator.normalize(profile.username)
+            let usernameRef = core.db.collection(FirestoreCollections.usernames).document(normalized)
+            let doc = try await usernameRef.getDocument()
+
+            if !doc.exists {
+                // Username doc missing — claim it
+                try await usernameRef.setData([
+                    "userId": uid,
+                    "claimedAt": FieldValue.serverTimestamp()
+                ])
+                Logger.debug("Repaired missing username entry for '\(normalized)'")
+            } else if doc.data()?["userId"] as? String != uid {
+                // Someone else claimed our username — this shouldn't happen
+                Logger.debug("Username '\(normalized)' claimed by another user — data inconsistency")
+            }
+        } catch {
+            Logger.error(error, context: "ensureUsernameClaimed")
+        }
     }
 
     /// Release the current user's username (for username changes)

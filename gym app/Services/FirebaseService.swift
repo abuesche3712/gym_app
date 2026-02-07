@@ -163,6 +163,10 @@ class FirestoreService: ObservableObject {
         try await social.releaseUsername(username)
     }
 
+    func ensureUsernameClaimed() async {
+        await social.ensureUsernameClaimed()
+    }
+
     func searchUsersByUsername(prefix: String, limit: Int = 20) async throws -> [UserSearchResult] {
         try await social.searchUsersByUsername(prefix: prefix, limit: limit)
     }
