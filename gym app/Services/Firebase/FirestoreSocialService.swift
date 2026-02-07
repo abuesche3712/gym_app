@@ -134,6 +134,65 @@ class FirestoreSocialService: ObservableObject {
         try await core.db.collection(FirestoreCollections.friendships).document(id.uuidString).delete()
     }
 
+    // MARK: - Friend IDs Array Maintenance
+
+    /// Atomically add or remove a friendId from a user's profile friendIds array.
+    /// Uses FieldValue.arrayUnion/arrayRemove for safe concurrent updates.
+    func updateFriendIdsArray(userId: String, friendId: String, add: Bool) async throws {
+        let ref = core.db.collection(FirestoreCollections.users).document(userId)
+            .collection(FirestoreCollections.profile).document(FirestoreCollections.profileSettings)
+        if add {
+            try await ref.updateData(["friendIds": FieldValue.arrayUnion([friendId])])
+        } else {
+            try await ref.updateData(["friendIds": FieldValue.arrayRemove([friendId])])
+        }
+    }
+
+    /// Set the full friendIds array on a user's profile (used for migration).
+    func setFriendIdsArray(userId: String, friendIds: [String]) async throws {
+        let ref = core.db.collection(FirestoreCollections.users).document(userId)
+            .collection(FirestoreCollections.profile).document(FirestoreCollections.profileSettings)
+        try await ref.updateData(["friendIds": friendIds])
+    }
+
+    /// Fetch multiple user profile documents in a single batch.
+    /// Returns a dictionary of Firebase UID -> UserProfile for profiles that exist.
+    func fetchProfilesBatched(userIds: [String]) async throws -> [String: UserProfile] {
+        guard !userIds.isEmpty else { return [:] }
+
+        // Fetch raw data in parallel, then decode on main actor
+        var rawResults: [(String, [String: Any])] = []
+
+        await withTaskGroup(of: (String, [String: Any]?).self) { group in
+            for userId in userIds {
+                group.addTask {
+                    let doc = try? await self.core.db
+                        .collection(FirestoreCollections.users).document(userId)
+                        .collection(FirestoreCollections.profile)
+                        .document(FirestoreCollections.profileSettings)
+                        .getDocument()
+                    return (userId, doc?.data())
+                }
+            }
+
+            for await (userId, data) in group {
+                if let data {
+                    rawResults.append((userId, data))
+                }
+            }
+        }
+
+        // Decode on main actor
+        var result: [String: UserProfile] = [:]
+        for (userId, data) in rawResults {
+            if let profile = decodeUserProfile(from: data) {
+                result[userId] = profile
+            }
+        }
+
+        return result
+    }
+
     /// Fetch all friendships involving a user
     func fetchFriendships(for userId: String) async throws -> [Friendship] {
         let requesterSnapshot = try await core.db.collection(FirestoreCollections.friendships)
@@ -236,6 +295,9 @@ class FirestoreSocialService: ObservableObject {
         if let profilePhotoURL = profile.profilePhotoURL {
             data["profilePhotoURL"] = profilePhotoURL
         }
+        if let friendIds = profile.friendIds {
+            data["friendIds"] = friendIds
+        }
 
         return data
     }
@@ -250,6 +312,7 @@ class FirestoreSocialService: ObservableObject {
         let bio = data["bio"] as? String
         let isPublic = data["isPublic"] as? Bool ?? false
         let profilePhotoURL = data["profilePhotoURL"] as? String
+        let friendIds = data["friendIds"] as? [String]
 
         let createdAt: Date
         if let timestamp = data["createdAt"] as? Timestamp {
@@ -283,6 +346,7 @@ class FirestoreSocialService: ObservableObject {
             bio: bio,
             isPublic: isPublic,
             profilePhotoURL: profilePhotoURL,
+            friendIds: friendIds,
             weightUnit: weightUnit,
             distanceUnit: distanceUnit,
             defaultRestTime: defaultRestTime,

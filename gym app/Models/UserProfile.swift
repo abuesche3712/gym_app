@@ -17,6 +17,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
     var bio: String?  // max 160 chars
     var isPublic: Bool
     var profilePhotoURL: String?  // Firebase Storage download URL
+    var friendIds: [String]?  // Denormalized list of accepted friend Firebase UIDs
 
     // Settings/preferences
     var weightUnit: WeightUnit
@@ -37,6 +38,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         bio: String? = nil,
         isPublic: Bool = false,
         profilePhotoURL: String? = nil,
+        friendIds: [String]? = nil,
         weightUnit: WeightUnit = .lbs,
         distanceUnit: DistanceUnit = .miles,
         defaultRestTime: Int = 90,
@@ -50,6 +52,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         self.bio = bio
         self.isPublic = isPublic
         self.profilePhotoURL = profilePhotoURL
+        self.friendIds = friendIds
         self.weightUnit = weightUnit
         self.distanceUnit = distanceUnit
         self.defaultRestTime = defaultRestTime
@@ -70,6 +73,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
         bio = try container.decodeIfPresent(String.self, forKey: .bio)
         isPublic = try container.decodeIfPresent(Bool.self, forKey: .isPublic) ?? false
         profilePhotoURL = try container.decodeIfPresent(String.self, forKey: .profilePhotoURL)
+        friendIds = try container.decodeIfPresent([String].self, forKey: .friendIds)
 
         // Settings
         weightUnit = try container.decodeIfPresent(WeightUnit.self, forKey: .weightUnit) ?? .lbs
@@ -85,7 +89,7 @@ struct UserProfile: Identifiable, Codable, Hashable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, id, username, displayName, bio, isPublic, profilePhotoURL
+        case schemaVersion, id, username, displayName, bio, isPublic, profilePhotoURL, friendIds
         case weightUnit, distanceUnit, defaultRestTime
         case createdAt, updatedAt, syncStatus
     }

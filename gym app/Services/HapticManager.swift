@@ -166,10 +166,10 @@ final class HapticManager: @unchecked Sendable {
         }
     }
 
-    /// Timer finished (with sound)
+    /// Timer finished (with short ding sound - for set timers)
     func timerComplete() {
         notification.notificationOccurred(.success)
-        playTimerCompleteSound()
+        playSetTimerCompleteSound()
     }
 
     /// Rest timer finished (with sound)
@@ -194,7 +194,15 @@ final class HapticManager: @unchecked Sendable {
         playPhaseTransitionSound()
     }
 
-    /// Play timer completion sound
+    /// Play short ding sound for set timer completion
+    private func playSetTimerCompleteSound() {
+        activateAudioSession()
+        // Short tick/ding - distinct from the full rest timer sound
+        AudioServicesPlaySystemSound(SystemSoundID(1057))
+        scheduleDeactivation(after: 0.3)
+    }
+
+    /// Play timer completion sound (full sound for rest timer)
     private func playTimerCompleteSound() {
         activateAudioSession()
 

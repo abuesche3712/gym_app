@@ -20,7 +20,6 @@ struct Post: Identifiable, Codable, Hashable {
     var likeCount: Int
     var commentCount: Int
     var reactionCounts: [String: Int]?  // ReactionType.rawValue -> count
-    var scheduledFor: Date?  // If set, post is scheduled for future publication
     var syncStatus: SyncStatus
 
     init(
@@ -33,7 +32,6 @@ struct Post: Identifiable, Codable, Hashable {
         likeCount: Int = 0,
         commentCount: Int = 0,
         reactionCounts: [String: Int]? = nil,
-        scheduledFor: Date? = nil,
         syncStatus: SyncStatus = .pendingSync
     ) {
         self.schemaVersion = SchemaVersions.post
@@ -46,7 +44,6 @@ struct Post: Identifiable, Codable, Hashable {
         self.likeCount = likeCount
         self.commentCount = commentCount
         self.reactionCounts = reactionCounts
-        self.scheduledFor = scheduledFor
         self.syncStatus = syncStatus
     }
 }

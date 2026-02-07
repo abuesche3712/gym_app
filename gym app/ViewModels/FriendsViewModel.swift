@@ -63,6 +63,9 @@ class FriendsViewModel: ObservableObject {
 
         isLoading = true
 
+        // Run one-time migration of friendIds array if needed
+        migrateFriendIdsIfNeeded()
+
         // Start real-time listener
         friendshipListener?.remove()
         friendshipListener = firestoreService.listenToFriendships(
@@ -250,6 +253,12 @@ class FriendsViewModel: ObservableObject {
             do {
                 try await firestoreService.saveFriendship(updated)
 
+                // Update denormalized friendIds arrays for both users
+                if let myId = currentUserId, let friendId = friendship.otherUserId(from: myId) {
+                    try? await firestoreService.updateFriendIdsArray(userId: myId, friendId: friendId, add: true)
+                    try? await firestoreService.updateFriendIdsArray(userId: friendId, friendId: myId, add: true)
+                }
+
                 // Create activity for requester
                 if let myId = currentUserId {
                     let activity = Activity(
@@ -299,6 +308,12 @@ class FriendsViewModel: ObservableObject {
         // Sync to cloud
         do {
             try await firestoreService.deleteFriendship(id: friendship.id)
+
+            // Update denormalized friendIds arrays for both users
+            if let myId = currentUserId, let friendId = friendship.otherUserId(from: myId) {
+                try? await firestoreService.updateFriendIdsArray(userId: myId, friendId: friendId, add: false)
+                try? await firestoreService.updateFriendIdsArray(userId: friendId, friendId: myId, add: false)
+            }
         } catch {
             // On failure, the listener will restore it
             throw error
@@ -321,6 +336,10 @@ class FriendsViewModel: ObservableObject {
         // Sync to cloud
         do {
             try await firestoreService.saveFriendship(friendship)
+
+            // Remove from denormalized friendIds arrays (they were friends before blocking)
+            try? await firestoreService.updateFriendIdsArray(userId: blockerId, friendId: blockedId, add: false)
+            try? await firestoreService.updateFriendIdsArray(userId: blockedId, friendId: blockerId, add: false)
         } catch {
             // Revert
             friendshipRepo.delete(friendship)
@@ -359,6 +378,8 @@ class FriendsViewModel: ObservableObject {
         Task {
             defer { isLoadingSuggestions = false }
 
+            let startTime = CFAbsoluteTimeGetCurrent()
+
             // Get current friend IDs
             let myFriends = friendshipRepo.getAcceptedFriends(for: myId)
             let myFriendIds = Set(myFriends.compactMap { $0.otherUserId(from: myId) })
@@ -367,34 +388,68 @@ class FriendsViewModel: ObservableObject {
             let allFriendships = friendshipRepo.getAllFriendships(for: myId)
             let allRelatedIds = Set(allFriendships.compactMap { $0.otherUserId(from: myId) })
 
+            let friendList = Array(myFriendIds.prefix(10))
             var candidateIds: Set<String> = []
+            var usedBatchedApproach = false
 
-            // Fetch friends-of-friends in parallel
-            await withTaskGroup(of: [String].self) { group in
-                for friendId in Array(myFriendIds.prefix(10)) {
-                    group.addTask {
-                        do {
-                            let friendsFriendships = try await self.firestoreService.fetchFriendships(for: friendId)
-                            return friendsFriendships
-                                .filter { $0.status == .accepted }
-                                .compactMap { $0.otherUserId(from: friendId) }
-                        } catch {
-                            Logger.error(error, context: "FriendsViewModel.loadSuggestedFriends")
-                            return []
+            // Option A: Batched approach using denormalized friendIds arrays
+            // Fetch friend profiles in one batch and extract their friendIds client-side
+            do {
+                let friendProfiles = try await firestoreService.fetchProfilesBatched(userIds: friendList)
+
+                // Check if any profile has the friendIds field populated
+                let profilesWithFriendIds = friendProfiles.values.filter { $0.friendIds != nil }
+
+                if !profilesWithFriendIds.isEmpty {
+                    usedBatchedApproach = true
+
+                    for (friendId, profile) in friendProfiles {
+                        guard let fofIds = profile.friendIds else { continue }
+                        for fofId in fofIds {
+                            if fofId != myId && !allRelatedIds.contains(fofId) {
+                                candidateIds.insert(fofId)
+                            }
                         }
+                        // Also skip the friend themselves
+                        candidateIds.remove(friendId)
                     }
                 }
+            } catch {
+                Logger.error(error, context: "FriendsViewModel.loadSuggestedFriends (batched)")
+            }
 
-                for await friendIds in group {
-                    for fofId in friendIds {
-                        if fofId != myId && !allRelatedIds.contains(fofId) {
-                            candidateIds.insert(fofId)
+            // Fallback: N+1 approach if friendIds not available (backward compat)
+            if !usedBatchedApproach {
+                Logger.debug("loadSuggestedFriends: falling back to N+1 approach (friendIds not populated)")
+                await withTaskGroup(of: [String].self) { group in
+                    for friendId in friendList {
+                        group.addTask {
+                            do {
+                                let friendsFriendships = try await self.firestoreService.fetchFriendships(for: friendId)
+                                return friendsFriendships
+                                    .filter { $0.status == .accepted }
+                                    .compactMap { $0.otherUserId(from: friendId) }
+                            } catch {
+                                Logger.error(error, context: "FriendsViewModel.loadSuggestedFriends (fallback)")
+                                return []
+                            }
+                        }
+                    }
+
+                    for await friendIds in group {
+                        for fofId in friendIds {
+                            if fofId != myId && !allRelatedIds.contains(fofId) {
+                                candidateIds.insert(fofId)
+                            }
                         }
                     }
                 }
             }
 
-            // Fetch profiles for candidates using ProfileCacheService (parallel)
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            Logger.debug("loadSuggestedFriends: found \(candidateIds.count) candidates in \(String(format: "%.2f", elapsed))s (batched: \(usedBatchedApproach))")
+
+            // Fetch profiles for candidates
             let candidateList = Array(candidateIds.prefix(5))
             let profileCache = ProfileCacheService.shared
             await profileCache.prefetch(userIds: candidateList)
@@ -402,12 +457,54 @@ class FriendsViewModel: ObservableObject {
             var suggestions: [UserSearchResult] = []
             for candidateId in candidateList {
                 let profile = await profileCache.profile(for: candidateId)
-                if profile.username != "unknown" {
-                    suggestions.append(UserSearchResult(firebaseUserId: candidateId, profile: profile))
+                // Skip placeholder profiles (fetch failed) rather than showing "unknown"
+                guard profile.username != "unknown" else {
+                    Logger.debug("loadSuggestedFriends: skipping candidate \(candidateId) — profile fetch failed")
+                    continue
                 }
+                suggestions.append(UserSearchResult(firebaseUserId: candidateId, profile: profile))
             }
 
             suggestedFriends = suggestions
+        }
+    }
+
+    // TODO: Option B — Cloud Function that maintains a dedicated `friendGraph` collection.
+    // Each doc: { userId: string, friendIds: [string], updatedAt: timestamp }
+    // Updated automatically on friendship changes via Firestore triggers.
+    // More scalable for users with 100+ friends since profile docs stay lean.
+
+    // MARK: - Friend IDs Migration
+
+    private static let friendIdsMigratedKey = "friendIdsMigrated"
+
+    /// One-time migration: builds the friendIds array for the current user's profile.
+    /// Called when friendships are first loaded after auth.
+    func migrateFriendIdsIfNeeded() {
+        guard let myId = currentUserId else { return }
+        guard !UserDefaults.standard.bool(forKey: Self.friendIdsMigratedKey) else { return }
+
+        Task {
+            do {
+                let friendships = try await firestoreService.fetchFriendships(for: myId)
+                let acceptedFriendIds = friendships
+                    .filter { $0.status == .accepted }
+                    .compactMap { $0.otherUserId(from: myId) }
+
+                guard !acceptedFriendIds.isEmpty else {
+                    UserDefaults.standard.set(true, forKey: Self.friendIdsMigratedKey)
+                    Logger.debug("friendIds migration: no accepted friends, marking complete")
+                    return
+                }
+
+                try await firestoreService.setFriendIdsArray(userId: myId, friendIds: acceptedFriendIds)
+
+                UserDefaults.standard.set(true, forKey: Self.friendIdsMigratedKey)
+                Logger.debug("friendIds migration: wrote \(acceptedFriendIds.count) friend IDs")
+            } catch {
+                Logger.error(error, context: "friendIds migration failed")
+                // Don't set the flag — will retry next launch
+            }
         }
     }
 

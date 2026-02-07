@@ -503,7 +503,7 @@ struct EditExerciseSheet: View {
                 trackRPE: group.trackRPE,
                 completedSetsCount: completedSets.count,  // Keep actual count for preserving completed sets
                 completedSets: completedSets,
-                allSets: group.sets,  // Store all sets for history editing
+                allSets: group.sets.allSatisfy({ $0.completed }) ? group.sets : [],
                 isInterval: group.isInterval,
                 workDuration: group.workDuration,
                 intervalRestDuration: group.intervalRestDuration,

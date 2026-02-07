@@ -58,8 +58,8 @@ struct AllSetsSection: View {
                                 onLog: { flatSet, weight, reps, rpe, duration, holdTime, distance, height, intensity, temperature, bandColor, implementMeasurableValues in
                                     onLogSet(flatSet, weight, reps, rpe, duration, holdTime, distance, height, intensity, temperature, bandColor, implementMeasurableValues)
                                     onHighlightClear()
-                                    // Start rest timer after completing right side
-                                    if flatSet.setData.side == .right && exercise.exerciseType != .recovery {
+                                    // Start rest timer after completing either side
+                                    if (flatSet.setData.side == .left || flatSet.setData.side == .right) && exercise.exerciseType != .recovery {
                                         let restPeriod = flatSet.restPeriod ?? appState.defaultRestTime
                                         if !allSetsCompleted(exercise) {
                                             sessionViewModel.startRestTimer(seconds: restPeriod)
@@ -369,6 +369,28 @@ struct UnilateralSetPairView: View {
                         onUncheck: onUncheck
                     )
                 }
+
+                // Compact rest timer between L and R rows
+                if sessionViewModel.isRestTimerRunning {
+                    HStack(spacing: AppSpacing.xs) {
+                        Image(systemName: "timer")
+                            .caption2(color: sessionViewModel.restTimerSeconds <= 5 ? AppColors.warning : AppColors.textTertiary)
+                        Text("\(sessionViewModel.restTimerSeconds)s")
+                            .monoMedium(color: sessionViewModel.restTimerSeconds <= 5 ? AppColors.warning : AppColors.textSecondary)
+                        Spacer()
+                        Button {
+                            sessionViewModel.stopRestTimer()
+                        } label: {
+                            Text("Skip")
+                                .caption2(color: AppColors.textTertiary)
+                                .fontWeight(.medium)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, AppSpacing.sm)
+                    .padding(.vertical, 4)
+                }
+
                 if let right = rightSet {
                     UnilateralSideRow(
                         flatSet: right,
@@ -425,6 +447,8 @@ struct UnilateralSideRow: View {
                             .caption(color: AppColors.textPrimary)
                             .fontWeight(.medium)
                         Spacer()
+                        Image(systemName: "pencil")
+                            .caption2(color: AppColors.textTertiary)
                         Image(systemName: "checkmark.circle.fill")
                             .caption(color: AppColors.success)
                     }

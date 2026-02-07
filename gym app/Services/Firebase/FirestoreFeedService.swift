@@ -384,10 +384,6 @@ class FirestoreFeedService: ObservableObject {
             data["updatedAt"] = Timestamp(date: updatedAt)
         }
 
-        if let scheduledFor = post.scheduledFor {
-            data["scheduledFor"] = Timestamp(date: scheduledFor)
-        }
-
         return data
     }
 
@@ -474,13 +470,6 @@ class FirestoreFeedService: ObservableObject {
             }
         }
 
-        let scheduledFor: Date?
-        if let timestamp = data["scheduledFor"] as? Timestamp {
-            scheduledFor = timestamp.dateValue()
-        } else {
-            scheduledFor = nil
-        }
-
         return Post(
             id: id,
             authorId: authorId,
@@ -491,7 +480,6 @@ class FirestoreFeedService: ObservableObject {
             likeCount: likeCount,
             commentCount: commentCount,
             reactionCounts: reactionCounts,
-            scheduledFor: scheduledFor,
             syncStatus: .synced
         )
     }

@@ -121,7 +121,8 @@ struct ActiveSessionView: View {
                                     // Previous Performance
                                     PreviousPerformanceSection(
                                         exerciseName: currentExercise.exerciseName,
-                                        lastData: sessionViewModel.getLastSessionData(for: currentExercise.exerciseName)
+                                        lastData: sessionViewModel.getLastSessionData(for: currentExercise.exerciseName),
+                                        fromSameWorkout: sessionViewModel.isLastSessionDataFromSameWorkout(for: currentExercise.exerciseName)
                                     )
                                 }
                                 .padding(AppSpacing.screenPadding)
@@ -489,30 +490,64 @@ struct ActiveSessionView: View {
         guard sessionViewModel.currentExerciseIndex < module.completedExercises.count else { return }
         var exercise = module.completedExercises[sessionViewModel.currentExerciseIndex]
 
-        let newSetNumber = exercise.completedSetGroups.reduce(0) { $0 + $1.sets.count } + 1
-
         // Check if there's an existing set group with sets to copy from
         if let lastSetGroup = exercise.completedSetGroups.last,
-           let lastSet = lastSetGroup.sets.last {
-            // Create new set with same targets as last set
-            let newSet = SetData(
-                setNumber: newSetNumber,
-                weight: lastSet.weight,
-                reps: lastSet.reps,
-                completed: false,
-                duration: lastSet.duration,
-                distance: lastSet.distance,
-                holdTime: lastSet.holdTime
-            )
+           !lastSetGroup.sets.isEmpty {
 
-            // Add to the last set group
             var updatedSetGroup = lastSetGroup
-            updatedSetGroup.sets.append(newSet)
+
+            if lastSetGroup.isUnilateral {
+                // For unilateral: logical set count is half the SetData count
+                let newSetNumber = (lastSetGroup.sets.count / 2) + 1
+
+                // Find last left and right sets to copy targets from
+                let lastLeftSet = lastSetGroup.sets.last(where: { $0.side == .left })
+                let lastRightSet = lastSetGroup.sets.last(where: { $0.side == .right })
+
+                let newLeftSet = SetData(
+                    setNumber: newSetNumber,
+                    weight: lastLeftSet?.weight,
+                    reps: lastLeftSet?.reps,
+                    completed: false,
+                    duration: lastLeftSet?.duration,
+                    distance: lastLeftSet?.distance,
+                    holdTime: lastLeftSet?.holdTime,
+                    side: .left
+                )
+                let newRightSet = SetData(
+                    setNumber: newSetNumber,
+                    weight: lastRightSet?.weight,
+                    reps: lastRightSet?.reps,
+                    completed: false,
+                    duration: lastRightSet?.duration,
+                    distance: lastRightSet?.distance,
+                    holdTime: lastRightSet?.holdTime,
+                    side: .right
+                )
+
+                updatedSetGroup.sets.append(newLeftSet)
+                updatedSetGroup.sets.append(newRightSet)
+            } else {
+                let newSetNumber = lastSetGroup.sets.count + 1
+                let lastSet = lastSetGroup.sets.last!
+
+                let newSet = SetData(
+                    setNumber: newSetNumber,
+                    weight: lastSet.weight,
+                    reps: lastSet.reps,
+                    completed: false,
+                    duration: lastSet.duration,
+                    distance: lastSet.distance,
+                    holdTime: lastSet.holdTime
+                )
+                updatedSetGroup.sets.append(newSet)
+            }
+
             exercise.completedSetGroups[exercise.completedSetGroups.count - 1] = updatedSetGroup
         } else {
             // No existing sets - create a new set group with default values
             let newSet = SetData(
-                setNumber: newSetNumber,
+                setNumber: 1,
                 completed: false
             )
             let newSetGroup = CompletedSetGroup(

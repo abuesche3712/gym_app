@@ -19,7 +19,7 @@ struct ProfilePhotoView: View {
     var body: some View {
         Group {
             if let photoURL = profile.profilePhotoURL, let url = URL(string: photoURL) {
-                AsyncImage(url: url) { phase in
+                AsyncImage(url: url, transaction: Transaction(animation: .easeIn(duration: 0.2))) { phase in
                     switch phase {
                     case .empty:
                         loadingView
@@ -27,12 +27,14 @@ struct ProfilePhotoView: View {
                         image
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                    case .failure:
+                    case .failure(let error):
+                        let _ = Logger.debug("ProfilePhoto failed for \(url): \(error)")
                         initialsView
                     @unknown default:
                         initialsView
                     }
                 }
+                .id(url.absoluteString)
             } else {
                 initialsView
             }

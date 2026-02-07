@@ -1159,26 +1159,65 @@ class SessionViewModel: ObservableObject {
         loadSessions()
     }
 
-    // Get last session data for an exercise within the same workout (for showing previous performance)
-    // Only returns data from the same workout - never shows data from other workouts
+    // Get last session data for an exercise (for showing previous performance)
+    // First searches same workout, then falls back to any workout containing this exercise
     func getLastSessionData(for exerciseName: String, workoutId: UUID? = nil) -> SessionExercise? {
-        // Get the target workout ID (current session's workout if not specified)
         let targetWorkoutId = workoutId ?? currentSession?.workoutId
         let currentSessionId = currentSession?.id
 
-        // Only look for exercise in sessions of the SAME workout (excluding current session)
-        // Sessions are sorted by date descending (most recent first)
-        guard let targetId = targetWorkoutId else { return nil }
+        // First: search sessions from the SAME workout
+        if let targetId = targetWorkoutId {
+            for session in sessions {
+                if session.id == currentSessionId { continue }
+                if session.workoutId == targetId {
+                    for module in session.completedModules {
+                        if let exercise = module.completedExercises.first(where: {
+                            $0.exerciseName == exerciseName &&
+                            $0.completedSetGroups.contains { setGroup in
+                                setGroup.sets.contains { set in
+                                    set.completed && set.hasAnyMetricData
+                                }
+                            }
+                        }) {
+                            return exercise
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: search ALL sessions for this exercise (different workouts)
+        for session in sessions {
+            if session.id == currentSessionId { continue }
+            for module in session.completedModules {
+                if let exercise = module.completedExercises.first(where: {
+                    $0.exerciseName == exerciseName &&
+                    $0.completedSetGroups.contains { setGroup in
+                        setGroup.sets.contains { set in
+                            set.completed && set.hasAnyMetricData
+                        }
+                    }
+                }) {
+                    return exercise
+                }
+            }
+        }
+
+        return nil
+    }
+
+    /// Check if last session data comes from the same workout (vs a different workout)
+    func isLastSessionDataFromSameWorkout(for exerciseName: String, workoutId: UUID? = nil) -> Bool {
+        let targetWorkoutId = workoutId ?? currentSession?.workoutId
+        let currentSessionId = currentSession?.id
+
+        guard let targetId = targetWorkoutId else { return false }
 
         for session in sessions {
-            // Skip the current session - we want PREVIOUS session data
             if session.id == currentSessionId { continue }
-
-            // Only consider sessions from the same workout
             if session.workoutId == targetId {
                 for module in session.completedModules {
-                    // Only return if the exercise has completed sets with actual data
-                    if let exercise = module.completedExercises.first(where: {
+                    if module.completedExercises.contains(where: {
                         $0.exerciseName == exerciseName &&
                         $0.completedSetGroups.contains { setGroup in
                             setGroup.sets.contains { set in
@@ -1186,13 +1225,12 @@ class SessionViewModel: ObservableObject {
                             }
                         }
                     }) {
-                        return exercise
+                        return true
                     }
                 }
             }
         }
 
-        // No fallback - if this workout has never been done before, return nil
-        return nil
+        return false
     }
 }

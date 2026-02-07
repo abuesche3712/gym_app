@@ -66,7 +66,6 @@ struct gym_appApp: App {
                         Logger.debug("App launch: Auth restored, starting sync...")
                         await dataRepository.syncFromCloud()
                         PresenceService.shared.goOnline()
-                        await ComposePostViewModel.publishScheduledPosts()
                         await PushNotificationService.shared.saveFCMToken()
                     } else {
                         Logger.debug("App launch: Not authenticated, skipping sync")

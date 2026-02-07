@@ -18,7 +18,6 @@ struct ComposePostSheet: View {
     @State private var selectedContentType: ContentPickerType?
     @State private var didSubmit = false
     @State private var showDraftRestored = false
-    @State private var showSchedulePicker = false
 
     /// Initialize for a text-only post (shows content picker option)
     init() {
@@ -48,9 +47,6 @@ struct ComposePostSheet: View {
 
                     // Caption input
                     captionInput
-
-                    // Schedule section
-                    scheduleSection
                 }
                 .padding(AppSpacing.screenPadding)
                 .padding(.bottom, AppSpacing.xxl)
@@ -62,7 +58,7 @@ struct ComposePostSheet: View {
                 PostEditorToolbar(
                     isProcessing: viewModel.isPosting,
                     canSubmit: !isPostDisabled,
-                    submitTitle: viewModel.isScheduled ? "Schedule" : "Post",
+                    submitTitle: "Post",
                     onCancel: { dismiss() },
                     onSubmit: {
                         HapticManager.shared.tap()
@@ -224,84 +220,6 @@ struct ComposePostSheet: View {
                 Text("Draft restored")
                     .caption(color: AppColors.textTertiary)
                     .transition(.opacity)
-            }
-        }
-    }
-
-    // MARK: - Schedule Section
-
-    private var scheduleSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("SCHEDULE")
-                .font(.caption.weight(.bold))
-                .tracking(0.5)
-                .foregroundColor(AppColors.textTertiary)
-
-            if let scheduledDate = viewModel.scheduledDate {
-                // Show scheduled date with option to remove
-                HStack {
-                    Image(systemName: "clock.fill")
-                        .foregroundColor(AppColors.accent2)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Scheduled for")
-                            .font(.caption)
-                            .foregroundColor(AppColors.textSecondary)
-                        Text(scheduledDate, style: .date)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundColor(AppColors.textPrimary)
-                        +
-                        Text(" at ")
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.textSecondary)
-                        +
-                        Text(scheduledDate, style: .time)
-                            .font(.subheadline.weight(.medium))
-                            .foregroundColor(AppColors.textPrimary)
-                    }
-
-                    Spacer()
-
-                    Button {
-                        withAnimation { viewModel.scheduledDate = nil }
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(AppColors.textTertiary)
-                    }
-                }
-                .padding(AppSpacing.md)
-                .background(AppColors.surfacePrimary)
-                .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .stroke(AppColors.accent2.opacity(0.3), lineWidth: 1)
-                )
-            } else {
-                Button {
-                    showSchedulePicker = true
-                } label: {
-                    HStack(spacing: AppSpacing.sm) {
-                        Image(systemName: "clock")
-                            .foregroundColor(AppColors.textSecondary)
-                        Text("Schedule for later")
-                            .font(.subheadline)
-                            .foregroundColor(AppColors.textSecondary)
-                        Spacer()
-                    }
-                    .padding(AppSpacing.md)
-                    .background(AppColors.surfacePrimary)
-                    .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppCorners.medium)
-                            .stroke(AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .sheet(isPresented: $showSchedulePicker) {
-            ScheduleDatePickerSheet { date in
-                viewModel.scheduledDate = date
             }
         }
     }
@@ -568,63 +486,6 @@ struct ContentPickerSheet: View {
                     dismiss()
                 }
             )
-        }
-    }
-}
-
-// MARK: - Schedule Date Picker Sheet
-
-struct ScheduleDatePickerSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedDate = Date().addingTimeInterval(3600) // Default: 1 hour from now
-    let onSchedule: (Date) -> Void
-
-    private var minimumDate: Date {
-        Date().addingTimeInterval(300) // At least 5 minutes in the future
-    }
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: AppSpacing.lg) {
-                Text("Choose when to publish this post")
-                    .subheadline(color: AppColors.textSecondary)
-                    .padding(.top, AppSpacing.md)
-
-                DatePicker(
-                    "Schedule Date",
-                    selection: $selectedDate,
-                    in: minimumDate...,
-                    displayedComponents: [.date, .hourAndMinute]
-                )
-                .datePickerStyle(.graphical)
-                .tint(AppColors.accent2)
-                .padding(.horizontal, AppSpacing.screenPadding)
-
-                Spacer()
-
-                Button {
-                    onSchedule(selectedDate)
-                    dismiss()
-                } label: {
-                    Text("Set Schedule")
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.md)
-                        .background(AppColors.accent2)
-                        .foregroundColor(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
-                }
-                .padding(.horizontal, AppSpacing.screenPadding)
-                .padding(.bottom, AppSpacing.lg)
-            }
-            .background(AppColors.background.ignoresSafeArea())
-            .navigationTitle("Schedule Post")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
         }
     }
 }

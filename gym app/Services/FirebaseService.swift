@@ -189,6 +189,18 @@ class FirestoreService: ObservableObject {
         social.listenToFriendships(for: userId, onChange: onChange, onError: onError)
     }
 
+    func updateFriendIdsArray(userId: String, friendId: String, add: Bool) async throws {
+        try await social.updateFriendIdsArray(userId: userId, friendId: friendId, add: add)
+    }
+
+    func fetchProfilesBatched(userIds: [String]) async throws -> [String: UserProfile] {
+        try await social.fetchProfilesBatched(userIds: userIds)
+    }
+
+    func setFriendIdsArray(userId: String, friendIds: [String]) async throws {
+        try await social.setFriendIdsArray(userId: userId, friendIds: friendIds)
+    }
+
     // MARK: - Conversation Operations
 
     func saveConversation(_ conversation: Conversation) async throws {

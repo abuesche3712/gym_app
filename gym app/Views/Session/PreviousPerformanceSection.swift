@@ -10,6 +10,7 @@ import SwiftUI
 struct PreviousPerformanceSection: View {
     let exerciseName: String
     let lastData: SessionExercise?
+    var fromSameWorkout: Bool = true
 
     var body: some View {
         Group {
@@ -18,7 +19,7 @@ struct PreviousPerformanceSection: View {
                     HStack {
                         Image(systemName: "clock.arrow.circlepath")
                             .subheadline(color: AppColors.textTertiary)
-                        Text("Last Session")
+                        Text(fromSameWorkout ? "Last Session" : "Last Performed")
                             .subheadline(color: AppColors.textSecondary)
                             .fontWeight(.semibold)
 
@@ -77,6 +78,19 @@ struct PreviousPerformanceSection: View {
                 .background(
                     RoundedRectangle(cornerRadius: AppCorners.medium)
                         .fill(AppColors.surfaceTertiary.opacity(0.5))
+                )
+            } else {
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .subheadline(color: AppColors.textTertiary)
+                    Text("No exercise history")
+                        .subheadline(color: AppColors.textTertiary)
+                }
+                .padding(AppSpacing.cardPadding)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .fill(AppColors.surfaceTertiary.opacity(0.3))
                 )
             }
         }

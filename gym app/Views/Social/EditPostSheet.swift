@@ -74,8 +74,7 @@ struct EditPostSheet: View {
                 icon: contentIcon,
                 iconColor: AppColors.dominant,
                 title: contentTitle,
-                subtitle: contentTypeLabel,
-                isLocked: true
+                subtitle: contentTypeLabel
             )
         }
     }

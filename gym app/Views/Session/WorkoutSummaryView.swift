@@ -21,6 +21,8 @@ struct WorkoutSummaryView: View {
     @State private var showShareSheet = false
     @State private var showPostToFeed = false
     @State private var showShareWithFriend = false
+    @State private var showHighlightPicker = false
+    @State private var selectedShareContent: (any ShareableContent)?
 
     // Computed stats
     private var totalVolume: Double {
@@ -74,7 +76,8 @@ struct WorkoutSummaryView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button {
-                            showPostToFeed = true
+                            onQuickSave(nil, nil)
+                            showHighlightPicker = true
                         } label: {
                             Label("Post to Feed", systemImage: "rectangle.stack")
                         }
@@ -102,8 +105,49 @@ struct WorkoutSummaryView: View {
             .sheet(isPresented: $showShareSheet) {
                 WorkoutShareSheet(items: [generateShareText()])
             }
+            .sheet(isPresented: $showHighlightPicker) {
+                HighlightPickerView(session: session) { highlights in
+                    if highlights.count == 1, let single = highlights.first {
+                        selectedShareContent = single
+                    } else if highlights.count > 1 {
+                        var exercises: [ShareableExercisePerformance] = []
+                        var sets: [ShareableSetPerformance] = []
+
+                        for highlight in highlights {
+                            if let ex = highlight as? ShareableExercisePerformance {
+                                exercises.append(ex)
+                            } else if let s = highlight as? ShareableSetPerformance {
+                                sets.append(s)
+                            } else if let sessionWithHighlights = highlight as? ShareableSessionWithHighlights {
+                                selectedShareContent = sessionWithHighlights
+                                showPostToFeed = true
+                                return
+                            } else if let sess = highlight as? Session {
+                                selectedShareContent = sess
+                                showPostToFeed = true
+                                return
+                            }
+                        }
+
+                        selectedShareContent = ShareableHighlightBundle(
+                            workoutName: session.workoutName,
+                            date: session.date,
+                            exercises: exercises,
+                            sets: sets
+                        )
+                    } else {
+                        // No highlights selected, share full session
+                        selectedShareContent = session
+                    }
+                    showPostToFeed = true
+                }
+            }
             .sheet(isPresented: $showPostToFeed) {
-                ComposePostSheet(content: session)
+                if let content = selectedShareContent {
+                    ComposePostSheet(content: content)
+                } else {
+                    ComposePostSheet(content: session)
+                }
             }
             .sheet(isPresented: $showShareWithFriend) {
                 ShareWithFriendSheet(content: session) { conversationWithProfile in
