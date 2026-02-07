@@ -72,7 +72,7 @@ final class gym_appTests: XCTestCase {
         XCTAssertEqual(breakdown.total, 3)
     }
 
-    func testRecentPRs_detectsWeightAndEstimatedOneRepMax() {
+    func testRecentPRs_detectsEstimatedOneRepMaxUsingBrzycki() {
         let day1 = makeDate(year: 2026, month: 1, day: 1)
         let day2 = makeDate(year: 2026, month: 1, day: 8)
         let day3 = makeDate(year: 2026, month: 1, day: 15)
@@ -93,16 +93,53 @@ final class gym_appTests: XCTestCase {
         switch prs[0].type {
         case .estimatedOneRepMax:
             XCTAssertTrue(prs[0].newBest > prs[0].previousBest)
-        default:
-            XCTFail("Expected estimated 1RM PR on day 3")
         }
 
         switch prs[1].type {
-        case .topWeight:
-            XCTAssertEqual(prs[1].improvement, 5, accuracy: 0.001)
-        default:
-            XCTFail("Expected top-weight PR on day 2")
+        case .estimatedOneRepMax:
+            XCTAssertEqual(prs[1].newBest, 118.125, accuracy: 0.001) // 105 * 36 / (37 - 5)
         }
+    }
+
+    func testRecentPRs_ignoresSetsAbove12Reps() {
+        let day1 = makeDate(year: 2026, month: 1, day: 1)
+        let day2 = makeDate(year: 2026, month: 1, day: 8)
+
+        let sessions = [
+            makeSession(date: day1, exercises: [makeStrengthExercise(name: "Bench", weight: 100, reps: 5)]),
+            makeSession(date: day2, exercises: [makeStrengthExercise(name: "Bench", weight: 100, reps: 13)])
+        ]
+
+        let prs = service.recentPRs(sessions: sessions, limit: 5)
+        XCTAssertEqual(prs.count, 0)
+    }
+
+    func testE1RMProgress_usesBestQualifyingSetPerDay() {
+        let day1Morning = makeDate(year: 2026, month: 1, day: 1)
+        let day1Evening = calendar.date(byAdding: .hour, value: 6, to: day1Morning)!
+        let day2 = makeDate(year: 2026, month: 1, day: 2)
+
+        let day1Exercise = makeStrengthExercise(
+            name: "Deadlift",
+            sets: [
+                SetData(setNumber: 1, weight: 365, reps: 5, completed: true),  // e1RM 410.6
+                SetData(setNumber: 2, weight: 405, reps: 4, completed: true),  // e1RM 437.4 (best)
+                SetData(setNumber: 3, weight: 225, reps: 15, completed: true)  // ignored (>12 reps)
+            ]
+        )
+        let day2Exercise = makeStrengthExercise(name: "Deadlift", weight: 425, reps: 4)
+
+        let sessions = [
+            makeSession(date: day1Morning, exercises: [day1Exercise]),
+            makeSession(date: day1Evening, exercises: [makeStrengthExercise(name: "Deadlift", weight: 385, reps: 4)]),
+            makeSession(date: day2, exercises: [day2Exercise])
+        ]
+
+        let points = service.e1RMProgress(for: "Deadlift", sessions: sessions)
+        XCTAssertEqual(points.count, 2)
+        XCTAssertEqual(points[0].topSet.weight, 405, accuracy: 0.001)
+        XCTAssertEqual(points[0].topSet.reps, 4)
+        XCTAssertEqual(points[1].topSet.weight, 425, accuracy: 0.001)
     }
 
     // MARK: - Helpers
@@ -118,6 +155,18 @@ final class gym_appTests: XCTestCase {
         reps: Int,
         recommendation: ProgressionRecommendation? = nil
     ) -> SessionExercise {
+        makeStrengthExercise(
+            name: name,
+            sets: [SetData(setNumber: 1, weight: weight, reps: reps, completed: true)],
+            recommendation: recommendation
+        )
+    }
+
+    private func makeStrengthExercise(
+        name: String,
+        sets: [SetData],
+        recommendation: ProgressionRecommendation? = nil
+    ) -> SessionExercise {
         SessionExercise(
             exerciseId: UUID(),
             exerciseName: name,
@@ -125,7 +174,7 @@ final class gym_appTests: XCTestCase {
             completedSetGroups: [
                 CompletedSetGroup(
                     setGroupId: UUID(),
-                    sets: [SetData(setNumber: 1, weight: weight, reps: reps, completed: true)]
+                    sets: sets
                 )
             ],
             progressionRecommendation: recommendation

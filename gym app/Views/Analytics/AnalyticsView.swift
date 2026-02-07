@@ -23,6 +23,7 @@ struct AnalyticsView: View {
                         consistencyCard
                         volumeTrendCard
                         liftTrendsCard
+                        strengthProgressCard
                         progressionBreakdownCard
                         recentPRsCard
                     }
@@ -221,6 +222,79 @@ struct AnalyticsView: View {
         )
     }
 
+    private var strengthProgressCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack {
+                Text("Strength e1RM Progress")
+                    .headline(color: AppColors.textPrimary)
+                Spacer()
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .foregroundColor(AppColors.dominant)
+            }
+
+            if viewModel.strengthExerciseOptions.isEmpty {
+                Text("Log strength sets with 1-12 reps to view e1RM progression.")
+                    .caption(color: AppColors.textTertiary)
+            } else {
+                Picker("Exercise", selection: $viewModel.selectedStrengthExercise) {
+                    ForEach(viewModel.strengthExerciseOptions, id: \.self) { exerciseName in
+                        Text(exerciseName).tag(exerciseName)
+                    }
+                }
+                .pickerStyle(.menu)
+
+                let points = viewModel.selectedE1RMPoints
+                if points.isEmpty {
+                    Text("No qualifying sets yet for this exercise.")
+                        .caption(color: AppColors.textTertiary)
+                } else {
+                    E1RMTrendChart(points: points)
+                        .frame(height: 148)
+
+                    HStack {
+                        if let first = points.first, let last = points.last {
+                            Text(formatMonthDay(first.date))
+                                .caption(color: AppColors.textTertiary)
+                            Spacer()
+                            Text(formatMonthDay(last.date))
+                                .caption(color: AppColors.textTertiary)
+                        }
+                    }
+
+                    HStack(spacing: AppSpacing.md) {
+                        analyticsStat(
+                            label: "Current e1RM",
+                            value: viewModel.selectedCurrentE1RM.map { "\(formatWeight($0)) lbs" } ?? "--",
+                            icon: "figure.strengthtraining.traditional",
+                            color: AppColors.dominant
+                        )
+                        analyticsStat(
+                            label: "Best e1RM",
+                            value: viewModel.selectedBestE1RM.map { "\(formatWeight($0)) lbs" } ?? "--",
+                            icon: "trophy.fill",
+                            color: AppColors.warning
+                        )
+                    }
+
+                    if let delta = viewModel.selectedE1RMDelta {
+                        Text(delta == 0 ? "No net change in visible range" : "\(delta > 0 ? "+" : "")\(formatWeight(delta)) lbs vs first point")
+                            .caption(color: delta >= 0 ? AppColors.success : AppColors.warning)
+                            .fontWeight(.semibold)
+                    }
+                }
+            }
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .fill(AppColors.surfacePrimary)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
+                )
+        )
+    }
+
     private var progressionBreakdownCard: some View {
         let breakdown = viewModel.progressionBreakdown
 
@@ -278,10 +352,10 @@ struct AnalyticsView: View {
                             .foregroundColor(AppColors.warning)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(pr.exerciseName)
+                            Text(pr.summary)
                                 .subheadline(color: AppColors.textPrimary)
                                 .fontWeight(.semibold)
-                            Text(pr.summary)
+                            Text("Estimated 1RM: \(formatWeight(pr.newBest)) lbs")
                                 .caption(color: AppColors.textSecondary)
                                 .lineLimit(2)
                         }
@@ -291,7 +365,7 @@ struct AnalyticsView: View {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text(formatMonthDay(pr.date))
                                 .caption(color: AppColors.textTertiary)
-                            Text("+\(formatWeight(pr.improvement))")
+                            Text("+\(formatWeight(pr.improvement)) e1RM")
                                 .caption(color: AppColors.success)
                                 .fontWeight(.semibold)
                         }
@@ -385,6 +459,74 @@ private struct VolumeTrendBars: View {
     }
 }
 
+private struct E1RMTrendChart: View {
+    let points: [E1RMProgressPoint]
+
+    private let horizontalPadding: CGFloat = 12
+    private let verticalPadding: CGFloat = 10
+
+    private var minValue: Double {
+        points.map(\.estimatedOneRepMax).min() ?? 0
+    }
+
+    private var maxValue: Double {
+        points.map(\.estimatedOneRepMax).max() ?? 1
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let size = geometry.size
+            let chartPoints = normalizedPoints(in: size)
+
+            ZStack {
+                RoundedRectangle(cornerRadius: AppCorners.medium)
+                    .fill(AppColors.surfaceSecondary)
+
+                if chartPoints.count >= 2 {
+                    Path { path in
+                        path.move(to: chartPoints[0])
+                        for point in chartPoints.dropFirst() {
+                            path.addLine(to: point)
+                        }
+                    }
+                    .stroke(AppColors.dominant, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                }
+
+                ForEach(Array(points.enumerated()), id: \.element.id) { index, point in
+                    let position = chartPoints[index]
+                    Circle()
+                        .fill(index == points.count - 1 ? AppColors.warning : AppColors.dominant)
+                        .frame(width: index == points.count - 1 ? 8 : 6, height: index == points.count - 1 ? 8 : 6)
+                        .position(position)
+                        .accessibilityLabel("\(formatMonthDay(point.date)), estimated 1RM \(formatWeight(point.estimatedOneRepMax)) pounds")
+                }
+            }
+        }
+    }
+
+    private func normalizedPoints(in size: CGSize) -> [CGPoint] {
+        guard !points.isEmpty else { return [] }
+
+        let plotWidth = max(1, size.width - (horizontalPadding * 2))
+        let plotHeight = max(1, size.height - (verticalPadding * 2))
+        let range = max(maxValue - minValue, 1)
+
+        return points.enumerated().map { index, point in
+            let x: CGFloat
+            if points.count == 1 {
+                x = size.width / 2
+            } else {
+                x = horizontalPadding + (CGFloat(index) / CGFloat(points.count - 1)) * plotWidth
+            }
+
+            let normalizedY = (point.estimatedOneRepMax - minValue) / range
+            let y = size.height - verticalPadding - (CGFloat(normalizedY) * plotHeight)
+
+            return CGPoint(x: x, y: y)
+        }
+    }
+}
+
 private struct ProgressionBreakdownRow: View {
     let label: String
     let count: Int
@@ -432,16 +574,43 @@ struct WeeklyVolumePoint: Identifiable, Hashable {
     var id: Date { weekStart }
 }
 
+private let e1RMMinReps = 1
+private let e1RMMaxReps = 12
+
+private func brzyckiEstimatedOneRepMax(weight: Double, reps: Int) -> Double? {
+    guard weight > 0, (e1RMMinReps...e1RMMaxReps).contains(reps) else { return nil }
+    let denominator = 37.0 - Double(reps)
+    guard denominator > 0 else { return nil }
+    return weight * 36.0 / denominator
+}
+
 struct StrengthTopSet: Hashable {
     let weight: Double
     let reps: Int
 
     var estimatedOneRepMax: Double {
-        weight * (1 + (Double(reps) / 30.0))
+        brzyckiEstimatedOneRepMax(weight: weight, reps: reps) ?? weight
     }
 
     var formatted: String {
-        "\(formatWeight(weight)) x \(reps)"
+        "\(formatWeight(weight))x\(reps)"
+    }
+}
+
+struct E1RMProgressPoint: Identifiable, Hashable {
+    let date: Date
+    let estimatedOneRepMax: Double
+    let topSet: StrengthTopSet
+
+    var id: Date { date }
+}
+
+struct E1RMExerciseProgress: Hashable {
+    let exerciseName: String
+    let points: [E1RMProgressPoint]
+
+    var latestDate: Date {
+        points.last?.date ?? .distantPast
     }
 }
 
@@ -499,7 +668,6 @@ struct ProgressionBreakdown: Hashable {
 }
 
 enum PersonalRecordType {
-    case topWeight
     case estimatedOneRepMax
 }
 
@@ -517,12 +685,7 @@ struct PersonalRecordEvent: Identifiable, Hashable {
     }
 
     var summary: String {
-        switch type {
-        case .topWeight:
-            return "Top set \(topSet.formatted) (\(formatWeight(newBest)) lbs PR)"
-        case .estimatedOneRepMax:
-            return "Top set \(topSet.formatted) (~\(formatWeight(newBest)) 1RM PR)"
-        }
+        "\(topSet.formatted) \(exerciseName) PR"
     }
 }
 
@@ -530,6 +693,7 @@ struct PersonalRecordEvent: Identifiable, Hashable {
 
 struct AnalyticsService {
     private let calendar = Calendar.current
+    private let oneRepMaxPRTolerance = 0.1
 
     func currentStreak(from sessions: [Session], referenceDate: Date = Date()) -> Int {
         let today = calendar.startOfDay(for: referenceDate)
@@ -678,65 +842,82 @@ struct AnalyticsService {
     func recentPRs(sessions: [Session], limit: Int = 3) -> [PersonalRecordEvent] {
         guard limit > 0 else { return [] }
 
-        struct RunningBest {
-            var topWeight: Double
-            var estimatedOneRepMax: Double
-        }
-
-        var bestByExercise: [String: RunningBest] = [:]
+        var bestEstimatedOneRepMaxByExercise: [String: Double] = [:]
         var events: [PersonalRecordEvent] = []
         let orderedSessions = sessions.sorted { $0.date < $1.date }
 
         for session in orderedSessions {
             for exercise in strengthExercises(in: session) {
-                guard let topSet = topStrengthSet(for: exercise) else { continue }
+                guard let topSet = topBrzyckiSet(for: exercise) else { continue }
                 let exerciseName = exercise.exerciseName
 
-                guard let best = bestByExercise[exerciseName] else {
-                    bestByExercise[exerciseName] = RunningBest(
-                        topWeight: topSet.weight,
-                        estimatedOneRepMax: topSet.estimatedOneRepMax
-                    )
+                guard let bestEstimatedOneRepMax = bestEstimatedOneRepMaxByExercise[exerciseName] else {
+                    bestEstimatedOneRepMaxByExercise[exerciseName] = topSet.estimatedOneRepMax
                     continue
                 }
 
-                let weightImproved = topSet.weight > best.topWeight + 0.001
-                let oneRepMaxImproved = topSet.estimatedOneRepMax > best.estimatedOneRepMax + 0.001
-
-                if weightImproved || oneRepMaxImproved {
-                    if weightImproved {
-                        events.append(
-                            PersonalRecordEvent(
-                                exerciseName: exerciseName,
-                                date: session.date,
-                                type: .topWeight,
-                                previousBest: best.topWeight,
-                                newBest: topSet.weight,
-                                topSet: topSet
-                            )
+                if topSet.estimatedOneRepMax > bestEstimatedOneRepMax + oneRepMaxPRTolerance {
+                    events.append(
+                        PersonalRecordEvent(
+                            exerciseName: exerciseName,
+                            date: session.date,
+                            type: .estimatedOneRepMax,
+                            previousBest: bestEstimatedOneRepMax,
+                            newBest: topSet.estimatedOneRepMax,
+                            topSet: topSet
                         )
-                    } else {
-                        events.append(
-                            PersonalRecordEvent(
-                                exerciseName: exerciseName,
-                                date: session.date,
-                                type: .estimatedOneRepMax,
-                                previousBest: best.estimatedOneRepMax,
-                                newBest: topSet.estimatedOneRepMax,
-                                topSet: topSet
-                            )
-                        )
-                    }
+                    )
                 }
 
-                bestByExercise[exerciseName] = RunningBest(
-                    topWeight: max(best.topWeight, topSet.weight),
-                    estimatedOneRepMax: max(best.estimatedOneRepMax, topSet.estimatedOneRepMax)
-                )
+                bestEstimatedOneRepMaxByExercise[exerciseName] = max(bestEstimatedOneRepMax, topSet.estimatedOneRepMax)
             }
         }
 
         return Array(events.sorted { $0.date > $1.date }.prefix(limit))
+    }
+
+    func strengthE1RMProgressByExercise(from sessions: [Session]) -> [E1RMExerciseProgress] {
+        let orderedSessions = sessions.sorted { $0.date < $1.date }
+        var pointsByExerciseAndDay: [String: [Date: E1RMProgressPoint]] = [:]
+
+        for session in orderedSessions {
+            let day = calendar.startOfDay(for: session.date)
+            for exercise in strengthExercises(in: session) {
+                guard let topSet = topBrzyckiSet(for: exercise) else { continue }
+
+                let candidate = E1RMProgressPoint(
+                    date: day,
+                    estimatedOneRepMax: topSet.estimatedOneRepMax,
+                    topSet: topSet
+                )
+
+                let existing = pointsByExerciseAndDay[exercise.exerciseName]?[day]
+                if let existing, !isBetter(candidate, than: existing) {
+                    continue
+                }
+
+                pointsByExerciseAndDay[exercise.exerciseName, default: [:]][day] = candidate
+            }
+        }
+
+        return pointsByExerciseAndDay
+            .map { exerciseName, pointsByDay in
+                let points = pointsByDay.values.sorted { $0.date < $1.date }
+                return E1RMExerciseProgress(exerciseName: exerciseName, points: points)
+            }
+            .filter { !$0.points.isEmpty }
+            .sorted { lhs, rhs in
+                if lhs.latestDate != rhs.latestDate {
+                    return lhs.latestDate > rhs.latestDate
+                }
+                return lhs.exerciseName < rhs.exerciseName
+            }
+    }
+
+    func e1RMProgress(for exerciseName: String, sessions: [Session]) -> [E1RMProgressPoint] {
+        strengthE1RMProgressByExercise(from: sessions)
+            .first(where: { $0.exerciseName == exerciseName })?
+            .points ?? []
     }
 
     private func strengthExercises(in session: Session) -> [SessionExercise] {
@@ -782,6 +963,51 @@ struct AnalyticsService {
             reps: max(1, best.reps ?? 0)
         )
     }
+
+    private func topBrzyckiSet(for exercise: SessionExercise) -> StrengthTopSet? {
+        let candidateSets = exercise.completedSetGroups
+            .flatMap { $0.sets }
+            .filter { set in
+                guard set.completed,
+                      let weight = set.weight,
+                      let reps = set.reps,
+                      weight > 0 else { return false }
+                return (e1RMMinReps...e1RMMaxReps).contains(reps)
+            }
+
+        var best: StrengthTopSet?
+
+        for set in candidateSets {
+            guard let weight = set.weight, let reps = set.reps else { continue }
+            let candidate = StrengthTopSet(weight: weight, reps: reps)
+            if let currentBest = best {
+                if isBetter(candidate, than: currentBest) {
+                    best = candidate
+                }
+            } else {
+                best = candidate
+            }
+        }
+
+        return best
+    }
+
+    private func isBetter(_ lhs: StrengthTopSet, than rhs: StrengthTopSet) -> Bool {
+        if lhs.estimatedOneRepMax != rhs.estimatedOneRepMax {
+            return lhs.estimatedOneRepMax > rhs.estimatedOneRepMax
+        }
+        if lhs.weight != rhs.weight {
+            return lhs.weight > rhs.weight
+        }
+        return lhs.reps < rhs.reps
+    }
+
+    private func isBetter(_ lhs: E1RMProgressPoint, than rhs: E1RMProgressPoint) -> Bool {
+        if lhs.estimatedOneRepMax != rhs.estimatedOneRepMax {
+            return lhs.estimatedOneRepMax > rhs.estimatedOneRepMax
+        }
+        return isBetter(lhs.topSet, than: rhs.topSet)
+    }
 }
 
 // MARK: - Analytics ViewModel
@@ -792,11 +1018,35 @@ final class AnalyticsViewModel: ObservableObject {
     @Published private(set) var workoutsThisWeek = 0
     @Published private(set) var weeklyVolumeTrend: [WeeklyVolumePoint] = []
     @Published private(set) var liftTrends: [LiftTrend] = []
+    @Published private(set) var strengthExerciseOptions: [String] = []
+    @Published private(set) var e1RMProgressByExercise: [String: [E1RMProgressPoint]] = [:]
+    @Published var selectedStrengthExercise: String = ""
     @Published private(set) var progressionBreakdown: ProgressionBreakdown = .empty
     @Published private(set) var recentPRs: [PersonalRecordEvent] = []
     @Published private(set) var analyzedSessionCount = 0
 
     private let analyticsService = AnalyticsService()
+
+    var selectedE1RMPoints: [E1RMProgressPoint] {
+        guard !selectedStrengthExercise.isEmpty else { return [] }
+        return e1RMProgressByExercise[selectedStrengthExercise] ?? []
+    }
+
+    var selectedCurrentE1RM: Double? {
+        selectedE1RMPoints.last?.estimatedOneRepMax
+    }
+
+    var selectedBestE1RM: Double? {
+        selectedE1RMPoints.map(\.estimatedOneRepMax).max()
+    }
+
+    var selectedE1RMDelta: Double? {
+        guard let first = selectedE1RMPoints.first?.estimatedOneRepMax,
+              let last = selectedE1RMPoints.last?.estimatedOneRepMax else {
+            return nil
+        }
+        return last - first
+    }
 
     func load(from sessions: [Session]) {
         analyzedSessionCount = sessions.count
@@ -804,6 +1054,12 @@ final class AnalyticsViewModel: ObservableObject {
         workoutsThisWeek = analyticsService.workoutsThisWeek(from: sessions)
         weeklyVolumeTrend = analyticsService.weeklyVolumeTrend(from: sessions, weeks: 10)
         liftTrends = analyticsService.mostTrainedLiftTrends(from: sessions, limit: 3)
+        let exerciseProgress = analyticsService.strengthE1RMProgressByExercise(from: sessions)
+        strengthExerciseOptions = exerciseProgress.map(\.exerciseName)
+        e1RMProgressByExercise = Dictionary(uniqueKeysWithValues: exerciseProgress.map { ($0.exerciseName, $0.points) })
+        if !strengthExerciseOptions.contains(selectedStrengthExercise) {
+            selectedStrengthExercise = strengthExerciseOptions.first ?? ""
+        }
         progressionBreakdown = analyticsService.progressionBreakdown(from: sessions, days: 28)
         recentPRs = analyticsService.recentPRs(sessions: sessions, limit: 5)
     }

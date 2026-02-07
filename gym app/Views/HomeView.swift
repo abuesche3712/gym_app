@@ -835,10 +835,10 @@ struct HomeView: View {
                                 .foregroundColor(AppColors.warning)
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(pr.exerciseName)
+                                Text(pr.summary)
                                     .subheadline(color: AppColors.textPrimary)
                                     .fontWeight(.semibold)
-                                Text(pr.summary)
+                                Text("Estimated 1RM: \(formatWeight(pr.newBest)) lbs")
                                     .caption(color: AppColors.textSecondary)
                             }
 
