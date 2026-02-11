@@ -61,6 +61,7 @@ class SessionViewModel: ObservableObject {
     @Published var isExerciseTimerRunning = false
     @Published var exerciseTimerIsStopwatch = false  // true = counting up, false = countdown
     @Published var exerciseTimerSetId: String?  // Which set this timer is for (e.g., "0-0")
+    @Published var exerciseTimerElapsed: Int = 0  // Elapsed time when timer stops (for auto-complete)
     private var exerciseTimerStartTime: Date?
     private var exerciseTimerDuration: Int = 0
     private var exerciseTimerCancellable: AnyCancellable?
@@ -1016,6 +1017,7 @@ class SessionViewModel: ObservableObject {
 
     /// Start a countdown timer for a set (e.g., isometric hold)
     func startExerciseTimer(seconds: Int, setId: String) {
+        stopRestTimer()
         exerciseTimerDuration = seconds
         exerciseTimerTotal = seconds
         exerciseTimerStartTime = Date()
@@ -1036,6 +1038,7 @@ class SessionViewModel: ObservableObject {
 
     /// Start a stopwatch timer for a set (e.g., cardio distance run)
     func startExerciseStopwatch(setId: String) {
+        stopRestTimer()
         exerciseTimerStartTime = Date()
         exerciseTimerSetId = setId
         exerciseTimerIsStopwatch = true
@@ -1092,6 +1095,7 @@ class SessionViewModel: ObservableObject {
             HapticManager.shared.timerComplete()
         }
 
+        exerciseTimerElapsed = result
         isExerciseTimerRunning = false
         exerciseTimerSetId = nil
         exerciseTimerStartTime = nil
@@ -1109,6 +1113,19 @@ class SessionViewModel: ObservableObject {
     /// Get the current exercise timer display value
     var exerciseTimerDisplaySeconds: Int {
         exerciseTimerSeconds
+    }
+
+    // MARK: - Exercise Notes
+
+    /// Update notes for a specific exercise during the active session
+    func updateExerciseNotes(moduleIndex: Int, exerciseIndex: Int, notes: String?) {
+        guard var session = currentSession,
+              moduleIndex < session.completedModules.count,
+              exerciseIndex < session.completedModules[moduleIndex].completedExercises.count else { return }
+
+        session.completedModules[moduleIndex].completedExercises[exerciseIndex].notes = notes
+        currentSession = session
+        autoSaveInProgressSession()
     }
 
     // MARK: - History

@@ -694,27 +694,92 @@ struct ExerciseFormView: View {
             updatedExercise.notes = trimmedNotes.isEmpty ? nil : trimmedNotes
 
             // Convert SetGroups back to CompletedSetGroups, preserving completed sets
+            // Use exercise-level isUnilateral (not setGroup-level) to propagate toggle changes
             var newSetGroups: [CompletedSetGroup] = []
             for setGroup in setGroups {
                 var sets: [SetData] = []
+                let wasUnilateral = setGroup.isUnilateral
+                let nowUnilateral = isUnilateral
 
                 // Check if we have preserved all sets from history editing
                 if let allSets = allSetsMap[setGroup.id], !allSets.isEmpty {
-                    sets = allSets
+                    if wasUnilateral == nowUnilateral {
+                        // No change in unilateral state
+                        sets = allSets
+                    } else if nowUnilateral && !wasUnilateral {
+                        // Bilateral → Unilateral: duplicate each set into L/R pairs
+                        for existingSet in allSets {
+                            var leftSet = existingSet
+                            leftSet.side = .left
+                            sets.append(leftSet)
+                            var rightSet = SetData(
+                                setNumber: existingSet.setNumber,
+                                weight: existingSet.weight,
+                                reps: existingSet.reps,
+                                completed: false,
+                                duration: existingSet.duration,
+                                distance: existingSet.distance,
+                                holdTime: existingSet.holdTime,
+                                side: .right
+                            )
+                            // Preserve completion only for the left side
+                            sets.append(rightSet)
+                        }
+                    } else {
+                        // Unilateral → Bilateral: keep only left-side sets, clear side
+                        for existingSet in allSets {
+                            if existingSet.side == .left || existingSet.side == nil {
+                                var bilateralSet = existingSet
+                                bilateralSet.side = nil
+                                sets.append(bilateralSet)
+                            }
+                            // Drop right-side sets
+                        }
+                    }
                 } else {
                     // Use preserved completed sets, then add remaining incomplete sets
                     let completedSets = completedSetsMap[setGroup.id] ?? []
-                    sets.append(contentsOf: completedSets)
 
-                    let completedLogicalSets = setGroup.isUnilateral
-                        ? completedSets.count / 2
-                        : completedSets.count
+                    if wasUnilateral == nowUnilateral {
+                        sets.append(contentsOf: completedSets)
+                    } else if nowUnilateral && !wasUnilateral {
+                        // Bilateral → Unilateral: duplicate completed sets into L/R
+                        for existingSet in completedSets {
+                            var leftSet = existingSet
+                            leftSet.side = .left
+                            sets.append(leftSet)
+                            var rightSet = SetData(
+                                setNumber: existingSet.setNumber,
+                                weight: existingSet.weight,
+                                reps: existingSet.reps,
+                                completed: false,
+                                duration: existingSet.duration,
+                                distance: existingSet.distance,
+                                holdTime: existingSet.holdTime,
+                                side: .right
+                            )
+                            sets.append(rightSet)
+                        }
+                    } else {
+                        // Unilateral → Bilateral: keep left-side completed sets
+                        for existingSet in completedSets {
+                            if existingSet.side == .left || existingSet.side == nil {
+                                var bilateralSet = existingSet
+                                bilateralSet.side = nil
+                                sets.append(bilateralSet)
+                            }
+                        }
+                    }
+
+                    let completedLogicalSets = nowUnilateral
+                        ? sets.count / 2
+                        : sets.count
                     let remainingLogicalSets = setGroup.sets - completedLogicalSets
 
-                    for i in 0..<remainingLogicalSets {
+                    for i in 0..<max(0, remainingLogicalSets) {
                         let setNumber = completedLogicalSets + i + 1
 
-                        if setGroup.isUnilateral {
+                        if nowUnilateral {
                             sets.append(SetData(
                                 setNumber: setNumber,
                                 weight: setGroup.targetWeight,
@@ -759,7 +824,7 @@ struct ExerciseFormView: View {
                         intervalRestDuration: setGroup.intervalRestDuration,
                         isAMRAP: setGroup.isAMRAP,
                         amrapTimeLimit: setGroup.amrapTimeLimit,
-                        isUnilateral: setGroup.isUnilateral,
+                        isUnilateral: isUnilateral,
                         trackRPE: setGroup.trackRPE,
                         implementMeasurables: setGroup.implementMeasurables
                     ))

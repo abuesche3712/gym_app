@@ -118,12 +118,13 @@ struct SetRowView: View {
             }
         }
         .onChange(of: sessionViewModel.isExerciseTimerRunning) { wasRunning, isRunning in
-            // When exercise timer stops (countdown complete), update input fields
+            // When exercise timer stops (countdown complete), update input fields with elapsed time
             if wasRunning && !isRunning && sessionViewModel.exerciseTimerSetId == nil {
-                if exercise.exerciseType == .isometric && sessionViewModel.exerciseTimerTotal > 0 {
-                    inputHoldTime = sessionViewModel.exerciseTimerTotal
-                } else if sessionViewModel.exerciseTimerTotal > 0 {
-                    inputDuration = sessionViewModel.exerciseTimerTotal
+                let elapsed = sessionViewModel.exerciseTimerElapsed
+                if exercise.exerciseType == .isometric && elapsed > 0 {
+                    inputHoldTime = elapsed
+                } else if elapsed > 0 {
+                    inputDuration = elapsed
                     durationManuallySet = true
                 }
             }

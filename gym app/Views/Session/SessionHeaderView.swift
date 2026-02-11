@@ -153,6 +153,10 @@ struct ExerciseCard: View {
     let onEdit: () -> Void
     let onBack: () -> Void
     let onSkip: () -> Void
+    var onNotesChange: ((String?) -> Void)? = nil
+
+    @State private var showNotes = false
+    @State private var notesText: String = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
@@ -194,8 +198,29 @@ struct ExerciseCard: View {
                         .truncationMode(.tail)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Text(exerciseSetsSummary)
-                        .subheadline(color: AppColors.textSecondary)
+                    HStack(spacing: AppSpacing.sm) {
+                        Text(exerciseSetsSummary)
+                            .subheadline(color: AppColors.textSecondary)
+
+                        // Notes button
+                        if onNotesChange != nil {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    showNotes.toggle()
+                                }
+                            } label: {
+                                HStack(spacing: 2) {
+                                    Image(systemName: notesText.isEmpty ? "note.text.badge.plus" : "note.text")
+                                        .caption(color: notesText.isEmpty ? AppColors.textTertiary : AppColors.accent1)
+                                    if !notesText.isEmpty {
+                                        Text("Notes")
+                                            .caption2(color: AppColors.accent1)
+                                    }
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -249,6 +274,22 @@ struct ExerciseCard: View {
                 }
                 .fixedSize()
             }
+
+            // Collapsible notes field
+            if showNotes, onNotesChange != nil {
+                TextField("Add notes for this exercise...", text: $notesText, axis: .vertical)
+                    .font(.subheadline)
+                    .foregroundColor(AppColors.textPrimary)
+                    .padding(AppSpacing.sm)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppCorners.small)
+                            .fill(AppColors.surfaceTertiary)
+                    )
+                    .lineLimit(1...4)
+                    .onChange(of: notesText) { _, newValue in
+                        onNotesChange?(newValue.isEmpty ? nil : newValue)
+                    }
+            }
         }
         .padding(AppSpacing.cardPadding)
         .frame(maxWidth: .infinity)
@@ -265,6 +306,10 @@ struct ExerciseCard: View {
         .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
         .onLongPressGesture {
             onEdit()
+        }
+        .onAppear {
+            notesText = exercise.notes ?? ""
+            if !notesText.isEmpty { showNotes = true }
         }
     }
 

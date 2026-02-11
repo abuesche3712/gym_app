@@ -58,8 +58,8 @@ struct AllSetsSection: View {
                                 onLog: { flatSet, weight, reps, rpe, duration, holdTime, distance, height, intensity, temperature, bandColor, implementMeasurableValues in
                                     onLogSet(flatSet, weight, reps, rpe, duration, holdTime, distance, height, intensity, temperature, bandColor, implementMeasurableValues)
                                     onHighlightClear()
-                                    // Start rest timer after completing either side
-                                    if (flatSet.setData.side == .left || flatSet.setData.side == .right) && exercise.exerciseType != .recovery {
+                                    // Start rest timer only after completing the RIGHT side
+                                    if flatSet.setData.side == .right && exercise.exerciseType != .recovery {
                                         let restPeriod = flatSet.restPeriod ?? appState.defaultRestTime
                                         if !allSetsCompleted(exercise) {
                                             sessionViewModel.startRestTimer(seconds: restPeriod)
@@ -370,27 +370,6 @@ struct UnilateralSetPairView: View {
                     )
                 }
 
-                // Compact rest timer between L and R rows
-                if sessionViewModel.isRestTimerRunning {
-                    HStack(spacing: AppSpacing.xs) {
-                        Image(systemName: "timer")
-                            .caption2(color: sessionViewModel.restTimerSeconds <= 5 ? AppColors.warning : AppColors.textTertiary)
-                        Text("\(sessionViewModel.restTimerSeconds)s")
-                            .monoMedium(color: sessionViewModel.restTimerSeconds <= 5 ? AppColors.warning : AppColors.textSecondary)
-                        Spacer()
-                        Button {
-                            sessionViewModel.stopRestTimer()
-                        } label: {
-                            Text("Skip")
-                                .caption2(color: AppColors.textTertiary)
-                                .fontWeight(.medium)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.horizontal, AppSpacing.sm)
-                    .padding(.vertical, 4)
-                }
-
                 if let right = rightSet {
                     UnilateralSideRow(
                         flatSet: right,
@@ -417,6 +396,8 @@ struct UnilateralSetPairView: View {
 
 /// Individual L or R row within a unilateral set pair, with its own input state
 struct UnilateralSideRow: View {
+    @EnvironmentObject var sessionViewModel: SessionViewModel
+
     let flatSet: FlatSet
     let side: Side
     let exercise: SessionExercise
@@ -425,9 +406,27 @@ struct UnilateralSideRow: View {
     let onLog: (FlatSet, Double?, Int?, Int?, Int?, Int?, Double?, Double?, Int?, Int?, String?, [String: String]?) -> Void
     var onUncheck: ((FlatSet) -> Void)?
 
+    // Shared input state
     @State private var inputWeight: String = ""
     @State private var inputReps: String = ""
     @State private var inputRPE: String = ""
+
+    // Type-specific input state
+    @State private var inputDuration: Int = 0
+    @State private var inputHoldTime: Int = 0
+    @State private var inputDistance: String = ""
+    @State private var inputHeight: String = ""
+    @State private var inputTemperature: String = ""
+    @State private var showTimePicker: Bool = false
+    @State private var durationManuallySet: Bool = false
+
+    /// Unique timer ID for this row
+    private var timerSetId: String { flatSet.id }
+
+    /// Whether this row's exercise timer is running
+    private var timerRunning: Bool {
+        sessionViewModel.isExerciseTimerRunning && sessionViewModel.exerciseTimerSetId == timerSetId
+    }
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
@@ -462,6 +461,22 @@ struct UnilateralSideRow: View {
 
                 Spacer(minLength: 0)
 
+                // Timer button for duration-based types
+                if exercise.exerciseType == .cardio || exercise.exerciseType == .recovery {
+                    Button {
+                        toggleTimer()
+                    } label: {
+                        Image(systemName: timerRunning ? "stop.fill" : "play.fill")
+                            .caption(color: timerRunning ? AppColors.warning : AppColors.accent1)
+                            .frame(width: 32, height: 32)
+                            .background(
+                                Circle()
+                                    .fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accent1.opacity(0.15))
+                            )
+                    }
+                    .buttonStyle(.bouncy)
+                }
+
                 // Log button
                 Button {
                     logSet()
@@ -487,12 +502,50 @@ struct UnilateralSideRow: View {
                       : (highlightNextSet && isFirstIncomplete ? AppColors.dominant.opacity(0.1) : AppColors.surfacePrimary))
         )
         .onAppear { loadDefaults() }
+        .onChange(of: sessionViewModel.isExerciseTimerRunning) { wasRunning, isRunning in
+            // When exercise timer auto-completes, capture elapsed time
+            if wasRunning && !isRunning && sessionViewModel.exerciseTimerSetId == nil {
+                let elapsed = sessionViewModel.exerciseTimerElapsed
+                if exercise.exerciseType == .isometric && elapsed > 0 {
+                    inputHoldTime = elapsed
+                } else if elapsed > 0 {
+                    inputDuration = elapsed
+                    durationManuallySet = true
+                }
+            }
+        }
+        .sheet(isPresented: $showTimePicker) {
+            TimePickerSheet(totalSeconds: $inputDuration, title: "Enter Time", onSave: {
+                durationManuallySet = true
+            })
+        }
     }
 
     private func loadDefaults() {
-        if let w = flatSet.setData.weight { inputWeight = formatWeight(w) }
-        if let r = flatSet.setData.reps { inputReps = "\(r)" }
-        if let rpe = flatSet.setData.rpe { inputRPE = "\(rpe)" }
+        let setData = flatSet.setData
+        if let w = setData.weight { inputWeight = formatWeight(w) }
+        if let r = setData.reps { inputReps = "\(r)" }
+        if let rpe = setData.rpe { inputRPE = "\(rpe)" }
+        if let d = setData.duration { inputDuration = d }
+        if let h = setData.holdTime { inputHoldTime = h }
+        if let dist = setData.distance { inputDistance = formatDistanceValue(dist) }
+        if let ht = setData.height { inputHeight = formatHeight(ht) }
+        if let temp = setData.temperature { inputTemperature = "\(temp)" }
+    }
+
+    private func toggleTimer() {
+        if timerRunning {
+            let elapsed = sessionViewModel.stopExerciseTimer()
+            inputDuration = elapsed
+            durationManuallySet = true
+        } else {
+            if exercise.exerciseType == .isometric {
+                let target = flatSet.targetHoldTime ?? 30
+                sessionViewModel.startExerciseTimer(seconds: target, setId: timerSetId)
+            } else {
+                sessionViewModel.startExerciseStopwatch(setId: timerSetId)
+            }
+        }
     }
 
     @ViewBuilder
@@ -524,7 +577,68 @@ struct UnilateralSideRow: View {
                     .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
                 Text("reps")
                     .caption2(color: AppColors.textTertiary)
-            default:
+
+            case .cardio:
+                // Duration tap button
+                if exercise.cardioMetric.tracksTime {
+                    Button {
+                        if timerRunning {
+                            toggleTimer()
+                        } else if inputDuration > 0 {
+                            showTimePicker = true
+                        } else {
+                            showTimePicker = true
+                        }
+                    } label: {
+                        Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 6)
+                            .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    }
+                    .buttonStyle(.plain)
+                }
+                // Distance field
+                if exercise.cardioMetric.tracksDistance {
+                    TextField("0", text: $inputDistance)
+                        .keyboardType(.decimalPad)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .frame(width: 40)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 4)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    Text(exercise.distanceUnit.abbreviation)
+                        .caption2(color: AppColors.textTertiary)
+                }
+
+            case .isometric:
+                // Hold time button with timer support
+                Button {
+                    if timerRunning {
+                        toggleTimer()
+                    } else if inputHoldTime > 0 {
+                        // Start countdown from target
+                        sessionViewModel.startExerciseTimer(seconds: inputHoldTime, setId: timerSetId)
+                    } else {
+                        let target = flatSet.targetHoldTime ?? 30
+                        sessionViewModel.startExerciseTimer(seconds: target, setId: timerSetId)
+                    }
+                } label: {
+                    Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputHoldTime > 0 ? "\(inputHoldTime)s" : "0s"))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 6)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                }
+                .buttonStyle(.plain)
+                Text("hold")
+                    .caption2(color: AppColors.textTertiary)
+
+            case .explosive:
                 TextField("0", text: $inputReps)
                     .keyboardType(.numberPad)
                     .font(.system(size: 14, weight: .semibold))
@@ -536,6 +650,71 @@ struct UnilateralSideRow: View {
                     .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
                 Text("reps")
                     .caption2(color: AppColors.textTertiary)
+                TextField("0", text: $inputHeight)
+                    .keyboardType(.decimalPad)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 36)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 4)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                Text("in")
+                    .caption2(color: AppColors.textTertiary)
+
+            case .mobility:
+                if exercise.mobilityTracking.tracksReps {
+                    TextField("0", text: $inputReps)
+                        .keyboardType(.numberPad)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .frame(width: 36)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 4)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    Text("reps")
+                        .caption2(color: AppColors.textTertiary)
+                }
+                if exercise.mobilityTracking.tracksDuration {
+                    Button {
+                        showTimePicker = true
+                    } label: {
+                        Text(inputDuration > 0 ? formatDuration(inputDuration) : "0:00")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(AppColors.textPrimary)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 6)
+                            .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+            case .recovery:
+                // Duration display with timer
+                Button {
+                    if !timerRunning {
+                        showTimePicker = true
+                    }
+                } label: {
+                    Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 6)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                }
+                .buttonStyle(.plain)
+                // Temperature field
+                TextField("°F", text: $inputTemperature)
+                    .keyboardType(.numberPad)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 36)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 4)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
             }
 
             if flatSet.trackRPE && (exercise.exerciseType == .strength || exercise.exerciseType == .explosive) {
@@ -559,7 +738,7 @@ struct UnilateralSideRow: View {
 
     private var completedSummary: String {
         let set = flatSet.setData
-        var summary: String
+        let summary: String
         switch exercise.exerciseType {
         case .strength:
             if let weight = set.weight, let reps = set.reps {
@@ -569,15 +748,38 @@ struct UnilateralSideRow: View {
             } else {
                 summary = "Done"
             }
-        default:
-            if let reps = set.reps {
-                summary = "\(reps) reps"
+        case .isometric:
+            if let holdTime = set.holdTime {
+                summary = formatDuration(holdTime) + " hold"
+            } else {
+                summary = "Done"
+            }
+        case .cardio:
+            var parts: [String] = []
+            if let duration = set.duration, duration > 0 { parts.append(formatDuration(duration)) }
+            if let distance = set.distance, distance > 0 { parts.append("\(formatDistanceValue(distance)) \(exercise.distanceUnit.abbreviation)") }
+            summary = parts.isEmpty ? "Done" : parts.joined(separator: " / ")
+        case .explosive:
+            var parts: [String] = []
+            if let reps = set.reps { parts.append("\(reps) reps") }
+            if let height = set.height { parts.append("@ \(formatHeight(height))") }
+            summary = parts.isEmpty ? "Done" : parts.joined(separator: " ")
+        case .mobility:
+            var parts: [String] = []
+            if exercise.mobilityTracking.tracksReps, let reps = set.reps { parts.append("\(reps) reps") }
+            if exercise.mobilityTracking.tracksDuration, let duration = set.duration { parts.append(formatDuration(duration)) }
+            summary = parts.isEmpty ? "Done" : parts.joined(separator: " · ")
+        case .recovery:
+            if let duration = set.duration {
+                var result = formatDuration(duration)
+                if let temp = set.temperature { result += " @ \(temp)°F" }
+                summary = result
             } else {
                 summary = "Done"
             }
         }
         if let rpe = set.rpe {
-            summary += " @ RPE \(rpe)"
+            return summary + " @ RPE \(rpe)"
         }
         return summary
     }
@@ -587,7 +789,39 @@ struct UnilateralSideRow: View {
         let reps = Int(inputReps)
         let rpeValue = Int(inputRPE)
         let validRPE = rpeValue.flatMap { $0 >= 1 && $0 <= 10 ? $0 : nil }
-        onLog(flatSet, weight, reps, validRPE, nil, nil, nil, nil, nil, nil, nil, nil)
+
+        // Stop timer if running for this set
+        if timerRunning {
+            let elapsed = sessionViewModel.stopExerciseTimer()
+            if exercise.exerciseType == .isometric {
+                inputHoldTime = elapsed
+            } else {
+                inputDuration = elapsed
+                durationManuallySet = true
+            }
+        }
+
+        let durationToSave: Int?
+        if exercise.exerciseType == .cardio || exercise.exerciseType == .recovery {
+            durationToSave = durationManuallySet && inputDuration > 0 ? inputDuration : nil
+        } else {
+            durationToSave = inputDuration > 0 ? inputDuration : nil
+        }
+
+        onLog(
+            flatSet,
+            weight,
+            reps,
+            validRPE,
+            durationToSave,
+            inputHoldTime > 0 ? inputHoldTime : nil,
+            Double(inputDistance),
+            Double(inputHeight),
+            nil, // intensity
+            Int(inputTemperature),
+            nil, // bandColor
+            nil  // implementMeasurableValues
+        )
     }
 }
 

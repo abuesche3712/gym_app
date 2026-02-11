@@ -78,7 +78,14 @@ struct ActiveSessionView: View {
                                         canGoBack: canGoBack,
                                         onEdit: { showEditExercise = true },
                                         onBack: { goToPreviousExerciseSuperset() },
-                                        onSkip: { skipToNextExerciseSuperset() }
+                                        onSkip: { skipToNextExerciseSuperset() },
+                                        onNotesChange: { notes in
+                                            sessionViewModel.updateExerciseNotes(
+                                                moduleIndex: sessionViewModel.currentModuleIndex,
+                                                exerciseIndex: sessionViewModel.currentExerciseIndex,
+                                                notes: notes
+                                            )
+                                        }
                                     )
 
                                     // All Sets (expandable rows) - pass fixed width to prevent layout shifts

@@ -249,6 +249,16 @@ struct EditSetGroupSheet: View {
                                     individualSetRow(set, index: index)
                                 }
                                 .buttonStyle(.plain)
+                                .swipeActions(edge: .trailing) {
+                                    if editableSets.count > 1 && !set.completed {
+                                        Button(role: .destructive) {
+                                            editableSets.remove(at: index)
+                                            sets = isUnilateral ? editableSets.count / 2 : editableSets.count
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -272,7 +282,7 @@ struct EditSetGroupSheet: View {
                 }
 
                 // Equipment Attributes (if any)
-                if !implementSpecificMeasurables.isEmpty && exerciseType == .strength {
+                if !implementSpecificMeasurables.isEmpty {
                     Section("Equipment Attributes") {
                         ForEach(Array(implementSpecificMeasurables.enumerated()), id: \.element.key) { index, item in
                             let measurable = item.value
@@ -317,10 +327,8 @@ struct EditSetGroupSheet: View {
 
                 // Options (unilateral, RPE tracking)
                 Section("Options") {
-                    if exerciseType != .cardio {
-                        Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
-                            .tint(AppColors.accent3)
-                    }
+                    Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
+                        .tint(AppColors.accent3)
                     if exerciseType == .strength || exerciseType == .explosive {
                         Toggle("Track RPE", isOn: $trackRPE)
                             .tint(AppColors.dominant)
@@ -576,8 +584,53 @@ struct EditSetGroupSheet: View {
         }
         setGroup.implementMeasurables = measurableTargets
 
-        // Update allSets if we were editing individual sets
+        // Reconcile set count with editable sets
         if !editableSets.isEmpty {
+            let targetDataCount = isUnilateral ? sets * 2 : sets
+            let currentCount = editableSets.count
+
+            if targetDataCount > currentCount {
+                // Add new empty sets
+                let existingLogical = isUnilateral ? currentCount / 2 : currentCount
+                for i in 0..<(targetDataCount - currentCount) {
+                    let setNumber = existingLogical + (isUnilateral ? i / 2 : i) + 1
+                    if isUnilateral {
+                        let side: Side = (i % 2 == 0) ? .left : .right
+                        editableSets.append(SetData(
+                            setNumber: setNumber,
+                            weight: Double(targetWeight),
+                            reps: targetReps,
+                            completed: false,
+                            duration: targetDuration > 0 ? targetDuration : nil,
+                            distance: Double(targetDistance),
+                            holdTime: targetHoldTime > 0 ? targetHoldTime : nil,
+                            side: side
+                        ))
+                    } else {
+                        editableSets.append(SetData(
+                            setNumber: setNumber,
+                            weight: Double(targetWeight),
+                            reps: targetReps,
+                            completed: false,
+                            duration: targetDuration > 0 ? targetDuration : nil,
+                            distance: Double(targetDistance),
+                            holdTime: targetHoldTime > 0 ? targetHoldTime : nil
+                        ))
+                    }
+                }
+            } else if targetDataCount < currentCount {
+                // Remove from the end, but only incomplete sets
+                var toRemove = currentCount - targetDataCount
+                while toRemove > 0 && editableSets.count > targetDataCount {
+                    if let lastIndex = editableSets.indices.last, !editableSets[lastIndex].completed {
+                        editableSets.removeLast()
+                        toRemove -= 1
+                    } else {
+                        break
+                    }
+                }
+            }
+
             setGroup.allSets = editableSets
             setGroup.completedSets = editableSets.filter { $0.completed }
             setGroup.completedSetsCount = setGroup.completedSets.count
