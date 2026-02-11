@@ -34,12 +34,12 @@ class ModuleViewModel: ObservableObject {
         // Clean up any orphaned superset IDs before saving
         moduleToSave.cleanupOrphanedSupersets()
         repository.saveModule(moduleToSave)
-        loadModules()
+        modules = repository.modules
     }
 
     func deleteModule(_ module: Module) {
         repository.deleteModule(module)
-        loadModules()
+        modules = repository.modules
     }
 
     func deleteModules(at offsets: IndexSet) {

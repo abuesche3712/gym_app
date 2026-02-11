@@ -31,6 +31,8 @@ struct ModuleFormView: View {
     @State private var draggedExercise: ExerciseInstance?
     @State private var showingShareSheet = false
     @State private var showingPostToFeed = false
+    @State private var selectedForSuperset: Set<UUID> = []
+    @State private var isSelectingForSuperset = false
     @FocusState private var focusedField: Bool
 
     private var isEditing: Bool { module != nil }
@@ -207,6 +209,12 @@ struct ModuleFormView: View {
 
                 FormDivider()
 
+                // Superset toolbar
+                if exercises.count >= 2 {
+                    supersetToolbar
+                    FormDivider()
+                }
+
                 // Exercise list
                 if exercises.isEmpty {
                     emptyExercisesView
@@ -292,22 +300,197 @@ struct ModuleFormView: View {
             ? exercise.exerciseType.displayName
             : "\(exercise.exerciseType.displayName) • \(formatSetScheme(exercise.setGroups))"
 
-        return BuilderItemRow(
-            index: index,
-            title: exercise.name,
-            subtitle: subtitle,
-            accentColor: moduleColor,
-            showEditButton: true,
-            onEdit: {
+        return HStack(spacing: AppSpacing.md) {
+            // Selection checkbox or drag handle
+            if isSelectingForSuperset {
+                Button {
+                    if selectedForSuperset.contains(exercise.id) {
+                        selectedForSuperset.remove(exercise.id)
+                    } else {
+                        selectedForSuperset.insert(exercise.id)
+                    }
+                } label: {
+                    Image(systemName: selectedForSuperset.contains(exercise.id) ? "checkmark.circle.fill" : "circle")
+                        .font(.title3)
+                        .foregroundColor(selectedForSuperset.contains(exercise.id) ? moduleColor : AppColors.textTertiary)
+                }
+            } else {
+                Image(systemName: "line.3.horizontal")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(width: 20)
+            }
+
+            // Superset indicator or order number
+            if let supersetId = exercise.supersetGroupId {
+                let supersetIndex = getSupersetIndex(for: supersetId)
+                ZStack {
+                    Circle()
+                        .fill(AppColors.accent1.opacity(0.12))
+                        .frame(width: 28, height: 28)
+                    Text("S\(supersetIndex)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(AppColors.accent1)
+                }
+            } else {
+                ZStack {
+                    Circle()
+                        .fill(moduleColor.opacity(0.12))
+                        .frame(width: 28, height: 28)
+                    Text("\(index + 1)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(moduleColor)
+                }
+            }
+
+            // Exercise info
+            VStack(alignment: .leading, spacing: 2) {
+                Text(exercise.name)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(AppColors.textPrimary)
+                if let subtitle = Optional(subtitle), !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+            }
+
+            Spacer()
+
+            // Edit button
+            Button {
                 editingExercise = exercise
-            },
-            onDelete: {
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.subheadline)
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(width: 32, height: 32)
+            }
+
+            // Delete button
+            Button {
                 withAnimation {
                     exercises.remove(at: index)
                     reorderExercises()
                 }
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.body)
+                    .foregroundColor(AppColors.textTertiary.opacity(0.6))
             }
-        )
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.vertical, AppSpacing.md)
+        .background(AppColors.surfacePrimary)
+        .contextMenu {
+            if exercise.supersetGroupId != nil {
+                Button {
+                    breakSupersetForExercise(exercise.id)
+                } label: {
+                    Label("Unlink from Superset", systemImage: "link.badge.minus")
+                }
+            }
+        }
+    }
+
+    // MARK: - Superset Support
+
+    private var supersetToolbar: some View {
+        HStack(spacing: AppSpacing.md) {
+            if isSelectingForSuperset {
+                Button {
+                    withAnimation {
+                        isSelectingForSuperset = false
+                        selectedForSuperset.removeAll()
+                    }
+                } label: {
+                    Text("Cancel")
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.textSecondary)
+                }
+
+                Spacer()
+
+                if selectedForSuperset.count >= 2 {
+                    Button {
+                        createSupersetFromSelection()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "link")
+                            Text("Link \(selectedForSuperset.count) as Superset")
+                        }
+                        .font(.subheadline.weight(.medium))
+                        .foregroundColor(moduleColor)
+                    }
+                } else {
+                    Text("Select 2+ exercises")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+            } else {
+                Spacer()
+                Button {
+                    withAnimation {
+                        isSelectingForSuperset = true
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "link.badge.plus")
+                        Text("Create Superset")
+                    }
+                    .font(.subheadline)
+                    .foregroundColor(moduleColor)
+                }
+            }
+        }
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.vertical, AppSpacing.sm)
+        .background(AppColors.surfacePrimary)
+    }
+
+    private func createSupersetFromSelection() {
+        let supersetId = UUID()
+        for i in exercises.indices {
+            if selectedForSuperset.contains(exercises[i].id) {
+                exercises[i].supersetGroupId = supersetId
+            }
+        }
+        withAnimation {
+            isSelectingForSuperset = false
+            selectedForSuperset.removeAll()
+        }
+    }
+
+    private func breakSupersetForExercise(_ exerciseId: UUID) {
+        guard let exercise = exercises.first(where: { $0.id == exerciseId }),
+              let supersetId = exercise.supersetGroupId else { return }
+
+        // Check how many exercises share this superset
+        let supersetMembers = exercises.filter { $0.supersetGroupId == supersetId }
+
+        if supersetMembers.count <= 2 {
+            // Break entire superset if only 2 members (removing one leaves a solo)
+            for i in exercises.indices {
+                if exercises[i].supersetGroupId == supersetId {
+                    exercises[i].supersetGroupId = nil
+                }
+            }
+        } else {
+            // Just remove this exercise from the superset
+            if let index = exercises.firstIndex(where: { $0.id == exerciseId }) {
+                exercises[index].supersetGroupId = nil
+            }
+        }
+    }
+
+    private func getSupersetIndex(for supersetId: UUID) -> Int {
+        let uniqueSupersetIds = Array(Set(exercises.compactMap { $0.supersetGroupId }))
+            .sorted { id1, id2 in
+                let index1 = exercises.firstIndex { $0.supersetGroupId == id1 } ?? 0
+                let index2 = exercises.firstIndex { $0.supersetGroupId == id2 } ?? 0
+                return index1 < index2
+            }
+        return (uniqueSupersetIds.firstIndex(of: supersetId) ?? 0) + 1
     }
 
     private var browseLibraryButton: some View {
@@ -474,6 +657,34 @@ struct ExerciseReorderDropDelegate: DropDelegate {
     }
 }
 
+// MARK: - Set Group Reorder Drop Delegate
+
+struct SetGroupReorderDropDelegate: DropDelegate {
+    let item: SetGroup
+    @Binding var setGroups: [SetGroup]
+    @Binding var draggedItem: SetGroup?
+
+    func dropEntered(info: DropInfo) {
+        guard let draggedItem = draggedItem,
+              draggedItem.id != item.id,
+              let fromIndex = setGroups.firstIndex(where: { $0.id == draggedItem.id }),
+              let toIndex = setGroups.firstIndex(where: { $0.id == item.id }) else { return }
+
+        withAnimation(.default) {
+            setGroups.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
+        }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggedItem = nil
+        return true
+    }
+}
+
 // MARK: - Inline Exercise Editor
 
 struct InlineExerciseEditor: View {
@@ -491,6 +702,7 @@ struct InlineExerciseEditor: View {
     @State private var notes: String = ""
     @State private var showingAddSetGroup = false
     @State private var editingSetGroupIndex: Int? = nil
+    @State private var draggedSetGroup: SetGroup?
     @FocusState private var focusedField: Bool
 
     // Additional exercise properties
@@ -580,15 +792,15 @@ struct InlineExerciseEditor: View {
                         } else {
                             ForEach(Array(setGroups.enumerated()), id: \.element.id) { index, setGroup in
                                 setGroupRow(setGroup: setGroup, index: index)
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                        Button(role: .destructive) {
-                                            withAnimation {
-                                                _ = setGroups.remove(at: index)
-                                            }
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                        }
+                                    .onDrag {
+                                        draggedSetGroup = setGroup
+                                        return NSItemProvider(object: setGroup.id.uuidString as NSString)
                                     }
+                                    .onDrop(of: [.text], delegate: SetGroupReorderDropDelegate(
+                                        item: setGroup,
+                                        setGroups: $setGroups,
+                                        draggedItem: $draggedSetGroup
+                                    ))
 
                                 if index < setGroups.count - 1 {
                                     FormDivider()
@@ -695,41 +907,61 @@ struct InlineExerciseEditor: View {
     }
 
     private func setGroupRow(setGroup: SetGroup, index: Int) -> some View {
-        Button {
-            editingSetGroupIndex = index
-        } label: {
-            HStack(spacing: AppSpacing.md) {
-                ZStack {
-                    Circle()
-                        .fill(AppColors.dominant.opacity(0.15))
-                        .frame(width: 28, height: 28)
-                    Text("\(index + 1)")
-                        .caption(color: AppColors.dominant)
+        HStack(spacing: AppSpacing.md) {
+            // Drag handle
+            Image(systemName: "line.3.horizontal")
+                .font(.subheadline.weight(.medium))
+                .foregroundColor(AppColors.textTertiary)
+                .frame(width: 20)
+
+            // Tap to edit
+            Button {
+                editingSetGroupIndex = index
+            } label: {
+                HStack(spacing: AppSpacing.md) {
+                    ZStack {
+                        Circle()
+                            .fill(AppColors.dominant.opacity(0.15))
+                            .frame(width: 28, height: 28)
+                        Text("\(index + 1)")
+                            .caption(color: AppColors.dominant)
+                            .fontWeight(.semibold)
+                    }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(setGroup.formattedTarget)
+                            .subheadline(color: AppColors.textPrimary)
+                            .fontWeight(.medium)
+
+                        if let rest = setGroup.formattedRest {
+                            Text("Rest: \(rest)")
+                                .caption(color: AppColors.textSecondary)
+                        }
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .caption(color: AppColors.textTertiary)
                         .fontWeight(.semibold)
                 }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(setGroup.formattedTarget)
-                        .subheadline(color: AppColors.textPrimary)
-                        .fontWeight(.medium)
-
-                    if let rest = setGroup.formattedRest {
-                        Text("Rest: \(rest)")
-                            .caption(color: AppColors.textSecondary)
-                    }
-                }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .caption(color: AppColors.textTertiary)
-                    .fontWeight(.semibold)
             }
-            .padding(.horizontal, AppSpacing.cardPadding)
-            .padding(.vertical, AppSpacing.md)
-            .background(AppColors.surfacePrimary)
+            .buttonStyle(.plain)
+
+            // Delete button
+            Button {
+                withAnimation {
+                    _ = setGroups.remove(at: index)
+                }
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.body)
+                    .foregroundColor(AppColors.textTertiary.opacity(0.6))
+            }
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, AppSpacing.cardPadding)
+        .padding(.vertical, AppSpacing.md)
+        .background(AppColors.surfacePrimary)
     }
 
     private func loadExercise() {

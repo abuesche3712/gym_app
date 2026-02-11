@@ -167,12 +167,12 @@ class WorkoutViewModel: ObservableObject {
 
     func saveWorkout(_ workout: Workout) {
         repository.saveWorkout(workout)
-        loadWorkouts()
+        workouts = repository.workouts
     }
 
     func deleteWorkout(_ workout: Workout) {
         repository.deleteWorkout(workout)
-        loadWorkouts()
+        workouts = repository.workouts
     }
 
     func deleteWorkouts(at offsets: IndexSet) {
