@@ -145,14 +145,25 @@ class StrongImportService {
             throw StrongImportError.emptyFile
         }
 
-        // Skip header row
+        // Parse the header row to build a column name → index map
+        let headerFields = lines[0]
+        let columnMap = buildColumnMap(from: headerFields)
+
+        // Validate required columns are present
+        guard columnMap["date"] != nil else {
+            throw StrongImportError.invalidFormat("Missing required 'Date' column in header")
+        }
+        guard columnMap["exercise name"] != nil else {
+            throw StrongImportError.invalidFormat("Missing required 'Exercise Name' column in header")
+        }
+
         let dataLines = Array(lines.dropFirst())
 
         for (index, line) in dataLines.enumerated() {
             let lineNumber = index + 2 // +1 for header, +1 for 1-based indexing
 
             do {
-                if let row = try parseCSVRow(line, csvWeightUnit: csvWeightUnit, appWeightUnit: appWeightUnit) {
+                if let row = try parseCSVRow(line, columnMap: columnMap, csvWeightUnit: csvWeightUnit, appWeightUnit: appWeightUnit) {
                     rows.append(row)
                 } else {
                     // Row was skipped (empty set)
@@ -165,6 +176,18 @@ class StrongImportService {
         }
 
         return (rows, warnings, skippedCount)
+    }
+
+    /// Build a mapping from lowercase header name to column index
+    private func buildColumnMap(from headers: [String]) -> [String: Int] {
+        var map: [String: Int] = [:]
+        for (index, header) in headers.enumerated() {
+            let key = header.trimmingCharacters(in: .whitespaces).lowercased()
+            if !key.isEmpty {
+                map[key] = index
+            }
+        }
+        return map
     }
 
     /// Parse CSV string into lines, handling quoted fields with newlines
@@ -242,28 +265,30 @@ class StrongImportService {
         return lines
     }
 
-    /// Parse a single CSV row into a StrongCSVRow
+    /// Safely get a trimmed field value by column name, returning a default if the column is missing
+    private func field(_ fields: [String], column: String, columnMap: [String: Int], default defaultValue: String = "") -> String {
+        guard let index = columnMap[column], index < fields.count else { return defaultValue }
+        return fields[index].trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Parse a single CSV row into a StrongCSVRow using header-based column mapping
     private func parseCSVRow(
         _ fields: [String],
+        columnMap: [String: Int],
         csvWeightUnit: WeightUnit,
         appWeightUnit: WeightUnit
     ) throws -> StrongCSVRow? {
-        // Expected columns: Date, Workout Name, Duration, Exercise Name, Set Order, Weight, Reps, Distance, Seconds, Notes, Workout Notes
-        guard fields.count >= 10 else {
-            throw StrongImportError.invalidFormat("Row has \(fields.count) columns, expected at least 10")
-        }
-
-        let dateStr = fields[0].trimmingCharacters(in: .whitespaces)
-        let workoutName = fields[1].trimmingCharacters(in: .whitespaces)
-        let duration = fields[2].trimmingCharacters(in: .whitespaces)
-        let exerciseName = fields[3].trimmingCharacters(in: .whitespaces)
-        let setOrderStr = fields[4].trimmingCharacters(in: .whitespaces)
-        let weightStr = fields[5].trimmingCharacters(in: .whitespaces)
-        let repsStr = fields[6].trimmingCharacters(in: .whitespaces)
-        let distanceStr = fields[7].trimmingCharacters(in: .whitespaces)
-        let secondsStr = fields[8].trimmingCharacters(in: .whitespaces)
-        let notes = fields[9].trimmingCharacters(in: .whitespaces)
-        let workoutNotes = fields.count > 10 ? fields[10].trimmingCharacters(in: .whitespaces) : ""
+        let dateStr = field(fields, column: "date", columnMap: columnMap)
+        let workoutName = field(fields, column: "workout name", columnMap: columnMap)
+        let duration = field(fields, column: "duration", columnMap: columnMap)
+        let exerciseName = field(fields, column: "exercise name", columnMap: columnMap)
+        let setOrderStr = field(fields, column: "set order", columnMap: columnMap)
+        let weightStr = field(fields, column: "weight", columnMap: columnMap)
+        let repsStr = field(fields, column: "reps", columnMap: columnMap)
+        let distanceStr = field(fields, column: "distance", columnMap: columnMap)
+        let secondsStr = field(fields, column: "seconds", columnMap: columnMap)
+        let notes = field(fields, column: "notes", columnMap: columnMap)
+        let workoutNotes = field(fields, column: "workout notes", columnMap: columnMap)
 
         // Skip rows with empty exercise name
         if exerciseName.isEmpty {
@@ -271,7 +296,7 @@ class StrongImportService {
         }
 
         // Parse date
-        guard let date = Self.dateFormatter.date(from: dateStr) else {
+        guard !dateStr.isEmpty, let date = Self.dateFormatter.date(from: dateStr) else {
             throw StrongImportError.parsingFailed("Invalid date format: \(dateStr)")
         }
 

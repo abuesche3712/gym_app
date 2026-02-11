@@ -10,6 +10,7 @@ import SwiftUI
 
 struct SessionDetailView: View {
     @EnvironmentObject var sessionViewModel: SessionViewModel
+    @EnvironmentObject var workoutViewModel: WorkoutViewModel
     @Environment(\.dismiss) private var dismiss
 
     let session: Session
@@ -33,6 +34,8 @@ struct SessionDetailView: View {
     @State private var setToShare: ShareableSetPerformance?
     @State private var exerciseToPost: ShareableExercisePerformance?
     @State private var setToPost: ShareableSetPerformance?
+    @State private var showConversionAlert = false
+    @State private var conversionResultMessage = ""
 
     private var currentSession: Session {
         if readOnly { return session }
@@ -72,6 +75,18 @@ struct SessionDetailView: View {
             if !readOnly {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: AppSpacing.md) {
+                        // Convert to Workout (imported sessions only)
+                        if session.isImported {
+                            Button {
+                                convertToWorkout()
+                            } label: {
+                                Image(systemName: "arrow.up.doc")
+                                    .font(.body.weight(.medium))
+                                    .foregroundColor(AppColors.textSecondary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+
                         // Share menu
                         Menu {
                             Button {
@@ -201,11 +216,31 @@ struct SessionDetailView: View {
         } message: {
             Text("This will permanently delete this workout from your history.")
         }
+        .alert("Workout Created", isPresented: $showConversionAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(conversionResultMessage)
+        }
         .onAppear {
             withAnimation(AppAnimation.entrance) {
                 animateIn = true
             }
         }
+    }
+
+    // MARK: - Convert to Workout
+
+    private func convertToWorkout() {
+        let result = ImportConversionService.shared.convertSessionToWorkout(session)
+        workoutViewModel.saveWorkout(result.workout)
+
+        var message = "Created workout '\(result.workout.name)' with \(result.workout.standaloneExercises.count) exercises."
+        if !result.createdExercises.isEmpty {
+            message += "\n\nCreated \(result.createdExercises.count) new exercise\(result.createdExercises.count == 1 ? "" : "s"): \(result.createdExercises.joined(separator: ", "))"
+        }
+
+        conversionResultMessage = message
+        showConversionAlert = true
     }
 
     // MARK: - Hero Section
@@ -1270,5 +1305,6 @@ private struct SessionShareSheet: UIViewControllerRepresentable {
             notes: "Great session! Hit a PR on squats."
         ))
         .environmentObject(SessionViewModel())
+        .environmentObject(WorkoutViewModel())
     }
 }

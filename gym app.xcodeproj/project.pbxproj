@@ -200,6 +200,7 @@
 		SOCLCMP02BUILD001 /* SocialComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = SOCLCMP01FILE001 /* SocialComponents.swift */; };
 		SSNVTST02BUILD002 /* SessionNavigatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SSNVTST01FILE001 /* SessionNavigatorTests.swift */; };
 		STGIMP02BUILD /* StrongImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = STGIMP01FILE /* StrongImportService.swift */; };
+		IMPCNV02BUILD /* ImportConversionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMPCNV01FILE /* ImportConversionService.swift */; };
 		STRCHG02BUILD002 /* StructuralChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = STRCHG01FILE001 /* StructuralChange.swift */; };
 		STRINP02BUILD002 /* StrengthInputsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = STRINP01FILE001 /* StrengthInputsView.swift */; };
 		SUPERSET002HELPER002 /* SupersetHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = SUPERSET001HELPER001 /* SupersetHelper.swift */; };
@@ -480,6 +481,7 @@
 		SOCLCMP01FILE001 /* SocialComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialComponents.swift; sourceTree = "<group>"; };
 		SSNVTST01FILE001 /* SessionNavigatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNavigatorTests.swift; sourceTree = "<group>"; };
 		STGIMP01FILE /* StrongImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StrongImportService.swift; sourceTree = "<group>"; };
+		IMPCNV01FILE /* ImportConversionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportConversionService.swift; sourceTree = "<group>"; };
 		STRCHG01FILE001 /* StructuralChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StructuralChange.swift; sourceTree = "<group>"; };
 		STRINP01FILE001 /* StrengthInputsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StrengthInputsView.swift; sourceTree = "<group>"; };
 		SUPERSET001HELPER001 /* SupersetHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SupersetHelper.swift; sourceTree = "<group>"; };
@@ -897,6 +899,7 @@
 				WKDIFF01FILE001 /* WorkoutDiffService.swift */,
 				QKLGSVC01FILE /* QuickLogService.swift */,
 				STGIMP01FILE /* StrongImportService.swift */,
+				IMPCNV01FILE /* ImportConversionService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -1506,6 +1509,7 @@
 				WDGSVC02BUILD002 /* WidgetData.swift in Sources */,
 				QKLGSVC02BUILD /* QuickLogService.swift in Sources */,
 				STGIMP02BUILD /* StrongImportService.swift in Sources */,
+				IMPCNV02BUILD /* ImportConversionService.swift in Sources */,
 				IMPDTV02BUILD /* ImportDataView.swift in Sources */,
 				QKLGVM02BUILD /* QuickLogViewModel.swift in Sources */,
 				QKLGSHT02BUILD /* QuickLogSheet.swift in Sources */,
