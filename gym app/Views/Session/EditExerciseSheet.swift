@@ -78,6 +78,9 @@ struct EditExerciseSheet: View {
     @State private var trackReps: Bool = true
     @State private var trackDuration: Bool = false
 
+    // Unilateral
+    @State private var isUnilateral: Bool = false
+
     // Set groups
     @State private var setGroups: [EditableSetGroup] = []
 
@@ -236,6 +239,8 @@ struct EditExerciseSheet: View {
                     Label(type.displayName, systemImage: type.icon).tag(type)
                 }
             }
+
+            Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
         }
     }
 
@@ -479,6 +484,7 @@ struct EditExerciseSheet: View {
         primaryMuscles = exercise.primaryMuscles
         secondaryMuscles = exercise.secondaryMuscles
         selectedImplementIds = exercise.implementIds
+        isUnilateral = exercise.completedSetGroups.first?.isUnilateral ?? false
 
         // Convert CompletedSetGroups to EditableSetGroups
         setGroups = exercise.completedSetGroups.map { group in
@@ -570,7 +576,10 @@ struct EditExerciseSheet: View {
         // Convert EditableSetGroups back to CompletedSetGroups
         var newSetGroups: [CompletedSetGroup] = []
 
-        for editableGroup in setGroups {
+        for var editableGroup in setGroups {
+            // Apply exercise-level unilateral setting to each set group
+            editableGroup.isUnilateral = isUnilateral
+
             var sets: [SetData] = []
 
             // If we have allSets (from history editing), use those directly

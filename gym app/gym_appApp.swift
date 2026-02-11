@@ -8,6 +8,7 @@
 import SwiftUI
 import FirebaseCore
 import FirebaseMessaging
+import WidgetKit
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
@@ -82,6 +83,7 @@ struct gym_appApp: App {
                         if authService.currentUser != nil {
                             PresenceService.shared.goOffline()
                         }
+                        WidgetCenter.shared.reloadTimelines(ofKind: "TodayWorkoutWidget")
                     @unknown default:
                         break
                     }

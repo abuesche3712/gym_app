@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import WidgetKit
 
 /// Data passed from the main app to the widget via App Groups
 struct TodayWorkoutData: Codable {
@@ -78,9 +79,6 @@ enum WidgetDataService {
 
     /// Request widget timeline refresh
     static func refreshWidget() {
-        // WidgetCenter is only available in WidgetKit
-        // The main app will call this after updating data
-        // Import WidgetKit in the main app and call:
-        // WidgetCenter.shared.reloadTimelines(ofKind: "TodayWorkoutWidget")
+        WidgetCenter.shared.reloadTimelines(ofKind: "TodayWorkoutWidget")
     }
 }

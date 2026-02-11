@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ModuleFormView: View {
     @EnvironmentObject var moduleViewModel: ModuleViewModel
@@ -27,6 +28,9 @@ struct ModuleFormView: View {
     @State private var editingExercise: ExerciseInstance?
     @State private var searchText = ""
     @State private var isSearchFocused = false
+    @State private var draggedExercise: ExerciseInstance?
+    @State private var showingShareSheet = false
+    @State private var showingPostToFeed = false
     @FocusState private var focusedField: Bool
 
     private var isEditing: Bool { module != nil }
@@ -81,6 +85,44 @@ struct ModuleFormView: View {
                 .fontWeight(.semibold)
                 .foregroundColor(name.trimmingCharacters(in: .whitespaces).isEmpty ? AppColors.textTertiary : AppColors.dominant)
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+
+            if isEditing, let module = module {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button {
+                            showingPostToFeed = true
+                        } label: {
+                            Label("Post to Feed", systemImage: "rectangle.stack")
+                        }
+
+                        Button {
+                            showingShareSheet = true
+                        } label: {
+                            Label("Share with Friend", systemImage: "paperplane")
+                        }
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            if let module = module {
+                ShareWithFriendSheet(content: module) { conversationWithProfile in
+                    let chatViewModel = ChatViewModel(
+                        conversation: conversationWithProfile.conversation,
+                        otherParticipant: conversationWithProfile.otherParticipant,
+                        otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+                    )
+                    let content = try module.createMessageContent()
+                    try await chatViewModel.sendSharedContent(content)
+                }
+            }
+        }
+        .sheet(isPresented: $showingPostToFeed) {
+            if let module = module {
+                ComposePostSheet(content: module)
             }
         }
         .sheet(isPresented: $showingExercisePicker) {
@@ -228,6 +270,15 @@ struct ModuleFormView: View {
         VStack(spacing: 0) {
             ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
                 exerciseRow(exercise: exercise, index: index)
+                    .onDrag {
+                        draggedExercise = exercise
+                        return NSItemProvider(object: exercise.id.uuidString as NSString)
+                    }
+                    .onDrop(of: [.text], delegate: ExerciseReorderDropDelegate(
+                        item: exercise,
+                        exercises: $exercises,
+                        draggedItem: $draggedExercise
+                    ))
 
                 if index < exercises.count - 1 {
                     FormDivider()
@@ -307,6 +358,7 @@ struct ModuleFormView: View {
             templateId: template.id,
             name: template.name,
             exerciseType: template.exerciseType,
+            isUnilateral: template.isUnilateral,
             primaryMuscles: template.primaryMuscles,
             secondaryMuscles: template.secondaryMuscles,
             implementIds: template.implementIds,
@@ -390,6 +442,38 @@ struct ModuleFormView: View {
     }
 }
 
+// MARK: - Exercise Reorder Drop Delegate
+
+struct ExerciseReorderDropDelegate: DropDelegate {
+    let item: ExerciseInstance
+    @Binding var exercises: [ExerciseInstance]
+    @Binding var draggedItem: ExerciseInstance?
+
+    func dropEntered(info: DropInfo) {
+        guard let draggedItem = draggedItem,
+              draggedItem.id != item.id,
+              let fromIndex = exercises.firstIndex(where: { $0.id == draggedItem.id }),
+              let toIndex = exercises.firstIndex(where: { $0.id == item.id }) else { return }
+
+        withAnimation(.default) {
+            exercises.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
+        }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggedItem = nil
+        // Reorder after drop
+        for i in exercises.indices {
+            exercises[i].order = i
+        }
+        return true
+    }
+}
+
 // MARK: - Inline Exercise Editor
 
 struct InlineExerciseEditor: View {
@@ -461,21 +545,19 @@ struct InlineExerciseEditor: View {
                     .padding(.vertical, AppSpacing.sm)
                     .background(AppColors.surfacePrimary)
 
-                    // Unilateral toggle (except for cardio)
-                    if exerciseType != .cardio {
-                        FormDivider()
-                        HStack(spacing: AppSpacing.md) {
-                            Image(systemName: "figure.walk")
-                                .body(color: AppColors.textTertiary)
-                                .frame(width: 24)
+                    // Unilateral toggle
+                    FormDivider()
+                    HStack(spacing: AppSpacing.md) {
+                        Image(systemName: "figure.walk")
+                            .body(color: AppColors.textTertiary)
+                            .frame(width: 24)
 
-                            Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
-                                .tint(AppColors.accent3)
-                        }
-                        .padding(.horizontal, AppSpacing.cardPadding)
-                        .padding(.vertical, AppSpacing.md)
-                        .background(AppColors.surfacePrimary)
+                        Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
+                            .tint(AppColors.accent3)
                     }
+                    .padding(.horizontal, AppSpacing.cardPadding)
+                    .padding(.vertical, AppSpacing.md)
+                    .background(AppColors.surfacePrimary)
                 }
 
                 // Muscles & Equipment section

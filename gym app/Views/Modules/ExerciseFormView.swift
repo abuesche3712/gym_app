@@ -223,21 +223,19 @@ struct ExerciseFormView: View {
                 mobilityOptionsSection
             }
 
-            // Unilateral toggle (for all exercises except cardio)
-            if exerciseType != .cardio {
-                FormDivider()
-                HStack(spacing: AppSpacing.md) {
-                    Image(systemName: "figure.walk")
-                        .body(color: AppColors.textTertiary)
-                        .frame(width: 24)
+            // Unilateral toggle
+            FormDivider()
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: "figure.walk")
+                    .body(color: AppColors.textTertiary)
+                    .frame(width: 24)
 
-                    Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
-                        .tint(AppColors.accent3)
-                }
-                .padding(.horizontal, AppSpacing.cardPadding)
-                .padding(.vertical, AppSpacing.md)
-                .background(AppColors.surfacePrimary)
+                Toggle("Unilateral (Left/Right)", isOn: $isUnilateral)
+                    .tint(AppColors.accent3)
             }
+            .padding(.horizontal, AppSpacing.cardPadding)
+            .padding(.vertical, AppSpacing.md)
+            .background(AppColors.surfacePrimary)
         }
     }
 

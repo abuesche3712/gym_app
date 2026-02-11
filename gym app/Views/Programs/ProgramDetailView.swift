@@ -349,6 +349,8 @@ struct EditProgramSheet: View {
     @State private var name: String
     @State private var description: String
     @State private var durationWeeks: Int
+    @State private var showingShareSheet = false
+    @State private var showingPostToFeed = false
 
     private let durationOptions = [2, 4, 6, 8, 10, 12, 16]
 
@@ -409,6 +411,38 @@ struct EditProgramSheet: View {
                     }
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
+
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button {
+                            showingPostToFeed = true
+                        } label: {
+                            Label("Post to Feed", systemImage: "rectangle.stack")
+                        }
+
+                        Button {
+                            showingShareSheet = true
+                        } label: {
+                            Label("Share with Friend", systemImage: "paperplane")
+                        }
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingShareSheet) {
+                ShareWithFriendSheet(content: program) { conversationWithProfile in
+                    let chatViewModel = ChatViewModel(
+                        conversation: conversationWithProfile.conversation,
+                        otherParticipant: conversationWithProfile.otherParticipant,
+                        otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+                    )
+                    let content = try program.createMessageContent()
+                    try await chatViewModel.sendSharedContent(content)
+                }
+            }
+            .sheet(isPresented: $showingPostToFeed) {
+                ComposePostSheet(content: program)
             }
         }
     }
