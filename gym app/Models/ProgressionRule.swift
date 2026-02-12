@@ -39,6 +39,8 @@ enum ProgressionPolicy: String, Codable, CaseIterable, Identifiable {
 enum ProgressionMetric: String, Codable, CaseIterable, Identifiable {
     case weight
     case reps
+    case duration
+    case distance
 
     var id: String { rawValue }
 
@@ -46,6 +48,8 @@ enum ProgressionMetric: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .weight: return "Weight"
         case .reps: return "Reps"
+        case .duration: return "Duration"
+        case .distance: return "Distance"
         }
     }
 
@@ -53,6 +57,8 @@ enum ProgressionMetric: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .weight: return "lbs"
         case .reps: return "reps"
+        case .duration: return "sec"
+        case .distance: return "mi"
         }
     }
 }
@@ -172,6 +178,24 @@ struct ProgressionRule: Codable, Hashable, Identifiable {
         minimumIncrease: 1.0
     )
 
+    /// Cardio duration progression: increase time by 5%, 30-second rounding
+    static let cardioDuration = ProgressionRule(
+        targetMetric: .duration,
+        strategy: .linear,
+        percentageIncrease: 5.0,
+        roundingIncrement: 30.0,
+        minimumIncrease: 30.0
+    )
+
+    /// Cardio distance progression: increase distance by 5%, 0.05-mile rounding
+    static let cardioDistance = ProgressionRule(
+        targetMetric: .distance,
+        strategy: .linear,
+        percentageIncrease: 5.0,
+        roundingIncrement: 0.05,
+        minimumIncrease: 0.05
+    )
+
     // MARK: - Display
 
     var displayDescription: String {
@@ -187,8 +211,144 @@ struct ProgressionRule: Codable, Hashable, Identifiable {
             return "+\(percentFormatted)%, round to \(Int(roundingIncrement)) lbs"
         case .reps:
             return "+\(percentFormatted)%, round to \(Int(roundingIncrement)) reps"
+        case .duration:
+            return "+\(percentFormatted)%, round to \(Int(roundingIncrement)) sec"
+        case .distance:
+            return "+\(percentFormatted)%, round to \(String(format: "%.2f", roundingIncrement)) mi"
         }
     }
+}
+
+// MARK: - Profile Schema
+
+/// Readiness rules used before applying progression decisions.
+struct ProgressionReadinessGate: Codable, Hashable {
+    var minimumCompletedSetRatio: Double
+    var minimumCompletedSets: Int
+    var staleAfterDays: Int
+
+    init(
+        minimumCompletedSetRatio: Double = 0.7,
+        minimumCompletedSets: Int = 2,
+        staleAfterDays: Int = 42
+    ) {
+        self.minimumCompletedSetRatio = min(max(minimumCompletedSetRatio, 0), 1)
+        self.minimumCompletedSets = max(0, minimumCompletedSets)
+        self.staleAfterDays = max(1, staleAfterDays)
+    }
+
+    static let strengthDefault = ProgressionReadinessGate()
+    static let cardioDefault = ProgressionReadinessGate(
+        minimumCompletedSetRatio: 0.8,
+        minimumCompletedSets: 1,
+        staleAfterDays: 42
+    )
+}
+
+/// Weighted decision thresholds for progress/stay/regress.
+struct ProgressionDecisionPolicy: Codable, Hashable {
+    var progressThreshold: Double
+    var regressThreshold: Double
+    var completionWeight: Double
+    var performanceWeight: Double
+    var effortWeight: Double
+    var confidenceWeight: Double
+    var streakWeight: Double
+
+    init(
+        progressThreshold: Double = 0.68,
+        regressThreshold: Double = 0.38,
+        completionWeight: Double = 0.30,
+        performanceWeight: Double = 0.30,
+        effortWeight: Double = 0.15,
+        confidenceWeight: Double = 0.15,
+        streakWeight: Double = 0.10
+    ) {
+        self.progressThreshold = min(max(progressThreshold, 0), 1)
+        self.regressThreshold = min(max(regressThreshold, 0), 1)
+        self.completionWeight = max(0, completionWeight)
+        self.performanceWeight = max(0, performanceWeight)
+        self.effortWeight = max(0, effortWeight)
+        self.confidenceWeight = max(0, confidenceWeight)
+        self.streakWeight = max(0, streakWeight)
+    }
+
+    static let strengthDefault = ProgressionDecisionPolicy()
+    static let cardioDefault = ProgressionDecisionPolicy(
+        progressThreshold: 0.70,
+        regressThreshold: 0.40,
+        completionWeight: 0.25,
+        performanceWeight: 0.35,
+        effortWeight: 0.05,
+        confidenceWeight: 0.20,
+        streakWeight: 0.15
+    )
+}
+
+/// Hard caps/floors so progression remains safe and non-jumpy.
+struct ProgressionGuardrails: Codable, Hashable {
+    var maxProgressPercent: Double?
+    var maxRegressPercent: Double?
+    var floorValue: Double?
+    var ceilingValue: Double?
+    var minimumAbsoluteStep: Double?
+
+    init(
+        maxProgressPercent: Double? = 10,
+        maxRegressPercent: Double? = 12,
+        floorValue: Double? = 0,
+        ceilingValue: Double? = nil,
+        minimumAbsoluteStep: Double? = nil
+    ) {
+        self.maxProgressPercent = maxProgressPercent.map { max(0, $0) }
+        self.maxRegressPercent = maxRegressPercent.map { max(0, $0) }
+        self.floorValue = floorValue
+        self.ceilingValue = ceilingValue
+        self.minimumAbsoluteStep = minimumAbsoluteStep.map { max(0, $0) }
+    }
+
+    static let strengthDefault = ProgressionGuardrails()
+    static let cardioDefault = ProgressionGuardrails(
+        maxProgressPercent: 8,
+        maxRegressPercent: 10,
+        floorValue: 0,
+        ceilingValue: nil,
+        minimumAbsoluteStep: nil
+    )
+}
+
+/// Per-exercise profile that keeps progression flexible without changing old fields.
+struct ProgressionProfile: Codable, Hashable {
+    var preferredMetric: ProgressionMetric?
+    var readinessGate: ProgressionReadinessGate
+    var decisionPolicy: ProgressionDecisionPolicy
+    var guardrails: ProgressionGuardrails
+
+    init(
+        preferredMetric: ProgressionMetric? = nil,
+        readinessGate: ProgressionReadinessGate = .strengthDefault,
+        decisionPolicy: ProgressionDecisionPolicy = .strengthDefault,
+        guardrails: ProgressionGuardrails = .strengthDefault
+    ) {
+        self.preferredMetric = preferredMetric
+        self.readinessGate = readinessGate
+        self.decisionPolicy = decisionPolicy
+        self.guardrails = guardrails
+    }
+
+    static let strengthDefault = ProgressionProfile(
+        preferredMetric: nil,
+        readinessGate: .strengthDefault,
+        decisionPolicy: .strengthDefault,
+        guardrails: .strengthDefault
+    )
+
+    static let cardioDefault = ProgressionProfile(
+        preferredMetric: nil,
+        readinessGate: .cardioDefault,
+        decisionPolicy: .cardioDefault,
+        guardrails: .cardioDefault
+    )
 }
 
 // MARK: - Exercise Progression State
@@ -199,6 +359,10 @@ struct ExerciseProgressionState: Codable, Hashable {
     var lastPrescribedWeight: Double?
     /// Last prescribed rep target for the exercise, if applicable.
     var lastPrescribedReps: Int?
+    /// Last prescribed duration target (seconds), if applicable.
+    var lastPrescribedDuration: Int?
+    /// Last prescribed distance target, if applicable.
+    var lastPrescribedDistance: Double?
     /// Consecutive successful sessions.
     var successStreak: Int
     /// Consecutive under-target sessions.
@@ -209,23 +373,44 @@ struct ExerciseProgressionState: Codable, Hashable {
     var confidence: Double
     /// Last time this state was updated.
     var lastUpdatedAt: Date?
+    /// Number of times an engine suggestion was shown.
+    var suggestionsPresented: Int
+    /// Number of times the user/session aligned with the engine suggestion.
+    var suggestionsAccepted: Int
+    /// Number of times the user/session diverged from the engine suggestion.
+    var suggestionsDismissed: Int
 
     init(
         lastPrescribedWeight: Double? = nil,
         lastPrescribedReps: Int? = nil,
+        lastPrescribedDuration: Int? = nil,
+        lastPrescribedDistance: Double? = nil,
         successStreak: Int = 0,
         failStreak: Int = 0,
         recentOutcomes: [ProgressionRecommendation] = [],
         confidence: Double = 0.5,
-        lastUpdatedAt: Date? = nil
+        lastUpdatedAt: Date? = nil,
+        suggestionsPresented: Int = 0,
+        suggestionsAccepted: Int = 0,
+        suggestionsDismissed: Int = 0
     ) {
         self.lastPrescribedWeight = lastPrescribedWeight
         self.lastPrescribedReps = lastPrescribedReps
+        self.lastPrescribedDuration = lastPrescribedDuration
+        self.lastPrescribedDistance = lastPrescribedDistance
         self.successStreak = successStreak
         self.failStreak = failStreak
         self.recentOutcomes = Array(recentOutcomes.prefix(3))
         self.confidence = min(max(confidence, 0), 1)
         self.lastUpdatedAt = lastUpdatedAt
+        self.suggestionsPresented = max(0, suggestionsPresented)
+        self.suggestionsAccepted = max(0, suggestionsAccepted)
+        self.suggestionsDismissed = max(0, suggestionsDismissed)
+    }
+
+    var acceptanceRate: Double? {
+        guard suggestionsPresented > 0 else { return nil }
+        return Double(suggestionsAccepted) / Double(suggestionsPresented)
     }
 }
 
@@ -241,6 +426,8 @@ struct ProgressionSuggestion: Codable, Hashable {
     let isOutcomeAdjusted: Bool
     let rationale: String?
     let confidence: Double?
+    let decisionCode: String?
+    let decisionFactors: [String]?
 
     init(
         baseValue: Double,
@@ -250,7 +437,9 @@ struct ProgressionSuggestion: Codable, Hashable {
         appliedOutcome: ProgressionRecommendation? = nil,
         isOutcomeAdjusted: Bool = false,
         rationale: String? = nil,
-        confidence: Double? = nil
+        confidence: Double? = nil,
+        decisionCode: String? = nil,
+        decisionFactors: [String]? = nil
     ) {
         self.baseValue = baseValue
         self.suggestedValue = suggestedValue
@@ -264,10 +453,13 @@ struct ProgressionSuggestion: Codable, Hashable {
         } else {
             self.confidence = nil
         }
+        self.decisionCode = decisionCode
+        self.decisionFactors = decisionFactors?.isEmpty == true ? nil : decisionFactors
     }
 
     private enum CodingKeys: String, CodingKey {
         case baseValue, suggestedValue, metric, percentageApplied, appliedOutcome, isOutcomeAdjusted, rationale, confidence
+        case decisionCode, decisionFactors
     }
 
     init(from decoder: Decoder) throws {
@@ -284,6 +476,8 @@ struct ProgressionSuggestion: Codable, Hashable {
         } else {
             confidence = nil
         }
+        decisionCode = try container.decodeIfPresent(String.self, forKey: .decisionCode)
+        decisionFactors = try container.decodeIfPresent([String].self, forKey: .decisionFactors)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -296,6 +490,8 @@ struct ProgressionSuggestion: Codable, Hashable {
         try container.encode(isOutcomeAdjusted, forKey: .isOutcomeAdjusted)
         try container.encodeIfPresent(rationale, forKey: .rationale)
         try container.encodeIfPresent(confidence, forKey: .confidence)
+        try container.encodeIfPresent(decisionCode, forKey: .decisionCode)
+        try container.encodeIfPresent(decisionFactors, forKey: .decisionFactors)
     }
 
     /// Formatted string for display (e.g., "135 lbs (+3.8%)")
@@ -307,6 +503,10 @@ struct ProgressionSuggestion: Codable, Hashable {
             return "\(formatWeight(suggestedValue)) (+\(percentFormatted)%)"
         case .reps:
             return "\(Int(suggestedValue)) reps (+\(percentFormatted)%)"
+        case .duration:
+            return "\(formatDuration(Int(suggestedValue.rounded()))) (+\(percentFormatted)%)"
+        case .distance:
+            return "\(String(format: "%.2f", suggestedValue)) mi (+\(percentFormatted)%)"
         }
     }
 
@@ -317,6 +517,10 @@ struct ProgressionSuggestion: Codable, Hashable {
             return formatWeight(suggestedValue)
         case .reps:
             return "\(Int(suggestedValue))"
+        case .duration:
+            return formatDuration(Int(suggestedValue.rounded()))
+        case .distance:
+            return String(format: "%.2f", suggestedValue)
         }
     }
 

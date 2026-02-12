@@ -36,6 +36,16 @@ struct CardioInputs: View {
         timerRunning && sessionViewModel.exerciseTimerIsStopwatch ? sessionViewModel.exerciseTimerSeconds : 0
     }
 
+    private var durationSuggestion: ProgressionSuggestion? {
+        guard let suggestion = exercise.progressionSuggestion, suggestion.metric == .duration else { return nil }
+        return suggestion
+    }
+
+    private var distanceSuggestion: ProgressionSuggestion? {
+        guard let suggestion = exercise.progressionSuggestion, suggestion.metric == .distance else { return nil }
+        return suggestion
+    }
+
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
             // Time input box - only show if tracking time
@@ -103,6 +113,14 @@ struct CardioInputs: View {
                     Text("time")
                         .caption2(color: AppColors.textTertiary)
                         .fontWeight(.medium)
+
+                    if let suggestion = durationSuggestion, !flatSet.setData.completed {
+                        Text(suggestionHintText(for: suggestion))
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(directionColor(for: suggestion))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
                 }
                 .fixedSize(horizontal: true, vertical: false)
             }
@@ -140,6 +158,14 @@ struct CardioInputs: View {
                     Text("distance")
                         .caption2(color: AppColors.textTertiary)
                         .fontWeight(.medium)
+
+                    if let suggestion = distanceSuggestion, !flatSet.setData.completed {
+                        Text(suggestionHintText(for: suggestion))
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(directionColor(for: suggestion))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
                 }
                 .fixedSize(horizontal: true, vertical: false)
             }
@@ -172,6 +198,25 @@ struct CardioInputs: View {
         } else {
             sessionViewModel.startExerciseStopwatch(setId: flatSet.id)
         }
+    }
+
+    private func suggestionHintText(for suggestion: ProgressionSuggestion) -> String {
+        if let label = suggestion.confidenceLabel {
+            return "\(directionSymbol(for: suggestion)) \(suggestion.formattedValue) · \(label)"
+        }
+        return "\(directionSymbol(for: suggestion)) \(suggestion.formattedValue)"
+    }
+
+    private func directionSymbol(for suggestion: ProgressionSuggestion) -> String {
+        if suggestion.suggestedValue > suggestion.baseValue { return "▲" }
+        if suggestion.suggestedValue < suggestion.baseValue { return "▼" }
+        return "■"
+    }
+
+    private func directionColor(for suggestion: ProgressionSuggestion) -> Color {
+        if suggestion.suggestedValue > suggestion.baseValue { return AppColors.success }
+        if suggestion.suggestedValue < suggestion.baseValue { return AppColors.warning }
+        return AppColors.textTertiary
     }
 }
 

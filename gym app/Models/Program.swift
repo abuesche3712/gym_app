@@ -34,6 +34,8 @@ struct Program: Identifiable, Codable, Hashable {
     var progressionEnabledExercises: Set<UUID>     // ExerciseInstance IDs that get progression
     var exerciseProgressionOverrides: [UUID: ProgressionRule]  // Per-exercise custom rules
     var exerciseProgressionStates: [UUID: ExerciseProgressionState]  // Per-exercise stateful progression context
+    var defaultProgressionProfile: ProgressionProfile? // Program-level decision/gate defaults
+    var exerciseProgressionProfiles: [UUID: ProgressionProfile] // Per-exercise profile overrides
 
     init(
         id: UUID = UUID(),
@@ -54,7 +56,9 @@ struct Program: Identifiable, Codable, Hashable {
         progressionPolicy: ProgressionPolicy = .legacy,
         progressionEnabledExercises: Set<UUID> = [],
         exerciseProgressionOverrides: [UUID: ProgressionRule] = [:],
-        exerciseProgressionStates: [UUID: ExerciseProgressionState] = [:]
+        exerciseProgressionStates: [UUID: ExerciseProgressionState] = [:],
+        defaultProgressionProfile: ProgressionProfile? = nil,
+        exerciseProgressionProfiles: [UUID: ProgressionProfile] = [:]
     ) {
         self.id = id
         self.name = name
@@ -75,6 +79,8 @@ struct Program: Identifiable, Codable, Hashable {
         self.progressionEnabledExercises = progressionEnabledExercises
         self.exerciseProgressionOverrides = exerciseProgressionOverrides
         self.exerciseProgressionStates = exerciseProgressionStates
+        self.defaultProgressionProfile = defaultProgressionProfile
+        self.exerciseProgressionProfiles = exerciseProgressionProfiles
     }
 
     init(from decoder: Decoder) throws {
@@ -162,12 +168,24 @@ struct Program: Identifiable, Codable, Hashable {
         } else {
             exerciseProgressionStates = [:]
         }
+
+        defaultProgressionProfile = try container.decodeIfPresent(ProgressionProfile.self, forKey: .defaultProgressionProfile)
+
+        if let stringKeyedProfiles = try container.decodeIfPresent([String: ProgressionProfile].self, forKey: .exerciseProgressionProfiles) {
+            exerciseProgressionProfiles = Dictionary(uniqueKeysWithValues: stringKeyedProfiles.compactMap { key, value in
+                guard let uuid = UUID(uuidString: key) else { return nil }
+                return (uuid, value)
+            })
+        } else {
+            exerciseProgressionProfiles = [:]
+        }
     }
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion
         case progressionRules, defaultProgressionRule, progressionEnabled, progressionPolicy
         case progressionEnabledExercises, exerciseProgressionOverrides, exerciseProgressionStates
+        case defaultProgressionProfile, exerciseProgressionProfiles
         case id, name, programDescription, durationWeeks, startDate, endDate, isActive, createdAt, updatedAt, syncStatus, workoutSlots, moduleSlots
         // Legacy field names (for backward compatibility with old Firebase data)
         case legacyCreated = "created"
@@ -211,6 +229,12 @@ struct Program: Identifiable, Codable, Hashable {
         // Encode UUID-keyed exerciseProgressionStates as String-keyed
         let stringKeyedStates = Dictionary(uniqueKeysWithValues: exerciseProgressionStates.map { ($0.key.uuidString, $0.value) })
         try container.encode(stringKeyedStates, forKey: .exerciseProgressionStates)
+
+        try container.encodeIfPresent(defaultProgressionProfile, forKey: .defaultProgressionProfile)
+
+        // Encode UUID-keyed exerciseProgressionProfiles as String-keyed
+        let stringKeyedProfiles = Dictionary(uniqueKeysWithValues: exerciseProgressionProfiles.map { ($0.key.uuidString, $0.value) })
+        try container.encode(stringKeyedProfiles, forKey: .exerciseProgressionProfiles)
     }
 
     // MARK: - Progression
@@ -248,6 +272,7 @@ struct Program: Identifiable, Codable, Hashable {
             progressionEnabledExercises.remove(exerciseInstanceId)
             exerciseProgressionOverrides.removeValue(forKey: exerciseInstanceId)
             exerciseProgressionStates.removeValue(forKey: exerciseInstanceId)
+            exerciseProgressionProfiles.removeValue(forKey: exerciseInstanceId)
         }
         updatedAt = Date()
     }
@@ -273,6 +298,36 @@ struct Program: Identifiable, Codable, Hashable {
             exerciseProgressionStates[exerciseInstanceId] = state
         } else {
             exerciseProgressionStates.removeValue(forKey: exerciseInstanceId)
+        }
+        updatedAt = Date()
+    }
+
+    /// Get effective progression profile for an exercise instance.
+    func progressionProfileForExercise(
+        _ exerciseInstanceId: UUID,
+        exerciseType: ExerciseType
+    ) -> ProgressionProfile {
+        if let override = exerciseProgressionProfiles[exerciseInstanceId] {
+            return override
+        }
+        if let defaultProgressionProfile {
+            return defaultProgressionProfile
+        }
+
+        switch exerciseType {
+        case .cardio:
+            return .cardioDefault
+        default:
+            return .strengthDefault
+        }
+    }
+
+    /// Set a custom progression profile for an exercise instance.
+    mutating func setProgressionProfile(_ profile: ProgressionProfile?, for exerciseInstanceId: UUID) {
+        if let profile {
+            exerciseProgressionProfiles[exerciseInstanceId] = profile
+        } else {
+            exerciseProgressionProfiles.removeValue(forKey: exerciseInstanceId)
         }
         updatedAt = Date()
     }

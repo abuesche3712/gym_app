@@ -1084,9 +1084,11 @@ public class ProgramEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var progressionEnabled: Bool
     @NSManaged public var progressionPolicyRaw: String?
     @NSManaged public var defaultProgressionRuleData: Data?
+    @NSManaged public var defaultProgressionProfileData: Data?
     @NSManaged public var progressionEnabledExercisesData: Data?  // JSON array of UUID strings
     @NSManaged public var exerciseProgressionOverridesData: Data?  // JSON dict [String: ProgressionRule]
     @NSManaged public var exerciseProgressionStatesData: Data?  // JSON dict [String: ExerciseProgressionState]
+    @NSManaged public var exerciseProgressionProfilesData: Data?  // JSON dict [String: ProgressionProfile]
 
     public override func willSave() {
         super.willSave()
@@ -1137,6 +1139,20 @@ public class ProgramEntity: NSManagedObject, SyncableEntity {
         }
     }
 
+    var defaultProgressionProfile: ProgressionProfile? {
+        get {
+            guard let data = defaultProgressionProfileData else { return nil }
+            return try? JSONDecoder().decode(ProgressionProfile.self, from: data)
+        }
+        set {
+            if let profile = newValue {
+                defaultProgressionProfileData = try? JSONEncoder().encode(profile)
+            } else {
+                defaultProgressionProfileData = nil
+            }
+        }
+    }
+
     var exerciseProgressionOverrides: [UUID: ProgressionRule] {
         get {
             guard let data = exerciseProgressionOverridesData,
@@ -1168,6 +1184,23 @@ public class ProgramEntity: NSManagedObject, SyncableEntity {
         set {
             let stringKeyed = Dictionary(uniqueKeysWithValues: newValue.map { ($0.key.uuidString, $0.value) })
             exerciseProgressionStatesData = try? JSONEncoder().encode(stringKeyed)
+        }
+    }
+
+    var exerciseProgressionProfiles: [UUID: ProgressionProfile] {
+        get {
+            guard let data = exerciseProgressionProfilesData,
+                  let stringKeyed = try? JSONDecoder().decode([String: ProgressionProfile].self, from: data) else {
+                return [:]
+            }
+            return Dictionary(uniqueKeysWithValues: stringKeyed.compactMap { key, value in
+                guard let uuid = UUID(uuidString: key) else { return nil }
+                return (uuid, value)
+            })
+        }
+        set {
+            let stringKeyed = Dictionary(uniqueKeysWithValues: newValue.map { ($0.key.uuidString, $0.value) })
+            exerciseProgressionProfilesData = try? JSONEncoder().encode(stringKeyed)
         }
     }
 }

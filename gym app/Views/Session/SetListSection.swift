@@ -159,7 +159,8 @@ struct AllSetsSection: View {
             .buttonStyle(.plain)
 
             // Progression buttons (show when all sets completed)
-            if allSetsCompleted(exercise) && exercise.exerciseType == .strength {
+            if allSetsCompleted(exercise) &&
+                (exercise.exerciseType == .strength || exercise.exerciseType == .cardio) {
                 ProgressionButtonsSection(
                     exercise: exercise,
                     width: width,
@@ -1009,9 +1010,23 @@ struct ProgressionButtonsSection: View {
                     .buttonStyle(.plain)
 
                     if showingEngineDetails, let rationale = suggestion.rationale, !rationale.isEmpty {
-                        Text(rationale)
-                            .caption2(color: AppColors.textTertiary)
-                            .lineLimit(3)
+                        VStack(alignment: .leading, spacing: 4) {
+                            if let decisionCode = suggestion.decisionCode, !decisionCode.isEmpty {
+                                explanationChip(decisionCode.replacingOccurrences(of: "_", with: " "))
+                            }
+
+                            if let factors = suggestion.decisionFactors, !factors.isEmpty {
+                                HStack(spacing: 6) {
+                                    ForEach(Array(factors.prefix(2)), id: \.self) { factor in
+                                        explanationChip(factor)
+                                    }
+                                }
+                            }
+
+                            Text(rationale)
+                                .caption2(color: AppColors.textTertiary)
+                                .lineLimit(3)
+                        }
                     }
                 }
                 .padding(.top, 2)
@@ -1053,5 +1068,18 @@ struct ProgressionButtonsSection: View {
             return "Engine: \(suggestion.formattedSuggestion) · \(confidenceText)"
         }
         return "Engine: \(suggestion.formattedSuggestion)"
+    }
+
+    @ViewBuilder
+    private func explanationChip(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 9, weight: .semibold))
+            .foregroundColor(AppColors.textSecondary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(
+                Capsule()
+                    .fill(AppColors.surfaceTertiary.opacity(0.9))
+            )
     }
 }

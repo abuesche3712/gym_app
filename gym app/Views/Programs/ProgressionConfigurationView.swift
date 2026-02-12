@@ -17,6 +17,8 @@ struct ProgressionConfigurationView: View {
     @State private var progressionEnabledExercises: Set<UUID>
     @State private var exerciseProgressionOverrides: [UUID: ProgressionRule]
     @State private var exerciseProgressionStates: [UUID: ExerciseProgressionState]
+    @State private var defaultProgressionProfile: ProgressionProfile
+    @State private var exerciseProgressionProfiles: [UUID: ProgressionProfile]
     @State private var defaultProgressionRule: ProgressionRule?
     @State private var progressionPolicy: ProgressionPolicy
     @State private var showingDefaultRuleEditor = false
@@ -55,11 +57,86 @@ struct ProgressionConfigurationView: View {
         }
     }
 
+    private enum ProfilePreset: String, CaseIterable, Identifiable {
+        case conservative
+        case balanced
+        case aggressive
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .conservative: return "Conservative"
+            case .balanced: return "Balanced"
+            case .aggressive: return "Aggressive"
+            }
+        }
+
+        var profile: ProgressionProfile {
+            switch self {
+            case .conservative:
+                return ProgressionProfile(
+                    preferredMetric: nil,
+                    readinessGate: ProgressionReadinessGate(
+                        minimumCompletedSetRatio: 0.8,
+                        minimumCompletedSets: 2,
+                        staleAfterDays: 35
+                    ),
+                    decisionPolicy: ProgressionDecisionPolicy(
+                        progressThreshold: 0.75,
+                        regressThreshold: 0.35,
+                        completionWeight: 0.35,
+                        performanceWeight: 0.25,
+                        effortWeight: 0.20,
+                        confidenceWeight: 0.10,
+                        streakWeight: 0.10
+                    ),
+                    guardrails: ProgressionGuardrails(
+                        maxProgressPercent: 5,
+                        maxRegressPercent: 8,
+                        floorValue: 0,
+                        ceilingValue: nil,
+                        minimumAbsoluteStep: nil
+                    )
+                )
+            case .balanced:
+                return .strengthDefault
+            case .aggressive:
+                return ProgressionProfile(
+                    preferredMetric: nil,
+                    readinessGate: ProgressionReadinessGate(
+                        minimumCompletedSetRatio: 0.65,
+                        minimumCompletedSets: 1,
+                        staleAfterDays: 49
+                    ),
+                    decisionPolicy: ProgressionDecisionPolicy(
+                        progressThreshold: 0.62,
+                        regressThreshold: 0.42,
+                        completionWeight: 0.25,
+                        performanceWeight: 0.35,
+                        effortWeight: 0.10,
+                        confidenceWeight: 0.15,
+                        streakWeight: 0.15
+                    ),
+                    guardrails: ProgressionGuardrails(
+                        maxProgressPercent: 12,
+                        maxRegressPercent: 12,
+                        floorValue: 0,
+                        ceilingValue: nil,
+                        minimumAbsoluteStep: nil
+                    )
+                )
+            }
+        }
+    }
+
     init(program: Program) {
         self.program = program
         _progressionEnabledExercises = State(initialValue: program.progressionEnabledExercises)
         _exerciseProgressionOverrides = State(initialValue: program.exerciseProgressionOverrides)
         _exerciseProgressionStates = State(initialValue: program.exerciseProgressionStates)
+        _defaultProgressionProfile = State(initialValue: program.defaultProgressionProfile ?? .strengthDefault)
+        _exerciseProgressionProfiles = State(initialValue: program.exerciseProgressionProfiles)
         _defaultProgressionRule = State(initialValue: program.defaultProgressionRule)
         _progressionPolicy = State(initialValue: program.progressionPolicy)
     }
@@ -75,6 +152,7 @@ struct ProgressionConfigurationView: View {
 
                     quickPresetsCard
                     quickTuningCard
+                    profileControlsCard
                     selectionToolsCard
                     learnedStateCard
 
@@ -230,7 +308,7 @@ struct ProgressionConfigurationView: View {
 
             HStack(spacing: 8) {
                 Menu {
-                    ForEach(ProgressionMetric.allCases) { metric in
+                    ForEach(ProgressionMetric.allCases.filter { $0 == .weight || $0 == .reps }) { metric in
                         Button(metric.displayName) {
                             updateDefaultRule { current in
                                 current.targetMetric = metric
@@ -306,6 +384,97 @@ struct ProgressionConfigurationView: View {
         .cornerRadius(12)
     }
 
+    private var profileControlsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Decision Profile")
+                .font(.headline)
+
+            Picker("Preset", selection: profilePresetSelection) {
+                ForEach(ProfilePreset.allCases) { preset in
+                    Text(preset.title).tag(preset)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            HStack(spacing: 8) {
+                Stepper(
+                    "Progress cap \(Int((defaultProgressionProfile.guardrails.maxProgressPercent ?? 10).rounded()))%",
+                    value: Binding(
+                        get: { Int((defaultProgressionProfile.guardrails.maxProgressPercent ?? 10).rounded()) },
+                        set: { value in
+                            defaultProgressionProfile.guardrails.maxProgressPercent = Double(max(1, value))
+                        }
+                    ),
+                    in: 1...20
+                )
+
+                Stepper(
+                    "Regress cap \(Int((defaultProgressionProfile.guardrails.maxRegressPercent ?? 12).rounded()))%",
+                    value: Binding(
+                        get: { Int((defaultProgressionProfile.guardrails.maxRegressPercent ?? 12).rounded()) },
+                        set: { value in
+                            defaultProgressionProfile.guardrails.maxRegressPercent = Double(max(1, value))
+                        }
+                    ),
+                    in: 1...25
+                )
+            }
+            .font(.caption)
+
+            HStack(spacing: 8) {
+                Stepper(
+                    "Completion \(Int((defaultProgressionProfile.readinessGate.minimumCompletedSetRatio * 100).rounded()))%",
+                    value: Binding(
+                        get: { Int((defaultProgressionProfile.readinessGate.minimumCompletedSetRatio * 100).rounded()) },
+                        set: { value in
+                            defaultProgressionProfile.readinessGate.minimumCompletedSetRatio = Double(max(50, min(95, value))) / 100.0
+                        }
+                    ),
+                    in: 50...95,
+                    step: 5
+                )
+
+                Stepper(
+                    "Stale \(defaultProgressionProfile.readinessGate.staleAfterDays)d",
+                    value: Binding(
+                        get: { defaultProgressionProfile.readinessGate.staleAfterDays },
+                        set: { value in
+                            defaultProgressionProfile.readinessGate.staleAfterDays = max(14, value)
+                        }
+                    ),
+                    in: 14...120,
+                    step: 7
+                )
+            }
+            .font(.caption)
+
+            HStack(spacing: 8) {
+                Button("Apply to Enabled") {
+                    applyProfileToEnabledExercises()
+                }
+                .buttonStyle(.bordered)
+
+                Button("Clear Exercise Overrides") {
+                    exerciseProgressionProfiles.removeAll()
+                }
+                .buttonStyle(.bordered)
+            }
+            .font(.caption)
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(12)
+        .opacity(progressionPolicy == .adaptive ? 1.0 : 0.5)
+        .disabled(progressionPolicy != .adaptive)
+    }
+
+    private var profilePresetSelection: Binding<ProfilePreset> {
+        Binding(
+            get: { preset(for: defaultProgressionProfile) },
+            set: { defaultProgressionProfile = $0.profile }
+        )
+    }
+
     private func tuningChip(title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
@@ -334,8 +503,8 @@ struct ProgressionConfigurationView: View {
                 }
                 .buttonStyle(.bordered)
 
-                Button("Enable Strength") {
-                    selectAllStrengthExercises()
+                Button("Enable Strength+Cardio") {
+                    selectAllPrimaryExercises()
                 }
                 .buttonStyle(.bordered)
 
@@ -355,6 +524,10 @@ struct ProgressionConfigurationView: View {
 
     private var learnedStateCard: some View {
         let learnedCount = exerciseProgressionStates.count
+        let acceptanceRates = exerciseProgressionStates.values.compactMap(\.acceptanceRate)
+        let averageAcceptance = acceptanceRates.isEmpty
+            ? nil
+            : acceptanceRates.reduce(0, +) / Double(acceptanceRates.count)
 
         return VStack(alignment: .leading, spacing: 10) {
             Text("Learned State")
@@ -368,6 +541,12 @@ struct ProgressionConfigurationView: View {
                 Text("\(learnedCount) exercise\(learnedCount == 1 ? "" : "s") have learned progression history.")
                     .font(.caption)
                     .foregroundColor(.secondary)
+
+                if let averageAcceptance {
+                    Text("Average acceptance \(Int((averageAcceptance * 100).rounded()))%")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
 
                 Button("Reset Learned State") {
                     exerciseProgressionStates.removeAll()
@@ -537,6 +716,7 @@ struct ProgressionConfigurationView: View {
     private func exerciseRow(exercise: ExerciseInstance, moduleType: ModuleType) -> some View {
         let isEnabled = progressionEnabledExercises.contains(exercise.id)
         let hasOverride = exerciseProgressionOverrides[exercise.id] != nil
+        let hasProfileOverride = exerciseProgressionProfiles[exercise.id] != nil
         let shouldDefaultEnabled = shouldDefaultToProgression(exercise, moduleType: moduleType)
 
         return HStack(spacing: 12) {
@@ -547,6 +727,7 @@ struct ProgressionConfigurationView: View {
                         progressionEnabledExercises.remove(exercise.id)
                         exerciseProgressionOverrides.removeValue(forKey: exercise.id)
                         exerciseProgressionStates.removeValue(forKey: exercise.id)
+                        exerciseProgressionProfiles.removeValue(forKey: exercise.id)
                     } else {
                         progressionEnabledExercises.insert(exercise.id)
                     }
@@ -570,6 +751,10 @@ struct ProgressionConfigurationView: View {
                         .foregroundColor(.orange)
                 } else if isEnabled, let summary = stateSummary(for: exercise.id) {
                     Text(summary)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                } else if isEnabled, hasProfileOverride {
+                    Text("Profile override")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
@@ -597,6 +782,21 @@ struct ProgressionConfigurationView: View {
                         .foregroundColor(hasOverride ? AppColors.dominant : .secondary)
                 }
                 .buttonStyle(.plain)
+
+                Button {
+                    withAnimation {
+                        if hasProfileOverride {
+                            exerciseProgressionProfiles.removeValue(forKey: exercise.id)
+                        } else {
+                            exerciseProgressionProfiles[exercise.id] = defaultProgressionProfile
+                        }
+                    }
+                } label: {
+                    Image(systemName: hasProfileOverride ? "slider.horizontal.3.circle.fill" : "slider.horizontal.3.circle")
+                        .font(.body)
+                        .foregroundColor(hasProfileOverride ? AppColors.dominant : .secondary)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, 12)
@@ -611,8 +811,8 @@ struct ProgressionConfigurationView: View {
             return false
         }
 
-        // Only progress strength-type exercises
-        if exercise.exerciseType != .strength {
+        // Progress strength and cardio exercises by default
+        if exercise.exerciseType != .strength && exercise.exerciseType != .cardio {
             return false
         }
 
@@ -627,6 +827,7 @@ struct ProgressionConfigurationView: View {
                 progressionEnabledExercises.remove(exercise.id)
                 exerciseProgressionOverrides.removeValue(forKey: exercise.id)
                 exerciseProgressionStates.removeValue(forKey: exercise.id)
+                exerciseProgressionProfiles.removeValue(forKey: exercise.id)
             }
         }
     }
@@ -639,10 +840,10 @@ struct ProgressionConfigurationView: View {
         }
     }
 
-    private func selectAllStrengthExercises() {
+    private func selectAllPrimaryExercises() {
         for workout in workoutsInProgram {
             for module in modulesForWorkout(workout) {
-                for exercise in module.exercises where exercise.exerciseType == .strength {
+                for exercise in module.exercises where exercise.exerciseType == .strength || exercise.exerciseType == .cardio {
                     progressionEnabledExercises.insert(exercise.id)
                 }
             }
@@ -653,6 +854,7 @@ struct ProgressionConfigurationView: View {
         progressionEnabledExercises.removeAll()
         exerciseProgressionOverrides.removeAll()
         exerciseProgressionStates.removeAll()
+        exerciseProgressionProfiles.removeAll()
     }
 
     private func selectAll(in module: Module) {
@@ -666,6 +868,7 @@ struct ProgressionConfigurationView: View {
             progressionEnabledExercises.remove(exercise.id)
             exerciseProgressionOverrides.removeValue(forKey: exercise.id)
             exerciseProgressionStates.removeValue(forKey: exercise.id)
+            exerciseProgressionProfiles.removeValue(forKey: exercise.id)
         }
     }
 
@@ -696,6 +899,20 @@ struct ProgressionConfigurationView: View {
         defaultProgressionRule = preset
     }
 
+    private func applyProfileToEnabledExercises() {
+        for exerciseId in progressionEnabledExercises {
+            exerciseProgressionProfiles[exerciseId] = defaultProgressionProfile
+        }
+    }
+
+    private func preset(for profile: ProgressionProfile) -> ProfilePreset {
+        if let maxProgress = profile.guardrails.maxProgressPercent {
+            if maxProgress <= 6 { return .conservative }
+            if maxProgress >= 11 { return .aggressive }
+        }
+        return .balanced
+    }
+
     private func updateDefaultRule(_ mutate: (inout ProgressionRule) -> Void) {
         var updated = defaultProgressionRule ?? .conservative
         mutate(&updated)
@@ -704,12 +921,22 @@ struct ProgressionConfigurationView: View {
 
     private func stateSummary(for exerciseId: UUID) -> String? {
         guard let state = exerciseProgressionStates[exerciseId] else { return nil }
+        let acceptance = state.acceptanceRate.map { Int(($0 * 100).rounded()) }
 
         if state.successStreak > 0 {
+            if let acceptance {
+                return "Success streak \(state.successStreak) · \(acceptance)% accept"
+            }
             return "Success streak \(state.successStreak) · \(Int((state.confidence * 100).rounded()))%"
         }
         if state.failStreak > 0 {
+            if let acceptance {
+                return "Fail streak \(state.failStreak) · \(acceptance)% accept"
+            }
             return "Fail streak \(state.failStreak) · \(Int((state.confidence * 100).rounded()))%"
+        }
+        if let acceptance {
+            return "Acceptance \(acceptance)% · Confidence \(Int((state.confidence * 100).rounded()))%"
         }
         return "Confidence \(Int((state.confidence * 100).rounded()))%"
     }
@@ -720,6 +947,10 @@ struct ProgressionConfigurationView: View {
         updatedProgram.exerciseProgressionOverrides = exerciseProgressionOverrides
         updatedProgram.exerciseProgressionStates = exerciseProgressionStates
         updatedProgram.defaultProgressionRule = defaultProgressionRule
+        updatedProgram.defaultProgressionProfile = defaultProgressionProfile
+        updatedProgram.exerciseProgressionProfiles = exerciseProgressionProfiles.filter {
+            progressionEnabledExercises.contains($0.key)
+        }
         updatedProgram.progressionPolicy = progressionPolicy
         updatedProgram.updatedAt = Date()
 
@@ -757,7 +988,11 @@ struct ProgressionRuleEditorSheet: View {
         self.onSave = onSave
 
         let defaultRule = rule ?? .conservative
-        _targetMetric = State(initialValue: defaultRule.targetMetric)
+        let editableMetric: ProgressionMetric =
+            (defaultRule.targetMetric == .weight || defaultRule.targetMetric == .reps)
+            ? defaultRule.targetMetric
+            : .weight
+        _targetMetric = State(initialValue: editableMetric)
         _strategy = State(initialValue: defaultRule.strategy)
         _percentageIncrease = State(initialValue: defaultRule.percentageIncrease)
         _roundingIncrement = State(initialValue: defaultRule.roundingIncrement)
@@ -769,7 +1004,7 @@ struct ProgressionRuleEditorSheet: View {
             Form {
                 Section {
                     Picker("Target Metric", selection: $targetMetric) {
-                        ForEach(ProgressionMetric.allCases) { metric in
+                        ForEach(ProgressionMetric.allCases.filter { $0 == .weight || $0 == .reps }) { metric in
                             Text(metric.displayName).tag(metric)
                         }
                     }

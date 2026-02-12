@@ -54,6 +54,46 @@ final class ProgressionServiceTests: XCTestCase {
         )
     }
 
+    private func makeCardioExercise(
+        name: String,
+        cardioMetric: CardioMetric = .timeOnly,
+        durations: [Int] = [],
+        distances: [Double] = [],
+        heartRates: [Int] = [],
+        recommendation: ProgressionRecommendation? = nil,
+        sourceExerciseInstanceId: UUID? = nil,
+        date: Date? = nil
+    ) -> SessionExercise {
+        let setCount = max(durations.count, max(distances.count, heartRates.count))
+        let resolvedCount = max(1, setCount)
+
+        let sets = (0..<resolvedCount).map { index in
+            SetData(
+                setNumber: index + 1,
+                completed: true,
+                duration: index < durations.count ? durations[index] : nil,
+                distance: index < distances.count ? distances[index] : nil,
+                avgHeartRate: index < heartRates.count ? heartRates[index] : nil
+            )
+        }
+
+        return SessionExercise(
+            exerciseId: UUID(),
+            exerciseName: name,
+            exerciseType: .cardio,
+            cardioMetric: cardioMetric,
+            completedSetGroups: [
+                CompletedSetGroup(
+                    setGroupId: UUID(),
+                    sets: sets
+                )
+            ],
+            sourceExerciseInstanceId: sourceExerciseInstanceId,
+            progressionRecommendation: recommendation,
+            date: date
+        )
+    }
+
     /// Creates a session with the given exercises
     private func makeSession(
         workoutId: UUID,
@@ -701,6 +741,98 @@ final class ProgressionServiceTests: XCTestCase {
         )
     }
 
+    func testAdaptiveMode_cardioDurationSuggestionUsesDurationMetric() {
+        let workoutId = UUID()
+        let instanceId = UUID()
+
+        let lastExercise = makeCardioExercise(
+            name: "Run",
+            cardioMetric: .timeOnly,
+            durations: [1800, 1800, 1800],
+            sourceExerciseInstanceId: instanceId
+        )
+        let history = [makeSession(workoutId: workoutId, exercises: [lastExercise])]
+
+        let currentExercise = makeCardioExercise(
+            name: "Run",
+            cardioMetric: .timeOnly,
+            durations: [1800],
+            sourceExerciseInstanceId: instanceId
+        )
+
+        let program = Program(
+            name: "Cardio Program",
+            progressionEnabled: true,
+            progressionPolicy: .adaptive,
+            defaultProgressionRule: .moderate,
+            progressionEnabledExercises: Set([instanceId])
+        )
+
+        let suggestions = service.calculateSuggestions(
+            for: [currentExercise],
+            exerciseInstanceIds: [currentExercise.id: instanceId],
+            workoutId: workoutId,
+            program: program,
+            sessionHistory: history
+        )
+
+        XCTAssertEqual(suggestions[currentExercise.id]?.metric, .duration)
+        XCTAssertEqual(suggestions[currentExercise.id]?.baseValue, 1800)
+        XCTAssertNotNil(suggestions[currentExercise.id]?.suggestedValue)
+    }
+
+    func testAdaptiveMode_guardrailsCapProgressJump() {
+        let workoutId = UUID()
+        let instanceId = UUID()
+        let now = Date(timeIntervalSince1970: 1_737_000_000)
+
+        let lastExercise = makeExercise(
+            name: "Bench Press",
+            weights: [100],
+            recommendation: .progress,
+            sourceExerciseInstanceId: instanceId,
+            date: now
+        )
+        let history = [makeSession(workoutId: workoutId, exercises: [lastExercise])]
+        let currentExercise = makeExercise(
+            name: "Bench Press",
+            weights: [],
+            sourceExerciseInstanceId: instanceId,
+            date: now
+        )
+
+        let profile = ProgressionProfile(
+            preferredMetric: .weight,
+            guardrails: ProgressionGuardrails(
+                maxProgressPercent: 2,
+                maxRegressPercent: 12,
+                floorValue: 0,
+                ceilingValue: nil,
+                minimumAbsoluteStep: nil
+            )
+        )
+
+        let program = Program(
+            name: "Guardrail Program",
+            progressionEnabled: true,
+            progressionPolicy: .adaptive,
+            defaultProgressionRule: .moderate, // Would usually suggest 105
+            progressionEnabledExercises: Set([instanceId]),
+            exerciseProgressionProfiles: [instanceId: profile]
+        )
+
+        let suggestions = service.calculateSuggestions(
+            for: [currentExercise],
+            exerciseInstanceIds: [currentExercise.id: instanceId],
+            workoutId: workoutId,
+            program: program,
+            sessionHistory: history
+        )
+
+        XCTAssertEqual(suggestions[currentExercise.id]?.appliedOutcome, .progress)
+        XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 102.0, accuracy: 0.001)
+    }
+
     func testInferProgressionOutcome_usesCompletedPerformance() {
         let exercise = makeExercise(name: "Bench Press", weights: [105], reps: 5)
         let suggestion = ProgressionSuggestion(
@@ -732,5 +864,33 @@ final class ProgressionServiceTests: XCTestCase {
         XCTAssertEqual(updated.lastPrescribedReps, 5)
         XCTAssertNotNil(updated.lastUpdatedAt)
         XCTAssertTrue(updated.confidence > 0.5)
+    }
+
+    func testUpdateProgressionState_tracksSuggestionAcceptance() {
+        let exercise = makeExercise(
+            name: "Bench Press",
+            weights: [105],
+            reps: 5,
+            recommendation: .progress
+        )
+        let suggestion = ProgressionSuggestion(
+            baseValue: 100,
+            suggestedValue: 105,
+            metric: .weight,
+            percentageApplied: 5,
+            appliedOutcome: .progress
+        )
+
+        let updated = service.updateProgressionState(
+            current: ExerciseProgressionState(),
+            exercise: exercise,
+            outcome: .progress,
+            suggestion: suggestion
+        )
+
+        XCTAssertEqual(updated.suggestionsPresented, 1)
+        XCTAssertEqual(updated.suggestionsAccepted, 1)
+        XCTAssertEqual(updated.suggestionsDismissed, 0)
+        XCTAssertEqual(updated.acceptanceRate, 1.0)
     }
 }

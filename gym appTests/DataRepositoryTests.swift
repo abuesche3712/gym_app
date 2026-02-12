@@ -874,6 +874,36 @@ final class ProgramRepositoryTests: XCTestCase {
         XCTAssertEqual(loadedState?.confidence, 0.8)
     }
 
+    func testProgramConversion_roundTripPreservesProgressionProfiles() {
+        // Given
+        let exerciseId = UUID()
+        let profile = ProgressionProfile(
+            preferredMetric: .duration,
+            readinessGate: ProgressionReadinessGate(minimumCompletedSetRatio: 0.85, minimumCompletedSets: 1, staleAfterDays: 30),
+            decisionPolicy: ProgressionDecisionPolicy(progressThreshold: 0.72, regressThreshold: 0.42),
+            guardrails: ProgressionGuardrails(maxProgressPercent: 7, maxRegressPercent: 9, floorValue: 60, ceilingValue: 3600, minimumAbsoluteStep: 15)
+        )
+
+        let original = Program(
+            id: UUID(),
+            name: "Profile Program",
+            progressionEnabled: true,
+            progressionPolicy: .adaptive,
+            progressionEnabledExercises: Set([exerciseId]),
+            defaultProgressionProfile: .cardioDefault,
+            exerciseProgressionProfiles: [exerciseId: profile]
+        )
+
+        // When
+        programRepo.save(original)
+        let loaded = programRepo.find(id: original.id)
+
+        // Then
+        XCTAssertNotNil(loaded)
+        XCTAssertEqual(loaded?.defaultProgressionProfile, .cardioDefault)
+        XCTAssertEqual(loaded?.exerciseProgressionProfiles[exerciseId], profile)
+    }
+
     func testSetProgressionEnabled_disablingClearsOverrideAndState() {
         // Given
         let exerciseId = UUID()
@@ -884,6 +914,7 @@ final class ProgramRepositoryTests: XCTestCase {
             ExerciseProgressionState(successStreak: 2, confidence: 0.8),
             for: exerciseId
         )
+        program.setProgressionProfile(.cardioDefault, for: exerciseId)
 
         // When
         program.setProgressionEnabled(false, for: exerciseId)
@@ -892,6 +923,7 @@ final class ProgramRepositoryTests: XCTestCase {
         XCTAssertFalse(program.progressionEnabledExercises.contains(exerciseId))
         XCTAssertNil(program.exerciseProgressionOverrides[exerciseId])
         XCTAssertNil(program.exerciseProgressionStates[exerciseId])
+        XCTAssertNil(program.exerciseProgressionProfiles[exerciseId])
     }
 }
 

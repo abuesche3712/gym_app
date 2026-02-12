@@ -560,7 +560,8 @@ struct SetRowView: View {
                 inputReps = lastReps.map { "\($0)" } ?? ""
             } else {
                 if let suggestion = exercise.progressionSuggestion {
-                    if suggestion.metric == .weight {
+                    switch suggestion.metric {
+                    case .weight:
                         let delta = max(suggestion.suggestedValue - suggestion.baseValue, 0)
 
                         switch exercise.progressionRecommendation {
@@ -580,7 +581,8 @@ struct SetRowView: View {
                         inputReps = lastReps.map { "\($0)" }
                             ?? flatSet.targetReps.map { "\($0)" }
                             ?? ""
-                    } else {
+
+                    case .reps:
                         inputWeight = lastWeight.map { formatWeight($0) }
                             ?? flatSet.targetWeight.map { formatWeight($0) }
                             ?? ""
@@ -605,6 +607,55 @@ struct SetRowView: View {
                         }
 
                         inputReps = "\(prefilledReps)"
+
+                    case .duration:
+                        let baseDuration = Int(round(suggestion.baseValue))
+                        let progressedDuration = Int(round(suggestion.suggestedValue))
+                        let durationDelta = max(progressedDuration - baseDuration, 1)
+                        let regressedDuration = max(1, baseDuration - durationDelta)
+
+                        let prefilledDuration: Int
+                        switch exercise.progressionRecommendation {
+                        case .progress:
+                            prefilledDuration = progressedDuration
+                        case .regress:
+                            prefilledDuration = regressedDuration
+                        case .stay:
+                            prefilledDuration = baseDuration
+                        case nil:
+                            prefilledDuration = suggestion.isOutcomeAdjusted
+                                ? progressedDuration
+                                : baseDuration
+                        }
+
+                        if !durationManuallySet {
+                            inputDuration = max(1, prefilledDuration)
+                        }
+                        inputDistance = lastDistance.map { formatDistanceValue($0) }
+                            ?? flatSet.targetDistance.map { formatDistanceValue($0) }
+                            ?? ""
+
+                    case .distance:
+                        let baseDistance = suggestion.baseValue
+                        let progressedDistance = suggestion.suggestedValue
+                        let distanceDelta = max(progressedDistance - baseDistance, 0.01)
+                        let regressedDistance = max(0, baseDistance - distanceDelta)
+
+                        let prefilledDistance: Double
+                        switch exercise.progressionRecommendation {
+                        case .progress:
+                            prefilledDistance = progressedDistance
+                        case .regress:
+                            prefilledDistance = regressedDistance
+                        case .stay:
+                            prefilledDistance = baseDistance
+                        case nil:
+                            prefilledDistance = suggestion.isOutcomeAdjusted
+                                ? progressedDistance
+                                : baseDistance
+                        }
+
+                        inputDistance = formatDistanceValue(prefilledDistance)
                     }
                 } else {
                     inputWeight = lastWeight.map { formatWeight($0) }

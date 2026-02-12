@@ -646,7 +646,7 @@ class SessionViewModel: ObservableObject {
 
         for module in session.completedModules where !module.skipped {
             for exercise in module.completedExercises {
-                guard exercise.exerciseType == .strength,
+                guard (exercise.exerciseType == .strength || exercise.exerciseType == .cardio),
                       let exerciseInstanceId = exercise.sourceExerciseInstanceId else {
                     continue
                 }
@@ -667,7 +667,8 @@ class SessionViewModel: ObservableObject {
                 let updatedState = progressionService.updateProgressionState(
                     current: currentState,
                     exercise: exercise,
-                    outcome: outcome
+                    outcome: outcome,
+                    suggestion: exercise.progressionSuggestion
                 )
                 program.setProgressionState(updatedState, for: exerciseInstanceId)
                 didUpdateProgram = true
