@@ -58,11 +58,17 @@ struct AllSetsSection: View {
                                 onLog: { flatSet, weight, reps, rpe, duration, holdTime, distance, height, intensity, temperature, bandColor, implementMeasurableValues in
                                     onLogSet(flatSet, weight, reps, rpe, duration, holdTime, distance, height, intensity, temperature, bandColor, implementMeasurableValues)
                                     onHighlightClear()
-                                    // Start rest timer only after completing the RIGHT side
-                                    if flatSet.setData.side == .right && exercise.exerciseType != .recovery {
-                                        let restPeriod = flatSet.restPeriod ?? appState.defaultRestTime
+                                    // Start rest timer between sides and between set pairs
+                                    if exercise.exerciseType != .recovery {
+                                        let fullRest = flatSet.restPeriod ?? appState.defaultRestTime
                                         if !allSetsCompleted(exercise) {
-                                            sessionViewModel.startRestTimer(seconds: restPeriod)
+                                            if flatSet.setData.side == .left {
+                                                // Short rest between sides (half rest, min 10s)
+                                                sessionViewModel.startRestTimer(seconds: max(10, fullRest / 2))
+                                            } else if flatSet.setData.side == .right {
+                                                // Full rest before next set pair
+                                                sessionViewModel.startRestTimer(seconds: fullRest)
+                                            }
                                         }
                                     }
                                 },
@@ -115,14 +121,14 @@ struct AllSetsSection: View {
                                 lastSessionExercise: lastSessionExercise,
                                 contentWidth: width - (AppSpacing.cardPadding * 2)
                             )
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            .contextMenu {
                                 if canDeleteSet(exercise: exercise) {
                                     Button(role: .destructive) {
                                         withAnimation(.easeInOut(duration: 0.2)) {
                                             onDeleteSet(flatSet)
                                         }
                                     } label: {
-                                        Label("Delete", systemImage: "trash")
+                                        Label("Delete Set", systemImage: "trash")
                                     }
                                 }
                             }
@@ -389,6 +395,15 @@ struct UnilateralSetPairView: View {
             RoundedRectangle(cornerRadius: AppCorners.medium)
                 .fill(AppColors.surfaceTertiary)
         )
+        .contextMenu {
+            if let onDelete = onDelete, let leftSet = leftSet {
+                Button(role: .destructive) {
+                    onDelete(leftSet)
+                } label: {
+                    Label("Delete Set \(setNumber)", systemImage: "trash")
+                }
+            }
+        }
     }
 }
 
@@ -462,7 +477,7 @@ struct UnilateralSideRow: View {
                 Spacer(minLength: 0)
 
                 // Timer button for duration-based types
-                if exercise.exerciseType == .cardio || exercise.exerciseType == .recovery {
+                if exercise.exerciseType == .cardio || exercise.exerciseType == .recovery || exercise.exerciseType == .isometric {
                     Button {
                         toggleTimer()
                     } label: {

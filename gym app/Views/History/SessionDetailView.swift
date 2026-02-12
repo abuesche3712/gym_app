@@ -55,6 +55,38 @@ struct SessionDetailView: View {
                 // Hero Section
                 heroSection
 
+                // Import conversion banner
+                if session.isImported && !readOnly {
+                    Button {
+                        convertToWorkout()
+                    } label: {
+                        HStack(spacing: AppSpacing.md) {
+                            Image(systemName: "arrow.up.doc.fill")
+                                .displaySmall(color: AppColors.accent1)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Extract Workout Template")
+                                    .subheadline(color: AppColors.textPrimary)
+                                    .fontWeight(.semibold)
+                                Text("Create a reusable workout from this imported session")
+                                    .caption(color: AppColors.textSecondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .caption(color: AppColors.textTertiary)
+                        }
+                        .padding(AppSpacing.cardPadding)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppCorners.medium)
+                                .fill(AppColors.surfacePrimary)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                                        .stroke(AppColors.accent1.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 // Quick Stats
                 statsGrid
 

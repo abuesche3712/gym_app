@@ -589,16 +589,33 @@ struct ActiveSessionView: View {
 
         guard flatSet.setIndex < setGroup.sets.count else { return }
 
-        // Remove the set
-        setGroup.sets.remove(at: flatSet.setIndex)
+        // Remove the set (for unilateral, remove the entire L/R pair)
+        if setGroup.isUnilateral {
+            let targetSetNumber = setGroup.sets[flatSet.setIndex].setNumber
+            setGroup.sets.removeAll { $0.setNumber == targetSetNumber }
+        } else {
+            setGroup.sets.remove(at: flatSet.setIndex)
+        }
 
         // If the set group is now empty, remove it too
         if setGroup.sets.isEmpty {
             exercise.completedSetGroups.remove(at: flatSet.setGroupIndex)
         } else {
             // Update set numbers for remaining sets
-            for i in 0..<setGroup.sets.count {
-                setGroup.sets[i].setNumber = i + 1
+            if setGroup.isUnilateral {
+                // Assign paired numbers for unilateral sets
+                var pairNumber = 1
+                for i in stride(from: 0, to: setGroup.sets.count, by: 2) {
+                    setGroup.sets[i].setNumber = pairNumber
+                    if i + 1 < setGroup.sets.count {
+                        setGroup.sets[i + 1].setNumber = pairNumber
+                    }
+                    pairNumber += 1
+                }
+            } else {
+                for i in 0..<setGroup.sets.count {
+                    setGroup.sets[i].setNumber = i + 1
+                }
             }
             exercise.completedSetGroups[flatSet.setGroupIndex] = setGroup
         }
@@ -624,6 +641,9 @@ struct ActiveSessionView: View {
 
         // Trigger auto-save to persist the changes
         sessionViewModel.triggerAutoSave()
+
+        // Refresh the navigator so it sees the updated structure
+        sessionViewModel.refreshNavigator()
 
         // Reset set indices if we're on the current exercise
         if moduleIndex == sessionViewModel.currentModuleIndex && exerciseIndex == sessionViewModel.currentExerciseIndex {

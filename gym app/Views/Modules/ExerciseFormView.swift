@@ -704,8 +704,38 @@ struct ExerciseFormView: View {
                 // Check if we have preserved all sets from history editing
                 if let allSets = allSetsMap[setGroup.id], !allSets.isEmpty {
                     if wasUnilateral == nowUnilateral {
-                        // No change in unilateral state
+                        // No change in unilateral state — respect edited set count
                         sets = allSets
+                        let currentLogical = wasUnilateral ? allSets.count / 2 : allSets.count
+                        let desiredLogical = setGroup.sets
+
+                        if desiredLogical > currentLogical {
+                            // Add new sets to match desired count
+                            for i in currentLogical..<desiredLogical {
+                                let setNum = i + 1
+                                if nowUnilateral {
+                                    sets.append(SetData(setNumber: setNum, weight: setGroup.targetWeight, reps: setGroup.targetReps, completed: false, duration: setGroup.targetDuration, distance: setGroup.targetDistance, holdTime: setGroup.targetHoldTime, side: .left))
+                                    sets.append(SetData(setNumber: setNum, weight: setGroup.targetWeight, reps: setGroup.targetReps, completed: false, duration: setGroup.targetDuration, distance: setGroup.targetDistance, holdTime: setGroup.targetHoldTime, side: .right))
+                                } else {
+                                    sets.append(SetData(setNumber: setNum, weight: setGroup.targetWeight, reps: setGroup.targetReps, completed: false, duration: setGroup.targetDuration, distance: setGroup.targetDistance, holdTime: setGroup.targetHoldTime))
+                                }
+                            }
+                        } else if desiredLogical < currentLogical {
+                            // Remove excess sets from end
+                            let targetDataCount = nowUnilateral ? desiredLogical * 2 : desiredLogical
+                            if sets.count > targetDataCount {
+                                sets = Array(sets.prefix(targetDataCount))
+                            }
+                        }
+
+                        // Update targets on incomplete sets
+                        for i in sets.indices where !sets[i].completed {
+                            sets[i].weight = setGroup.targetWeight
+                            sets[i].reps = setGroup.targetReps
+                            sets[i].duration = setGroup.targetDuration
+                            sets[i].distance = setGroup.targetDistance
+                            sets[i].holdTime = setGroup.targetHoldTime
+                        }
                     } else if nowUnilateral && !wasUnilateral {
                         // Bilateral → Unilateral: duplicate each set into L/R pairs
                         for existingSet in allSets {
