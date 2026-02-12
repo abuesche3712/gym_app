@@ -33,6 +33,7 @@ struct Program: Identifiable, Codable, Hashable {
     var progressionPolicy: ProgressionPolicy       // Legacy or adaptive progression engine
     var progressionEnabledExercises: Set<UUID>     // ExerciseInstance IDs that get progression
     var exerciseProgressionOverrides: [UUID: ProgressionRule]  // Per-exercise custom rules
+    var exerciseProgressionStates: [UUID: ExerciseProgressionState]  // Per-exercise stateful progression context
 
     init(
         id: UUID = UUID(),
@@ -52,7 +53,8 @@ struct Program: Identifiable, Codable, Hashable {
         progressionEnabled: Bool = false,
         progressionPolicy: ProgressionPolicy = .legacy,
         progressionEnabledExercises: Set<UUID> = [],
-        exerciseProgressionOverrides: [UUID: ProgressionRule] = [:]
+        exerciseProgressionOverrides: [UUID: ProgressionRule] = [:],
+        exerciseProgressionStates: [UUID: ExerciseProgressionState] = [:]
     ) {
         self.id = id
         self.name = name
@@ -72,6 +74,7 @@ struct Program: Identifiable, Codable, Hashable {
         self.progressionPolicy = progressionPolicy
         self.progressionEnabledExercises = progressionEnabledExercises
         self.exerciseProgressionOverrides = exerciseProgressionOverrides
+        self.exerciseProgressionStates = exerciseProgressionStates
     }
 
     init(from decoder: Decoder) throws {
@@ -150,12 +153,21 @@ struct Program: Identifiable, Codable, Hashable {
         } else {
             exerciseProgressionOverrides = [:]
         }
+
+        if let stringKeyedStates = try container.decodeIfPresent([String: ExerciseProgressionState].self, forKey: .exerciseProgressionStates) {
+            exerciseProgressionStates = Dictionary(uniqueKeysWithValues: stringKeyedStates.compactMap { key, value in
+                guard let uuid = UUID(uuidString: key) else { return nil }
+                return (uuid, value)
+            })
+        } else {
+            exerciseProgressionStates = [:]
+        }
     }
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion
         case progressionRules, defaultProgressionRule, progressionEnabled, progressionPolicy
-        case progressionEnabledExercises, exerciseProgressionOverrides
+        case progressionEnabledExercises, exerciseProgressionOverrides, exerciseProgressionStates
         case id, name, programDescription, durationWeeks, startDate, endDate, isActive, createdAt, updatedAt, syncStatus, workoutSlots, moduleSlots
         // Legacy field names (for backward compatibility with old Firebase data)
         case legacyCreated = "created"
@@ -195,6 +207,10 @@ struct Program: Identifiable, Codable, Hashable {
         // Encode UUID-keyed exerciseProgressionOverrides as String-keyed
         let stringKeyedOverrides = Dictionary(uniqueKeysWithValues: exerciseProgressionOverrides.map { ($0.key.uuidString, $0.value) })
         try container.encode(stringKeyedOverrides, forKey: .exerciseProgressionOverrides)
+
+        // Encode UUID-keyed exerciseProgressionStates as String-keyed
+        let stringKeyedStates = Dictionary(uniqueKeysWithValues: exerciseProgressionStates.map { ($0.key.uuidString, $0.value) })
+        try container.encode(stringKeyedStates, forKey: .exerciseProgressionStates)
     }
 
     // MARK: - Progression
@@ -241,6 +257,21 @@ struct Program: Identifiable, Codable, Hashable {
             exerciseProgressionOverrides[exerciseInstanceId] = rule
         } else {
             exerciseProgressionOverrides.removeValue(forKey: exerciseInstanceId)
+        }
+        updatedAt = Date()
+    }
+
+    /// Get persisted progression state for a specific exercise instance
+    func progressionState(for exerciseInstanceId: UUID) -> ExerciseProgressionState? {
+        exerciseProgressionStates[exerciseInstanceId]
+    }
+
+    /// Set progression state for a specific exercise instance
+    mutating func setProgressionState(_ state: ExerciseProgressionState?, for exerciseInstanceId: UUID) {
+        if let state {
+            exerciseProgressionStates[exerciseInstanceId] = state
+        } else {
+            exerciseProgressionStates.removeValue(forKey: exerciseInstanceId)
         }
         updatedAt = Date()
     }

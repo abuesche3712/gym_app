@@ -675,6 +675,7 @@ struct PersistenceController {
             createAttribute("defaultProgressionRuleData", type: .binaryDataAttributeType, optional: true),
             createAttribute("progressionEnabledExercisesData", type: .binaryDataAttributeType, optional: true),
             createAttribute("exerciseProgressionOverridesData", type: .binaryDataAttributeType, optional: true),
+            createAttribute("exerciseProgressionStatesData", type: .binaryDataAttributeType, optional: true),
             // Module slots (for standalone modules in program)
             createAttribute("moduleSlotsData", type: .binaryDataAttributeType, optional: true)
         ]

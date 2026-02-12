@@ -1086,6 +1086,7 @@ public class ProgramEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var defaultProgressionRuleData: Data?
     @NSManaged public var progressionEnabledExercisesData: Data?  // JSON array of UUID strings
     @NSManaged public var exerciseProgressionOverridesData: Data?  // JSON dict [String: ProgressionRule]
+    @NSManaged public var exerciseProgressionStatesData: Data?  // JSON dict [String: ExerciseProgressionState]
 
     public override func willSave() {
         super.willSave()
@@ -1150,6 +1151,23 @@ public class ProgramEntity: NSManagedObject, SyncableEntity {
         set {
             let stringKeyed = Dictionary(uniqueKeysWithValues: newValue.map { ($0.key.uuidString, $0.value) })
             exerciseProgressionOverridesData = try? JSONEncoder().encode(stringKeyed)
+        }
+    }
+
+    var exerciseProgressionStates: [UUID: ExerciseProgressionState] {
+        get {
+            guard let data = exerciseProgressionStatesData,
+                  let stringKeyed = try? JSONDecoder().decode([String: ExerciseProgressionState].self, from: data) else {
+                return [:]
+            }
+            return Dictionary(uniqueKeysWithValues: stringKeyed.compactMap { key, value in
+                guard let uuid = UUID(uuidString: key) else { return nil }
+                return (uuid, value)
+            })
+        }
+        set {
+            let stringKeyed = Dictionary(uniqueKeysWithValues: newValue.map { ($0.key.uuidString, $0.value) })
+            exerciseProgressionStatesData = try? JSONEncoder().encode(stringKeyed)
         }
     }
 }

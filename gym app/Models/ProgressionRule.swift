@@ -191,6 +191,44 @@ struct ProgressionRule: Codable, Hashable, Identifiable {
     }
 }
 
+// MARK: - Exercise Progression State
+
+/// Stores per-exercise progression context so decisions can be stateful over time.
+struct ExerciseProgressionState: Codable, Hashable {
+    /// Last prescribed working weight for the exercise, if applicable.
+    var lastPrescribedWeight: Double?
+    /// Last prescribed rep target for the exercise, if applicable.
+    var lastPrescribedReps: Int?
+    /// Consecutive successful sessions.
+    var successStreak: Int
+    /// Consecutive under-target sessions.
+    var failStreak: Int
+    /// Most recent outcomes, newest first (max 3 entries).
+    var recentOutcomes: [ProgressionRecommendation]
+    /// Decision confidence from 0.0 to 1.0.
+    var confidence: Double
+    /// Last time this state was updated.
+    var lastUpdatedAt: Date?
+
+    init(
+        lastPrescribedWeight: Double? = nil,
+        lastPrescribedReps: Int? = nil,
+        successStreak: Int = 0,
+        failStreak: Int = 0,
+        recentOutcomes: [ProgressionRecommendation] = [],
+        confidence: Double = 0.5,
+        lastUpdatedAt: Date? = nil
+    ) {
+        self.lastPrescribedWeight = lastPrescribedWeight
+        self.lastPrescribedReps = lastPrescribedReps
+        self.successStreak = successStreak
+        self.failStreak = failStreak
+        self.recentOutcomes = Array(recentOutcomes.prefix(3))
+        self.confidence = min(max(confidence, 0), 1)
+        self.lastUpdatedAt = lastUpdatedAt
+    }
+}
+
 // MARK: - Progression Suggestion
 
 /// A calculated progression suggestion for an exercise

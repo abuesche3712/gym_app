@@ -57,7 +57,8 @@ class ProgramRepository: CoreDataRepository {
             progressionEnabled: entity.progressionEnabled,
             progressionPolicy: entity.progressionPolicy,
             progressionEnabledExercises: entity.progressionEnabledExercises,
-            exerciseProgressionOverrides: entity.exerciseProgressionOverrides
+            exerciseProgressionOverrides: entity.exerciseProgressionOverrides,
+            exerciseProgressionStates: entity.exerciseProgressionStates
         )
     }
 
@@ -78,6 +79,7 @@ class ProgramRepository: CoreDataRepository {
         entity.defaultProgressionRule = program.defaultProgressionRule
         entity.progressionEnabledExercises = program.progressionEnabledExercises
         entity.exerciseProgressionOverrides = program.exerciseProgressionOverrides
+        entity.exerciseProgressionStates = program.exerciseProgressionStates
 
         // Clear existing workout slots
         if let existingSlots = entity.workoutSlots {

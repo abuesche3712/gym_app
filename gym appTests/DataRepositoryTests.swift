@@ -836,6 +836,43 @@ final class ProgramRepositoryTests: XCTestCase {
         XCTAssertEqual(loaded?.workoutSlots.count, 1)
         XCTAssertEqual(loaded?.workoutSlots.first?.notes, "Start week strong")
     }
+
+    func testProgramConversion_roundTripPreservesExerciseProgressionStates() throws {
+        // Given
+        let exerciseId = UUID()
+        let state = ExerciseProgressionState(
+            lastPrescribedWeight: 135,
+            lastPrescribedReps: 8,
+            successStreak: 2,
+            failStreak: 0,
+            recentOutcomes: [.progress, .stay],
+            confidence: 0.8,
+            lastUpdatedAt: Date()
+        )
+        let original = Program(
+            id: UUID(),
+            name: "Stateful Program",
+            progressionEnabled: true,
+            progressionPolicy: .adaptive,
+            progressionEnabledExercises: Set([exerciseId]),
+            exerciseProgressionStates: [exerciseId: state]
+        )
+
+        // When
+        programRepo.save(original)
+        let loaded = programRepo.find(id: original.id)
+        let loadedState = loaded?.exerciseProgressionStates[exerciseId]
+
+        // Then
+        XCTAssertNotNil(loaded)
+        XCTAssertNotNil(loadedState)
+        XCTAssertEqual(loadedState?.lastPrescribedWeight, 135)
+        XCTAssertEqual(loadedState?.lastPrescribedReps, 8)
+        XCTAssertEqual(loadedState?.successStreak, 2)
+        XCTAssertEqual(loadedState?.failStreak, 0)
+        XCTAssertEqual(loadedState?.recentOutcomes, [.progress, .stay])
+        XCTAssertEqual(loadedState?.confidence, 0.8)
+    }
 }
 
 // MARK: - Integration Tests (Multiple Repositories)
