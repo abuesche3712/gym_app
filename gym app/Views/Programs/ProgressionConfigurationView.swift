@@ -10,7 +10,7 @@ import SwiftUI
 struct ProgressionConfigurationView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var programViewModel: ProgramViewModel
-    @EnvironmentObject private var repository: DataRepository
+    @ObservedObject private var repository = DataRepository.shared
 
     let program: Program
 
