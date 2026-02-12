@@ -21,7 +21,7 @@ struct ProgramsListView: View {
     @State private var showingProgramsSheet = false
     @State private var selectedMonth: Date = Date()
     @State private var selectedDate: Date?
-    @State private var editingProgram: Program?
+    @State private var selectedProgram: Program?
 
     // Selection mode support for share flow
     var selectionMode: ViewSelectionMode? = nil
@@ -69,10 +69,8 @@ struct ProgramsListView: View {
                 workouts: workoutViewModel.workouts
             )
         }
-        .sheet(item: $editingProgram) { program in
-            NavigationStack {
-                ProgramFormView(program: program)
-            }
+        .navigationDestination(item: $selectedProgram) { program in
+            ProgramDetailView(program: program)
         }
     }
 
@@ -114,7 +112,7 @@ struct ProgramsListView: View {
         Group {
             if let activeProgram = programViewModel.activeProgram {
                 Button {
-                    editingProgram = activeProgram
+                    selectedProgram = activeProgram
                 } label: {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
@@ -295,7 +293,7 @@ struct ProgramsListView: View {
             } else {
                 ForEach(programViewModel.programs) { program in
                     Button {
-                        editingProgram = program
+                        selectedProgram = program
                     } label: {
                         ProgramCompactRow(program: program, isActive: program.isActive)
                     }
@@ -544,14 +542,14 @@ struct ProgramCompactRow: View {
 struct ProgramsManagementSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var programViewModel: ProgramViewModel
-    @State private var editingProgram: Program?
+    @State private var selectedProgram: Program?
 
     var body: some View {
         NavigationStack {
             List {
                 ForEach(programViewModel.programs) { program in
                     Button {
-                        editingProgram = program
+                        selectedProgram = program
                     } label: {
                         ProgramRow(program: program, isActive: program.isActive)
                     }
@@ -567,10 +565,8 @@ struct ProgramsManagementSheet: View {
                     }
                 }
             }
-            .sheet(item: $editingProgram) { program in
-                NavigationStack {
-                    ProgramFormView(program: program)
-                }
+            .navigationDestination(item: $selectedProgram) { program in
+                ProgramDetailView(program: program)
             }
         }
     }
