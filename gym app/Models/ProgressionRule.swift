@@ -324,4 +324,16 @@ struct ProgressionSuggestion: Codable, Hashable {
         guard let confidence else { return nil }
         return "\(Int((confidence * 100).rounded()))% confidence"
     }
+
+    var confidenceLabel: String? {
+        guard let confidence else { return nil }
+        switch confidence {
+        case 0.75...:
+            return "High"
+        case 0.45...:
+            return "Medium"
+        default:
+            return "Low"
+        }
+    }
 }

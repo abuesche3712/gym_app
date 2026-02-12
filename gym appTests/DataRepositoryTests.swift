@@ -873,6 +873,26 @@ final class ProgramRepositoryTests: XCTestCase {
         XCTAssertEqual(loadedState?.recentOutcomes, [.progress, .stay])
         XCTAssertEqual(loadedState?.confidence, 0.8)
     }
+
+    func testSetProgressionEnabled_disablingClearsOverrideAndState() {
+        // Given
+        let exerciseId = UUID()
+        var program = Program.fixture(progressionEnabled: true)
+        program.setProgressionEnabled(true, for: exerciseId)
+        program.setProgressionOverride(.moderate, for: exerciseId)
+        program.setProgressionState(
+            ExerciseProgressionState(successStreak: 2, confidence: 0.8),
+            for: exerciseId
+        )
+
+        // When
+        program.setProgressionEnabled(false, for: exerciseId)
+
+        // Then
+        XCTAssertFalse(program.progressionEnabledExercises.contains(exerciseId))
+        XCTAssertNil(program.exerciseProgressionOverrides[exerciseId])
+        XCTAssertNil(program.exerciseProgressionStates[exerciseId])
+    }
 }
 
 // MARK: - Integration Tests (Multiple Repositories)

@@ -247,6 +247,7 @@ struct Program: Identifiable, Codable, Hashable {
         } else {
             progressionEnabledExercises.remove(exerciseInstanceId)
             exerciseProgressionOverrides.removeValue(forKey: exerciseInstanceId)
+            exerciseProgressionStates.removeValue(forKey: exerciseInstanceId)
         }
         updatedAt = Date()
     }

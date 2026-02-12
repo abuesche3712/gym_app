@@ -977,6 +977,7 @@ struct ProgressionButtonsSection: View {
     let exercise: SessionExercise
     let width: CGFloat
     let onProgressionUpdate: (SessionExercise, ProgressionRecommendation) -> Void
+    @State private var showingEngineDetails = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -992,13 +993,25 @@ struct ProgressionButtonsSection: View {
 
             if let suggestion = exercise.progressionSuggestion {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(suggestionSummaryText(for: suggestion))
-                        .caption2(color: AppColors.textSecondary)
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showingEngineDetails.toggle()
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: showingEngineDetails ? "chevron.down.circle.fill" : "chevron.right.circle")
+                                .caption2(color: AppColors.textTertiary)
+                            Text(suggestionSummaryText(for: suggestion))
+                                .caption2(color: AppColors.textSecondary)
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(.plain)
 
-                    if let rationale = suggestion.rationale, !rationale.isEmpty {
+                    if showingEngineDetails, let rationale = suggestion.rationale, !rationale.isEmpty {
                         Text(rationale)
                             .caption2(color: AppColors.textTertiary)
-                            .lineLimit(2)
+                            .lineLimit(3)
                     }
                 }
                 .padding(.top, 2)
@@ -1033,8 +1046,11 @@ struct ProgressionButtonsSection: View {
     }
 
     private func suggestionSummaryText(for suggestion: ProgressionSuggestion) -> String {
-        if let confidence = suggestion.confidenceText {
-            return "Engine: \(suggestion.formattedSuggestion) · \(confidence)"
+        if let confidenceLabel = suggestion.confidenceLabel {
+            return "Engine: \(suggestion.formattedSuggestion) · \(confidenceLabel) confidence"
+        }
+        if let confidenceText = suggestion.confidenceText {
+            return "Engine: \(suggestion.formattedSuggestion) · \(confidenceText)"
         }
         return "Engine: \(suggestion.formattedSuggestion)"
     }

@@ -16,6 +16,7 @@ struct ProgressionConfigurationView: View {
 
     @State private var progressionEnabledExercises: Set<UUID>
     @State private var exerciseProgressionOverrides: [UUID: ProgressionRule]
+    @State private var exerciseProgressionStates: [UUID: ExerciseProgressionState]
     @State private var defaultProgressionRule: ProgressionRule?
     @State private var progressionPolicy: ProgressionPolicy
     @State private var showingDefaultRuleEditor = false
@@ -58,6 +59,7 @@ struct ProgressionConfigurationView: View {
         self.program = program
         _progressionEnabledExercises = State(initialValue: program.progressionEnabledExercises)
         _exerciseProgressionOverrides = State(initialValue: program.exerciseProgressionOverrides)
+        _exerciseProgressionStates = State(initialValue: program.exerciseProgressionStates)
         _defaultProgressionRule = State(initialValue: program.defaultProgressionRule)
         _progressionPolicy = State(initialValue: program.progressionPolicy)
     }
@@ -74,6 +76,7 @@ struct ProgressionConfigurationView: View {
                     quickPresetsCard
                     quickTuningCard
                     selectionToolsCard
+                    learnedStateCard
 
                     // Workouts and their exercises
                     workoutsList
@@ -350,6 +353,34 @@ struct ProgressionConfigurationView: View {
         .disabled(progressionPolicy != .adaptive)
     }
 
+    private var learnedStateCard: some View {
+        let learnedCount = exerciseProgressionStates.count
+
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("Learned State")
+                .font(.headline)
+
+            if learnedCount == 0 {
+                Text("No exercises have learned progression history yet.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else {
+                Text("\(learnedCount) exercise\(learnedCount == 1 ? "" : "s") have learned progression history.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                Button("Reset Learned State") {
+                    exerciseProgressionStates.removeAll()
+                }
+                .buttonStyle(.bordered)
+                .tint(.orange)
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(12)
+    }
+
     // MARK: - Workouts List
 
     private var workoutsList: some View {
@@ -515,6 +546,7 @@ struct ProgressionConfigurationView: View {
                     if isEnabled {
                         progressionEnabledExercises.remove(exercise.id)
                         exerciseProgressionOverrides.removeValue(forKey: exercise.id)
+                        exerciseProgressionStates.removeValue(forKey: exercise.id)
                     } else {
                         progressionEnabledExercises.insert(exercise.id)
                     }
@@ -536,6 +568,10 @@ struct ProgressionConfigurationView: View {
                     Text("Not recommended")
                         .font(.caption2)
                         .foregroundColor(.orange)
+                } else if isEnabled, let summary = stateSummary(for: exercise.id) {
+                    Text(summary)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
                 }
             }
 
@@ -590,6 +626,7 @@ struct ProgressionConfigurationView: View {
             } else {
                 progressionEnabledExercises.remove(exercise.id)
                 exerciseProgressionOverrides.removeValue(forKey: exercise.id)
+                exerciseProgressionStates.removeValue(forKey: exercise.id)
             }
         }
     }
@@ -615,6 +652,7 @@ struct ProgressionConfigurationView: View {
     private func clearAllSelections() {
         progressionEnabledExercises.removeAll()
         exerciseProgressionOverrides.removeAll()
+        exerciseProgressionStates.removeAll()
     }
 
     private func selectAll(in module: Module) {
@@ -627,6 +665,7 @@ struct ProgressionConfigurationView: View {
         for exercise in module.exercises {
             progressionEnabledExercises.remove(exercise.id)
             exerciseProgressionOverrides.removeValue(forKey: exercise.id)
+            exerciseProgressionStates.removeValue(forKey: exercise.id)
         }
     }
 
@@ -663,10 +702,23 @@ struct ProgressionConfigurationView: View {
         defaultProgressionRule = updated
     }
 
+    private func stateSummary(for exerciseId: UUID) -> String? {
+        guard let state = exerciseProgressionStates[exerciseId] else { return nil }
+
+        if state.successStreak > 0 {
+            return "Success streak \(state.successStreak) · \(Int((state.confidence * 100).rounded()))%"
+        }
+        if state.failStreak > 0 {
+            return "Fail streak \(state.failStreak) · \(Int((state.confidence * 100).rounded()))%"
+        }
+        return "Confidence \(Int((state.confidence * 100).rounded()))%"
+    }
+
     private func saveChanges() {
         var updatedProgram = program
         updatedProgram.progressionEnabledExercises = progressionEnabledExercises
         updatedProgram.exerciseProgressionOverrides = exerciseProgressionOverrides
+        updatedProgram.exerciseProgressionStates = exerciseProgressionStates
         updatedProgram.defaultProgressionRule = defaultProgressionRule
         updatedProgram.progressionPolicy = progressionPolicy
         updatedProgram.updatedAt = Date()

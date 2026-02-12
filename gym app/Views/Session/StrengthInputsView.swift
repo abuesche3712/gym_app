@@ -312,9 +312,8 @@ struct StrengthInputs: View {
     }
 
     private func suggestionHintText(for suggestion: ProgressionSuggestion) -> String {
-        if let confidence = suggestion.confidence {
-            let percent = Int((confidence * 100).rounded())
-            return "\(directionSymbol(for: suggestion)) \(suggestion.formattedValue) · \(percent)%"
+        if let label = suggestion.confidenceLabel {
+            return "\(directionSymbol(for: suggestion)) \(suggestion.formattedValue) · \(label)"
         }
         return "\(directionSymbol(for: suggestion)) \(suggestion.formattedValue)"
     }
