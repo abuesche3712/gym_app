@@ -72,6 +72,132 @@ final class gym_appTests: XCTestCase {
         XCTAssertEqual(breakdown.total, 3)
     }
 
+    func testEngineHealth_calculatesAcceptanceOverrideAndRegressRates() {
+        let reference = makeDate(year: 2026, month: 2, day: 6)
+        let recentDate = calendar.date(byAdding: .day, value: -2, to: reference)!
+
+        let progressSuggestion = ProgressionSuggestion(
+            baseValue: 100,
+            suggestedValue: 105,
+            metric: .weight,
+            percentageApplied: 5,
+            appliedOutcome: .progress,
+            confidence: 0.8,
+            decisionCode: "WEIGHTED_PROGRESS"
+        )
+        let regressSuggestion = ProgressionSuggestion(
+            baseValue: 200,
+            suggestedValue: 190,
+            metric: .weight,
+            percentageApplied: -5,
+            appliedOutcome: .regress,
+            confidence: 0.78,
+            decisionCode: "WEIGHTED_REGRESS"
+        )
+
+        let exercises = [
+            makeStrengthExercise(name: "Bench", weight: 100, reps: 5, recommendation: .progress, suggestion: progressSuggestion),
+            makeStrengthExercise(name: "Squat", weight: 200, reps: 5, recommendation: .stay, suggestion: progressSuggestion),
+            makeStrengthExercise(name: "Deadlift", weight: 300, reps: 3, recommendation: .regress, suggestion: regressSuggestion)
+        ]
+        let sessions = [makeSession(date: recentDate, exercises: exercises)]
+
+        let health = service.engineHealth(from: sessions, days: 28, referenceDate: reference)
+        XCTAssertEqual(health.totalDecisions, 3)
+        XCTAssertEqual(health.acceptedCount, 2)
+        XCTAssertEqual(health.overriddenCount, 1)
+        XCTAssertEqual(health.regressCount, 1)
+        XCTAssertEqual(health.acceptanceRate, 67)
+        XCTAssertEqual(health.overrideRate, 33)
+        XCTAssertEqual(health.regressRate, 33)
+    }
+
+    func testProgressionAlerts_flagsLowAcceptanceAndHighOverrides() {
+        let reference = makeDate(year: 2026, month: 2, day: 6)
+        let recentDate = calendar.date(byAdding: .day, value: -1, to: reference)!
+        let progressSuggestion = ProgressionSuggestion(
+            baseValue: 100,
+            suggestedValue: 105,
+            metric: .weight,
+            percentageApplied: 5,
+            appliedOutcome: .progress,
+            confidence: 0.65,
+            decisionCode: "WEIGHTED_PROGRESS"
+        )
+
+        let benchExercises = [
+            makeStrengthExercise(name: "Bench", weight: 100, reps: 5, recommendation: .stay, suggestion: progressSuggestion),
+            makeStrengthExercise(name: "Bench", weight: 100, reps: 5, recommendation: .stay, suggestion: progressSuggestion),
+            makeStrengthExercise(name: "Bench", weight: 100, reps: 5, recommendation: .regress, suggestion: progressSuggestion),
+            makeStrengthExercise(name: "Bench", weight: 100, reps: 5, recommendation: .progress, suggestion: progressSuggestion)
+        ]
+        let sessions = [makeSession(date: recentDate, exercises: benchExercises)]
+
+        let alerts = service.progressionAlerts(from: sessions, days: 28, referenceDate: reference)
+        XCTAssertTrue(alerts.contains(where: { $0.title.contains("Low acceptance") }))
+        XCTAssertTrue(alerts.contains(where: { $0.title.contains("Frequent overrides") }))
+    }
+
+    func testDryRunProfiles_simulatesConservativeToAggressive() {
+        let reference = makeDate(year: 2026, month: 2, day: 6)
+
+        let highConfidenceProgress = ProgressionSuggestion(
+            baseValue: 100,
+            suggestedValue: 105,
+            metric: .weight,
+            percentageApplied: 5,
+            appliedOutcome: .progress,
+            confidence: 0.90,
+            decisionCode: "WEIGHTED_PROGRESS"
+        )
+        let mediumConfidenceProgress = ProgressionSuggestion(
+            baseValue: 100,
+            suggestedValue: 105,
+            metric: .weight,
+            percentageApplied: 5,
+            appliedOutcome: .progress,
+            confidence: 0.50,
+            decisionCode: "WEIGHTED_PROGRESS"
+        )
+        let lowConfidenceRegress = ProgressionSuggestion(
+            baseValue: 100,
+            suggestedValue: 95,
+            metric: .weight,
+            percentageApplied: -5,
+            appliedOutcome: .regress,
+            confidence: 0.30,
+            decisionCode: "WEIGHTED_REGRESS"
+        )
+
+        let sessions = [
+            makeSession(
+                date: reference,
+                exercises: [makeStrengthExercise(name: "Bench", weight: 105, reps: 5, recommendation: .progress, suggestion: highConfidenceProgress)]
+            ),
+            makeSession(
+                date: calendar.date(byAdding: .day, value: -1, to: reference)!,
+                exercises: [makeStrengthExercise(name: "Bench", weight: 102, reps: 5, recommendation: .stay, suggestion: mediumConfidenceProgress)]
+            ),
+            makeSession(
+                date: calendar.date(byAdding: .day, value: -2, to: reference)!,
+                exercises: [makeStrengthExercise(name: "Bench", weight: 98, reps: 5, recommendation: .stay, suggestion: lowConfidenceRegress)]
+            )
+        ]
+
+        let dryRun = service.dryRunProfiles(from: sessions, recentSessionLimit: 12)
+
+        XCTAssertEqual(dryRun.inputCount, 3)
+        XCTAssertEqual(dryRun.results.count, 3)
+
+        let conservative = dryRun.results.first { $0.name == "Conservative" }
+        let aggressive = dryRun.results.first { $0.name == "Aggressive" }
+
+        XCTAssertEqual(conservative?.progressCount, 1)
+        XCTAssertEqual(conservative?.stayCount, 2)
+        XCTAssertEqual(aggressive?.progressCount, 2)
+        XCTAssertEqual(aggressive?.stayCount, 1)
+    }
+
     func testRecentPRs_detectsEstimatedOneRepMaxUsingBrzycki() {
         let day1 = makeDate(year: 2026, month: 1, day: 1)
         let day2 = makeDate(year: 2026, month: 1, day: 8)
@@ -153,19 +279,22 @@ final class gym_appTests: XCTestCase {
         name: String,
         weight: Double,
         reps: Int,
-        recommendation: ProgressionRecommendation? = nil
+        recommendation: ProgressionRecommendation? = nil,
+        suggestion: ProgressionSuggestion? = nil
     ) -> SessionExercise {
         makeStrengthExercise(
             name: name,
             sets: [SetData(setNumber: 1, weight: weight, reps: reps, completed: true)],
-            recommendation: recommendation
+            recommendation: recommendation,
+            suggestion: suggestion
         )
     }
 
     private func makeStrengthExercise(
         name: String,
         sets: [SetData],
-        recommendation: ProgressionRecommendation? = nil
+        recommendation: ProgressionRecommendation? = nil,
+        suggestion: ProgressionSuggestion? = nil
     ) -> SessionExercise {
         SessionExercise(
             exerciseId: UUID(),
@@ -177,7 +306,8 @@ final class gym_appTests: XCTestCase {
                     sets: sets
                 )
             ],
-            progressionRecommendation: recommendation
+            progressionRecommendation: recommendation,
+            progressionSuggestion: suggestion
         )
     }
 

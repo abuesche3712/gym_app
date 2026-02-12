@@ -25,6 +25,9 @@ struct AnalyticsView: View {
                         liftTrendsCard
                         strengthProgressCard
                         progressionBreakdownCard
+                        engineHealthCard
+                        progressionAlertsCard
+                        dryRunSimulatorCard
                         recentPRsCard
                     }
                 }
@@ -385,6 +388,164 @@ struct AnalyticsView: View {
         )
     }
 
+    private var engineHealthCard: some View {
+        let health = viewModel.engineHealth
+
+        return VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("Engine Health")
+                .headline(color: AppColors.textPrimary)
+
+            if health.totalDecisions == 0 {
+                Text("No engine decisions captured yet.")
+                    .caption(color: AppColors.textTertiary)
+            } else {
+                HStack(spacing: AppSpacing.md) {
+                    analyticsStat(
+                        label: "Acceptance",
+                        value: "\(health.acceptanceRate)% (\(health.acceptedCount)/\(health.totalDecisions))",
+                        icon: "checkmark.circle.fill",
+                        color: AppColors.success
+                    )
+
+                    analyticsStat(
+                        label: "Overrides",
+                        value: "\(health.overrideRate)% (\(health.overriddenCount))",
+                        icon: "hand.point.up.left.fill",
+                        color: AppColors.warning
+                    )
+                }
+
+                HStack(spacing: AppSpacing.md) {
+                    analyticsStat(
+                        label: "Regress Rate",
+                        value: "\(health.regressRate)% (\(health.regressCount))",
+                        icon: "arrow.down.circle.fill",
+                        color: AppColors.warning
+                    )
+
+                    analyticsStat(
+                        label: "Profiles Tracked",
+                        value: "\(viewModel.decisionProfileHealth.count)",
+                        icon: "slider.horizontal.3",
+                        color: AppColors.dominant
+                    )
+                }
+
+                if !viewModel.decisionProfileHealth.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Decision Paths")
+                            .caption(color: AppColors.textSecondary)
+                        ForEach(viewModel.decisionProfileHealth.prefix(3)) { profile in
+                            HStack {
+                                Text(profile.name)
+                                    .caption(color: AppColors.textPrimary)
+                                Spacer()
+                                Text("\(profile.acceptanceRate)% accept")
+                                    .caption(color: AppColors.textSecondary)
+                            }
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+            }
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .fill(AppColors.surfacePrimary)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
+                )
+        )
+    }
+
+    private var progressionAlertsCard: some View {
+        let alerts = viewModel.progressionAlerts
+
+        return VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("Safety Alerts")
+                .headline(color: AppColors.textPrimary)
+
+            if alerts.isEmpty {
+                Text("No high-risk progression patterns detected.")
+                    .caption(color: AppColors.textTertiary)
+            } else {
+                ForEach(alerts.prefix(4)) { alert in
+                    HStack(alignment: .top, spacing: AppSpacing.sm) {
+                        Image(systemName: alert.icon)
+                            .foregroundColor(alert.color)
+                            .frame(width: 18)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(alert.title)
+                                .subheadline(color: AppColors.textPrimary)
+                                .fontWeight(.semibold)
+                            Text(alert.message)
+                                .caption(color: AppColors.textSecondary)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .fill(AppColors.surfacePrimary)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
+                )
+        )
+    }
+
+    private var dryRunSimulatorCard: some View {
+        let runs = viewModel.dryRunProfiles
+
+        return VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("Dry-Run Simulator")
+                .headline(color: AppColors.textPrimary)
+
+            if runs.isEmpty {
+                Text("Need more suggestion history to simulate alternate profiles.")
+                    .caption(color: AppColors.textTertiary)
+            } else {
+                Text("How the last \(viewModel.dryRunInputCount) suggestions would route:")
+                    .caption(color: AppColors.textSecondary)
+
+                ForEach(runs) { run in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(run.name)
+                                .subheadline(color: AppColors.textPrimary)
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text("Match \(run.agreementRate)%")
+                                .caption(color: AppColors.textSecondary)
+                        }
+
+                        HStack(spacing: 10) {
+                            dryRunPill(label: "P", value: run.progressCount, color: AppColors.success)
+                            dryRunPill(label: "S", value: run.stayCount, color: AppColors.dominant)
+                            dryRunPill(label: "R", value: run.regressCount, color: AppColors.warning)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+        }
+        .padding(AppSpacing.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .fill(AppColors.surfacePrimary)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
+                )
+        )
+    }
+
     @ViewBuilder
     private func analyticsStat(label: String, value: String, icon: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -405,6 +566,24 @@ struct AnalyticsView: View {
         .background(
             RoundedRectangle(cornerRadius: AppCorners.medium)
                 .fill(AppColors.surfaceSecondary)
+        )
+    }
+
+    @ViewBuilder
+    private func dryRunPill(label: String, value: Int, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Text(label)
+                .caption(color: color)
+                .fontWeight(.bold)
+            Text("\(value)")
+                .caption(color: AppColors.textPrimary)
+                .fontWeight(.semibold)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            Capsule()
+                .fill(color.opacity(0.14))
         )
     }
 
@@ -667,6 +846,100 @@ struct ProgressionBreakdown: Hashable {
     }
 }
 
+struct ProgressionEngineHealth: Hashable {
+    let totalDecisions: Int
+    let acceptedCount: Int
+    let overriddenCount: Int
+    let regressCount: Int
+
+    static let empty = ProgressionEngineHealth(
+        totalDecisions: 0,
+        acceptedCount: 0,
+        overriddenCount: 0,
+        regressCount: 0
+    )
+
+    var acceptanceRate: Int {
+        guard totalDecisions > 0 else { return 0 }
+        return Int(round((Double(acceptedCount) / Double(totalDecisions)) * 100))
+    }
+
+    var overrideRate: Int {
+        guard totalDecisions > 0 else { return 0 }
+        return Int(round((Double(overriddenCount) / Double(totalDecisions)) * 100))
+    }
+
+    var regressRate: Int {
+        guard totalDecisions > 0 else { return 0 }
+        return Int(round((Double(regressCount) / Double(totalDecisions)) * 100))
+    }
+}
+
+struct DecisionProfileHealth: Identifiable, Hashable {
+    let name: String
+    let totalDecisions: Int
+    let acceptedCount: Int
+    let regressCount: Int
+
+    var id: String { name }
+
+    var acceptanceRate: Int {
+        guard totalDecisions > 0 else { return 0 }
+        return Int(round((Double(acceptedCount) / Double(totalDecisions)) * 100))
+    }
+
+    var regressRate: Int {
+        guard totalDecisions > 0 else { return 0 }
+        return Int(round((Double(regressCount) / Double(totalDecisions)) * 100))
+    }
+}
+
+enum ProgressionAlertType {
+    case lowAcceptance
+    case highRegress
+    case highOverride
+}
+
+struct ProgressionAlert: Identifiable, Hashable {
+    let title: String
+    let message: String
+    let type: ProgressionAlertType
+
+    var id: String { "\(type)-\(title)" }
+
+    var icon: String {
+        switch type {
+        case .lowAcceptance: return "exclamationmark.triangle.fill"
+        case .highRegress: return "arrow.down.circle.fill"
+        case .highOverride: return "hand.raised.fill"
+        }
+    }
+
+    var color: Color {
+        switch type {
+        case .lowAcceptance: return AppColors.warning
+        case .highRegress: return AppColors.warning
+        case .highOverride: return AppColors.dominant
+        }
+    }
+}
+
+struct DryRunProfileResult: Identifiable, Hashable {
+    let name: String
+    let progressCount: Int
+    let stayCount: Int
+    let regressCount: Int
+    let agreementCount: Int
+    let comparableCount: Int
+
+    var id: String { name }
+
+    var agreementRate: Int {
+        guard comparableCount > 0 else { return 0 }
+        return Int(round((Double(agreementCount) / Double(comparableCount)) * 100))
+    }
+}
+
 enum PersonalRecordType {
     case estimatedOneRepMax
 }
@@ -694,6 +967,15 @@ struct PersonalRecordEvent: Identifiable, Hashable {
 struct AnalyticsService {
     private let calendar = Calendar.current
     private let oneRepMaxPRTolerance = 0.1
+
+    private struct ProgressionDecisionRecord {
+        let date: Date
+        let exerciseName: String
+        let decisionPath: String
+        let expected: ProgressionRecommendation
+        let actual: ProgressionRecommendation?
+        let confidence: Double
+    }
 
     func currentStreak(from sessions: [Session], referenceDate: Date = Date()) -> Int {
         let today = calendar.startOfDay(for: referenceDate)
@@ -837,6 +1119,178 @@ struct AnalyticsService {
             stayCount: stayCount,
             regressCount: regressCount
         )
+    }
+
+    func engineHealth(from sessions: [Session], days: Int = 28, referenceDate: Date = Date()) -> ProgressionEngineHealth {
+        let records = progressionDecisionRecords(
+            from: sessions,
+            days: days,
+            referenceDate: referenceDate
+        ).filter { $0.actual != nil }
+
+        guard !records.isEmpty else { return .empty }
+
+        let accepted = records.filter { $0.actual == $0.expected }.count
+        let overrides = records.count - accepted
+        let regress = records.filter { $0.actual == .regress }.count
+
+        return ProgressionEngineHealth(
+            totalDecisions: records.count,
+            acceptedCount: accepted,
+            overriddenCount: overrides,
+            regressCount: regress
+        )
+    }
+
+    func decisionProfileHealth(from sessions: [Session], days: Int = 28, referenceDate: Date = Date()) -> [DecisionProfileHealth] {
+        let records = progressionDecisionRecords(
+            from: sessions,
+            days: days,
+            referenceDate: referenceDate
+        ).filter { $0.actual != nil }
+
+        let grouped = Dictionary(grouping: records, by: \.decisionPath)
+        return grouped
+            .map { name, entries in
+                let accepted = entries.filter { $0.actual == $0.expected }.count
+                let regress = entries.filter { $0.actual == .regress }.count
+                return DecisionProfileHealth(
+                    name: name,
+                    totalDecisions: entries.count,
+                    acceptedCount: accepted,
+                    regressCount: regress
+                )
+            }
+            .sorted { lhs, rhs in
+                if lhs.totalDecisions != rhs.totalDecisions {
+                    return lhs.totalDecisions > rhs.totalDecisions
+                }
+                return lhs.name < rhs.name
+            }
+    }
+
+    func progressionAlerts(from sessions: [Session], days: Int = 28, referenceDate: Date = Date()) -> [ProgressionAlert] {
+        let records = progressionDecisionRecords(
+            from: sessions,
+            days: days,
+            referenceDate: referenceDate
+        ).filter { $0.actual != nil }
+
+        let byExercise = Dictionary(grouping: records, by: \.exerciseName)
+        var alerts: [ProgressionAlert] = []
+
+        for (exerciseName, entries) in byExercise {
+            guard entries.count >= 4 else { continue }
+
+            let accepted = entries.filter { $0.actual == $0.expected }.count
+            let acceptanceRate = Double(accepted) / Double(entries.count)
+            let regressCount = entries.filter { $0.actual == .regress }.count
+            let regressRate = Double(regressCount) / Double(entries.count)
+            let overrideRate = 1 - acceptanceRate
+
+            if acceptanceRate < 0.45 {
+                alerts.append(
+                    ProgressionAlert(
+                        title: "\(exerciseName): Low acceptance",
+                        message: "Only \(Int((acceptanceRate * 100).rounded()))% of suggestions are accepted (\(entries.count) decisions). Consider a more conservative profile.",
+                        type: .lowAcceptance
+                    )
+                )
+            }
+
+            if regressRate > 0.40 {
+                alerts.append(
+                    ProgressionAlert(
+                        title: "\(exerciseName): High regressions",
+                        message: "Regress selected \(Int((regressRate * 100).rounded()))% of the time. Tighten progression caps or raise readiness gates.",
+                        type: .highRegress
+                    )
+                )
+            }
+
+            if overrideRate > 0.60 {
+                alerts.append(
+                    ProgressionAlert(
+                        title: "\(exerciseName): Frequent overrides",
+                        message: "Overrides are \(Int((overrideRate * 100).rounded()))%. The current decision profile may be too aggressive.",
+                        type: .highOverride
+                    )
+                )
+            }
+        }
+
+        let severityRank: (ProgressionAlertType) -> Int = { type in
+            switch type {
+            case .lowAcceptance: return 0
+            case .highRegress: return 1
+            case .highOverride: return 2
+            }
+        }
+
+        return alerts
+            .sorted { lhs, rhs in
+                if severityRank(lhs.type) != severityRank(rhs.type) {
+                    return severityRank(lhs.type) < severityRank(rhs.type)
+                }
+                return lhs.title < rhs.title
+            }
+    }
+
+    func dryRunProfiles(
+        from sessions: [Session],
+        recentSessionLimit: Int = 12
+    ) -> (results: [DryRunProfileResult], inputCount: Int) {
+        let orderedSessions = sessions.sorted { $0.date > $1.date }
+        let sessionSlice = Array(orderedSessions.prefix(max(1, recentSessionLimit)))
+
+        let records = progressionDecisionRecords(
+            from: sessionSlice,
+            days: 0,
+            referenceDate: Date()
+        )
+
+        let runConfigs: [(name: String, threshold: Double)] = [
+            ("Conservative", 0.78),
+            ("Balanced", 0.58),
+            ("Aggressive", 0.42)
+        ]
+
+        let results = runConfigs.map { config in
+            var progress = 0
+            var stay = 0
+            var regress = 0
+            var agreement = 0
+            var comparable = 0
+
+            for record in records {
+                let predicted = predictedOutcome(
+                    for: record,
+                    confidenceThreshold: config.threshold
+                )
+
+                switch predicted {
+                case .progress: progress += 1
+                case .stay: stay += 1
+                case .regress: regress += 1
+                }
+
+                if let actual = record.actual {
+                    comparable += 1
+                    if actual == predicted { agreement += 1 }
+                }
+            }
+
+            return DryRunProfileResult(
+                name: config.name,
+                progressCount: progress,
+                stayCount: stay,
+                regressCount: regress,
+                agreementCount: agreement,
+                comparableCount: comparable
+            )
+        }
+
+        return (results, records.count)
     }
 
     func recentPRs(sessions: [Session], limit: Int = 3) -> [PersonalRecordEvent] {
@@ -1008,6 +1462,86 @@ struct AnalyticsService {
         }
         return isBetter(lhs.topSet, than: rhs.topSet)
     }
+
+    private func progressionDecisionRecords(
+        from sessions: [Session],
+        days: Int,
+        referenceDate: Date
+    ) -> [ProgressionDecisionRecord] {
+        let cutoffDate: Date?
+        if days > 0 {
+            cutoffDate = calendar.date(byAdding: .day, value: -days, to: referenceDate)
+        } else {
+            cutoffDate = nil
+        }
+
+        var records: [ProgressionDecisionRecord] = []
+
+        for session in sessions {
+            if let cutoffDate, session.date < cutoffDate { continue }
+
+            for module in session.completedModules where !module.skipped {
+                for exercise in module.completedExercises {
+                    guard let suggestion = exercise.progressionSuggestion,
+                          let expected = expectedRecommendation(from: suggestion) else {
+                        continue
+                    }
+
+                    records.append(
+                        ProgressionDecisionRecord(
+                            date: session.date,
+                            exerciseName: exercise.exerciseName,
+                            decisionPath: decisionPath(from: suggestion),
+                            expected: expected,
+                            actual: exercise.progressionRecommendation,
+                            confidence: suggestion.confidence ?? 0.56
+                        )
+                    )
+                }
+            }
+        }
+
+        return records.sorted { $0.date > $1.date }
+    }
+
+    private func expectedRecommendation(from suggestion: ProgressionSuggestion) -> ProgressionRecommendation? {
+        if let applied = suggestion.appliedOutcome {
+            return applied
+        }
+        if suggestion.suggestedValue > suggestion.baseValue + 0.0001 {
+            return .progress
+        }
+        if suggestion.suggestedValue < suggestion.baseValue - 0.0001 {
+            return .regress
+        }
+        return .stay
+    }
+
+    private func decisionPath(from suggestion: ProgressionSuggestion) -> String {
+        guard let code = suggestion.decisionCode else { return "Unlabeled" }
+        if code.contains("DOUBLE_PROGRESSION_GATE") { return "Double Progression Gate" }
+        if code.contains("READINESS_GATE") { return "Readiness Gate" }
+        if code.contains("WEIGHTED_") { return "Weighted Model" }
+        if code.contains("BASELINE") { return "Baseline Rule" }
+        if code.contains("MANUAL_OVERRIDE") { return "Manual Carryover" }
+        return "Unlabeled"
+    }
+
+    private func predictedOutcome(
+        for record: ProgressionDecisionRecord,
+        confidenceThreshold: Double
+    ) -> ProgressionRecommendation {
+        if record.decisionPath == "Readiness Gate" {
+            return .stay
+        }
+        if record.expected == .stay {
+            return .stay
+        }
+        if record.confidence >= confidenceThreshold {
+            return record.expected
+        }
+        return .stay
+    }
 }
 
 // MARK: - Analytics ViewModel
@@ -1022,6 +1556,11 @@ final class AnalyticsViewModel: ObservableObject {
     @Published private(set) var e1RMProgressByExercise: [String: [E1RMProgressPoint]] = [:]
     @Published var selectedStrengthExercise: String = ""
     @Published private(set) var progressionBreakdown: ProgressionBreakdown = .empty
+    @Published private(set) var engineHealth: ProgressionEngineHealth = .empty
+    @Published private(set) var decisionProfileHealth: [DecisionProfileHealth] = []
+    @Published private(set) var progressionAlerts: [ProgressionAlert] = []
+    @Published private(set) var dryRunProfiles: [DryRunProfileResult] = []
+    @Published private(set) var dryRunInputCount: Int = 0
     @Published private(set) var recentPRs: [PersonalRecordEvent] = []
     @Published private(set) var analyzedSessionCount = 0
 
@@ -1061,6 +1600,12 @@ final class AnalyticsViewModel: ObservableObject {
             selectedStrengthExercise = strengthExerciseOptions.first ?? ""
         }
         progressionBreakdown = analyticsService.progressionBreakdown(from: sessions, days: 28)
+        engineHealth = analyticsService.engineHealth(from: sessions, days: 28)
+        decisionProfileHealth = analyticsService.decisionProfileHealth(from: sessions, days: 28)
+        progressionAlerts = analyticsService.progressionAlerts(from: sessions, days: 28)
+        let dryRun = analyticsService.dryRunProfiles(from: sessions, recentSessionLimit: 12)
+        dryRunProfiles = dryRun.results
+        dryRunInputCount = dryRun.inputCount
         recentPRs = analyticsService.recentPRs(sessions: sessions, limit: 5)
     }
 }
