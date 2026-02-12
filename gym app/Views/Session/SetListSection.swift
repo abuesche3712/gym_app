@@ -221,7 +221,7 @@ struct AllSetsSection: View {
         var result: [FlatSet] = []
         for (setIndex, setData) in setGroup.sets.enumerated() {
             result.append(FlatSet(
-                id: "\(groupIndex)-\(setIndex)",
+                id: "\(exercise.exerciseId)-\(groupIndex)-\(setIndex)",
                 setGroupIndex: groupIndex,
                 setIndex: setIndex,
                 setNumber: runningSetNumber,
@@ -477,7 +477,7 @@ struct UnilateralSideRow: View {
                 Spacer(minLength: 0)
 
                 // Timer button for duration-based types
-                if exercise.exerciseType == .cardio || exercise.exerciseType == .recovery || exercise.exerciseType == .isometric {
+                if exercise.exerciseType == .cardio || exercise.exerciseType == .recovery || exercise.exerciseType == .isometric || (exercise.exerciseType == .mobility && exercise.mobilityTracking.tracksDuration) {
                     Button {
                         toggleTimer()
                     } label: {
