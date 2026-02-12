@@ -26,7 +26,8 @@ final class ProgressionServiceTests: XCTestCase {
         weights: [Double],
         reps: Int = 5,
         recommendation: ProgressionRecommendation? = nil,
-        sourceExerciseInstanceId: UUID? = nil
+        sourceExerciseInstanceId: UUID? = nil,
+        date: Date? = nil
     ) -> SessionExercise {
         let sets = weights.enumerated().map { index, weight in
             SetData(
@@ -48,7 +49,8 @@ final class ProgressionServiceTests: XCTestCase {
                 )
             ],
             sourceExerciseInstanceId: sourceExerciseInstanceId,
-            progressionRecommendation: recommendation
+            progressionRecommendation: recommendation,
+            date: date
         )
     }
 
@@ -496,6 +498,69 @@ final class ProgressionServiceTests: XCTestCase {
         XCTAssertEqual(suggestions[currentExercise.id]?.baseValue, 135.0)
         XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 135.0)
         XCTAssertEqual(suggestions[currentExercise.id]?.appliedOutcome, .stay)
+        XCTAssertEqual(suggestions[currentExercise.id]?.rationale, "Rep gate: 0/3 sets hit 8 reps last session.")
+    }
+
+    func testAdaptiveMode_doubleProgressionRequiresAllSetsToHitRepGoal() {
+        let workoutId = UUID()
+        let instanceId = UUID()
+        let lastExercise = SessionExercise(
+            exerciseId: UUID(),
+            exerciseName: "Bench Press",
+            exerciseType: .strength,
+            completedSetGroups: [
+                CompletedSetGroup(
+                    setGroupId: UUID(),
+                    sets: [
+                        SetData(setNumber: 1, completed: true, weight: 135, reps: 8),
+                        SetData(setNumber: 2, completed: true, weight: 135, reps: 8),
+                        SetData(setNumber: 3, completed: true, weight: 135, reps: 7)
+                    ]
+                )
+            ],
+            sourceExerciseInstanceId: instanceId
+        )
+        let history = [makeSession(workoutId: workoutId, exercises: [lastExercise])]
+
+        let currentExercise = SessionExercise(
+            exerciseId: UUID(),
+            exerciseName: "Bench Press",
+            exerciseType: .strength,
+            completedSetGroups: [
+                CompletedSetGroup(
+                    setGroupId: UUID(),
+                    sets: [SetData(setNumber: 1, completed: false, weight: 135, reps: 8)]
+                )
+            ]
+        )
+
+        let rule = ProgressionRule(
+            targetMetric: .weight,
+            strategy: .doubleProgression,
+            percentageIncrease: 5.0,
+            roundingIncrement: 5.0,
+            minimumIncrease: 5.0
+        )
+
+        let program = Program(
+            name: "Adaptive Program",
+            progressionEnabled: true,
+            progressionPolicy: .adaptive,
+            defaultProgressionRule: rule,
+            progressionEnabledExercises: Set([instanceId])
+        )
+
+        let suggestions = service.calculateSuggestions(
+            for: [currentExercise],
+            exerciseInstanceIds: [currentExercise.id: instanceId],
+            workoutId: workoutId,
+            program: program,
+            sessionHistory: history
+        )
+
+        XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 135.0)
+        XCTAssertEqual(suggestions[currentExercise.id]?.appliedOutcome, .stay)
+        XCTAssertEqual(suggestions[currentExercise.id]?.rationale, "Rep gate: 2/3 sets hit 8 reps last session.")
     }
 
     func testAdaptiveMode_stateFailStreakRegresses() {
@@ -581,6 +646,59 @@ final class ProgressionServiceTests: XCTestCase {
         XCTAssertEqual(suggestions[currentExercise.id]?.isOutcomeAdjusted, true)
         XCTAssertNotNil(suggestions[currentExercise.id]?.rationale)
         XCTAssertNotNil(suggestions[currentExercise.id]?.confidence)
+    }
+
+    func testAdaptiveMode_staleStateFallsBackToBaselineProgression() {
+        let workoutId = UUID()
+        let instanceId = UUID()
+
+        let now = Date(timeIntervalSince1970: 1_737_000_000)
+        let staleDate = Date(timeIntervalSince1970: 1_733_000_000) // >42 days earlier
+
+        let lastExercise = makeExercise(
+            name: "Bench Press",
+            weights: [100],
+            sourceExerciseInstanceId: instanceId,
+            date: staleDate
+        )
+        let history = [makeSession(workoutId: workoutId, exercises: [lastExercise])]
+        let currentExercise = makeExercise(
+            name: "Bench Press",
+            weights: [],
+            date: now
+        )
+
+        let state = ExerciseProgressionState(
+            successStreak: 0,
+            failStreak: 3,
+            confidence: 0.1,
+            lastUpdatedAt: staleDate
+        )
+
+        let program = Program(
+            name: "Adaptive Program",
+            progressionEnabled: true,
+            progressionPolicy: .adaptive,
+            defaultProgressionRule: .moderate,
+            progressionEnabledExercises: Set([instanceId]),
+            exerciseProgressionStates: [instanceId: state]
+        )
+
+        let suggestions = service.calculateSuggestions(
+            for: [currentExercise],
+            exerciseInstanceIds: [currentExercise.id: instanceId],
+            workoutId: workoutId,
+            program: program,
+            sessionHistory: history
+        )
+
+        XCTAssertEqual(suggestions[currentExercise.id]?.baseValue, 100.0)
+        XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 105.0)
+        XCTAssertNil(suggestions[currentExercise.id]?.appliedOutcome)
+        XCTAssertEqual(
+            suggestions[currentExercise.id]?.rationale,
+            "Using baseline progression because learned state is stale."
+        )
     }
 
     func testInferProgressionOutcome_usesCompletedPerformance() {

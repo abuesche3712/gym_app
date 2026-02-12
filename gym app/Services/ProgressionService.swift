@@ -24,6 +24,8 @@ struct ProgressionService {
         let outcome: ProgressionRecommendation
         let targetReps: Int
         let achievedReps: Int
+        let setsAtTarget: Int
+        let totalSets: Int
     }
 
     // MARK: - Public API
@@ -295,10 +297,13 @@ struct ProgressionService {
             currentExercise: currentExercise,
             rule: rule
         )
+        let referenceDate = currentExercise.date ?? Date()
+        let staleState = progressionState.map { isProgressionStateStale($0, referenceDate: referenceDate) } ?? false
         let stateOutcome = stateDrivenOutcomeIfNeeded(
             progressionState,
             rule: rule,
-            automaticDecision: repGateDecision
+            automaticDecision: repGateDecision,
+            referenceDate: referenceDate
         )
 
         let manualDecision = lastExercise.progressionRecommendation.map { recommendation in
@@ -312,7 +317,7 @@ struct ProgressionService {
         let automaticDecision = repGateDecision.map { decision in
             OutcomeDecision(
                 outcome: decision.outcome,
-                rationale: "Rep gate: hit \(decision.achievedReps)/\(decision.targetReps) reps last session.",
+                rationale: "Rep gate: \(decision.setsAtTarget)/\(decision.totalSets) sets hit \(decision.targetReps) reps last session.",
                 confidence: 0.78
             )
         }
@@ -322,6 +327,14 @@ struct ProgressionService {
                 decision,
                 to: linearSuggestion,
                 rule: rule
+            )
+        }
+
+        if staleState {
+            return attachMetadata(
+                to: linearSuggestion,
+                rationale: "Using baseline progression because learned state is stale.",
+                confidence: 0.5
             )
         }
 
@@ -335,7 +348,8 @@ struct ProgressionService {
     private func stateDrivenOutcomeIfNeeded(
         _ state: ExerciseProgressionState?,
         rule: ProgressionRule,
-        automaticDecision: RepGateDecision?
+        automaticDecision: RepGateDecision?,
+        referenceDate: Date
     ) -> OutcomeDecision? {
         guard let state else { return nil }
 
@@ -343,9 +357,13 @@ struct ProgressionService {
         if rule.strategy == .doubleProgression, let automaticDecision {
             return OutcomeDecision(
                 outcome: automaticDecision.outcome,
-                rationale: "Rep gate: hit \(automaticDecision.achievedReps)/\(automaticDecision.targetReps) reps last session.",
+                rationale: "Rep gate: \(automaticDecision.setsAtTarget)/\(automaticDecision.totalSets) sets hit \(automaticDecision.targetReps) reps last session.",
                 confidence: 0.78
             )
+        }
+
+        if isProgressionStateStale(state, referenceDate: referenceDate) {
+            return nil
         }
 
         if state.failStreak >= 2 || state.confidence <= 0.2 {
@@ -386,17 +404,36 @@ struct ProgressionService {
             return nil
         }
 
-        let achievedReps = lastExercise.completedSetGroups
+        let completedSets = lastExercise.completedSetGroups
             .flatMap { $0.sets }
             .filter { $0.completed && ($0.weight ?? 0) > 0 }
             .compactMap(\.reps)
-            .max() ?? 0
+
+        guard !completedSets.isEmpty else {
+            return nil
+        }
+
+        let totalSets = completedSets.count
+        let setsAtTarget = completedSets.filter { $0 >= targetReps }.count
+        let achievedReps = completedSets.max() ?? 0
 
         return RepGateDecision(
-            outcome: achievedReps >= targetReps ? .progress : .stay,
+            outcome: setsAtTarget == totalSets ? .progress : .stay,
             targetReps: targetReps,
-            achievedReps: achievedReps
+            achievedReps: achievedReps,
+            setsAtTarget: setsAtTarget,
+            totalSets: totalSets
         )
+    }
+
+    private func isProgressionStateStale(
+        _ state: ExerciseProgressionState,
+        referenceDate: Date
+    ) -> Bool {
+        guard let lastUpdatedAt = state.lastUpdatedAt else { return false }
+
+        let days = Calendar.current.dateComponents([.day], from: lastUpdatedAt, to: referenceDate).day ?? 0
+        return days >= 42
     }
 
     private func applyOutcome(
