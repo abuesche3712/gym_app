@@ -239,6 +239,8 @@ struct ProgressionSuggestion: Codable, Hashable {
     let percentageApplied: Double   // Actual % increase after rounding
     let appliedOutcome: ProgressionRecommendation?
     let isOutcomeAdjusted: Bool
+    let rationale: String?
+    let confidence: Double?
 
     init(
         baseValue: Double,
@@ -246,7 +248,9 @@ struct ProgressionSuggestion: Codable, Hashable {
         metric: ProgressionMetric,
         percentageApplied: Double,
         appliedOutcome: ProgressionRecommendation? = nil,
-        isOutcomeAdjusted: Bool = false
+        isOutcomeAdjusted: Bool = false,
+        rationale: String? = nil,
+        confidence: Double? = nil
     ) {
         self.baseValue = baseValue
         self.suggestedValue = suggestedValue
@@ -254,10 +258,16 @@ struct ProgressionSuggestion: Codable, Hashable {
         self.percentageApplied = percentageApplied
         self.appliedOutcome = appliedOutcome
         self.isOutcomeAdjusted = isOutcomeAdjusted
+        self.rationale = rationale
+        if let confidence {
+            self.confidence = min(max(confidence, 0), 1)
+        } else {
+            self.confidence = nil
+        }
     }
 
     private enum CodingKeys: String, CodingKey {
-        case baseValue, suggestedValue, metric, percentageApplied, appliedOutcome, isOutcomeAdjusted
+        case baseValue, suggestedValue, metric, percentageApplied, appliedOutcome, isOutcomeAdjusted, rationale, confidence
     }
 
     init(from decoder: Decoder) throws {
@@ -268,6 +278,12 @@ struct ProgressionSuggestion: Codable, Hashable {
         percentageApplied = try container.decode(Double.self, forKey: .percentageApplied)
         appliedOutcome = try container.decodeIfPresent(ProgressionRecommendation.self, forKey: .appliedOutcome)
         isOutcomeAdjusted = try container.decodeIfPresent(Bool.self, forKey: .isOutcomeAdjusted) ?? false
+        rationale = try container.decodeIfPresent(String.self, forKey: .rationale)
+        if let decodedConfidence = try container.decodeIfPresent(Double.self, forKey: .confidence) {
+            confidence = min(max(decodedConfidence, 0), 1)
+        } else {
+            confidence = nil
+        }
     }
 
     func encode(to encoder: Encoder) throws {
@@ -278,6 +294,8 @@ struct ProgressionSuggestion: Codable, Hashable {
         try container.encode(percentageApplied, forKey: .percentageApplied)
         try container.encodeIfPresent(appliedOutcome, forKey: .appliedOutcome)
         try container.encode(isOutcomeAdjusted, forKey: .isOutcomeAdjusted)
+        try container.encodeIfPresent(rationale, forKey: .rationale)
+        try container.encodeIfPresent(confidence, forKey: .confidence)
     }
 
     /// Formatted string for display (e.g., "135 lbs (+3.8%)")
@@ -300,5 +318,10 @@ struct ProgressionSuggestion: Codable, Hashable {
         case .reps:
             return "\(Int(suggestedValue))"
         }
+    }
+
+    var confidenceText: String? {
+        guard let confidence else { return nil }
+        return "\(Int((confidence * 100).rounded()))% confidence"
     }
 }

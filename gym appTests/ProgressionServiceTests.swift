@@ -537,6 +537,8 @@ final class ProgressionServiceTests: XCTestCase {
         XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 190.0)
         XCTAssertEqual(suggestions[currentExercise.id]?.appliedOutcome, .regress)
         XCTAssertEqual(suggestions[currentExercise.id]?.isOutcomeAdjusted, true)
+        XCTAssertNotNil(suggestions[currentExercise.id]?.rationale)
+        XCTAssertNotNil(suggestions[currentExercise.id]?.confidence)
     }
 
     func testAdaptiveMode_stateSuccessStreakForcesProgressOutcome() {
@@ -577,6 +579,8 @@ final class ProgressionServiceTests: XCTestCase {
         XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 105.0)
         XCTAssertEqual(suggestions[currentExercise.id]?.appliedOutcome, .progress)
         XCTAssertEqual(suggestions[currentExercise.id]?.isOutcomeAdjusted, true)
+        XCTAssertNotNil(suggestions[currentExercise.id]?.rationale)
+        XCTAssertNotNil(suggestions[currentExercise.id]?.confidence)
     }
 
     func testInferProgressionOutcome_usesCompletedPerformance() {

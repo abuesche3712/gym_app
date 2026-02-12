@@ -989,6 +989,20 @@ struct ProgressionButtonsSection: View {
                 }
             }
             .frame(width: width - (AppSpacing.cardPadding * 2))
+
+            if let suggestion = exercise.progressionSuggestion {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(suggestionSummaryText(for: suggestion))
+                        .caption2(color: AppColors.textSecondary)
+
+                    if let rationale = suggestion.rationale, !rationale.isEmpty {
+                        Text(rationale)
+                            .caption2(color: AppColors.textTertiary)
+                            .lineLimit(2)
+                    }
+                }
+                .padding(.top, 2)
+            }
         }
         .padding(.top, AppSpacing.sm)
     }
@@ -1016,5 +1030,12 @@ struct ProgressionButtonsSection: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    private func suggestionSummaryText(for suggestion: ProgressionSuggestion) -> String {
+        if let confidence = suggestion.confidenceText {
+            return "Engine: \(suggestion.formattedSuggestion) · \(confidence)"
+        }
+        return "Engine: \(suggestion.formattedSuggestion)"
     }
 }

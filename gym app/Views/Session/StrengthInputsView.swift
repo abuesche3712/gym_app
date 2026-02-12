@@ -166,9 +166,11 @@ struct StrengthInputs: View {
                     if let suggestion = exercise.progressionSuggestion,
                        suggestion.metric == .weight,
                        !flatSet.setData.completed {
-                        Text("\(directionSymbol(for: suggestion)) \(suggestion.formattedValue)")
+                        Text(suggestionHintText(for: suggestion))
                             .font(.system(size: 10, weight: .medium))
                             .foregroundColor(directionColor(for: suggestion))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                 }
                 .fixedSize(horizontal: true, vertical: false)
@@ -307,6 +309,14 @@ struct StrengthInputs: View {
         if suggestion.percentageApplied > 0.01 { return AppColors.success }
         if suggestion.percentageApplied < -0.01 { return AppColors.warning }
         return AppColors.dominant
+    }
+
+    private func suggestionHintText(for suggestion: ProgressionSuggestion) -> String {
+        if let confidence = suggestion.confidence {
+            let percent = Int((confidence * 100).rounded())
+            return "\(directionSymbol(for: suggestion)) \(suggestion.formattedValue) · \(percent)%"
+        }
+        return "\(directionSymbol(for: suggestion)) \(suggestion.formattedValue)"
     }
 }
 

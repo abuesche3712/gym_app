@@ -22,6 +22,38 @@ struct ProgressionConfigurationView: View {
     @State private var editingExerciseId: UUID?
     @State private var expandedWorkouts: Set<UUID> = []
 
+    private enum QuickRulePreset: String, CaseIterable, Identifiable {
+        case compound
+        case dumbbell
+        case repBuilder
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .compound: return "Compound"
+            case .dumbbell: return "Dumbbell"
+            case .repBuilder: return "Rep Builder"
+            }
+        }
+
+        var subtitle: String {
+            switch self {
+            case .compound: return "+5%, 5 lb steps"
+            case .dumbbell: return "+2.5%, 2.5 lb steps"
+            case .repBuilder: return "Reps +5%"
+            }
+        }
+
+        var rule: ProgressionRule {
+            switch self {
+            case .compound: return .moderate
+            case .dumbbell: return .fineGrained
+            case .repBuilder: return .repProgression
+            }
+        }
+    }
+
     init(program: Program) {
         self.program = program
         _progressionEnabledExercises = State(initialValue: program.progressionEnabledExercises)
@@ -38,6 +70,10 @@ struct ProgressionConfigurationView: View {
 
                     // Default Rule Card
                     defaultRuleCard
+
+                    quickPresetsCard
+                    quickTuningCard
+                    selectionToolsCard
 
                     // Workouts and their exercises
                     workoutsList
@@ -149,6 +185,169 @@ struct ProgressionConfigurationView: View {
         .padding()
         .background(Color(.secondarySystemGroupedBackground))
         .cornerRadius(12)
+    }
+
+    private var quickPresetsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Quick Presets")
+                .font(.headline)
+
+            HStack(spacing: 8) {
+                ForEach(QuickRulePreset.allCases) { preset in
+                    Button {
+                        applyQuickPreset(preset.rule)
+                    } label: {
+                        VStack(spacing: 3) {
+                            Text(preset.title)
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                            Text(preset.subtitle)
+                                .font(.caption2)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(Color(.tertiarySystemGroupedBackground))
+                        .cornerRadius(8)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(12)
+    }
+
+    private var quickTuningCard: some View {
+        let rule = defaultProgressionRule ?? .conservative
+
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("Quick Tuning")
+                .font(.headline)
+
+            HStack(spacing: 8) {
+                Menu {
+                    ForEach(ProgressionMetric.allCases) { metric in
+                        Button(metric.displayName) {
+                            updateDefaultRule { current in
+                                current.targetMetric = metric
+                                if metric != .weight {
+                                    current.strategy = .linear
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    tuningChip(title: "Metric", value: rule.targetMetric.displayName)
+                }
+
+                if rule.targetMetric == .weight {
+                    Menu {
+                        ForEach(ProgressionStrategy.allCases) { strategy in
+                            Button(strategy.displayName) {
+                                updateDefaultRule { current in
+                                    current.strategy = strategy
+                                }
+                            }
+                        }
+                    } label: {
+                        tuningChip(title: "Strategy", value: rule.strategy.displayName)
+                    }
+                }
+            }
+
+            HStack(spacing: 8) {
+                Menu {
+                    ForEach(percentageOptions, id: \.self) { value in
+                        Button("+\(formatPercent(value))%") {
+                            updateDefaultRule { current in
+                                current.percentageIncrease = value
+                            }
+                        }
+                    }
+                } label: {
+                    tuningChip(title: "Increase", value: "+\(formatPercent(rule.percentageIncrease))%")
+                }
+
+                Menu {
+                    ForEach(roundingOptions(for: rule), id: \.self) { value in
+                        Button(formatWeight(value)) {
+                            updateDefaultRule { current in
+                                current.roundingIncrement = value
+                            }
+                        }
+                    }
+                } label: {
+                    tuningChip(title: "Round", value: formatWeight(rule.roundingIncrement))
+                }
+
+                Menu {
+                    ForEach(minimumOptions(for: rule), id: \.self) { value in
+                        let label = value == 0 ? "No min" : formatWeight(value)
+                        Button(label) {
+                            updateDefaultRule { current in
+                                current.minimumIncrease = value > 0 ? value : nil
+                            }
+                        }
+                    }
+                } label: {
+                    tuningChip(
+                        title: "Min",
+                        value: rule.minimumIncrease.map { formatWeight($0) } ?? "No min"
+                    )
+                }
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(12)
+    }
+
+    private func tuningChip(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+            Text(value)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(Color(.tertiarySystemGroupedBackground))
+        .cornerRadius(8)
+    }
+
+    private var selectionToolsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Selection Tools")
+                .font(.headline)
+
+            HStack(spacing: 8) {
+                Button("Smart Select All") {
+                    applySmartDefaultsToAll()
+                }
+                .buttonStyle(.bordered)
+
+                Button("Enable Strength") {
+                    selectAllStrengthExercises()
+                }
+                .buttonStyle(.bordered)
+
+                Button("Clear All") {
+                    clearAllSelections()
+                }
+                .buttonStyle(.bordered)
+            }
+            .font(.caption)
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(12)
+        .opacity(progressionPolicy == .adaptive ? 1.0 : 0.5)
+        .disabled(progressionPolicy != .adaptive)
     }
 
     // MARK: - Workouts List
@@ -403,6 +602,21 @@ struct ProgressionConfigurationView: View {
         }
     }
 
+    private func selectAllStrengthExercises() {
+        for workout in workoutsInProgram {
+            for module in modulesForWorkout(workout) {
+                for exercise in module.exercises where exercise.exerciseType == .strength {
+                    progressionEnabledExercises.insert(exercise.id)
+                }
+            }
+        }
+    }
+
+    private func clearAllSelections() {
+        progressionEnabledExercises.removeAll()
+        exerciseProgressionOverrides.removeAll()
+    }
+
     private func selectAll(in module: Module) {
         for exercise in module.exercises {
             progressionEnabledExercises.insert(exercise.id)
@@ -418,11 +632,35 @@ struct ProgressionConfigurationView: View {
 
     // MARK: - Helpers
 
+    private let percentageOptions: [Double] = [1.0, 2.5, 5.0, 7.5, 10.0]
+    private let weightRoundingOptions: [Double] = [1.0, 2.5, 5.0, 10.0]
+    private let repRoundingOptions: [Double] = [1.0]
+    private let weightMinimumOptions: [Double] = [0, 2.5, 5.0, 10.0]
+    private let repMinimumOptions: [Double] = [0, 1.0, 2.0]
+
     private func formatPercent(_ value: Double) -> String {
         if value.truncatingRemainder(dividingBy: 1) == 0 {
             return String(format: "%.0f", value)
         }
         return String(format: "%.1f", value)
+    }
+
+    private func roundingOptions(for rule: ProgressionRule) -> [Double] {
+        rule.targetMetric == .weight ? weightRoundingOptions : repRoundingOptions
+    }
+
+    private func minimumOptions(for rule: ProgressionRule) -> [Double] {
+        rule.targetMetric == .weight ? weightMinimumOptions : repMinimumOptions
+    }
+
+    private func applyQuickPreset(_ preset: ProgressionRule) {
+        defaultProgressionRule = preset
+    }
+
+    private func updateDefaultRule(_ mutate: (inout ProgressionRule) -> Void) {
+        var updated = defaultProgressionRule ?? .conservative
+        mutate(&updated)
+        defaultProgressionRule = updated
     }
 
     private func saveChanges() {

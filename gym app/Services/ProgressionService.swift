@@ -14,6 +14,18 @@ struct ProgressionService {
         case adaptive
     }
 
+    private struct OutcomeDecision {
+        let outcome: ProgressionRecommendation
+        let rationale: String
+        let confidence: Double
+    }
+
+    private struct RepGateDecision {
+        let outcome: ProgressionRecommendation
+        let targetReps: Int
+        let achievedReps: Int
+    }
+
     // MARK: - Public API
 
     /// Calculate progression suggestions for all exercises in a workout
@@ -278,7 +290,7 @@ struct ProgressionService {
         guard let linearSuggestion else { return nil }
         guard mode == .adaptive else { return linearSuggestion }
 
-        let strategyOutcome = automaticOutcomeIfNeeded(
+        let repGateDecision = automaticOutcomeIfNeeded(
             lastExercise: lastExercise,
             currentExercise: currentExercise,
             rule: rule
@@ -286,36 +298,70 @@ struct ProgressionService {
         let stateOutcome = stateDrivenOutcomeIfNeeded(
             progressionState,
             rule: rule,
-            automaticOutcome: strategyOutcome
+            automaticDecision: repGateDecision
         )
-        let outcome = lastExercise.progressionRecommendation ?? stateOutcome ?? strategyOutcome
-        guard let outcome else { return linearSuggestion }
 
-        return applyOutcome(
-            outcome,
+        let manualDecision = lastExercise.progressionRecommendation.map { recommendation in
+            OutcomeDecision(
+                outcome: recommendation,
+                rationale: "Using your previous session choice (\(recommendation.displayName.lowercased())).",
+                confidence: 0.95
+            )
+        }
+
+        let automaticDecision = repGateDecision.map { decision in
+            OutcomeDecision(
+                outcome: decision.outcome,
+                rationale: "Rep gate: hit \(decision.achievedReps)/\(decision.targetReps) reps last session.",
+                confidence: 0.78
+            )
+        }
+
+        if let decision = manualDecision ?? stateOutcome ?? automaticDecision {
+            return applyOutcome(
+                decision,
+                to: linearSuggestion,
+                rule: rule
+            )
+        }
+
+        return attachMetadata(
             to: linearSuggestion,
-            rule: rule
+            rationale: "No recent outcome override; using baseline progression.",
+            confidence: 0.56
         )
     }
 
     private func stateDrivenOutcomeIfNeeded(
         _ state: ExerciseProgressionState?,
         rule: ProgressionRule,
-        automaticOutcome: ProgressionRecommendation?
-    ) -> ProgressionRecommendation? {
+        automaticDecision: RepGateDecision?
+    ) -> OutcomeDecision? {
         guard let state else { return nil }
 
         // For double progression, rep-goal gate still wins.
-        if rule.strategy == .doubleProgression, let automaticOutcome {
-            return automaticOutcome
+        if rule.strategy == .doubleProgression, let automaticDecision {
+            return OutcomeDecision(
+                outcome: automaticDecision.outcome,
+                rationale: "Rep gate: hit \(automaticDecision.achievedReps)/\(automaticDecision.targetReps) reps last session.",
+                confidence: 0.78
+            )
         }
 
         if state.failStreak >= 2 || state.confidence <= 0.2 {
-            return .regress
+            return OutcomeDecision(
+                outcome: .regress,
+                rationale: "Regression triggered by recent misses (fail streak \(state.failStreak)).",
+                confidence: max(0.65, min(state.confidence + 0.3, 0.9))
+            )
         }
 
         if state.successStreak >= 2 || state.confidence >= 0.8 {
-            return .progress
+            return OutcomeDecision(
+                outcome: .progress,
+                rationale: "Progression triggered by consistent success (streak \(state.successStreak)).",
+                confidence: max(0.7, state.confidence)
+            )
         }
 
         return nil
@@ -325,7 +371,7 @@ struct ProgressionService {
         lastExercise: SessionExercise,
         currentExercise: SessionExercise,
         rule: ProgressionRule
-    ) -> ProgressionRecommendation? {
+    ) -> RepGateDecision? {
         guard rule.targetMetric == .weight, rule.strategy == .doubleProgression else {
             return nil
         }
@@ -346,14 +392,19 @@ struct ProgressionService {
             .compactMap(\.reps)
             .max() ?? 0
 
-        return achievedReps >= targetReps ? .progress : .stay
+        return RepGateDecision(
+            outcome: achievedReps >= targetReps ? .progress : .stay,
+            targetReps: targetReps,
+            achievedReps: achievedReps
+        )
     }
 
     private func applyOutcome(
-        _ outcome: ProgressionRecommendation,
+        _ decision: OutcomeDecision,
         to suggestion: ProgressionSuggestion,
         rule: ProgressionRule
     ) -> ProgressionSuggestion {
+        let outcome = decision.outcome
         let base = suggestion.baseValue
         let progressed = suggestion.suggestedValue
 
@@ -377,7 +428,9 @@ struct ProgressionService {
                 metric: .weight,
                 percentageApplied: percent,
                 appliedOutcome: outcome,
-                isOutcomeAdjusted: true
+                isOutcomeAdjusted: true,
+                rationale: decision.rationale,
+                confidence: decision.confidence
             )
         case .reps:
             let delta = max(progressed - base, 1)
@@ -398,9 +451,28 @@ struct ProgressionService {
                 metric: .reps,
                 percentageApplied: percent,
                 appliedOutcome: outcome,
-                isOutcomeAdjusted: true
+                isOutcomeAdjusted: true,
+                rationale: decision.rationale,
+                confidence: decision.confidence
             )
         }
+    }
+
+    private func attachMetadata(
+        to suggestion: ProgressionSuggestion,
+        rationale: String,
+        confidence: Double
+    ) -> ProgressionSuggestion {
+        ProgressionSuggestion(
+            baseValue: suggestion.baseValue,
+            suggestedValue: suggestion.suggestedValue,
+            metric: suggestion.metric,
+            percentageApplied: suggestion.percentageApplied,
+            appliedOutcome: suggestion.appliedOutcome,
+            isOutcomeAdjusted: suggestion.isOutcomeAdjusted,
+            rationale: rationale,
+            confidence: confidence
+        )
     }
 
     /// Calculate weight progression suggestion
