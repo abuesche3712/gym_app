@@ -68,6 +68,8 @@ struct ProgressionService {
                 continue
             }
 
+            let progressionState = program.progressionState(for: exerciseInstanceId)
+
             // Find last session data for this exercise within this workout
             guard let lastExerciseData = findLastSessionData(
                 exerciseInstanceId: exerciseInstanceId,
@@ -84,7 +86,8 @@ struct ProgressionService {
                 from: lastExerciseData,
                 currentExercise: exercise,
                 rule: rule,
-                mode: .adaptive
+                mode: .adaptive,
+                progressionState: progressionState
             ) {
                 suggestions[exercise.id] = suggestion
             }
@@ -132,13 +135,89 @@ struct ProgressionService {
                 from: lastExerciseData,
                 currentExercise: exercise,
                 rule: rule,
-                mode: .legacy
+                mode: .legacy,
+                progressionState: nil
             ) {
                 suggestions[exercise.id] = suggestion
             }
         }
 
         return suggestions
+    }
+
+    /// Infer a progression outcome for a completed exercise.
+    /// Priority: explicit user recommendation -> suggestion/performance comparison.
+    func inferProgressionOutcome(
+        for exercise: SessionExercise,
+        suggestion: ProgressionSuggestion?
+    ) -> ProgressionRecommendation? {
+        if let explicit = exercise.progressionRecommendation {
+            return explicit
+        }
+
+        guard let suggestion else { return nil }
+
+        switch suggestion.metric {
+        case .weight:
+            guard let maxWeight = maximumCompletedWeight(in: exercise) else { return nil }
+            if maxWeight >= suggestion.suggestedValue - 0.01 {
+                return .progress
+            }
+            if maxWeight <= suggestion.baseValue * 0.9 {
+                return .regress
+            }
+            return .stay
+
+        case .reps:
+            guard let maxReps = maximumCompletedReps(in: exercise) else { return nil }
+            let suggestedReps = Int(round(suggestion.suggestedValue))
+            let baseReps = Int(round(suggestion.baseValue))
+            if maxReps >= suggestedReps {
+                return .progress
+            }
+            if maxReps < max(1, baseReps - 1) {
+                return .regress
+            }
+            return .stay
+        }
+    }
+
+    /// Update stateful progression context after a completed session.
+    func updateProgressionState(
+        current: ExerciseProgressionState?,
+        exercise: SessionExercise,
+        outcome: ProgressionRecommendation,
+        at date: Date = Date()
+    ) -> ExerciseProgressionState {
+        var state = current ?? ExerciseProgressionState()
+
+        if let maxWeight = maximumCompletedWeight(in: exercise) {
+            state.lastPrescribedWeight = maxWeight
+        }
+        if let maxReps = maximumCompletedReps(in: exercise) {
+            state.lastPrescribedReps = maxReps
+        }
+
+        switch outcome {
+        case .progress:
+            state.successStreak += 1
+            state.failStreak = 0
+            state.confidence = min(1, state.confidence + 0.08)
+        case .stay:
+            state.successStreak = max(0, state.successStreak - 1)
+            state.failStreak = max(0, state.failStreak - 1)
+            state.confidence += (0.5 - state.confidence) * 0.05
+        case .regress:
+            state.failStreak += 1
+            state.successStreak = 0
+            state.confidence = max(0, state.confidence - 0.12)
+        }
+
+        state.recentOutcomes.insert(outcome, at: 0)
+        state.recentOutcomes = Array(state.recentOutcomes.prefix(3))
+        state.lastUpdatedAt = date
+
+        return state
     }
 
     // MARK: - Private Helpers
@@ -184,7 +263,8 @@ struct ProgressionService {
         from lastExercise: SessionExercise,
         currentExercise: SessionExercise,
         rule: ProgressionRule,
-        mode: SuggestionMode
+        mode: SuggestionMode,
+        progressionState: ExerciseProgressionState?
     ) -> ProgressionSuggestion? {
 
         let linearSuggestion: ProgressionSuggestion?
@@ -203,7 +283,12 @@ struct ProgressionService {
             currentExercise: currentExercise,
             rule: rule
         )
-        let outcome = lastExercise.progressionRecommendation ?? strategyOutcome
+        let stateOutcome = stateDrivenOutcomeIfNeeded(
+            progressionState,
+            rule: rule,
+            automaticOutcome: strategyOutcome
+        )
+        let outcome = lastExercise.progressionRecommendation ?? stateOutcome ?? strategyOutcome
         guard let outcome else { return linearSuggestion }
 
         return applyOutcome(
@@ -211,6 +296,29 @@ struct ProgressionService {
             to: linearSuggestion,
             rule: rule
         )
+    }
+
+    private func stateDrivenOutcomeIfNeeded(
+        _ state: ExerciseProgressionState?,
+        rule: ProgressionRule,
+        automaticOutcome: ProgressionRecommendation?
+    ) -> ProgressionRecommendation? {
+        guard let state else { return nil }
+
+        // For double progression, rep-goal gate still wins.
+        if rule.strategy == .doubleProgression, let automaticOutcome {
+            return automaticOutcome
+        }
+
+        if state.failStreak >= 2 || state.confidence <= 0.2 {
+            return .regress
+        }
+
+        if state.successStreak >= 2 || state.confidence >= 0.8 {
+            return .progress
+        }
+
+        return nil
     }
 
     private func automaticOutcomeIfNeeded(
@@ -385,5 +493,21 @@ struct ProgressionService {
             metric: .reps,
             percentageApplied: actualPercent
         )
+    }
+
+    private func maximumCompletedWeight(in exercise: SessionExercise) -> Double? {
+        exercise.completedSetGroups
+            .flatMap { $0.sets }
+            .filter { $0.completed }
+            .compactMap(\.weight)
+            .max()
+    }
+
+    private func maximumCompletedReps(in exercise: SessionExercise) -> Int? {
+        exercise.completedSetGroups
+            .flatMap { $0.sets }
+            .filter { $0.completed }
+            .compactMap(\.reps)
+            .max()
     }
 }

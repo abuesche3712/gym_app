@@ -497,4 +497,118 @@ final class ProgressionServiceTests: XCTestCase {
         XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 135.0)
         XCTAssertEqual(suggestions[currentExercise.id]?.appliedOutcome, .stay)
     }
+
+    func testAdaptiveMode_stateFailStreakRegresses() {
+        let workoutId = UUID()
+        let instanceId = UUID()
+
+        let lastExercise = makeExercise(
+            name: "Squat",
+            weights: [200],
+            sourceExerciseInstanceId: instanceId
+        )
+        let history = [makeSession(workoutId: workoutId, exercises: [lastExercise])]
+        let currentExercise = makeExercise(name: "Squat", weights: [])
+
+        let state = ExerciseProgressionState(
+            successStreak: 0,
+            failStreak: 2,
+            confidence: 0.4
+        )
+
+        let program = Program(
+            name: "Adaptive Program",
+            progressionEnabled: true,
+            progressionPolicy: .adaptive,
+            defaultProgressionRule: .moderate,
+            progressionEnabledExercises: Set([instanceId]),
+            exerciseProgressionStates: [instanceId: state]
+        )
+
+        let suggestions = service.calculateSuggestions(
+            for: [currentExercise],
+            exerciseInstanceIds: [currentExercise.id: instanceId],
+            workoutId: workoutId,
+            program: program,
+            sessionHistory: history
+        )
+
+        XCTAssertEqual(suggestions[currentExercise.id]?.baseValue, 200.0)
+        XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 190.0)
+        XCTAssertEqual(suggestions[currentExercise.id]?.appliedOutcome, .regress)
+        XCTAssertEqual(suggestions[currentExercise.id]?.isOutcomeAdjusted, true)
+    }
+
+    func testAdaptiveMode_stateSuccessStreakForcesProgressOutcome() {
+        let workoutId = UUID()
+        let instanceId = UUID()
+
+        let lastExercise = makeExercise(
+            name: "Bench Press",
+            weights: [100],
+            sourceExerciseInstanceId: instanceId
+        )
+        let history = [makeSession(workoutId: workoutId, exercises: [lastExercise])]
+        let currentExercise = makeExercise(name: "Bench Press", weights: [])
+
+        let state = ExerciseProgressionState(
+            successStreak: 2,
+            failStreak: 0,
+            confidence: 0.7
+        )
+
+        let program = Program(
+            name: "Adaptive Program",
+            progressionEnabled: true,
+            progressionPolicy: .adaptive,
+            defaultProgressionRule: .moderate,
+            progressionEnabledExercises: Set([instanceId]),
+            exerciseProgressionStates: [instanceId: state]
+        )
+
+        let suggestions = service.calculateSuggestions(
+            for: [currentExercise],
+            exerciseInstanceIds: [currentExercise.id: instanceId],
+            workoutId: workoutId,
+            program: program,
+            sessionHistory: history
+        )
+
+        XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 105.0)
+        XCTAssertEqual(suggestions[currentExercise.id]?.appliedOutcome, .progress)
+        XCTAssertEqual(suggestions[currentExercise.id]?.isOutcomeAdjusted, true)
+    }
+
+    func testInferProgressionOutcome_usesCompletedPerformance() {
+        let exercise = makeExercise(name: "Bench Press", weights: [105], reps: 5)
+        let suggestion = ProgressionSuggestion(
+            baseValue: 100,
+            suggestedValue: 105,
+            metric: .weight,
+            percentageApplied: 5
+        )
+
+        let outcome = service.inferProgressionOutcome(for: exercise, suggestion: suggestion)
+        XCTAssertEqual(outcome, .progress)
+    }
+
+    func testUpdateProgressionState_tracksStreaksConfidenceAndHistory() {
+        let exercise = makeExercise(name: "Bench Press", weights: [100], reps: 5)
+        let initial = ExerciseProgressionState(confidence: 0.5)
+
+        let updated = service.updateProgressionState(
+            current: initial,
+            exercise: exercise,
+            outcome: .progress,
+            at: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+
+        XCTAssertEqual(updated.successStreak, 1)
+        XCTAssertEqual(updated.failStreak, 0)
+        XCTAssertEqual(updated.recentOutcomes.first, .progress)
+        XCTAssertEqual(updated.lastPrescribedWeight, 100)
+        XCTAssertEqual(updated.lastPrescribedReps, 5)
+        XCTAssertNotNil(updated.lastUpdatedAt)
+        XCTAssertTrue(updated.confidence > 0.5)
+    }
 }

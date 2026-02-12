@@ -616,6 +616,7 @@ class SessionViewModel: ObservableObject {
         session.overallFeeling = feeling
         session.notes = notes
 
+        updateProgramProgressionStates(from: session)
         repository.saveSession(session)
         loadSessions()
 
@@ -633,6 +634,49 @@ class SessionViewModel: ObservableObject {
 
         // Update widget to show completed status
         NotificationCenter.default.post(name: .sessionCompleted, object: nil)
+    }
+
+    private func updateProgramProgressionStates(from session: Session) {
+        guard let programId = session.programId,
+              var program = repository.getProgram(id: programId),
+              program.progressionEnabled else { return }
+
+        let progressionService = ProgressionService()
+        var didUpdateProgram = false
+
+        for module in session.completedModules where !module.skipped {
+            for exercise in module.completedExercises {
+                guard exercise.exerciseType == .strength,
+                      let exerciseInstanceId = exercise.sourceExerciseInstanceId else {
+                    continue
+                }
+
+                if program.progressionPolicy == .adaptive &&
+                    !program.isProgressionEnabled(for: exerciseInstanceId) {
+                    continue
+                }
+
+                guard let outcome = progressionService.inferProgressionOutcome(
+                    for: exercise,
+                    suggestion: exercise.progressionSuggestion
+                ) else {
+                    continue
+                }
+
+                let currentState = program.progressionState(for: exerciseInstanceId)
+                let updatedState = progressionService.updateProgressionState(
+                    current: currentState,
+                    exercise: exercise,
+                    outcome: outcome
+                )
+                program.setProgressionState(updatedState, for: exerciseInstanceId)
+                didUpdateProgram = true
+            }
+        }
+
+        if didUpdateProgram {
+            repository.saveProgram(program)
+        }
     }
 
     func cancelSession() {
