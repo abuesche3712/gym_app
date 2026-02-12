@@ -292,6 +292,11 @@ class SessionViewModel: ObservableObject {
 
             // Get all exercises from all modules
             let allExercises = completedModules.flatMap { $0.completedExercises }
+            let exerciseInstancePairs: [(UUID, UUID)] = allExercises.compactMap { exercise in
+                guard let sourceId = exercise.sourceExerciseInstanceId else { return nil }
+                return (exercise.id, sourceId)
+            }
+            let exerciseInstanceIds = Dictionary(uniqueKeysWithValues: exerciseInstancePairs)
 
             // Get session history for this workout (already sorted by date descending)
             let workoutHistory = sessions.filter { $0.workoutId == workout.id }
@@ -300,6 +305,7 @@ class SessionViewModel: ObservableObject {
             let progressionService = ProgressionService()
             let suggestions = progressionService.calculateSuggestions(
                 for: allExercises,
+                exerciseInstanceIds: exerciseInstanceIds,
                 workoutId: workout.id,
                 program: program,
                 sessionHistory: workoutHistory

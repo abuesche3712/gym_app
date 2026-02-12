@@ -9,6 +9,11 @@ import Foundation
 
 struct ProgressionService {
 
+    private enum SuggestionMode {
+        case legacy
+        case adaptive
+    }
+
     // MARK: - Public API
 
     /// Calculate progression suggestions for all exercises in a workout
@@ -28,10 +33,20 @@ struct ProgressionService {
     ) -> [UUID: ProgressionSuggestion] {
 
         var suggestions: [UUID: ProgressionSuggestion] = [:]
+        guard let program else { return suggestions }
 
         // Check if progression is enabled globally
-        guard program?.progressionEnabled ?? false else {
+        guard program.progressionEnabled else {
             return suggestions
+        }
+
+        if program.progressionPolicy == .legacy {
+            return calculateSuggestions(
+                for: exercises,
+                workoutId: workoutId,
+                program: program,
+                sessionHistory: sessionHistory
+            )
         }
 
         for exercise in exercises {
@@ -44,8 +59,7 @@ struct ProgressionService {
             }
 
             // Check if this specific exercise has progression enabled
-            guard let program = program,
-                  program.isProgressionEnabled(for: exerciseInstanceId) else {
+            guard program.isProgressionEnabled(for: exerciseInstanceId) else {
                 continue
             }
 
@@ -56,6 +70,7 @@ struct ProgressionService {
 
             // Find last session data for this exercise within this workout
             guard let lastExerciseData = findLastSessionData(
+                exerciseInstanceId: exerciseInstanceId,
                 exerciseName: exercise.exerciseName,
                 workoutId: workoutId,
                 history: sessionHistory
@@ -67,7 +82,9 @@ struct ProgressionService {
             // Calculate suggestion based on rule
             if let suggestion = calculateSuggestion(
                 from: lastExerciseData,
-                rule: rule
+                currentExercise: exercise,
+                rule: rule,
+                mode: .adaptive
             ) {
                 suggestions[exercise.id] = suggestion
             }
@@ -87,7 +104,7 @@ struct ProgressionService {
         var suggestions: [UUID: ProgressionSuggestion] = [:]
 
         // Check if progression is enabled
-        guard program?.progressionEnabled ?? false else {
+        guard let program, program.progressionEnabled else {
             return suggestions
         }
 
@@ -96,7 +113,7 @@ struct ProgressionService {
             guard exercise.exerciseType == .strength else { continue }
 
             // Get the default progression rule
-            guard let rule = program?.defaultProgressionRule else {
+            guard let rule = program.defaultProgressionRule else {
                 continue
             }
 
@@ -113,7 +130,9 @@ struct ProgressionService {
             // Calculate suggestion based on rule
             if let suggestion = calculateSuggestion(
                 from: lastExerciseData,
-                rule: rule
+                currentExercise: exercise,
+                rule: rule,
+                mode: .legacy
             ) {
                 suggestions[exercise.id] = suggestion
             }
@@ -126,6 +145,7 @@ struct ProgressionService {
 
     /// Find the most recent completed exercise data for an exercise name within a specific workout
     private func findLastSessionData(
+        exerciseInstanceId: UUID? = nil,
         exerciseName: String,
         workoutId: UUID,
         history: [Session]
@@ -133,6 +153,13 @@ struct ProgressionService {
         // Find the most recent session with this workout that has the exercise
         for session in history where session.workoutId == workoutId {
             for module in session.completedModules where !module.skipped {
+                if let exerciseInstanceId,
+                   let exercise = module.completedExercises.first(where: {
+                       $0.sourceExerciseInstanceId == exerciseInstanceId && hasCompletedStrengthData($0)
+                   }) {
+                    return exercise
+                }
+
                 if let exercise = module.completedExercises.first(where: {
                     $0.exerciseName == exerciseName && hasCompletedStrengthData($0)
                 }) {
@@ -155,14 +182,116 @@ struct ProgressionService {
     /// Calculate a progression suggestion based on the last exercise data and rule
     private func calculateSuggestion(
         from lastExercise: SessionExercise,
-        rule: ProgressionRule
+        currentExercise: SessionExercise,
+        rule: ProgressionRule,
+        mode: SuggestionMode
     ) -> ProgressionSuggestion? {
 
+        let linearSuggestion: ProgressionSuggestion?
         switch rule.targetMetric {
         case .weight:
-            return calculateWeightSuggestion(from: lastExercise, rule: rule)
+            linearSuggestion = calculateWeightSuggestion(from: lastExercise, rule: rule)
         case .reps:
-            return calculateRepsSuggestion(from: lastExercise, rule: rule)
+            linearSuggestion = calculateRepsSuggestion(from: lastExercise, rule: rule)
+        }
+
+        guard let linearSuggestion else { return nil }
+        guard mode == .adaptive else { return linearSuggestion }
+
+        let strategyOutcome = automaticOutcomeIfNeeded(
+            lastExercise: lastExercise,
+            currentExercise: currentExercise,
+            rule: rule
+        )
+        let outcome = lastExercise.progressionRecommendation ?? strategyOutcome
+        guard let outcome else { return linearSuggestion }
+
+        return applyOutcome(
+            outcome,
+            to: linearSuggestion,
+            rule: rule
+        )
+    }
+
+    private func automaticOutcomeIfNeeded(
+        lastExercise: SessionExercise,
+        currentExercise: SessionExercise,
+        rule: ProgressionRule
+    ) -> ProgressionRecommendation? {
+        guard rule.targetMetric == .weight, rule.strategy == .doubleProgression else {
+            return nil
+        }
+
+        // Pull target reps from the current template-driven session setup.
+        let targetReps = currentExercise.completedSetGroups
+            .flatMap { $0.sets }
+            .compactMap(\.reps)
+            .max()
+
+        guard let targetReps, targetReps > 0 else {
+            return nil
+        }
+
+        let achievedReps = lastExercise.completedSetGroups
+            .flatMap { $0.sets }
+            .filter { $0.completed && ($0.weight ?? 0) > 0 }
+            .compactMap(\.reps)
+            .max() ?? 0
+
+        return achievedReps >= targetReps ? .progress : .stay
+    }
+
+    private func applyOutcome(
+        _ outcome: ProgressionRecommendation,
+        to suggestion: ProgressionSuggestion,
+        rule: ProgressionRule
+    ) -> ProgressionSuggestion {
+        let base = suggestion.baseValue
+        let progressed = suggestion.suggestedValue
+
+        switch suggestion.metric {
+        case .weight:
+            let delta = max(progressed - base, rule.roundingIncrement)
+            let adjusted: Double
+            switch outcome {
+            case .progress:
+                adjusted = progressed
+            case .stay:
+                adjusted = base
+            case .regress:
+                adjusted = max(0, base - delta)
+            }
+
+            let percent = base > 0 ? ((adjusted - base) / base) * 100.0 : 0
+            return ProgressionSuggestion(
+                baseValue: base,
+                suggestedValue: adjusted,
+                metric: .weight,
+                percentageApplied: percent,
+                appliedOutcome: outcome,
+                isOutcomeAdjusted: true
+            )
+        case .reps:
+            let delta = max(progressed - base, 1)
+            let adjusted: Double
+            switch outcome {
+            case .progress:
+                adjusted = progressed
+            case .stay:
+                adjusted = base
+            case .regress:
+                adjusted = max(1, base - delta)
+            }
+
+            let percent = base > 0 ? ((adjusted - base) / base) * 100.0 : 0
+            return ProgressionSuggestion(
+                baseValue: base,
+                suggestedValue: adjusted,
+                metric: .reps,
+                percentageApplied: percent,
+                appliedOutcome: outcome,
+                isOutcomeAdjusted: true
+            )
         }
     }
 

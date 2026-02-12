@@ -166,9 +166,9 @@ struct StrengthInputs: View {
                     if let suggestion = exercise.progressionSuggestion,
                        suggestion.metric == .weight,
                        !flatSet.setData.completed {
-                        Text("▲ \(suggestion.formattedValue)")
+                        Text("\(directionSymbol(for: suggestion)) \(suggestion.formattedValue)")
                             .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(AppColors.success)
+                            .foregroundColor(directionColor(for: suggestion))
                     }
                 }
                 .fixedSize(horizontal: true, vertical: false)
@@ -295,6 +295,18 @@ struct StrengthInputs: View {
         } else {
             sessionViewModel.startExerciseTimer(seconds: timeLimit, setId: flatSet.id)
         }
+    }
+
+    private func directionSymbol(for suggestion: ProgressionSuggestion) -> String {
+        if suggestion.percentageApplied > 0.01 { return "▲" }
+        if suggestion.percentageApplied < -0.01 { return "▼" }
+        return "■"
+    }
+
+    private func directionColor(for suggestion: ProgressionSuggestion) -> Color {
+        if suggestion.percentageApplied > 0.01 { return AppColors.success }
+        if suggestion.percentageApplied < -0.01 { return AppColors.warning }
+        return AppColors.dominant
     }
 }
 

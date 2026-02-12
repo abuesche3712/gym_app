@@ -1082,6 +1082,7 @@ public class ProgramEntity: NSManagedObject, SyncableEntity {
 
     // Progression configuration (stored as JSON Data)
     @NSManaged public var progressionEnabled: Bool
+    @NSManaged public var progressionPolicyRaw: String?
     @NSManaged public var defaultProgressionRuleData: Data?
     @NSManaged public var progressionEnabledExercisesData: Data?  // JSON array of UUID strings
     @NSManaged public var exerciseProgressionOverridesData: Data?  // JSON dict [String: ProgressionRule]
@@ -1101,6 +1102,11 @@ public class ProgramEntity: NSManagedObject, SyncableEntity {
     }
 
     // MARK: - Progression Accessors
+
+    var progressionPolicy: ProgressionPolicy {
+        get { progressionPolicyRaw.flatMap { ProgressionPolicy(rawValue: $0) } ?? .legacy }
+        set { progressionPolicyRaw = newValue.rawValue }
+    }
 
     var defaultProgressionRule: ProgressionRule? {
         get {

@@ -570,8 +570,11 @@ struct SetRowView: View {
                             // Regress by the same step used for progression (fallback to 2.5 lbs).
                             let regressionStep = delta > 0 ? delta : 2.5
                             inputWeight = formatWeight(max(0, suggestion.baseValue - regressionStep))
-                        case .stay, nil:
+                        case .stay:
                             inputWeight = formatWeight(suggestion.baseValue)
+                        case nil:
+                            // If the suggestion was already adjusted from a prior outcome, apply it directly.
+                            inputWeight = formatWeight(suggestion.isOutcomeAdjusted ? suggestion.suggestedValue : suggestion.baseValue)
                         }
 
                         inputReps = lastReps.map { "\($0)" }
@@ -593,8 +596,12 @@ struct SetRowView: View {
                             prefilledReps = max(1, progressedReps)
                         case .regress:
                             prefilledReps = regressedReps
-                        case .stay, nil:
+                        case .stay:
                             prefilledReps = max(1, baseReps)
+                        case nil:
+                            prefilledReps = suggestion.isOutcomeAdjusted
+                                ? max(1, progressedReps)
+                                : max(1, baseReps)
                         }
 
                         inputReps = "\(prefilledReps)"

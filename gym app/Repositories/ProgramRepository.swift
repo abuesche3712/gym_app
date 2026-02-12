@@ -55,6 +55,7 @@ class ProgramRepository: CoreDataRepository {
             workoutSlots: slots,
             defaultProgressionRule: entity.defaultProgressionRule,
             progressionEnabled: entity.progressionEnabled,
+            progressionPolicy: entity.progressionPolicy,
             progressionEnabledExercises: entity.progressionEnabledExercises,
             exerciseProgressionOverrides: entity.exerciseProgressionOverrides
         )
@@ -73,6 +74,7 @@ class ProgramRepository: CoreDataRepository {
 
         // Progression configuration
         entity.progressionEnabled = program.progressionEnabled
+        entity.progressionPolicy = program.progressionPolicy
         entity.defaultProgressionRule = program.defaultProgressionRule
         entity.progressionEnabledExercises = program.progressionEnabledExercises
         entity.exerciseProgressionOverrides = program.exerciseProgressionOverrides

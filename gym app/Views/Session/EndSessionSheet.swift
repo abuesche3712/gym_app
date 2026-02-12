@@ -202,9 +202,6 @@ struct EndSessionSheet: View {
                     Divider()
                         .background(AppColors.surfaceTertiary.opacity(0.5))
 
-                    // Progression buttons
-                    progressionButtons(exercise: exercise, moduleId: moduleId)
-
                     // Exercise notes
                     exerciseNotesField(exercise: exercise, moduleId: moduleId)
                 }
@@ -328,64 +325,6 @@ struct EndSessionSheet: View {
             }
             return parts.isEmpty ? "–" : parts.joined(separator: " ")
         }
-    }
-
-    private func progressionButtons(exercise: SessionExercise, moduleId: UUID) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Next session:")
-                .caption2()
-
-            HStack(spacing: AppSpacing.sm) {
-                ForEach(ProgressionRecommendation.allCases) { recommendation in
-                    progressionButton(recommendation, exercise: exercise, moduleId: moduleId)
-                }
-            }
-        }
-    }
-
-    private func progressionButton(_ recommendation: ProgressionRecommendation, exercise: SessionExercise, moduleId: UUID) -> some View {
-        let isSelected = exercise.progressionRecommendation == recommendation
-        let color = recommendation.color
-
-        return Button {
-            updateProgression(moduleId: moduleId, exerciseId: exercise.id, recommendation: recommendation)
-            HapticManager.shared.selectionChanged()
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: recommendation.icon)
-                    .caption(color: isSelected ? .white : color)
-                Text(recommendation.displayName)
-                    .caption(color: isSelected ? .white : color)
-                    .fontWeight(.medium)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, AppSpacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.small)
-                    .fill(isSelected ? color : color.opacity(0.12))
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func updateProgression(moduleId: UUID, exerciseId: UUID, recommendation: ProgressionRecommendation) {
-        guard var currentSession = session else { return }
-
-        for moduleIndex in currentSession.completedModules.indices {
-            if currentSession.completedModules[moduleIndex].id == moduleId {
-                for exerciseIndex in currentSession.completedModules[moduleIndex].completedExercises.indices {
-                    if currentSession.completedModules[moduleIndex].completedExercises[exerciseIndex].id == exerciseId {
-                        // Toggle: if already selected, deselect; otherwise select
-                        let current = currentSession.completedModules[moduleIndex].completedExercises[exerciseIndex].progressionRecommendation
-                        currentSession.completedModules[moduleIndex].completedExercises[exerciseIndex].progressionRecommendation = current == recommendation ? nil : recommendation
-                        break
-                    }
-                }
-                break
-            }
-        }
-
-        session = currentSession
     }
 
     // MARK: - Exercise Notes

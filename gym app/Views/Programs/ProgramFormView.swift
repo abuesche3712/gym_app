@@ -27,6 +27,7 @@ struct ProgramFormView: View {
 
     // Progression state
     @State private var progressionEnabled: Bool
+    @State private var progressionPolicy: ProgressionPolicy
     @State private var defaultProgressionRule: ProgressionRule?
 
     // UI state
@@ -63,6 +64,7 @@ struct ProgramFormView: View {
         _workoutSlots = State(initialValue: program?.workoutSlots ?? [])
         _moduleSlots = State(initialValue: program?.moduleSlots ?? [])
         _progressionEnabled = State(initialValue: program?.progressionEnabled ?? false)
+        _progressionPolicy = State(initialValue: program?.progressionPolicy ?? .adaptive)
         _defaultProgressionRule = State(initialValue: program?.defaultProgressionRule)
     }
 
@@ -314,6 +316,23 @@ struct ProgramFormView: View {
 
                 // Progression rule picker (only when enabled)
                 if progressionEnabled {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Progression Mode")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundColor(AppColors.textSecondary)
+
+                        Picker("Progression Mode", selection: $progressionPolicy) {
+                            ForEach(ProgressionPolicy.allCases) { policy in
+                                Text(policy.displayName).tag(policy)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        Text(progressionPolicy.shortDescription)
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Progression Rate")
                             .font(.subheadline.weight(.medium))
@@ -677,6 +696,7 @@ struct ProgramFormView: View {
             updatedProgram.workoutSlots = workoutSlots
             updatedProgram.moduleSlots = moduleSlots
             updatedProgram.progressionEnabled = progressionEnabled
+            updatedProgram.progressionPolicy = progressionPolicy
             updatedProgram.defaultProgressionRule = defaultProgressionRule
 
             // Recalculate end date if active and duration changed
@@ -709,6 +729,7 @@ struct ProgramFormView: View {
 
             // Set progression settings
             newProgram.progressionEnabled = progressionEnabled
+            newProgram.progressionPolicy = progressionPolicy
             newProgram.defaultProgressionRule = defaultProgressionRule
 
             programViewModel.saveProgram(newProgram)

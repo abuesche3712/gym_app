@@ -671,6 +671,7 @@ struct PersistenceController {
             createAttribute("syncStatusRaw", type: .stringAttributeType),
             // Progression configuration
             createAttribute("progressionEnabled", type: .booleanAttributeType, optional: true, defaultValue: false),
+            createAttribute("progressionPolicyRaw", type: .stringAttributeType, optional: true, defaultValue: "legacy"),
             createAttribute("defaultProgressionRuleData", type: .binaryDataAttributeType, optional: true),
             createAttribute("progressionEnabledExercisesData", type: .binaryDataAttributeType, optional: true),
             createAttribute("exerciseProgressionOverridesData", type: .binaryDataAttributeType, optional: true),

@@ -24,7 +24,9 @@ final class ProgressionServiceTests: XCTestCase {
     private func makeExercise(
         name: String,
         weights: [Double],
-        reps: Int = 5
+        reps: Int = 5,
+        recommendation: ProgressionRecommendation? = nil,
+        sourceExerciseInstanceId: UUID? = nil
     ) -> SessionExercise {
         let sets = weights.enumerated().map { index, weight in
             SetData(
@@ -44,7 +46,9 @@ final class ProgressionServiceTests: XCTestCase {
                     setGroupId: UUID(),
                     sets: sets
                 )
-            ]
+            ],
+            sourceExerciseInstanceId: sourceExerciseInstanceId,
+            progressionRecommendation: recommendation
         )
     }
 
@@ -360,5 +364,137 @@ final class ProgressionServiceTests: XCTestCase {
         // Then: 25 + 2.5 (minimum) = 27.5
         XCTAssertNotNil(suggestions[currentExercise.id])
         XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 27.5)
+    }
+
+    // MARK: - Adaptive Mode Tests
+
+    func testAdaptiveMode_onlyEnabledExercisesGetSuggestions() {
+        let workoutId = UUID()
+        let enabledInstanceId = UUID()
+        let disabledInstanceId = UUID()
+
+        let lastEnabled = makeExercise(
+            name: "Bench Press",
+            weights: [100],
+            sourceExerciseInstanceId: enabledInstanceId
+        )
+        let lastDisabled = makeExercise(
+            name: "Incline DB Press",
+            weights: [80],
+            sourceExerciseInstanceId: disabledInstanceId
+        )
+        let history = [makeSession(workoutId: workoutId, exercises: [lastEnabled, lastDisabled])]
+
+        let currentEnabled = makeExercise(name: "Bench Press", weights: [])
+        let currentDisabled = makeExercise(name: "Incline DB Press", weights: [])
+
+        let program = Program(
+            name: "Adaptive Program",
+            progressionEnabled: true,
+            progressionPolicy: .adaptive,
+            progressionEnabledExercises: Set([enabledInstanceId]),
+            exerciseProgressionOverrides: [enabledInstanceId: .moderate]
+        )
+
+        let suggestions = service.calculateSuggestions(
+            for: [currentEnabled, currentDisabled],
+            exerciseInstanceIds: [
+                currentEnabled.id: enabledInstanceId,
+                currentDisabled.id: disabledInstanceId
+            ],
+            workoutId: workoutId,
+            program: program,
+            sessionHistory: history
+        )
+
+        XCTAssertNotNil(suggestions[currentEnabled.id])
+        XCTAssertNil(suggestions[currentDisabled.id])
+    }
+
+    func testAdaptiveMode_appliesPreviousOutcomeRecommendation() {
+        let workoutId = UUID()
+        let instanceId = UUID()
+        let lastExercise = makeExercise(
+            name: "Squat",
+            weights: [200],
+            recommendation: .stay,
+            sourceExerciseInstanceId: instanceId
+        )
+        let history = [makeSession(workoutId: workoutId, exercises: [lastExercise])]
+        let currentExercise = makeExercise(name: "Squat", weights: [])
+
+        let program = Program(
+            name: "Adaptive Program",
+            progressionEnabled: true,
+            progressionPolicy: .adaptive,
+            defaultProgressionRule: .moderate,
+            progressionEnabledExercises: Set([instanceId])
+        )
+
+        let suggestions = service.calculateSuggestions(
+            for: [currentExercise],
+            exerciseInstanceIds: [currentExercise.id: instanceId],
+            workoutId: workoutId,
+            program: program,
+            sessionHistory: history
+        )
+
+        XCTAssertEqual(suggestions[currentExercise.id]?.baseValue, 200.0)
+        XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 200.0)
+        XCTAssertEqual(suggestions[currentExercise.id]?.appliedOutcome, .stay)
+        XCTAssertEqual(suggestions[currentExercise.id]?.isOutcomeAdjusted, true)
+    }
+
+    func testAdaptiveMode_doubleProgressionStaysUntilRepGoal() {
+        let workoutId = UUID()
+        let instanceId = UUID()
+        let lastExercise = makeExercise(
+            name: "Bench Press",
+            weights: [135, 135, 135],
+            reps: 6,
+            sourceExerciseInstanceId: instanceId
+        )
+        let history = [makeSession(workoutId: workoutId, exercises: [lastExercise])]
+
+        // Current session starts with an 8-rep target.
+        let currentExercise = SessionExercise(
+            exerciseId: UUID(),
+            exerciseName: "Bench Press",
+            exerciseType: .strength,
+            completedSetGroups: [
+                CompletedSetGroup(
+                    setGroupId: UUID(),
+                    sets: [SetData(setNumber: 1, completed: false, weight: 135, reps: 8)]
+                )
+            ]
+        )
+
+        let rule = ProgressionRule(
+            targetMetric: .weight,
+            strategy: .doubleProgression,
+            percentageIncrease: 5.0,
+            roundingIncrement: 5.0,
+            minimumIncrease: 5.0
+        )
+
+        let program = Program(
+            name: "Adaptive Program",
+            progressionEnabled: true,
+            progressionPolicy: .adaptive,
+            defaultProgressionRule: rule,
+            progressionEnabledExercises: Set([instanceId])
+        )
+
+        let suggestions = service.calculateSuggestions(
+            for: [currentExercise],
+            exerciseInstanceIds: [currentExercise.id: instanceId],
+            workoutId: workoutId,
+            program: program,
+            sessionHistory: history
+        )
+
+        XCTAssertEqual(suggestions[currentExercise.id]?.baseValue, 135.0)
+        XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 135.0)
+        XCTAssertEqual(suggestions[currentExercise.id]?.appliedOutcome, .stay)
     }
 }

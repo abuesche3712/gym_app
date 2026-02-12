@@ -30,6 +30,7 @@ struct Program: Identifiable, Codable, Hashable {
     var progressionRules: [UUID: ProgressionRule]  // Keyed by ExerciseTemplate.id (legacy)
     var defaultProgressionRule: ProgressionRule?   // Fallback for exercises without specific rules
     var progressionEnabled: Bool                   // Global toggle for auto-progression
+    var progressionPolicy: ProgressionPolicy       // Legacy or adaptive progression engine
     var progressionEnabledExercises: Set<UUID>     // ExerciseInstance IDs that get progression
     var exerciseProgressionOverrides: [UUID: ProgressionRule]  // Per-exercise custom rules
 
@@ -49,6 +50,7 @@ struct Program: Identifiable, Codable, Hashable {
         progressionRules: [UUID: ProgressionRule] = [:],
         defaultProgressionRule: ProgressionRule? = nil,
         progressionEnabled: Bool = false,
+        progressionPolicy: ProgressionPolicy = .legacy,
         progressionEnabledExercises: Set<UUID> = [],
         exerciseProgressionOverrides: [UUID: ProgressionRule] = [:]
     ) {
@@ -67,6 +69,7 @@ struct Program: Identifiable, Codable, Hashable {
         self.progressionRules = progressionRules
         self.defaultProgressionRule = defaultProgressionRule
         self.progressionEnabled = progressionEnabled
+        self.progressionPolicy = progressionPolicy
         self.progressionEnabledExercises = progressionEnabledExercises
         self.exerciseProgressionOverrides = exerciseProgressionOverrides
     }
@@ -130,6 +133,7 @@ struct Program: Identifiable, Codable, Hashable {
         }
         defaultProgressionRule = try container.decodeIfPresent(ProgressionRule.self, forKey: .defaultProgressionRule)
         progressionEnabled = try container.decodeIfPresent(Bool.self, forKey: .progressionEnabled) ?? false
+        progressionPolicy = try container.decodeIfPresent(ProgressionPolicy.self, forKey: .progressionPolicy) ?? .legacy
 
         // Per-exercise progression configuration (new fields with defaults for backward compatibility)
         if let enabledArray = try container.decodeIfPresent([String].self, forKey: .progressionEnabledExercises) {
@@ -150,7 +154,7 @@ struct Program: Identifiable, Codable, Hashable {
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion
-        case progressionRules, defaultProgressionRule, progressionEnabled
+        case progressionRules, defaultProgressionRule, progressionEnabled, progressionPolicy
         case progressionEnabledExercises, exerciseProgressionOverrides
         case id, name, programDescription, durationWeeks, startDate, endDate, isActive, createdAt, updatedAt, syncStatus, workoutSlots, moduleSlots
         // Legacy field names (for backward compatibility with old Firebase data)
@@ -182,6 +186,7 @@ struct Program: Identifiable, Codable, Hashable {
 
         try container.encodeIfPresent(defaultProgressionRule, forKey: .defaultProgressionRule)
         try container.encode(progressionEnabled, forKey: .progressionEnabled)
+        try container.encode(progressionPolicy, forKey: .progressionPolicy)
 
         // Encode progressionEnabledExercises as array of UUID strings
         let enabledArray = progressionEnabledExercises.map { $0.uuidString }

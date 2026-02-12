@@ -17,6 +17,7 @@ struct ProgressionConfigurationView: View {
     @State private var progressionEnabledExercises: Set<UUID>
     @State private var exerciseProgressionOverrides: [UUID: ProgressionRule]
     @State private var defaultProgressionRule: ProgressionRule?
+    @State private var progressionPolicy: ProgressionPolicy
     @State private var showingDefaultRuleEditor = false
     @State private var editingExerciseId: UUID?
     @State private var expandedWorkouts: Set<UUID> = []
@@ -26,17 +27,22 @@ struct ProgressionConfigurationView: View {
         _progressionEnabledExercises = State(initialValue: program.progressionEnabledExercises)
         _exerciseProgressionOverrides = State(initialValue: program.exerciseProgressionOverrides)
         _defaultProgressionRule = State(initialValue: program.defaultProgressionRule)
+        _progressionPolicy = State(initialValue: program.progressionPolicy)
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    progressionModeCard
+
                     // Default Rule Card
                     defaultRuleCard
 
                     // Workouts and their exercises
                     workoutsList
+                        .opacity(progressionPolicy == .adaptive ? 1.0 : 0.5)
+                        .disabled(progressionPolicy != .adaptive)
                 }
                 .padding()
             }
@@ -81,6 +87,33 @@ struct ProgressionConfigurationView: View {
     }
 
     // MARK: - Default Rule Card
+
+    private var progressionModeCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Progression Mode")
+                .font(.headline)
+
+            Picker("Progression Mode", selection: $progressionPolicy) {
+                ForEach(ProgressionPolicy.allCases) { policy in
+                    Text(policy.displayName).tag(policy)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            Text(progressionPolicy.shortDescription)
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            if progressionPolicy == .legacy {
+                Text("Switch to Adaptive to use per-exercise enablement and overrides below.")
+                    .font(.caption)
+                    .foregroundColor(.orange)
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(12)
+    }
 
     private var defaultRuleCard: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -397,6 +430,7 @@ struct ProgressionConfigurationView: View {
         updatedProgram.progressionEnabledExercises = progressionEnabledExercises
         updatedProgram.exerciseProgressionOverrides = exerciseProgressionOverrides
         updatedProgram.defaultProgressionRule = defaultProgressionRule
+        updatedProgram.progressionPolicy = progressionPolicy
         updatedProgram.updatedAt = Date()
 
         programViewModel.saveProgram(updatedProgram)
@@ -414,13 +448,17 @@ struct ProgressionRuleEditorSheet: View {
     var showUseDefault: Bool = false
     let onSave: (ProgressionRule?) -> Void
 
+    @State private var targetMetric: ProgressionMetric
+    @State private var strategy: ProgressionStrategy
     @State private var percentageIncrease: Double
     @State private var roundingIncrement: Double
     @State private var minimumIncrease: Double
 
     private let percentageOptions: [Double] = [1.0, 2.5, 5.0, 7.5, 10.0]
-    private let roundingOptions: [Double] = [2.5, 5.0, 10.0]
-    private let minimumOptions: [Double] = [0, 2.5, 5.0, 10.0]
+    private let weightRoundingOptions: [Double] = [1.0, 2.5, 5.0, 10.0]
+    private let repRoundingOptions: [Double] = [1.0]
+    private let weightMinimumOptions: [Double] = [0, 2.5, 5.0, 10.0]
+    private let repMinimumOptions: [Double] = [0, 1.0, 2.0]
 
     init(rule: ProgressionRule?, title: String, showUseDefault: Bool = false, onSave: @escaping (ProgressionRule?) -> Void) {
         self.rule = rule
@@ -429,6 +467,8 @@ struct ProgressionRuleEditorSheet: View {
         self.onSave = onSave
 
         let defaultRule = rule ?? .conservative
+        _targetMetric = State(initialValue: defaultRule.targetMetric)
+        _strategy = State(initialValue: defaultRule.strategy)
         _percentageIncrease = State(initialValue: defaultRule.percentageIncrease)
         _roundingIncrement = State(initialValue: defaultRule.roundingIncrement)
         _minimumIncrease = State(initialValue: defaultRule.minimumIncrease ?? 5.0)
@@ -438,6 +478,20 @@ struct ProgressionRuleEditorSheet: View {
         NavigationStack {
             Form {
                 Section {
+                    Picker("Target Metric", selection: $targetMetric) {
+                        ForEach(ProgressionMetric.allCases) { metric in
+                            Text(metric.displayName).tag(metric)
+                        }
+                    }
+
+                    if targetMetric == .weight {
+                        Picker("Strategy", selection: $strategy) {
+                            ForEach(ProgressionStrategy.allCases) { option in
+                                Text(option.displayName).tag(option)
+                            }
+                        }
+                    }
+
                     Picker("Percentage Increase", selection: $percentageIncrease) {
                         ForEach(percentageOptions, id: \.self) { value in
                             Text("+\(formatPercent(value))%").tag(value)
@@ -481,6 +535,17 @@ struct ProgressionRuleEditorSheet: View {
                     }
                 }
             }
+            .onChange(of: targetMetric) { _, newMetric in
+                if !roundingOptions.contains(roundingIncrement) {
+                    roundingIncrement = roundingOptions.first ?? 1.0
+                }
+                if !minimumOptions.contains(minimumIncrease) {
+                    minimumIncrease = minimumOptions.first ?? 0
+                }
+                if newMetric != .weight {
+                    strategy = .linear
+                }
+            }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -493,7 +558,8 @@ struct ProgressionRuleEditorSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         let newRule = ProgressionRule(
-                            targetMetric: .weight,
+                            targetMetric: targetMetric,
+                            strategy: targetMetric == .weight ? strategy : .linear,
                             percentageIncrease: percentageIncrease,
                             roundingIncrement: roundingIncrement,
                             minimumIncrease: minimumIncrease > 0 ? minimumIncrease : nil
@@ -513,15 +579,23 @@ struct ProgressionRuleEditorSheet: View {
         return String(format: "%.1f", value)
     }
 
+    private var roundingOptions: [Double] {
+        targetMetric == .weight ? weightRoundingOptions : repRoundingOptions
+    }
+
+    private var minimumOptions: [Double] {
+        targetMetric == .weight ? weightMinimumOptions : repMinimumOptions
+    }
+
     private func calculateExample() -> Double {
-        let baseWeight = 100.0
-        var increase = baseWeight * (percentageIncrease / 100.0)
+        let base = targetMetric == .weight ? 100.0 : 8.0
+        var increase = base * (percentageIncrease / 100.0)
         if minimumIncrease > 0 {
             increase = max(increase, minimumIncrease)
         }
-        let rawSuggested = baseWeight + increase
+        let rawSuggested = base + increase
         let rounded = round(rawSuggested / roundingIncrement) * roundingIncrement
-        return max(rounded, baseWeight + roundingIncrement)
+        return max(rounded, base + roundingIncrement)
     }
 }
 
