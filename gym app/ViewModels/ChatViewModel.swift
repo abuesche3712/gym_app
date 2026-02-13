@@ -139,11 +139,17 @@ class ChatViewModel: ObservableObject {
 
     private func markMessagesAsRead() {
         guard let userId = currentUserId else { return }
+        let localUnreadCount = conversationRepo.getConversation(id: conversation.id)?.unreadCount ?? 0
 
         // Capture unread remote message IDs before local read-state mutation.
         let unreadFromOther = messageRepo
             .getAllMessages(for: conversation.id)
             .filter { $0.senderId != userId && !$0.isRead }
+
+        // Avoid repeated network writes when nothing is unread locally or remotely.
+        if unreadFromOther.isEmpty && localUnreadCount == 0 {
+            return
+        }
 
         // Mark messages from the other person as read
         messageRepo.markAllAsRead(in: conversation.id, for: userId)

@@ -93,12 +93,6 @@ struct SocialView: View {
                 stopSocialListeners()
             }
         }
-        // Reload feed when friends list changes (ensures feed includes new friends' posts)
-        .onChange(of: friendsViewModel.friends.count) { _, _ in
-            if authService.isAuthenticated {
-                feedViewModel.loadFeed()
-            }
-        }
     }
 
     // MARK: - Authenticated Feed View

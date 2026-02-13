@@ -57,9 +57,11 @@ class FirestoreFeedService: ObservableObject {
             allPosts.append(contentsOf: posts)
         }
 
-        // Sort all results by createdAt descending and apply limit
-        return allPosts
-            .sorted { $0.createdAt > $1.createdAt }
+        // Sort, dedupe across query chunks, and apply limit.
+        let deduped = dedupePosts(
+            allPosts.sorted { $0.createdAt > $1.createdAt }
+        )
+        return deduped
             .prefix(limit)
             .map { $0 }
     }
@@ -115,17 +117,34 @@ class FirestoreFeedService: ObservableObject {
 
                     postsByChunk[index] = posts
 
-                    // Merge all chunks, sort, and apply limit
-                    let allPosts = postsByChunk.flatMap { $0 }
-                        .sorted { $0.createdAt > $1.createdAt }
+                    // Merge all chunks, sort, dedupe, and apply limit.
+                    let allPosts = self?.dedupePosts(
+                        postsByChunk.flatMap { $0 }
+                            .sorted { $0.createdAt > $1.createdAt }
+                    ) ?? []
+                    let limitedPosts = allPosts
                         .prefix(limit)
                         .map { $0 }
-                    onChange(allPosts)
+                    onChange(limitedPosts)
                 }
             listeners.append(listener)
         }
 
         return CompositeListenerRegistration(listeners: listeners)
+    }
+
+    private func dedupePosts(_ posts: [Post]) -> [Post] {
+        var seenIds = Set<UUID>()
+        var uniquePosts: [Post] = []
+        uniquePosts.reserveCapacity(posts.count)
+
+        for post in posts {
+            if seenIds.insert(post.id).inserted {
+                uniquePosts.append(post)
+            }
+        }
+
+        return uniquePosts
     }
 
     /// Fetch trending posts (recent posts with most likes)

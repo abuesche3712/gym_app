@@ -219,7 +219,9 @@ class FeedViewModel: ObservableObject {
             )
 
             let postsWithAuthors = await loadAuthorsForPosts(morePosts, userId: userId)
-            posts.append(contentsOf: postsWithAuthors)
+            var existingIds = Set(posts.map { $0.post.id })
+            let uniquePosts = postsWithAuthors.filter { existingIds.insert($0.post.id).inserted }
+            posts.append(contentsOf: uniquePosts)
         } catch {
             self.error = error
         }
