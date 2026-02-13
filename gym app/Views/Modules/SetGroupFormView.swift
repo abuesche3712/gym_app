@@ -68,7 +68,7 @@ struct SetGroupFormView: View {
         for id in implementIds {
             guard let implement = libraryService.getImplement(id: id) else { continue }
             for measurable in implement.measurableArray {
-                let key = "\(implement.name)_\(measurable.name)"
+                let key = measurableKey(implementId: id, measurableName: measurable.name)
 
                 // Only add if not already set (preserve existing values)
                 if implementMeasurableValues[key] == nil {
@@ -93,7 +93,7 @@ struct SetGroupFormView: View {
 
         // Filter to only include measurables for currently selected implements
         // Skip weight/load measurables for ALL exercises (redundant with the main Weight field)
-        let validKeys = result.keys
+        let validKeys = Set(result.keys)
         return merged.filter { entry in
             guard validKeys.contains(entry.key) else { return false }
 
@@ -104,7 +104,12 @@ struct SetGroupFormView: View {
             }
 
             return true
-        }.sorted { $0.key < $1.key }
+        }.sorted {
+            if $0.value.implementName == $1.value.implementName {
+                return extractMeasurableName(from: $0.key) < extractMeasurableName(from: $1.key)
+            }
+            return $0.value.implementName < $1.value.implementName
+        }
     }
 
     /// Returns the primary implement's string-based measurable info (like band color)
@@ -524,8 +529,17 @@ struct SetGroupFormView: View {
     }
 
     private func extractMeasurableName(from key: String) -> String {
-        // Key format: "ImplementName_MeasurableName"
-        key.components(separatedBy: "_").last ?? key
+        // Key format: "<ImplementUUID>|<MeasurableName>"
+        key.split(separator: "|", maxSplits: 1).dropFirst().first.map(String.init) ?? key
+    }
+
+    private func measurableKey(implementId: UUID, measurableName: String) -> String {
+        "\(implementId.uuidString)|\(measurableName)"
+    }
+
+    private func implementIdFromKey(_ key: String) -> UUID? {
+        guard let rawId = key.split(separator: "|", maxSplits: 1).first else { return nil }
+        return UUID(uuidString: String(rawId))
     }
 
 
@@ -736,33 +750,23 @@ struct SetGroupFormView: View {
     private func saveSetGroup() {
         // Convert implement measurable values to ImplementMeasurableTarget objects
         var measurableTargets: [ImplementMeasurableTarget] = []
-        for (key, value) in implementMeasurableValues {
-            // Skip empty values
-            let hasValue = value.isStringBased ? !value.stringValue.isEmpty : !value.numericValue.isEmpty
+        for measurable in implementSpecificMeasurables {
+            let key = measurable.key
+            let value = implementMeasurableValues[key] ?? measurable.value
+            guard let implementId = implementIdFromKey(key) else { continue }
 
-            if hasValue {
-                // Extract implement ID from the key
-                // Key format: "ImplementName_MeasurableName"
-                let components = key.components(separatedBy: "_")
-                guard components.count >= 2 else { continue }
+            let trimmedStringValue = value.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            let numericValue = Double(value.numericValue)
+            let stringValue = trimmedStringValue.isEmpty ? nil : trimmedStringValue
 
-                let implementName = components.dropLast().joined(separator: "_")
-                let measurableName = components.last!
-
-                // Find the implement ID
-                guard let implementId = implementIds.first(where: { id in
-                    libraryService.getImplement(id: id)?.name == implementName
-                }) else { continue }
-
-                measurableTargets.append(ImplementMeasurableTarget(
-                    implementId: implementId,
-                    measurableName: measurableName,
-                    unit: value.unit,
-                    isStringBased: value.isStringBased,
-                    targetValue: value.isStringBased ? nil : Double(value.numericValue),
-                    targetStringValue: value.isStringBased ? value.stringValue : nil
-                ))
-            }
+            measurableTargets.append(ImplementMeasurableTarget(
+                implementId: implementId,
+                measurableName: extractMeasurableName(from: key),
+                unit: value.unit,
+                isStringBased: value.isStringBased,
+                targetValue: value.isStringBased ? nil : numericValue,
+                targetStringValue: value.isStringBased ? stringValue : nil
+            ))
         }
 
         // Legacy single measurable support (for backward compatibility)
@@ -825,7 +829,7 @@ struct SetGroupFormView: View {
             for target in existing.implementMeasurables {
                 // Find implement name
                 guard let implement = libraryService.getImplement(id: target.implementId) else { continue }
-                let key = "\(implement.name)_\(target.measurableName)"
+                let key = measurableKey(implementId: target.implementId, measurableName: target.measurableName)
 
                 implementMeasurableValues[key] = MeasurableValue(
                     numericValue: target.targetValue.map { formatWeight($0) } ?? "",

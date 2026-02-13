@@ -282,6 +282,7 @@ struct PersistenceController {
             createAttribute("targetRPE", type: .integer32AttributeType, optional: true),
             createAttribute("targetDuration", type: .integer32AttributeType, optional: true),
             createAttribute("targetDistance", type: .doubleAttributeType, optional: true),
+            createAttribute("targetDistanceUnitRaw", type: .stringAttributeType, optional: true),
             createAttribute("targetHoldTime", type: .integer32AttributeType, optional: true),
             createAttribute("restPeriod", type: .integer32AttributeType, optional: true),
             createAttribute("notes", type: .stringAttributeType, optional: true),
@@ -293,6 +294,13 @@ struct PersistenceController {
             createAttribute("isInterval", type: .booleanAttributeType, optional: true),
             createAttribute("workDuration", type: .integer32AttributeType, optional: true),
             createAttribute("intervalRestDuration", type: .integer32AttributeType, optional: true),
+            // AMRAP/unilateral/RPE fields
+            createAttribute("isAMRAP", type: .booleanAttributeType, optional: true, defaultValue: false),
+            createAttribute("amrapTimeLimit", type: .integer32AttributeType, optional: true),
+            createAttribute("isUnilateral", type: .booleanAttributeType, optional: true, defaultValue: false),
+            createAttribute("trackRPE", type: .booleanAttributeType, optional: true, defaultValue: true),
+            // Multi-measurable targets
+            createAttribute("implementMeasurablesData", type: .binaryDataAttributeType, optional: true),
             // Implement-specific measurable fields
             createAttribute("implementMeasurableLabel", type: .stringAttributeType, optional: true),
             createAttribute("implementMeasurableUnit", type: .stringAttributeType, optional: true),
@@ -360,7 +368,13 @@ struct PersistenceController {
             createAttribute("createdAt", type: .dateAttributeType, optional: true),
             createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true),
-            createAttribute("syncStatusRaw", type: .stringAttributeType, optional: true)
+            createAttribute("syncStatusRaw", type: .stringAttributeType, optional: true),
+            createAttribute("programId", type: .UUIDAttributeType, optional: true),
+            createAttribute("programName", type: .stringAttributeType, optional: true),
+            createAttribute("programWeekNumber", type: .integer32AttributeType, optional: true),
+            createAttribute("isQuickLog", type: .booleanAttributeType, optional: true, defaultValue: false),
+            createAttribute("isFreestyle", type: .booleanAttributeType, optional: true, defaultValue: false),
+            createAttribute("isImported", type: .booleanAttributeType, optional: true, defaultValue: false)
         ]
 
         return entity
@@ -407,6 +421,15 @@ struct PersistenceController {
             createAttribute("progressionRecommendationRaw", type: .stringAttributeType, optional: true),
             createAttribute("mobilityTrackingRaw", type: .stringAttributeType, optional: true),
             createAttribute("isBodyweight", type: .booleanAttributeType, optional: true),
+            createAttribute("tracksAddedWeight", type: .booleanAttributeType, optional: true, defaultValue: true),
+            createAttribute("recoveryActivityTypeRaw", type: .stringAttributeType, optional: true),
+            createAttribute("implementIdsRaw", type: .stringAttributeType, optional: true),
+            createAttribute("primaryMusclesData", type: .binaryDataAttributeType, optional: true),
+            createAttribute("secondaryMusclesData", type: .binaryDataAttributeType, optional: true),
+            createAttribute("isSubstitution", type: .booleanAttributeType, optional: true, defaultValue: false),
+            createAttribute("originalExerciseName", type: .stringAttributeType, optional: true),
+            createAttribute("isAdHoc", type: .booleanAttributeType, optional: true, defaultValue: false),
+            createAttribute("sourceExerciseInstanceId", type: .UUIDAttributeType, optional: true),
             createAttribute("supersetGroupIdRaw", type: .stringAttributeType, optional: true)
         ]
 
@@ -429,7 +452,14 @@ struct PersistenceController {
             // Interval mode fields
             createAttribute("isInterval", type: .booleanAttributeType, optional: true),
             createAttribute("workDuration", type: .integer32AttributeType, optional: true),
-            createAttribute("intervalRestDuration", type: .integer32AttributeType, optional: true)
+            createAttribute("intervalRestDuration", type: .integer32AttributeType, optional: true),
+            // AMRAP/unilateral/RPE fields
+            createAttribute("isAMRAP", type: .booleanAttributeType, optional: true, defaultValue: false),
+            createAttribute("amrapTimeLimit", type: .integer32AttributeType, optional: true),
+            createAttribute("isUnilateral", type: .booleanAttributeType, optional: true, defaultValue: false),
+            createAttribute("trackRPE", type: .booleanAttributeType, optional: true, defaultValue: true),
+            // Multi-measurable targets
+            createAttribute("implementMeasurablesData", type: .binaryDataAttributeType, optional: true)
         ]
 
         return entity
@@ -455,6 +485,10 @@ struct PersistenceController {
             createAttribute("intensity", type: .integer32AttributeType, optional: true),
             createAttribute("height", type: .doubleAttributeType, optional: true),
             createAttribute("quality", type: .integer32AttributeType, optional: true),
+            createAttribute("bandColor", type: .stringAttributeType, optional: true),
+            createAttribute("temperature", type: .integer32AttributeType, optional: true),
+            createAttribute("sideRaw", type: .stringAttributeType, optional: true),
+            createAttribute("implementMeasurableValuesData", type: .binaryDataAttributeType, optional: true),
             createAttribute("restAfter", type: .integer32AttributeType, optional: true),
             createAttribute("createdAt", type: .dateAttributeType, optional: true),
             createAttribute("updatedAt", type: .dateAttributeType, optional: true),
@@ -542,6 +576,8 @@ struct PersistenceController {
             createAttribute("distanceUnitRaw", type: .stringAttributeType, optional: true),
             createAttribute("mobilityTrackingRaw", type: .stringAttributeType, optional: true),
             createAttribute("isBodyweight", type: .booleanAttributeType, defaultValue: false),
+            createAttribute("tracksAddedWeight", type: .booleanAttributeType, defaultValue: true),
+            createAttribute("isUnilateral", type: .booleanAttributeType, defaultValue: false),
             createAttribute("recoveryActivityTypeRaw", type: .stringAttributeType, optional: true),
             createAttribute("primaryMusclesData", type: .binaryDataAttributeType, optional: true),
             createAttribute("secondaryMusclesData", type: .binaryDataAttributeType, optional: true),

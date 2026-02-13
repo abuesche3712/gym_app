@@ -155,6 +155,7 @@ struct ProgressionConfigurationView: View {
                     profileControlsCard
                     selectionToolsCard
                     learnedStateCard
+                    subtleSignalsCard
 
                     // Workouts and their exercises
                     workoutsList
@@ -308,12 +309,24 @@ struct ProgressionConfigurationView: View {
 
             HStack(spacing: 8) {
                 Menu {
-                    ForEach(ProgressionMetric.allCases.filter { $0 == .weight || $0 == .reps }) { metric in
+                    ForEach(availableTargetMetrics) { metric in
                         Button(metric.displayName) {
                             updateDefaultRule { current in
                                 current.targetMetric = metric
                                 if metric != .weight {
                                     current.strategy = .linear
+                                }
+                                let nextRounding = roundingOptions(for: current).first ?? 1
+                                if !roundingOptions(for: current).contains(current.roundingIncrement) {
+                                    current.roundingIncrement = nextRounding
+                                }
+                                let nextMinimum = minimumOptions(for: current).first ?? 0
+                                if let minIncrease = current.minimumIncrease {
+                                    if !minimumOptions(for: current).contains(minIncrease) {
+                                        current.minimumIncrease = nextMinimum > 0 ? nextMinimum : nil
+                                    }
+                                } else if nextMinimum > 0 {
+                                    current.minimumIncrease = nextMinimum
                                 }
                             }
                         }
@@ -352,19 +365,22 @@ struct ProgressionConfigurationView: View {
 
                 Menu {
                     ForEach(roundingOptions(for: rule), id: \.self) { value in
-                        Button(formatWeight(value)) {
+                        Button(formatTuningValue(value, metric: rule.targetMetric)) {
                             updateDefaultRule { current in
                                 current.roundingIncrement = value
                             }
                         }
                     }
                 } label: {
-                    tuningChip(title: "Round", value: formatWeight(rule.roundingIncrement))
+                    tuningChip(
+                        title: "Round",
+                        value: formatTuningValue(rule.roundingIncrement, metric: rule.targetMetric)
+                    )
                 }
 
                 Menu {
                     ForEach(minimumOptions(for: rule), id: \.self) { value in
-                        let label = value == 0 ? "No min" : formatWeight(value)
+                        let label = value == 0 ? "No min" : formatTuningValue(value, metric: rule.targetMetric)
                         Button(label) {
                             updateDefaultRule { current in
                                 current.minimumIncrease = value > 0 ? value : nil
@@ -374,7 +390,7 @@ struct ProgressionConfigurationView: View {
                 } label: {
                     tuningChip(
                         title: "Min",
-                        value: rule.minimumIncrease.map { formatWeight($0) } ?? "No min"
+                        value: rule.minimumIncrease.map { formatTuningValue($0, metric: rule.targetMetric) } ?? "No min"
                     )
                 }
             }
@@ -558,6 +574,86 @@ struct ProgressionConfigurationView: View {
         .padding()
         .background(Color(.secondarySystemGroupedBackground))
         .cornerRadius(12)
+    }
+
+    private var subtleSignalsCard: some View {
+        let lowAcceptanceIds = lowAcceptanceExerciseIds
+        let oscillatingIds = oscillatingExerciseIds
+        let cardioWithoutProfileIds = enabledCardioExerciseIds.filter { exerciseProgressionProfiles[$0] == nil }
+        let hasSignals = !lowAcceptanceIds.isEmpty || !oscillatingIds.isEmpty || !cardioWithoutProfileIds.isEmpty
+
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("Signals")
+                .font(.headline)
+
+            if !hasSignals {
+                Text("No notable progression signals yet.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else {
+                if !lowAcceptanceIds.isEmpty {
+                    subtleSignalRow(
+                        title: "Low acceptance on \(lowAcceptanceIds.count) exercise\(lowAcceptanceIds.count == 1 ? "" : "s").",
+                        detail: "Suggestions are frequently overridden. Consider a lower progression ceiling."
+                    ) {
+                        Button("Apply Conservative") {
+                            applyConservativeProfile(to: lowAcceptanceIds)
+                        }
+                        .buttonStyle(.bordered)
+                        .font(.caption)
+                    }
+                }
+
+                if !oscillatingIds.isEmpty {
+                    subtleSignalRow(
+                        title: "Outcome direction is oscillating on \(oscillatingIds.count) exercise\(oscillatingIds.count == 1 ? "" : "s").",
+                        detail: "A slightly stricter readiness gate can reduce back-and-forth jumps."
+                    ) {
+                        Button("Tighten Readiness") {
+                            tightenReadinessGate(for: oscillatingIds)
+                        }
+                        .buttonStyle(.bordered)
+                        .font(.caption)
+                    }
+                }
+
+                if !cardioWithoutProfileIds.isEmpty {
+                    subtleSignalRow(
+                        title: "Cardio progression is enabled on \(cardioWithoutProfileIds.count) exercise\(cardioWithoutProfileIds.count == 1 ? "" : "s") without a cardio profile.",
+                        detail: "You can apply a cardio-tuned profile while keeping per-exercise control."
+                    ) {
+                        Button("Apply Cardio Profile") {
+                            applyCardioProfile(to: cardioWithoutProfileIds)
+                        }
+                        .buttonStyle(.bordered)
+                        .font(.caption)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .cornerRadius(12)
+        .opacity(progressionPolicy == .adaptive ? 1.0 : 0.5)
+        .disabled(progressionPolicy != .adaptive)
+    }
+
+    @ViewBuilder
+    private func subtleSignalRow<Actions: View>(
+        title: String,
+        detail: String,
+        @ViewBuilder actions: () -> Actions
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.primary)
+            Text(detail)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+            actions()
+        }
+        .padding(.vertical, 2)
     }
 
     // MARK: - Workouts List
@@ -877,8 +973,12 @@ struct ProgressionConfigurationView: View {
     private let percentageOptions: [Double] = [1.0, 2.5, 5.0, 7.5, 10.0]
     private let weightRoundingOptions: [Double] = [1.0, 2.5, 5.0, 10.0]
     private let repRoundingOptions: [Double] = [1.0]
+    private let durationRoundingOptions: [Double] = [15.0, 30.0, 60.0, 120.0]
+    private let distanceRoundingOptions: [Double] = [0.05, 0.10, 0.25, 0.50]
     private let weightMinimumOptions: [Double] = [0, 2.5, 5.0, 10.0]
     private let repMinimumOptions: [Double] = [0, 1.0, 2.0]
+    private let durationMinimumOptions: [Double] = [0, 15.0, 30.0, 60.0, 120.0]
+    private let distanceMinimumOptions: [Double] = [0, 0.05, 0.10, 0.25]
 
     private func formatPercent(_ value: Double) -> String {
         if value.truncatingRemainder(dividingBy: 1) == 0 {
@@ -887,12 +987,109 @@ struct ProgressionConfigurationView: View {
         return String(format: "%.1f", value)
     }
 
+    private var availableTargetMetrics: [ProgressionMetric] {
+        var metrics: [ProgressionMetric] = [.weight, .reps]
+        if exerciseLookupById.values.contains(where: { $0.exerciseType == .cardio }) {
+            metrics.append(.duration)
+            metrics.append(.distance)
+        }
+        return metrics
+    }
+
     private func roundingOptions(for rule: ProgressionRule) -> [Double] {
-        rule.targetMetric == .weight ? weightRoundingOptions : repRoundingOptions
+        switch rule.targetMetric {
+        case .weight:
+            return weightRoundingOptions
+        case .reps:
+            return repRoundingOptions
+        case .duration:
+            return durationRoundingOptions
+        case .distance:
+            return distanceRoundingOptions
+        }
     }
 
     private func minimumOptions(for rule: ProgressionRule) -> [Double] {
-        rule.targetMetric == .weight ? weightMinimumOptions : repMinimumOptions
+        switch rule.targetMetric {
+        case .weight:
+            return weightMinimumOptions
+        case .reps:
+            return repMinimumOptions
+        case .duration:
+            return durationMinimumOptions
+        case .distance:
+            return distanceMinimumOptions
+        }
+    }
+
+    private func formatTuningValue(_ value: Double, metric: ProgressionMetric) -> String {
+        switch metric {
+        case .weight:
+            return "\(formatWeight(value)) lbs"
+        case .reps:
+            return "\(Int(value.rounded())) reps"
+        case .duration:
+            return formatDuration(Int(value.rounded()))
+        case .distance:
+            return "\(formatDistanceValue(value)) mi"
+        }
+    }
+
+    private var exerciseLookupById: [UUID: ExerciseInstance] {
+        var lookup: [UUID: ExerciseInstance] = [:]
+        for workout in workoutsInProgram {
+            for module in modulesForWorkout(workout) {
+                for exercise in module.exercises {
+                    lookup[exercise.id] = exercise
+                }
+            }
+        }
+        return lookup
+    }
+
+    private var enabledCardioExerciseIds: [UUID] {
+        progressionEnabledExercises
+            .filter { exerciseLookupById[$0]?.exerciseType == .cardio }
+            .sorted { lhs, rhs in
+                let lhsName = exerciseLookupById[lhs]?.name ?? ""
+                let rhsName = exerciseLookupById[rhs]?.name ?? ""
+                return lhsName < rhsName
+            }
+    }
+
+    private var lowAcceptanceExerciseIds: [UUID] {
+        exerciseProgressionStates
+            .filter { exerciseId, state in
+                guard progressionEnabledExercises.contains(exerciseId),
+                      state.suggestionsPresented >= 4,
+                      let acceptanceRate = state.acceptanceRate else {
+                    return false
+                }
+                return acceptanceRate < 0.45
+            }
+            .map(\.key)
+            .sorted { lhs, rhs in
+                let lhsName = exerciseLookupById[lhs]?.name ?? ""
+                let rhsName = exerciseLookupById[rhs]?.name ?? ""
+                return lhsName < rhsName
+            }
+    }
+
+    private var oscillatingExerciseIds: [UUID] {
+        exerciseProgressionStates
+            .filter { exerciseId, state in
+                guard progressionEnabledExercises.contains(exerciseId),
+                      state.recentOutcomes.count >= 2 else {
+                    return false
+                }
+                return state.recentOutcomes[0] != state.recentOutcomes[1]
+            }
+            .map(\.key)
+            .sorted { lhs, rhs in
+                let lhsName = exerciseLookupById[lhs]?.name ?? ""
+                let rhsName = exerciseLookupById[rhs]?.name ?? ""
+                return lhsName < rhsName
+            }
     }
 
     private func applyQuickPreset(_ preset: ProgressionRule) {
@@ -903,6 +1100,45 @@ struct ProgressionConfigurationView: View {
         for exerciseId in progressionEnabledExercises {
             exerciseProgressionProfiles[exerciseId] = defaultProgressionProfile
         }
+    }
+
+    private func applyConservativeProfile(to exerciseIds: [UUID]) {
+        for exerciseId in exerciseIds {
+            let isCardio = exerciseLookupById[exerciseId]?.exerciseType == .cardio
+            exerciseProgressionProfiles[exerciseId] = isCardio ? conservativeCardioProfile : ProfilePreset.conservative.profile
+        }
+    }
+
+    private func tightenReadinessGate(for exerciseIds: [UUID]) {
+        for exerciseId in exerciseIds {
+            var profile = exerciseProgressionProfiles[exerciseId] ?? defaultProgressionProfile
+            profile.readinessGate.minimumCompletedSetRatio = min(
+                0.95,
+                profile.readinessGate.minimumCompletedSetRatio + 0.05
+            )
+            profile.readinessGate.minimumCompletedSets = min(
+                5,
+                max(profile.readinessGate.minimumCompletedSets + 1, 1)
+            )
+            exerciseProgressionProfiles[exerciseId] = profile
+        }
+    }
+
+    private func applyCardioProfile(to exerciseIds: [UUID]) {
+        for exerciseId in exerciseIds {
+            exerciseProgressionProfiles[exerciseId] = conservativeCardioProfile
+        }
+    }
+
+    private var conservativeCardioProfile: ProgressionProfile {
+        var profile = ProgressionProfile.cardioDefault
+        profile.readinessGate.minimumCompletedSetRatio = max(
+            profile.readinessGate.minimumCompletedSetRatio,
+            0.85
+        )
+        profile.decisionPolicy.progressThreshold = max(profile.decisionPolicy.progressThreshold, 0.74)
+        profile.guardrails.maxProgressPercent = min(profile.guardrails.maxProgressPercent ?? 8, 6)
+        return profile
     }
 
     private func preset(for profile: ProgressionProfile) -> ProfilePreset {
@@ -978,8 +1214,12 @@ struct ProgressionRuleEditorSheet: View {
     private let percentageOptions: [Double] = [1.0, 2.5, 5.0, 7.5, 10.0]
     private let weightRoundingOptions: [Double] = [1.0, 2.5, 5.0, 10.0]
     private let repRoundingOptions: [Double] = [1.0]
+    private let durationRoundingOptions: [Double] = [15.0, 30.0, 60.0, 120.0]
+    private let distanceRoundingOptions: [Double] = [0.05, 0.10, 0.25, 0.50]
     private let weightMinimumOptions: [Double] = [0, 2.5, 5.0, 10.0]
     private let repMinimumOptions: [Double] = [0, 1.0, 2.0]
+    private let durationMinimumOptions: [Double] = [0, 15.0, 30.0, 60.0, 120.0]
+    private let distanceMinimumOptions: [Double] = [0, 0.05, 0.10, 0.25]
 
     init(rule: ProgressionRule?, title: String, showUseDefault: Bool = false, onSave: @escaping (ProgressionRule?) -> Void) {
         self.rule = rule
@@ -988,15 +1228,11 @@ struct ProgressionRuleEditorSheet: View {
         self.onSave = onSave
 
         let defaultRule = rule ?? .conservative
-        let editableMetric: ProgressionMetric =
-            (defaultRule.targetMetric == .weight || defaultRule.targetMetric == .reps)
-            ? defaultRule.targetMetric
-            : .weight
-        _targetMetric = State(initialValue: editableMetric)
+        _targetMetric = State(initialValue: defaultRule.targetMetric)
         _strategy = State(initialValue: defaultRule.strategy)
         _percentageIncrease = State(initialValue: defaultRule.percentageIncrease)
         _roundingIncrement = State(initialValue: defaultRule.roundingIncrement)
-        _minimumIncrease = State(initialValue: defaultRule.minimumIncrease ?? 5.0)
+        _minimumIncrease = State(initialValue: defaultRule.minimumIncrease ?? 0)
     }
 
     var body: some View {
@@ -1004,7 +1240,7 @@ struct ProgressionRuleEditorSheet: View {
             Form {
                 Section {
                     Picker("Target Metric", selection: $targetMetric) {
-                        ForEach(ProgressionMetric.allCases.filter { $0 == .weight || $0 == .reps }) { metric in
+                        ForEach(ProgressionMetric.allCases) { metric in
                             Text(metric.displayName).tag(metric)
                         }
                     }
@@ -1025,7 +1261,7 @@ struct ProgressionRuleEditorSheet: View {
 
                     Picker("Round to nearest", selection: $roundingIncrement) {
                         ForEach(roundingOptions, id: \.self) { value in
-                            Text("\(formatWeight(value))").tag(value)
+                            Text(formatValue(value, metric: targetMetric)).tag(value)
                         }
                     }
 
@@ -1034,7 +1270,7 @@ struct ProgressionRuleEditorSheet: View {
                             if value == 0 {
                                 Text("No minimum").tag(value)
                             } else {
-                                Text("\(formatWeight(value))").tag(value)
+                                Text(formatValue(value, metric: targetMetric)).tag(value)
                             }
                         }
                     }
@@ -1043,7 +1279,7 @@ struct ProgressionRuleEditorSheet: View {
                 }
 
                 Section {
-                    Text("Example: 100 lbs → \(formatWeight(calculateExample()))")
+                    Text(exampleText)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 } header: {
@@ -1105,15 +1341,69 @@ struct ProgressionRuleEditorSheet: View {
     }
 
     private var roundingOptions: [Double] {
-        targetMetric == .weight ? weightRoundingOptions : repRoundingOptions
+        switch targetMetric {
+        case .weight:
+            return weightRoundingOptions
+        case .reps:
+            return repRoundingOptions
+        case .duration:
+            return durationRoundingOptions
+        case .distance:
+            return distanceRoundingOptions
+        }
     }
 
     private var minimumOptions: [Double] {
-        targetMetric == .weight ? weightMinimumOptions : repMinimumOptions
+        switch targetMetric {
+        case .weight:
+            return weightMinimumOptions
+        case .reps:
+            return repMinimumOptions
+        case .duration:
+            return durationMinimumOptions
+        case .distance:
+            return distanceMinimumOptions
+        }
+    }
+
+    private func formatValue(_ value: Double, metric: ProgressionMetric) -> String {
+        switch metric {
+        case .weight:
+            return "\(formatWeight(value)) lbs"
+        case .reps:
+            return "\(Int(value.rounded())) reps"
+        case .duration:
+            return formatDuration(Int(value.rounded()))
+        case .distance:
+            return "\(formatDistanceValue(value)) mi"
+        }
+    }
+
+    private var exampleText: String {
+        switch targetMetric {
+        case .weight:
+            return "Example: 100 lbs → \(formatWeight(calculateExample())) lbs"
+        case .reps:
+            return "Example: 8 reps → \(Int(calculateExample().rounded())) reps"
+        case .duration:
+            return "Example: 20:00 → \(formatDuration(Int(calculateExample().rounded())))"
+        case .distance:
+            return "Example: 2.00 mi → \(formatDistanceValue(calculateExample())) mi"
+        }
     }
 
     private func calculateExample() -> Double {
-        let base = targetMetric == .weight ? 100.0 : 8.0
+        let base: Double
+        switch targetMetric {
+        case .weight:
+            base = 100.0
+        case .reps:
+            base = 8.0
+        case .duration:
+            base = 1200.0
+        case .distance:
+            base = 2.0
+        }
         var increase = base * (percentageIncrease / 100.0)
         if minimumIncrease > 0 {
             increase = max(increase, minimumIncrease)

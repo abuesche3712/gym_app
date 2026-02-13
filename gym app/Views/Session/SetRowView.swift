@@ -504,7 +504,7 @@ struct SetRowView: View {
         var finalSummary = sidePrefix + mainSummary
         if !set.implementMeasurableValues.isEmpty {
             let measurableStrings = flatSet.implementMeasurables.compactMap { measurable -> String? in
-                guard let value = set.implementMeasurableValues[measurable.measurableName] else { return nil }
+                guard let value = measurableValue(for: measurable, in: set.implementMeasurableValues) else { return nil }
                 if let numericValue = value.numericValue {
                     return "\(measurable.measurableName): \(formatMeasurableValue(numericValue)) \(measurable.unit)"
                 } else if let stringValue = value.stringValue {
@@ -527,6 +527,21 @@ struct SetRowView: View {
         }
     }
 
+    private func measurableStorageKey(for measurable: ImplementMeasurableTarget) -> String {
+        "\(measurable.implementId.uuidString)|\(measurable.measurableName)"
+    }
+
+    private func measurableValue(
+        for measurable: ImplementMeasurableTarget,
+        in values: [String: MeasurableValue]
+    ) -> MeasurableValue? {
+        if let currentValue = values[measurableStorageKey(for: measurable)] {
+            return currentValue
+        }
+        // Backward compatibility for older sessions that keyed by measurable name only.
+        return values[measurable.measurableName]
+    }
+
     // MARK: - Load Defaults
 
     private func loadDefaults() {
@@ -542,7 +557,12 @@ struct SetRowView: View {
         let lastHoldTime = lastSessionSet?.holdTime
         let lastDistance = lastSessionSet?.distance
         let lastHeight = lastSessionSet?.height
-        let lastBandColor = lastSessionSet?.bandColor ?? lastSessionSet?.implementMeasurableValues["Color"]?.stringValue
+        let primaryStringMeasurable = flatSet.implementMeasurables.first(where: { $0.isStringBased })
+        let lastBandColor = lastSessionSet?.bandColor
+            ?? primaryStringMeasurable.flatMap { measurable in
+                measurableValue(for: measurable, in: lastSessionSet?.implementMeasurableValues ?? [:])?.stringValue
+            }
+            ?? lastSessionSet?.implementMeasurableValues["Color"]?.stringValue
         var didApplySuggestionDuration = false
         var didApplySuggestionDistance = false
 
@@ -688,28 +708,32 @@ struct SetRowView: View {
         inputIntensity = setData.intensity ?? 0
         inputTemperature = setData.temperature.map { "\($0)" } ?? ""
         inputBandColor = setData.bandColor
+            ?? primaryStringMeasurable.flatMap { measurable in
+                measurableValue(for: measurable, in: setData.implementMeasurableValues)?.stringValue
+            }
             ?? setData.implementMeasurableValues["Color"]?.stringValue
             ?? lastBandColor
             ?? ""
 
         inputMeasurableValues = [:]
         for measurable in flatSet.implementMeasurables {
-            if let loggedValue = setData.implementMeasurableValues[measurable.measurableName] {
+            let storageKey = measurableStorageKey(for: measurable)
+            if let loggedValue = measurableValue(for: measurable, in: setData.implementMeasurableValues) {
                 if let numericValue = loggedValue.numericValue {
-                    inputMeasurableValues[measurable.measurableName] = formatMeasurableValue(numericValue)
+                    inputMeasurableValues[storageKey] = formatMeasurableValue(numericValue)
                 } else if let stringValue = loggedValue.stringValue {
-                    inputMeasurableValues[measurable.measurableName] = stringValue
+                    inputMeasurableValues[storageKey] = stringValue
                 }
-            } else if let lastSessionValue = lastSessionSet?.implementMeasurableValues[measurable.measurableName] {
+            } else if let lastSessionValue = measurableValue(for: measurable, in: lastSessionSet?.implementMeasurableValues ?? [:]) {
                 if let numericValue = lastSessionValue.numericValue {
-                    inputMeasurableValues[measurable.measurableName] = formatMeasurableValue(numericValue)
+                    inputMeasurableValues[storageKey] = formatMeasurableValue(numericValue)
                 } else if let stringValue = lastSessionValue.stringValue {
-                    inputMeasurableValues[measurable.measurableName] = stringValue
+                    inputMeasurableValues[storageKey] = stringValue
                 }
             } else if let targetNumeric = measurable.targetValue {
-                inputMeasurableValues[measurable.measurableName] = formatMeasurableValue(targetNumeric)
+                inputMeasurableValues[storageKey] = formatMeasurableValue(targetNumeric)
             } else if let targetString = measurable.targetStringValue {
-                inputMeasurableValues[measurable.measurableName] = targetString
+                inputMeasurableValues[storageKey] = targetString
             }
         }
     }

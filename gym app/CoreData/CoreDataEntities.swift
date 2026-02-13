@@ -210,6 +210,8 @@ public class ExerciseInstanceEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var distanceUnitRaw: String?
     @NSManaged public var mobilityTrackingRaw: String?
     @NSManaged public var isBodyweight: Bool
+    @NSManaged public var tracksAddedWeight: Bool
+    @NSManaged public var isUnilateral: Bool
     @NSManaged public var recoveryActivityTypeRaw: String?
     @NSManaged public var primaryMusclesData: Data?
     @NSManaged public var secondaryMusclesData: Data?
@@ -389,9 +391,15 @@ public class SetGroupEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var isInterval: Bool
     @NSManaged public var workDuration: Int32
     @NSManaged public var intervalRestDuration: Int32
+    @NSManaged public var isAMRAP: Bool
+    @NSManaged public var amrapTimeLimit: Int32
+    @NSManaged public var isUnilateral: Bool
+    @NSManaged public var trackRPE: Bool
 
     // Dynamic measurable targets (new system)
     @NSManaged public var targetValues: NSSet?
+    @NSManaged public var targetDistanceUnitRaw: String?
+    @NSManaged public var implementMeasurablesData: Data?
 
     // DEPRECATED: Flat fields kept for backward compatibility with existing workouts
     // New workouts should use targetValues instead
@@ -422,6 +430,26 @@ public class SetGroupEntity: NSManagedObject, SyncableEntity {
 
     var targetValueArray: [TargetValueEntity] {
         targetValues?.allObjects as? [TargetValueEntity] ?? []
+    }
+
+    var targetDistanceUnit: DistanceUnit? {
+        get {
+            guard let raw = targetDistanceUnitRaw else { return nil }
+            return DistanceUnit(rawValue: raw)
+        }
+        set {
+            targetDistanceUnitRaw = newValue?.rawValue
+        }
+    }
+
+    var implementMeasurables: [ImplementMeasurableTarget] {
+        get {
+            guard let data = implementMeasurablesData else { return [] }
+            return (try? JSONDecoder().decode([ImplementMeasurableTarget].self, from: data)) ?? []
+        }
+        set {
+            implementMeasurablesData = try? JSONEncoder().encode(newValue)
+        }
     }
 
     /// Get target value for a specific measurable by name
@@ -560,6 +588,12 @@ public class SessionEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var syncedAt: Date?
     @NSManaged public var syncStatusRaw: String?
     @NSManaged public var completedModules: NSOrderedSet?
+    @NSManaged public var programId: UUID?
+    @NSManaged public var programName: String?
+    @NSManaged public var programWeekNumber: Int32
+    @NSManaged public var isQuickLog: Bool
+    @NSManaged public var isFreestyle: Bool
+    @NSManaged public var isImported: Bool
 
     public override func awakeFromInsert() {
         super.awakeFromInsert()
@@ -652,6 +686,15 @@ public class SessionExerciseEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var progressionRecommendationRaw: String?
     @NSManaged public var mobilityTrackingRaw: String?
     @NSManaged public var isBodyweight: Bool
+    @NSManaged public var tracksAddedWeight: Bool
+    @NSManaged public var recoveryActivityTypeRaw: String?
+    @NSManaged public var implementIdsRaw: String?
+    @NSManaged public var primaryMusclesData: Data?
+    @NSManaged public var secondaryMusclesData: Data?
+    @NSManaged public var isSubstitution: Bool
+    @NSManaged public var originalExerciseName: String?
+    @NSManaged public var isAdHoc: Bool
+    @NSManaged public var sourceExerciseInstanceId: UUID?
     @NSManaged public var supersetGroupIdRaw: String?
 
     public override func awakeFromInsert() {
@@ -691,6 +734,46 @@ public class SessionExerciseEntity: NSManagedObject, SyncableEntity {
         set { mobilityTrackingRaw = newValue.rawValue }
     }
 
+    var recoveryActivityType: RecoveryActivityType? {
+        get {
+            guard let raw = recoveryActivityTypeRaw else { return nil }
+            return RecoveryActivityType(rawValue: raw)
+        }
+        set {
+            recoveryActivityTypeRaw = newValue?.rawValue
+        }
+    }
+
+    var primaryMuscles: [MuscleGroup] {
+        get {
+            guard let data = primaryMusclesData else { return [] }
+            return (try? JSONDecoder().decode([MuscleGroup].self, from: data)) ?? []
+        }
+        set {
+            primaryMusclesData = try? JSONEncoder().encode(newValue)
+        }
+    }
+
+    var secondaryMuscles: [MuscleGroup] {
+        get {
+            guard let data = secondaryMusclesData else { return [] }
+            return (try? JSONDecoder().decode([MuscleGroup].self, from: data)) ?? []
+        }
+        set {
+            secondaryMusclesData = try? JSONEncoder().encode(newValue)
+        }
+    }
+
+    var implementIds: Set<UUID> {
+        get {
+            guard let raw = implementIdsRaw else { return [] }
+            return Set(raw.split(separator: ",").compactMap { UUID(uuidString: String($0)) })
+        }
+        set {
+            implementIdsRaw = newValue.isEmpty ? nil : newValue.map { $0.uuidString }.joined(separator: ",")
+        }
+    }
+
     var supersetGroupId: UUID? {
         get { supersetGroupIdRaw.flatMap { UUID(uuidString: $0) } }
         set { supersetGroupIdRaw = newValue?.uuidString }
@@ -719,6 +802,11 @@ public class CompletedSetGroupEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var workDuration: Int32
     @NSManaged public var intervalRestDuration: Int32
     @NSManaged public var restPeriod: Int32
+    @NSManaged public var isAMRAP: Bool
+    @NSManaged public var amrapTimeLimit: Int32
+    @NSManaged public var isUnilateral: Bool
+    @NSManaged public var trackRPE: Bool
+    @NSManaged public var implementMeasurablesData: Data?
 
     public override func awakeFromInsert() {
         super.awakeFromInsert()
@@ -734,6 +822,16 @@ public class CompletedSetGroupEntity: NSManagedObject, SyncableEntity {
 
     var setArray: [SetDataEntity] {
         sets?.array as? [SetDataEntity] ?? []
+    }
+
+    var implementMeasurables: [ImplementMeasurableTarget] {
+        get {
+            guard let data = implementMeasurablesData else { return [] }
+            return (try? JSONDecoder().decode([ImplementMeasurableTarget].self, from: data)) ?? []
+        }
+        set {
+            implementMeasurablesData = try? JSONEncoder().encode(newValue)
+        }
     }
 }
 
@@ -766,6 +864,10 @@ public class SetDataEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var intensity: Int32
     @NSManaged public var height: Double
     @NSManaged public var quality: Int32
+    @NSManaged public var bandColor: String?
+    @NSManaged public var temperature: Int32
+    @NSManaged public var sideRaw: String?
+    @NSManaged public var implementMeasurableValuesData: Data?
 
     public override func awakeFromInsert() {
         super.awakeFromInsert()
@@ -781,6 +883,26 @@ public class SetDataEntity: NSManagedObject, SyncableEntity {
 
     var actualValueArray: [ActualValueEntity] {
         actualValues?.allObjects as? [ActualValueEntity] ?? []
+    }
+
+    var side: Side? {
+        get {
+            guard let raw = sideRaw else { return nil }
+            return Side(rawValue: raw)
+        }
+        set {
+            sideRaw = newValue?.rawValue
+        }
+    }
+
+    var implementMeasurableValues: [String: MeasurableValue] {
+        get {
+            guard let data = implementMeasurableValuesData else { return [:] }
+            return (try? JSONDecoder().decode([String: MeasurableValue].self, from: data)) ?? [:]
+        }
+        set {
+            implementMeasurableValuesData = try? JSONEncoder().encode(newValue)
+        }
     }
 
     /// Get actual value for a specific measurable by name

@@ -193,8 +193,8 @@ struct StrengthInputs: View {
             }
             .fixedSize(horizontal: true, vertical: false)
 
-            // Multi-measurable inputs (up to 2 additional attributes like Height, Incline, etc.)
-            ForEach(flatSet.implementMeasurables.prefix(2)) { measurable in
+            // Multi-measurable inputs (Height, Incline, etc.)
+            ForEach(flatSet.implementMeasurables) { measurable in
                 measurableInputField(measurable: measurable)
             }
 
@@ -239,10 +239,11 @@ struct StrengthInputs: View {
 
     @ViewBuilder
     private func measurableInputField(measurable: ImplementMeasurableTarget) -> some View {
+        let measurableKey = measurableStorageKey(for: measurable)
         VStack(spacing: 4) {
             TextField(measurable.isStringBased ? measurable.measurableName : "0", text: Binding(
-                get: { inputMeasurableValues[measurable.measurableName] ?? "" },
-                set: { inputMeasurableValues[measurable.measurableName] = $0 }
+                get: { inputMeasurableValues[measurableKey] ?? "" },
+                set: { inputMeasurableValues[measurableKey] = $0 }
             ))
             .keyboardType(measurable.isStringBased ? .default : .decimalPad)
             .font(.system(size: 16, weight: .semibold))
@@ -253,11 +254,15 @@ struct StrengthInputs: View {
             .padding(.horizontal, 6)
             .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
 
-            Text(measurable.unit)
+            Text(measurable.unit.isEmpty ? measurable.measurableName : measurable.unit)
                 .caption2(color: AppColors.textTertiary)
                 .fontWeight(.medium)
         }
         .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private func measurableStorageKey(for measurable: ImplementMeasurableTarget) -> String {
+        "\(measurable.implementId.uuidString)|\(measurable.measurableName)"
     }
 
     // MARK: - AMRAP Timer Button

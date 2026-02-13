@@ -1,0 +1,99 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 1970 >>
+stream
+BT
+/F1 18 Tf
+1 0 0 1 54.00 738.00 Tm
+(Gym App - One-Page Summary) Tj
+/F1 13 Tf
+1 0 0 1 54.00 710.00 Tm
+(What It Is) Tj
+/F1 11 Tf
+1 0 0 1 54.00 694.00 Tm
+(iOS workout tracking app built with SwiftUI.) Tj
+/F1 11 Tf
+1 0 0 1 54.00 680.00 Tm
+(Offline-first using CoreData with Firebase for cloud sync.) Tj
+/F1 13 Tf
+1 0 0 1 54.00 660.00 Tm
+(Who It's For) Tj
+/F1 11 Tf
+1 0 0 1 54.00 644.00 Tm
+(Hybrid athletes focused on complex workout tracking.) Tj
+/F1 13 Tf
+1 0 0 1 54.00 624.00 Tm
+(What It Does) Tj
+/F1 11 Tf
+1 0 0 1 54.00 608.00 Tm
+(- Create and manage programs, workouts, and modules.) Tj
+/F1 11 Tf
+1 0 0 1 54.00 594.00 Tm
+(- Log training sessions with exercises, sets, and measurable data.) Tj
+/F1 11 Tf
+1 0 0 1 54.00 580.00 Tm
+(- Apply progression rules and compute training progress.) Tj
+/F1 11 Tf
+1 0 0 1 54.00 566.00 Tm
+(- Run offline with CoreData and sync to Firebase when signed in.) Tj
+/F1 11 Tf
+1 0 0 1 54.00 552.00 Tm
+(- Social features: profiles, friendships, feed, messaging, and sharing.) Tj
+/F1 11 Tf
+1 0 0 1 54.00 538.00 Tm
+(- Import Strong CSV history and show a Today Workout widget.) Tj
+/F1 13 Tf
+1 0 0 1 54.00 518.00 Tm
+(How It Works) Tj
+/F1 11 Tf
+1 0 0 1 54.00 502.00 Tm
+(- SwiftUI views bind to MVVM ViewModels with @Published state.) Tj
+/F1 11 Tf
+1 0 0 1 54.00 488.00 Tm
+(- ViewModels call DataRepository, which coordinates entity repositories.) Tj
+/F1 11 Tf
+1 0 0 1 54.00 474.00 Tm
+(- Repositories persist to CoreData; services handle business logic.) Tj
+/F1 11 Tf
+1 0 0 1 54.00 460.00 Tm
+(- FirestoreService + SyncManager sync with Firebase when authenticated.) Tj
+/F1 11 Tf
+1 0 0 1 54.00 446.00 Tm
+(- Widget extension reads App Group data for today's workout.) Tj
+/F1 13 Tf
+1 0 0 1 54.00 426.00 Tm
+(How To Run) Tj
+/F1 11 Tf
+1 0 0 1 54.00 410.00 Tm
+(- xcodebuild -scheme "gym app" -destination "generic/platform=iOS Simulator" build) Tj
+/F1 11 Tf
+1 0 0 1 54.00 396.00 Tm
+(- Not found in repo: explicit steps to launch on Simulator/device.) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+2333
+%%EOF

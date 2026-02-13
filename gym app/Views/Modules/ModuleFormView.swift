@@ -541,7 +541,12 @@ struct ModuleFormView: View {
             templateId: template.id,
             name: template.name,
             exerciseType: template.exerciseType,
+            cardioMetric: template.cardioMetric,
+            distanceUnit: template.distanceUnit,
+            mobilityTracking: template.mobilityTracking,
+            isBodyweight: template.isBodyweight,
             isUnilateral: template.isUnilateral,
+            recoveryActivityType: template.recoveryActivityType,
             primaryMuscles: template.primaryMuscles,
             secondaryMuscles: template.secondaryMuscles,
             implementIds: template.implementIds,
@@ -873,7 +878,7 @@ struct InlineExerciseEditor: View {
                     cardioMetric: exercise.cardioMetric,
                     mobilityTracking: exercise.mobilityTracking,
                     distanceUnit: exercise.distanceUnit,
-                    implementIds: exercise.implementIds,
+                    implementIds: selectedImplementIds,
                     isBodyweight: exercise.isBodyweight,
                     existingSetGroup: nil
                 ) { newSetGroup in
@@ -892,7 +897,7 @@ struct InlineExerciseEditor: View {
                         cardioMetric: exercise.cardioMetric,
                         mobilityTracking: exercise.mobilityTracking,
                         distanceUnit: exercise.distanceUnit,
-                        implementIds: exercise.implementIds,
+                        implementIds: selectedImplementIds,
                         isBodyweight: exercise.isBodyweight,
                         existingSetGroup: setGroups[index]
                     ) { updatedSetGroup in

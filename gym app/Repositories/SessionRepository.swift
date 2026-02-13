@@ -44,6 +44,7 @@ class SessionRepository: CoreDataRepository {
                             reps: setEntity.reps > 0 ? Int(setEntity.reps) : nil,
                             rpe: setEntity.rpe > 0 ? Int(setEntity.rpe) : nil,
                             completed: setEntity.completed,
+                            bandColor: setEntity.bandColor,
                             duration: setEntity.duration > 0 ? Int(setEntity.duration) : nil,
                             distance: setEntity.distance > 0 ? setEntity.distance : nil,
                             pace: setEntity.pace > 0 ? setEntity.pace : nil,
@@ -52,7 +53,10 @@ class SessionRepository: CoreDataRepository {
                             intensity: setEntity.intensity > 0 ? Int(setEntity.intensity) : nil,
                             height: setEntity.height > 0 ? setEntity.height : nil,
                             quality: setEntity.quality > 0 ? Int(setEntity.quality) : nil,
-                            restAfter: setEntity.restAfter > 0 ? Int(setEntity.restAfter) : nil
+                            temperature: setEntity.temperature > 0 ? Int(setEntity.temperature) : nil,
+                            restAfter: setEntity.restAfter > 0 ? Int(setEntity.restAfter) : nil,
+                            side: setEntity.side,
+                            implementMeasurableValues: setEntity.implementMeasurableValues
                         )
                     }
                     return CompletedSetGroup(
@@ -62,7 +66,12 @@ class SessionRepository: CoreDataRepository {
                         sets: sets,
                         isInterval: sgEntity.isInterval,
                         workDuration: sgEntity.workDuration > 0 ? Int(sgEntity.workDuration) : nil,
-                        intervalRestDuration: sgEntity.intervalRestDuration > 0 ? Int(sgEntity.intervalRestDuration) : nil
+                        intervalRestDuration: sgEntity.intervalRestDuration > 0 ? Int(sgEntity.intervalRestDuration) : nil,
+                        isAMRAP: sgEntity.isAMRAP,
+                        amrapTimeLimit: sgEntity.amrapTimeLimit > 0 ? Int(sgEntity.amrapTimeLimit) : nil,
+                        isUnilateral: sgEntity.isUnilateral,
+                        trackRPE: sgEntity.trackRPE,
+                        implementMeasurables: sgEntity.implementMeasurables
                     )
                 }
 
@@ -78,6 +87,15 @@ class SessionRepository: CoreDataRepository {
                     completedSetGroups: completedSetGroups,
                     notes: exerciseEntity.notes,
                     isBodyweight: exerciseEntity.isBodyweight,
+                    tracksAddedWeight: exerciseEntity.tracksAddedWeight,
+                    recoveryActivityType: exerciseEntity.recoveryActivityType,
+                    implementIds: exerciseEntity.implementIds,
+                    primaryMuscles: exerciseEntity.primaryMuscles,
+                    secondaryMuscles: exerciseEntity.secondaryMuscles,
+                    isSubstitution: exerciseEntity.isSubstitution,
+                    originalExerciseName: exerciseEntity.originalExerciseName,
+                    isAdHoc: exerciseEntity.isAdHoc,
+                    sourceExerciseInstanceId: exerciseEntity.sourceExerciseInstanceId,
                     progressionRecommendation: exerciseEntity.progressionRecommendation
                 )
             }
@@ -104,7 +122,13 @@ class SessionRepository: CoreDataRepository {
             overallFeeling: entity.overallFeeling > 0 ? Int(entity.overallFeeling) : nil,
             notes: entity.notes,
             createdAt: entity.createdAt ?? entity.date,
-            syncStatus: entity.syncStatus
+            syncStatus: entity.syncStatus,
+            programId: entity.programId,
+            programName: entity.programName,
+            programWeekNumber: entity.programWeekNumber > 0 ? Int(entity.programWeekNumber) : nil,
+            isQuickLog: entity.isQuickLog,
+            isFreestyle: entity.isFreestyle,
+            isImported: entity.isImported
         )
     }
 
@@ -118,6 +142,12 @@ class SessionRepository: CoreDataRepository {
         entity.notes = session.notes
         entity.createdAt = session.createdAt
         entity.syncStatus = session.syncStatus
+        entity.programId = session.programId
+        entity.programName = session.programName
+        entity.programWeekNumber = Int32(session.programWeekNumber ?? 0)
+        entity.isQuickLog = session.isQuickLog
+        entity.isFreestyle = session.isFreestyle
+        entity.isImported = session.isImported
 
         // Clear existing completed modules
         if let existingModules = entity.completedModules {
@@ -153,6 +183,15 @@ class SessionRepository: CoreDataRepository {
                 exerciseEntity.progressionRecommendation = sessionExercise.progressionRecommendation
                 exerciseEntity.mobilityTracking = sessionExercise.mobilityTracking
                 exerciseEntity.isBodyweight = sessionExercise.isBodyweight
+                exerciseEntity.tracksAddedWeight = sessionExercise.tracksAddedWeight
+                exerciseEntity.recoveryActivityType = sessionExercise.recoveryActivityType
+                exerciseEntity.implementIds = sessionExercise.implementIds
+                exerciseEntity.primaryMuscles = sessionExercise.primaryMuscles
+                exerciseEntity.secondaryMuscles = sessionExercise.secondaryMuscles
+                exerciseEntity.isSubstitution = sessionExercise.isSubstitution
+                exerciseEntity.originalExerciseName = sessionExercise.originalExerciseName
+                exerciseEntity.isAdHoc = sessionExercise.isAdHoc
+                exerciseEntity.sourceExerciseInstanceId = sessionExercise.sourceExerciseInstanceId
                 exerciseEntity.supersetGroupId = sessionExercise.supersetGroupId
 
                 // Add completed set groups
@@ -165,6 +204,11 @@ class SessionRepository: CoreDataRepository {
                     sgEntity.isInterval = completedSetGroup.isInterval
                     sgEntity.workDuration = Int32(completedSetGroup.workDuration ?? 0)
                     sgEntity.intervalRestDuration = Int32(completedSetGroup.intervalRestDuration ?? 0)
+                    sgEntity.isAMRAP = completedSetGroup.isAMRAP
+                    sgEntity.amrapTimeLimit = Int32(completedSetGroup.amrapTimeLimit ?? 0)
+                    sgEntity.isUnilateral = completedSetGroup.isUnilateral
+                    sgEntity.trackRPE = completedSetGroup.trackRPE
+                    sgEntity.implementMeasurables = completedSetGroup.implementMeasurables
                     sgEntity.sessionExercise = exerciseEntity
 
                     // Add set data
@@ -176,6 +220,7 @@ class SessionRepository: CoreDataRepository {
                         setEntity.reps = Int32(setData.reps ?? 0)
                         setEntity.rpe = Int32(setData.rpe ?? 0)
                         setEntity.completed = setData.completed
+                        setEntity.bandColor = setData.bandColor
                         setEntity.duration = Int32(setData.duration ?? 0)
                         setEntity.distance = setData.distance ?? 0
                         setEntity.pace = setData.pace ?? 0
@@ -184,6 +229,9 @@ class SessionRepository: CoreDataRepository {
                         setEntity.intensity = Int32(setData.intensity ?? 0)
                         setEntity.height = setData.height ?? 0
                         setEntity.quality = Int32(setData.quality ?? 0)
+                        setEntity.temperature = Int32(setData.temperature ?? 0)
+                        setEntity.side = setData.side
+                        setEntity.implementMeasurableValues = setData.implementMeasurableValues
                         setEntity.restAfter = Int32(setData.restAfter ?? 0)
                         setEntity.completedSetGroup = sgEntity
                         return setEntity

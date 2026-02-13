@@ -29,22 +29,22 @@ struct ResolvedExercise: Identifiable, Hashable, ExerciseMetrics {
     var tracksAddedWeight: Bool { instance.tracksAddedWeight }
     var recoveryActivityType: RecoveryActivityType? { instance.recoveryActivityType }
 
-    // Dynamic property - prefer template (source of truth) over instance snapshot
+    // Use instance as source of truth; template is only metadata/fallback.
     var isUnilateral: Bool {
-        template?.isUnilateral ?? instance.isUnilateral
+        instance.isUnilateral
     }
 
-    // Dynamic properties - prefer template (source of truth) over instance snapshot
+    // Use instance as source of truth; template is only metadata/fallback.
     var primaryMuscles: [MuscleGroup] {
-        template?.primaryMuscles ?? instance.primaryMuscles
+        instance.primaryMuscles
     }
 
     var secondaryMuscles: [MuscleGroup] {
-        template?.secondaryMuscles ?? instance.secondaryMuscles
+        instance.secondaryMuscles
     }
 
     var implementIds: Set<UUID> {
-        template?.implementIds ?? instance.implementIds
+        instance.implementIds
     }
 
     // Category is only on template (not critical for display)

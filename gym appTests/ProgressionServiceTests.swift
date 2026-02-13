@@ -25,6 +25,7 @@ final class ProgressionServiceTests: XCTestCase {
         name: String,
         weights: [Double],
         reps: Int = 5,
+        rpe: Double? = nil,
         recommendation: ProgressionRecommendation? = nil,
         sourceExerciseInstanceId: UUID? = nil,
         date: Date? = nil
@@ -33,6 +34,40 @@ final class ProgressionServiceTests: XCTestCase {
             SetData(
                 setNumber: index + 1,
                 completed: true,
+                weight: weight,
+                reps: reps,
+                rpe: rpe
+            )
+        }
+
+        return SessionExercise(
+            exerciseId: UUID(),
+            exerciseName: name,
+            exerciseType: .strength,
+            completedSetGroups: [
+                CompletedSetGroup(
+                    setGroupId: UUID(),
+                    sets: sets
+                )
+            ],
+            sourceExerciseInstanceId: sourceExerciseInstanceId,
+            progressionRecommendation: recommendation,
+            date: date
+        )
+    }
+
+    private func makePlannedStrengthExercise(
+        name: String,
+        setCount: Int,
+        weight: Double,
+        reps: Int,
+        sourceExerciseInstanceId: UUID? = nil,
+        date: Date? = nil
+    ) -> SessionExercise {
+        let sets = (0..<max(1, setCount)).map { index in
+            SetData(
+                setNumber: index + 1,
+                completed: false,
                 weight: weight,
                 reps: reps
             )
@@ -49,7 +84,6 @@ final class ProgressionServiceTests: XCTestCase {
                 )
             ],
             sourceExerciseInstanceId: sourceExerciseInstanceId,
-            progressionRecommendation: recommendation,
             date: date
         )
     }
@@ -831,6 +865,118 @@ final class ProgressionServiceTests: XCTestCase {
 
         XCTAssertEqual(suggestions[currentExercise.id]?.appliedOutcome, .progress)
         XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 102.0, accuracy: 0.001)
+    }
+
+    func testAdaptiveMode_hysteresisHoldsBorderlineReversal() {
+        let workoutId = UUID()
+        let instanceId = UUID()
+        let now = Date(timeIntervalSince1970: 1_737_100_000)
+
+        let lastExercise = makeExercise(
+            name: "Bench Press",
+            weights: [100],
+            reps: 5,
+            rpe: 9.4,
+            sourceExerciseInstanceId: instanceId,
+            date: now
+        )
+        let history = [makeSession(workoutId: workoutId, exercises: [lastExercise])]
+
+        let currentExercise = makePlannedStrengthExercise(
+            name: "Bench Press",
+            setCount: 3,
+            weight: 100,
+            reps: 10,
+            sourceExerciseInstanceId: instanceId,
+            date: now
+        )
+
+        var profile = ProgressionProfile.strengthDefault
+        profile.readinessGate.minimumCompletedSets = 1
+        profile.readinessGate.minimumCompletedSetRatio = 0.30
+
+        let state = ExerciseProgressionState(
+            recentOutcomes: [.progress],
+            confidence: 0.2
+        )
+
+        let program = Program(
+            name: "Adaptive Program",
+            progressionEnabled: true,
+            progressionPolicy: .adaptive,
+            defaultProgressionRule: .moderate,
+            progressionEnabledExercises: Set([instanceId]),
+            exerciseProgressionStates: [instanceId: state],
+            exerciseProgressionProfiles: [instanceId: profile]
+        )
+
+        let suggestions = service.calculateSuggestions(
+            for: [currentExercise],
+            exerciseInstanceIds: [currentExercise.id: instanceId],
+            workoutId: workoutId,
+            program: program,
+            sessionHistory: history
+        )
+
+        XCTAssertEqual(suggestions[currentExercise.id]?.appliedOutcome, .stay)
+        XCTAssertEqual(suggestions[currentExercise.id]?.decisionCode, "HYSTERESIS_STAY")
+        XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 100.0, accuracy: 0.001)
+    }
+
+    func testAdaptiveMode_hysteresisAllowsClearRegression() {
+        let workoutId = UUID()
+        let instanceId = UUID()
+        let now = Date(timeIntervalSince1970: 1_737_100_500)
+
+        let lastExercise = makeExercise(
+            name: "Bench Press",
+            weights: [100],
+            reps: 5,
+            rpe: 9.7,
+            sourceExerciseInstanceId: instanceId,
+            date: now
+        )
+        let history = [makeSession(workoutId: workoutId, exercises: [lastExercise])]
+
+        let currentExercise = makePlannedStrengthExercise(
+            name: "Bench Press",
+            setCount: 5,
+            weight: 100,
+            reps: 12,
+            sourceExerciseInstanceId: instanceId,
+            date: now
+        )
+
+        var profile = ProgressionProfile.strengthDefault
+        profile.readinessGate.minimumCompletedSets = 1
+        profile.readinessGate.minimumCompletedSetRatio = 0.15
+
+        let state = ExerciseProgressionState(
+            recentOutcomes: [.progress],
+            confidence: 0.15
+        )
+
+        let program = Program(
+            name: "Adaptive Program",
+            progressionEnabled: true,
+            progressionPolicy: .adaptive,
+            defaultProgressionRule: .moderate,
+            progressionEnabledExercises: Set([instanceId]),
+            exerciseProgressionStates: [instanceId: state],
+            exerciseProgressionProfiles: [instanceId: profile]
+        )
+
+        let suggestions = service.calculateSuggestions(
+            for: [currentExercise],
+            exerciseInstanceIds: [currentExercise.id: instanceId],
+            workoutId: workoutId,
+            program: program,
+            sessionHistory: history
+        )
+
+        XCTAssertEqual(suggestions[currentExercise.id]?.appliedOutcome, .regress)
+        XCTAssertEqual(suggestions[currentExercise.id]?.decisionCode, "WEIGHTED_REGRESS")
+        XCTAssertEqual(suggestions[currentExercise.id]?.suggestedValue, 95.0, accuracy: 0.001)
     }
 
     func testInferProgressionOutcome_usesCompletedPerformance() {

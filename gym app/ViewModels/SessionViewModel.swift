@@ -119,14 +119,86 @@ class SessionViewModel: ObservableObject {
                         }
                     }
 
-                    // If exercises use implements, trigger view update
-                    // This forces computed properties (implementStringMeasurable, usesBox, etc.)
-                    // to re-evaluate with fresh library data
                     if hasImplements {
-                        self.objectWillChange.send()
+                        self.reconcileActiveSessionImplementMeasurables()
                     }
                 }
             }
+    }
+
+    /// Reconcile active-session measurable definitions after equipment library changes.
+    /// Preserves existing target values by `(implementId, measurableName)`.
+    private func reconcileActiveSessionImplementMeasurables() {
+        guard var session = currentSession else { return }
+        var didMutateSession = false
+
+        for moduleIndex in session.completedModules.indices {
+            for exerciseIndex in session.completedModules[moduleIndex].completedExercises.indices {
+                let implementIds = session.completedModules[moduleIndex].completedExercises[exerciseIndex].implementIds
+                guard !implementIds.isEmpty else { continue }
+
+                for setGroupIndex in session.completedModules[moduleIndex].completedExercises[exerciseIndex].completedSetGroups.indices {
+                    let original = session.completedModules[moduleIndex].completedExercises[exerciseIndex].completedSetGroups[setGroupIndex].implementMeasurables
+                    let reconciled = reconcileMeasurables(existing: original, implementIds: implementIds)
+                    if reconciled != original {
+                        session.completedModules[moduleIndex].completedExercises[exerciseIndex].completedSetGroups[setGroupIndex].implementMeasurables = reconciled
+                        didMutateSession = true
+                    }
+                }
+            }
+        }
+
+        if didMutateSession {
+            currentSession = session
+            autoSaveInProgressSession()
+        } else {
+            // Refresh computed equipment UI state (names, capabilities, etc.).
+            objectWillChange.send()
+        }
+    }
+
+    private func reconcileMeasurables(
+        existing: [ImplementMeasurableTarget],
+        implementIds: Set<UUID>
+    ) -> [ImplementMeasurableTarget] {
+        var existingByKey: [String: ImplementMeasurableTarget] = [:]
+        for target in existing {
+            existingByKey[measurableKey(implementId: target.implementId, measurableName: target.measurableName)] = target
+        }
+
+        var reconciled: [ImplementMeasurableTarget] = []
+        for implementId in implementIds {
+            guard let implement = libraryService.getImplement(id: implementId) else { continue }
+            for measurable in implement.measurableArray where shouldIncludeImplementMeasurable(measurable.name) {
+                let key = measurableKey(implementId: implementId, measurableName: measurable.name)
+                if let preserved = existingByKey[key] {
+                    reconciled.append(preserved)
+                } else {
+                    reconciled.append(ImplementMeasurableTarget(
+                        implementId: implementId,
+                        measurableName: measurable.name,
+                        unit: measurable.unit,
+                        isStringBased: measurable.isStringBased
+                    ))
+                }
+            }
+        }
+
+        return reconciled.sorted { lhs, rhs in
+            if lhs.implementId == rhs.implementId {
+                return lhs.measurableName < rhs.measurableName
+            }
+            return lhs.implementId.uuidString < rhs.implementId.uuidString
+        }
+    }
+
+    private func measurableKey(implementId: UUID, measurableName: String) -> String {
+        "\(implementId.uuidString)|\(measurableName)"
+    }
+
+    private func shouldIncludeImplementMeasurable(_ measurableName: String) -> Bool {
+        let normalized = measurableName.lowercased()
+        return !(normalized.contains("weight") || normalized.contains("load"))
     }
 
     // MARK: - Navigation Accessors
@@ -489,25 +561,9 @@ class SessionViewModel: ObservableObject {
         }
     }
 
-    /// Converts a ResolvedExercise to a SessionExercise for use in an active session
-    /// Re-syncs equipment from current template to pick up any library changes
+    /// Converts a ResolvedExercise to a SessionExercise for use in an active session.
+    /// Uses instance data as the authoritative source.
     private func convertResolvedExerciseToSession(_ resolved: ResolvedExercise, context: ModuleSharingContext) -> SessionExercise {
-        // Re-sync implementIds from current template if available (picks up library changes)
-        let currentImplementIds: Set<UUID>
-        let currentIsBodyweight: Bool
-        let currentTracksAddedWeight: Bool
-        if let templateId = resolved.templateId,
-           let currentTemplate = ExerciseResolver.shared.getTemplate(id: templateId) {
-            currentImplementIds = currentTemplate.implementIds
-            currentIsBodyweight = currentTemplate.isBodyweight
-            currentTracksAddedWeight = resolved.tracksAddedWeight  // Use instance value (configurable)
-        } else {
-            // Fall back to instance data if template not found
-            currentImplementIds = resolved.implementIds
-            currentIsBodyweight = resolved.isBodyweight
-            currentTracksAddedWeight = resolved.tracksAddedWeight
-        }
-
         // Use the distance unit from the first set group if specified, otherwise fall back to exercise default
         let effectiveDistanceUnit: DistanceUnit = resolved.setGroups
             .compactMap { $0.targetDistanceUnit }
@@ -593,10 +649,10 @@ class SessionViewModel: ObservableObject {
                     implementMeasurables: setGroup.implementMeasurables
                 )
             },
-            isBodyweight: currentIsBodyweight,
-            tracksAddedWeight: currentTracksAddedWeight,
+            isBodyweight: resolved.isBodyweight,
+            tracksAddedWeight: resolved.tracksAddedWeight,
             recoveryActivityType: resolved.recoveryActivityType,
-            implementIds: currentImplementIds,
+            implementIds: resolved.implementIds,
             primaryMuscles: resolved.primaryMuscles,
             secondaryMuscles: resolved.secondaryMuscles,
             sourceExerciseInstanceId: resolved.instance.id,  // Track source for structural change detection

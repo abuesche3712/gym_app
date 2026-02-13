@@ -84,12 +84,18 @@ class ModuleRepository: CoreDataRepository {
                     targetRPE: sgEntity.targetRPE > 0 ? Int(sgEntity.targetRPE) : nil,
                     targetDuration: sgEntity.targetDuration > 0 ? Int(sgEntity.targetDuration) : nil,
                     targetDistance: sgEntity.targetDistance > 0 ? sgEntity.targetDistance : nil,
+                    targetDistanceUnit: sgEntity.targetDistanceUnit,
                     targetHoldTime: sgEntity.targetHoldTime > 0 ? Int(sgEntity.targetHoldTime) : nil,
                     restPeriod: sgEntity.restPeriod > 0 ? Int(sgEntity.restPeriod) : nil,
                     notes: sgEntity.notes,
                     isInterval: sgEntity.isInterval,
                     workDuration: sgEntity.workDuration > 0 ? Int(sgEntity.workDuration) : nil,
                     intervalRestDuration: sgEntity.intervalRestDuration > 0 ? Int(sgEntity.intervalRestDuration) : nil,
+                    isAMRAP: sgEntity.isAMRAP,
+                    amrapTimeLimit: sgEntity.amrapTimeLimit > 0 ? Int(sgEntity.amrapTimeLimit) : nil,
+                    isUnilateral: sgEntity.isUnilateral,
+                    trackRPE: sgEntity.trackRPE,
+                    implementMeasurables: sgEntity.implementMeasurables,
                     implementMeasurableLabel: sgEntity.implementMeasurableLabel,
                     implementMeasurableUnit: sgEntity.implementMeasurableUnit,
                     implementMeasurableValue: sgEntity.implementMeasurableValue > 0 ? sgEntity.implementMeasurableValue : nil,
@@ -159,11 +165,12 @@ class ModuleRepository: CoreDataRepository {
                 return .repsOnly
             }()
 
-            // Get other fields from entity or template
+            // Get other fields from entity or template (for legacy pre-normalized records).
             let template = instanceEntity.templateId.flatMap { ExerciseResolver.shared.getTemplate(id: $0) }
-            let primaryMuscles = instanceEntity.primaryMuscles.isEmpty ? (template?.primaryMuscles ?? []) : instanceEntity.primaryMuscles
-            let secondaryMuscles = instanceEntity.secondaryMuscles.isEmpty ? (template?.secondaryMuscles ?? []) : instanceEntity.secondaryMuscles
-            let implementIds = instanceEntity.implementIds.isEmpty ? (template?.implementIds ?? []) : instanceEntity.implementIds
+            let hasDirectSnapshot = instanceEntity.name != nil
+            let primaryMuscles = instanceEntity.primaryMusclesData == nil ? (template?.primaryMuscles ?? []) : instanceEntity.primaryMuscles
+            let secondaryMuscles = instanceEntity.secondaryMusclesData == nil ? (template?.secondaryMuscles ?? []) : instanceEntity.secondaryMuscles
+            let implementIds = instanceEntity.implementIdsRaw == nil ? (template?.implementIds ?? []) : instanceEntity.implementIds
 
             return ExerciseInstance(
                 id: instanceEntity.id,
@@ -173,8 +180,10 @@ class ModuleRepository: CoreDataRepository {
                 cardioMetric: cardioMetric,
                 distanceUnit: distanceUnit,
                 mobilityTracking: mobilityTracking,
-                isBodyweight: instanceEntity.isBodyweight || (template?.isBodyweight ?? false),
-                recoveryActivityType: instanceEntity.recoveryActivityType ?? template?.recoveryActivityType,
+                isBodyweight: hasDirectSnapshot ? instanceEntity.isBodyweight : (template?.isBodyweight ?? instanceEntity.isBodyweight),
+                tracksAddedWeight: instanceEntity.tracksAddedWeight,
+                isUnilateral: hasDirectSnapshot ? instanceEntity.isUnilateral : (template?.isUnilateral ?? instanceEntity.isUnilateral),
+                recoveryActivityType: hasDirectSnapshot ? instanceEntity.recoveryActivityType : (instanceEntity.recoveryActivityType ?? template?.recoveryActivityType),
                 primaryMuscles: primaryMuscles,
                 secondaryMuscles: secondaryMuscles,
                 implementIds: implementIds,
@@ -209,6 +218,8 @@ class ModuleRepository: CoreDataRepository {
             instanceEntity.distanceUnit = instance.distanceUnit
             instanceEntity.mobilityTracking = instance.mobilityTracking
             instanceEntity.isBodyweight = instance.isBodyweight
+            instanceEntity.tracksAddedWeight = instance.tracksAddedWeight
+            instanceEntity.isUnilateral = instance.isUnilateral
             instanceEntity.recoveryActivityType = instance.recoveryActivityType
             instanceEntity.primaryMuscles = instance.primaryMuscles
             instanceEntity.secondaryMuscles = instance.secondaryMuscles
@@ -226,6 +237,7 @@ class ModuleRepository: CoreDataRepository {
                 sgEntity.targetRPE = Int32(setGroup.targetRPE ?? 0)
                 sgEntity.targetDuration = Int32(setGroup.targetDuration ?? 0)
                 sgEntity.targetDistance = setGroup.targetDistance ?? 0
+                sgEntity.targetDistanceUnit = setGroup.targetDistanceUnit
                 sgEntity.targetHoldTime = Int32(setGroup.targetHoldTime ?? 0)
                 sgEntity.restPeriod = Int32(setGroup.restPeriod ?? 0)
                 sgEntity.notes = setGroup.notes
@@ -235,6 +247,11 @@ class ModuleRepository: CoreDataRepository {
                 sgEntity.isInterval = setGroup.isInterval
                 sgEntity.workDuration = Int32(setGroup.workDuration ?? 0)
                 sgEntity.intervalRestDuration = Int32(setGroup.intervalRestDuration ?? 0)
+                sgEntity.isAMRAP = setGroup.isAMRAP
+                sgEntity.amrapTimeLimit = Int32(setGroup.amrapTimeLimit ?? 0)
+                sgEntity.isUnilateral = setGroup.isUnilateral
+                sgEntity.trackRPE = setGroup.trackRPE
+                sgEntity.implementMeasurables = setGroup.implementMeasurables
                 // Implement measurable fields
                 sgEntity.implementMeasurableLabel = setGroup.implementMeasurableLabel
                 sgEntity.implementMeasurableUnit = setGroup.implementMeasurableUnit

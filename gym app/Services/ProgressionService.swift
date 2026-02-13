@@ -484,6 +484,25 @@ struct ProgressionService {
             (signals.confidence * weights.confidenceWeight) +
             (signals.streak * weights.streakWeight)
 
+        let proposedOutcome: ProgressionRecommendation
+        if score >= profile.decisionPolicy.progressThreshold {
+            proposedOutcome = .progress
+        } else if score <= profile.decisionPolicy.regressThreshold {
+            proposedOutcome = .regress
+        } else {
+            proposedOutcome = .stay
+        }
+
+        if let hysteresisDecision = hysteresisHoldDecision(
+            proposedOutcome: proposedOutcome,
+            score: score,
+            state: state,
+            staleState: staleState,
+            policy: profile.decisionPolicy
+        ) {
+            return hysteresisDecision
+        }
+
         if score >= profile.decisionPolicy.progressThreshold {
             let factors = topFactors(
                 for: signals,
@@ -525,6 +544,42 @@ struct ProgressionService {
             confidence: 0.58,
             code: "WEIGHTED_STAY",
             factors: factors
+        )
+    }
+
+    private func hysteresisHoldDecision(
+        proposedOutcome: ProgressionRecommendation,
+        score: Double,
+        state: ExerciseProgressionState?,
+        staleState: Bool,
+        policy: ProgressionDecisionPolicy
+    ) -> OutcomeDecision? {
+        guard !staleState,
+              let state,
+              let previousOutcome = state.recentOutcomes.first else {
+            return nil
+        }
+
+        let reversalBand = 0.05
+
+        switch (previousOutcome, proposedOutcome) {
+        case (.progress, .regress):
+            guard score >= (policy.regressThreshold - reversalBand) else { return nil }
+        case (.regress, .progress):
+            guard score <= (policy.progressThreshold + reversalBand) else { return nil }
+        default:
+            return nil
+        }
+
+        return OutcomeDecision(
+            outcome: .stay,
+            rationale: "Holding steady to avoid back-to-back reversals while readiness is borderline.",
+            confidence: 0.64,
+            code: "HYSTERESIS_STAY",
+            factors: [
+                "Previous outcome \(previousOutcome.displayName)",
+                "Score \(Int((score * 100).rounded())) near reversal threshold"
+            ]
         )
     }
 

@@ -58,7 +58,7 @@ struct EditSetGroupSheet: View {
         for id in implementIds {
             guard let implement = libraryService.getImplement(id: id) else { continue }
             for measurable in implement.measurableArray {
-                let key = "\(implement.name)_\(measurable.name)"
+                let key = measurableKey(implementId: id, measurableName: measurable.name)
                 if implementMeasurableValues[key] == nil {
                     result[key] = MeasurableValue(
                         numericValue: "",
@@ -78,12 +78,34 @@ struct EditSetGroupSheet: View {
             }
         }
 
-        let validKeys = result.keys
-        return merged.filter { validKeys.contains($0.key) }.sorted { $0.key < $1.key }
+        let validKeys = Set(result.keys)
+        return merged.filter { entry in
+            guard validKeys.contains(entry.key) else { return false }
+            return shouldIncludeImplementMeasurable(extractMeasurableName(from: entry.key))
+        }.sorted {
+            if $0.value.implementName == $1.value.implementName {
+                return extractMeasurableName(from: $0.key) < extractMeasurableName(from: $1.key)
+            }
+            return $0.value.implementName < $1.value.implementName
+        }
     }
 
     private func extractMeasurableName(from key: String) -> String {
-        key.components(separatedBy: "_").last ?? key
+        key.split(separator: "|", maxSplits: 1).dropFirst().first.map(String.init) ?? key
+    }
+
+    private func measurableKey(implementId: UUID, measurableName: String) -> String {
+        "\(implementId.uuidString)|\(measurableName)"
+    }
+
+    private func implementIdFromKey(_ key: String) -> UUID? {
+        guard let rawId = key.split(separator: "|", maxSplits: 1).first else { return nil }
+        return UUID(uuidString: String(rawId))
+    }
+
+    private func shouldIncludeImplementMeasurable(_ measurableName: String) -> Bool {
+        let normalized = measurableName.lowercased()
+        return !(normalized.contains("weight") || normalized.contains("load"))
     }
 
     private var hasIndividualSets: Bool {
@@ -527,7 +549,7 @@ struct EditSetGroupSheet: View {
         // Load equipment measurable values
         for target in setGroup.implementMeasurables {
             guard let implement = libraryService.getImplement(id: target.implementId) else { continue }
-            let key = "\(implement.name)_\(target.measurableName)"
+            let key = measurableKey(implementId: target.implementId, measurableName: target.measurableName)
             implementMeasurableValues[key] = MeasurableValue(
                 numericValue: target.targetValue.map { formatWeight($0) } ?? "",
                 stringValue: target.targetStringValue ?? "",
@@ -560,27 +582,23 @@ struct EditSetGroupSheet: View {
 
         // Save equipment measurable values
         var measurableTargets: [ImplementMeasurableTarget] = []
-        for (key, value) in implementMeasurableValues {
-            let hasValue = value.isStringBased ? !value.stringValue.isEmpty : !value.numericValue.isEmpty
-            if hasValue {
-                let components = key.components(separatedBy: "_")
-                guard components.count >= 2 else { continue }
-                let implementName = components.dropLast().joined(separator: "_")
-                let measurableName = components.last!
+        for measurable in implementSpecificMeasurables {
+            let key = measurable.key
+            let value = implementMeasurableValues[key] ?? measurable.value
+            guard let implementId = implementIdFromKey(key) else { continue }
 
-                guard let implementId = implementIds.first(where: { id in
-                    libraryService.getImplement(id: id)?.name == implementName
-                }) else { continue }
+            let trimmedStringValue = value.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            let numericValue = Double(value.numericValue)
+            let stringValue = trimmedStringValue.isEmpty ? nil : trimmedStringValue
 
-                measurableTargets.append(ImplementMeasurableTarget(
-                    implementId: implementId,
-                    measurableName: measurableName,
-                    unit: value.unit,
-                    isStringBased: value.isStringBased,
-                    targetValue: value.isStringBased ? nil : Double(value.numericValue),
-                    targetStringValue: value.isStringBased ? value.stringValue : nil
-                ))
-            }
+            measurableTargets.append(ImplementMeasurableTarget(
+                implementId: implementId,
+                measurableName: extractMeasurableName(from: key),
+                unit: value.unit,
+                isStringBased: value.isStringBased,
+                targetValue: value.isStringBased ? nil : numericValue,
+                targetStringValue: value.isStringBased ? stringValue : nil
+            ))
         }
         setGroup.implementMeasurables = measurableTargets
 
