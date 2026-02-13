@@ -164,6 +164,18 @@ class FeedViewModel: ObservableObject {
 
     // MARK: - Loading Feed
 
+    func stopListening(clearData: Bool = false) {
+        feedListener?.remove()
+        feedListener = nil
+        if clearData {
+            posts = []
+            trendingPosts = []
+            isLoading = false
+            isLoadingMore = false
+            isLoadingTrending = false
+        }
+    }
+
     func loadFeed() {
         guard currentUserId != nil else { return }
 

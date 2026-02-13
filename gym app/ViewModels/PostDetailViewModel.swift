@@ -235,10 +235,14 @@ class PostDetailViewModel: ObservableObject {
     }
 
     func deleteComment(_ comment: CommentWithAuthor) async {
-        guard comment.comment.authorId == currentUserId else { return }
+        guard let userId = currentUserId,
+              comment.comment.authorId == userId || post.post.authorId == userId else { return }
 
         // Optimistic removal
         comments.removeAll { $0.id == comment.id }
+        for key in replies.keys {
+            replies[key]?.removeAll { $0.id == comment.id }
+        }
 
         do {
             try await firestoreService.deleteComment(postId: post.post.id, commentId: comment.comment.id)

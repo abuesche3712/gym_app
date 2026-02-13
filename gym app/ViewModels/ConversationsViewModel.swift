@@ -32,6 +32,7 @@ class ConversationsViewModel: ObservableObject {
     @Published var error: Error?
 
     private let conversationRepo: ConversationRepository
+    private let messageRepo: MessageRepository
     private let friendshipRepo: FriendshipRepository
     private let firestoreService = FirestoreService.shared
     private let authService = AuthService.shared
@@ -47,8 +48,10 @@ class ConversationsViewModel: ObservableObject {
     }
 
     init(conversationRepo: ConversationRepository = DataRepository.shared.conversationRepo,
+         messageRepo: MessageRepository = DataRepository.shared.messageRepo,
          friendshipRepo: FriendshipRepository = DataRepository.shared.friendshipRepo) {
         self.conversationRepo = conversationRepo
+        self.messageRepo = messageRepo
         self.friendshipRepo = friendshipRepo
     }
 
@@ -181,6 +184,7 @@ class ConversationsViewModel: ObservableObject {
     /// Delete a conversation
     func deleteConversation(_ conversation: Conversation) async {
         // Delete locally
+        messageRepo.deleteAllMessages(for: conversation.id)
         conversationRepo.delete(conversation)
 
         // Remove from cloud
@@ -213,9 +217,13 @@ class ConversationsViewModel: ObservableObject {
         }
     }
 
-    func stopListening() {
+    func stopListening(clearData: Bool = false) {
         conversationListener?.remove()
         conversationListener = nil
+        if clearData {
+            conversations = []
+            isLoading = false
+        }
     }
 }
 

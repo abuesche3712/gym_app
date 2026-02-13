@@ -33,6 +33,7 @@ class ChatViewModel: ObservableObject {
     private var presenceListener: ListenerRegistration?
     private let presenceService = PresenceService.shared
     private var typingDebounceTask: Task<Void, Never>?
+    private let userDefaults = UserDefaults.standard
 
     var currentUserId: String? {
         authService.currentUser?.uid
@@ -120,7 +121,9 @@ class ChatViewModel: ObservableObject {
     }
 
     private func loadFromLocalCache() {
+        let hidden = hiddenMessageIds()
         messages = messageRepo.getAllMessages(for: conversation.id)
+            .filter { !hidden.contains($0.id) }
         markMessagesAsRead()
     }
 
@@ -137,6 +140,11 @@ class ChatViewModel: ObservableObject {
     private func markMessagesAsRead() {
         guard let userId = currentUserId else { return }
 
+        // Capture unread remote message IDs before local read-state mutation.
+        let unreadFromOther = messageRepo
+            .getAllMessages(for: conversation.id)
+            .filter { $0.senderId != userId && !$0.isRead }
+
         // Mark messages from the other person as read
         messageRepo.markAllAsRead(in: conversation.id, for: userId)
 
@@ -150,7 +158,6 @@ class ChatViewModel: ObservableObject {
                 try await firestoreService.resetUnreadCount(conversationId: conversation.id, userId: userId)
 
                 // Mark individual messages as read in Firestore
-                let unreadFromOther = messages.filter { $0.senderId != userId && !$0.isRead }
                 for message in unreadFromOther {
                     try await firestoreService.markMessageRead(
                         conversationId: conversation.id,
@@ -269,6 +276,7 @@ class ChatViewModel: ObservableObject {
 
     /// Delete a message for the current user only (hides locally)
     func deleteMessage(_ message: Message) {
+        addHiddenMessageId(message.id)
         messages.removeAll { $0.id == message.id }
     }
 
@@ -345,6 +353,21 @@ class ChatViewModel: ObservableObject {
         if let userId = currentUserId {
             presenceService.setTypingStatus(conversationId: conversation.id, userId: userId, isTyping: false)
         }
+    }
+
+    private var hiddenMessagesKey: String {
+        "chat.hiddenMessages.\(conversation.id.uuidString)"
+    }
+
+    private func hiddenMessageIds() -> Set<UUID> {
+        let stored = userDefaults.stringArray(forKey: hiddenMessagesKey) ?? []
+        return Set(stored.compactMap(UUID.init))
+    }
+
+    private func addHiddenMessageId(_ id: UUID) {
+        var ids = hiddenMessageIds()
+        ids.insert(id)
+        userDefaults.set(ids.map(\.uuidString), forKey: hiddenMessagesKey)
     }
 
     // MARK: - Import Shared Content

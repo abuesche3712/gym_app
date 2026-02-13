@@ -158,11 +158,15 @@ class AppState: ObservableObject {
 
     private func pushUserProfileToCloud() async {
         guard authService.isAuthenticated else { return }
-        let profile = UserProfile(
-            weightUnit: weightUnit,
-            distanceUnit: distanceUnit,
-            defaultRestTime: defaultRestTime
-        )
+        guard var profile = repository.profileRepo.currentProfile else { return }
+
+        profile.weightUnit = weightUnit
+        profile.distanceUnit = distanceUnit
+        profile.defaultRestTime = defaultRestTime
+
+        // Keep local profile in sync with settings updates.
+        repository.profileRepo.save(profile)
+
         do {
             try await firestoreService.saveUserProfile(profile)
         } catch {

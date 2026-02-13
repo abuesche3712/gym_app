@@ -58,6 +58,22 @@ class FriendsViewModel: ObservableObject {
 
     // MARK: - Data Loading
 
+    func stopListening(clearData: Bool = false) {
+        friendshipListener?.remove()
+        friendshipListener = nil
+        searchTask?.cancel()
+        if clearData {
+            friends = []
+            incomingRequests = []
+            outgoingRequests = []
+            blockedUsers = []
+            suggestedFriends = []
+            searchResults = []
+            isLoading = false
+            isSearching = false
+        }
+    }
+
     func loadFriendships() {
         guard let userId = currentUserId else { return }
 

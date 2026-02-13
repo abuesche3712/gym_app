@@ -150,13 +150,10 @@ class ConversationRepository: ObservableObject {
     /// Update from cloud data
     func updateFromCloud(_ cloudConversation: Conversation) {
         if let local = getConversation(id: cloudConversation.id) {
-            // Merge: take newer lastMessageAt, preserve local unreadCount
+            // Merge: use server unread count, take newer lastMessageAt
             let entity = findOrCreateEntity(id: cloudConversation.id)
             var merged = cloudConversation
             merged.syncStatus = .synced
-
-            // Preserve local unread count (not synced)
-            merged.unreadCount = local.unreadCount
 
             // Take the more recent lastMessageAt
             if let cloudDate = cloudConversation.lastMessageAt,

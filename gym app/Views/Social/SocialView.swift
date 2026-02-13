@@ -81,10 +81,16 @@ struct SocialView: View {
         }
         .onAppear {
             if authService.isAuthenticated {
-                friendsViewModel.loadFriendships()
-                conversationsViewModel.loadConversations()
-                feedViewModel.loadFeed()
-                activityViewModel.loadActivities()
+                startSocialListeners()
+            } else {
+                stopSocialListeners()
+            }
+        }
+        .onChange(of: authService.isAuthenticated) { _, isAuthenticated in
+            if isAuthenticated {
+                startSocialListeners()
+            } else {
+                stopSocialListeners()
             }
         }
         // Reload feed when friends list changes (ensures feed includes new friends' posts)
@@ -655,6 +661,20 @@ struct SocialView: View {
         .padding(AppSpacing.md)
         .background(AppColors.surfacePrimary)
         .cornerRadius(AppCorners.large)
+    }
+
+    private func startSocialListeners() {
+        friendsViewModel.loadFriendships()
+        conversationsViewModel.loadConversations()
+        feedViewModel.loadFeed()
+        activityViewModel.loadActivities()
+    }
+
+    private func stopSocialListeners() {
+        feedViewModel.stopListening(clearData: true)
+        friendsViewModel.stopListening(clearData: true)
+        conversationsViewModel.stopListening(clearData: true)
+        activityViewModel.stopListening(clearData: true)
     }
 }
 

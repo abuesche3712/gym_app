@@ -30,6 +30,16 @@ class ActivityViewModel: ObservableObject {
 
     // MARK: - Loading
 
+    func stopListening(clearData: Bool = false) {
+        activityListener?.remove()
+        activityListener = nil
+        if clearData {
+            activities = []
+            unreadCount = 0
+            isLoading = false
+        }
+    }
+
     func loadActivities() {
         guard let userId = currentUserId else { return }
 

@@ -22,6 +22,7 @@ class FirestoreMessagingService: ObservableObject {
     /// Save a conversation to Firestore
     func saveConversation(_ conversation: Conversation) async throws {
         let ref = core.db.collection(FirestoreCollections.conversations).document(conversation.id.uuidString)
+        // Merge basic conversation fields without touching unread metadata.
         let data = encodeConversation(conversation)
         try await ref.setData(data, merge: true)
     }
@@ -59,7 +60,11 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Delete a conversation
     func deleteConversation(id: UUID) async throws {
-        try await core.db.collection(FirestoreCollections.conversations).document(id.uuidString).delete()
+        let ref = core.db.collection(FirestoreCollections.conversations).document(id.uuidString)
+
+        try await deleteSubcollection(path: ref.collection(FirestoreCollections.messages))
+        try await deleteSubcollection(path: ref.collection(FirestoreCollections.typing))
+        try await ref.delete()
     }
 
     // MARK: - Message Operations
@@ -189,13 +194,6 @@ class FirestoreMessagingService: ObservableObject {
             data["lastMessagePreview"] = preview
         }
 
-        // Initialize unreadCounts map for all participants (set to 0)
-        var unreadCounts: [String: Int] = [:]
-        for participantId in conversation.participantIds {
-            unreadCounts[participantId] = 0
-        }
-        data["unreadCounts"] = unreadCounts
-
         return data
     }
 
@@ -225,9 +223,14 @@ class FirestoreMessagingService: ObservableObject {
         // Extract unread count for the current user
         var unreadCount = 0
         if let userId = userId,
-           let unreadCounts = data["unreadCounts"] as? [String: Any],
-           let count = unreadCounts[userId] as? Int {
-            unreadCount = count
+           let unreadCounts = data["unreadCounts"] as? [String: Any] {
+            if let count = unreadCounts[userId] as? Int {
+                unreadCount = count
+            } else if let count = unreadCounts[userId] as? Int64 {
+                unreadCount = Int(count)
+            } else if let count = unreadCounts[userId] as? NSNumber {
+                unreadCount = count.intValue
+            }
         }
 
         return Conversation(
@@ -312,5 +315,18 @@ class FirestoreMessagingService: ObservableObject {
             isDeleted: isDeleted,
             syncStatus: .synced
         )
+    }
+
+    private func deleteSubcollection(path: CollectionReference, batchSize: Int = 400) async throws {
+        while true {
+            let snapshot = try await path.limit(to: batchSize).getDocuments()
+            if snapshot.documents.isEmpty { return }
+
+            let batch = core.db.batch()
+            for document in snapshot.documents {
+                batch.deleteDocument(document.reference)
+            }
+            try await batch.commit()
+        }
     }
 }
