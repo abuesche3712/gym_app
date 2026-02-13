@@ -19,6 +19,7 @@ struct FeedPostRow: View {
     var onPostTap: (() -> Void)? = nil
     var onReact: ((ReactionType) -> Void)? = nil
     var onReport: (() -> Void)? = nil
+    var onHideAuthor: (() -> Void)? = nil
 
     @State private var showingDeleteConfirmation = false
     @State private var isLikeAnimating = false
@@ -121,7 +122,7 @@ struct FeedPostRow: View {
             Spacer()
 
             // More menu
-            if isOwnPost || onReport != nil {
+            if isOwnPost || onReport != nil || onHideAuthor != nil {
                 Menu {
                     if let onEdit = onEdit {
                         Button {
@@ -144,6 +145,14 @@ struct FeedPostRow: View {
                             onReport()
                         } label: {
                             Label("Report", systemImage: "flag")
+                        }
+                    }
+
+                    if !isOwnPost, let onHideAuthor = onHideAuthor {
+                        Button {
+                            onHideAuthor()
+                        } label: {
+                            Label("Hide @\(post.author.username)", systemImage: "eye.slash")
                         }
                     }
                 } label: {

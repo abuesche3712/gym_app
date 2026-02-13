@@ -113,8 +113,12 @@ struct SocialView: View {
                         .padding(.horizontal, AppSpacing.screenPadding)
                         .padding(.bottom, AppSpacing.xs)
 
-                    if feedViewModel.feedMode == .feed {
-                        contentFilterSelector
+                    contentFilterSelector
+                        .padding(.horizontal, AppSpacing.screenPadding)
+                        .padding(.bottom, AppSpacing.xs)
+
+                    if feedViewModel.hiddenAuthorCount > 0 {
+                        hiddenAuthorsBanner
                             .padding(.horizontal, AppSpacing.screenPadding)
                             .padding(.bottom, AppSpacing.xs)
                     }
@@ -401,6 +405,9 @@ struct SocialView: View {
                         },
                         onReport: post.post.authorId != feedViewModel.currentUserId ? {
                             postToReport = post
+                        } : nil,
+                        onHideAuthor: post.post.authorId != feedViewModel.currentUserId ? {
+                            feedViewModel.hideAuthor(post.post.authorId)
                         } : nil
                     )
                 }
@@ -475,6 +482,32 @@ struct SocialView: View {
         }
     }
 
+    private var hiddenAuthorsBanner: some View {
+        HStack(spacing: AppSpacing.sm) {
+            Image(systemName: "eye.slash")
+                .font(.caption)
+                .foregroundColor(AppColors.textTertiary)
+
+            Text("\(feedViewModel.hiddenAuthorCount) hidden")
+                .caption(color: AppColors.textSecondary)
+
+            Spacer()
+
+            Button("Show all") {
+                feedViewModel.clearHiddenAuthors()
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundColor(AppColors.accent2)
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, AppSpacing.sm)
+        .padding(.vertical, AppSpacing.xs)
+        .background(
+            Capsule()
+                .fill(AppColors.surfaceSecondary)
+        )
+    }
+
     // MARK: - Feed Mode Selector
 
     private var feedModeSelector: some View {
@@ -526,7 +559,7 @@ struct SocialView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, 100)
-            } else if feedViewModel.trendingPosts.isEmpty {
+            } else if feedViewModel.filteredTrendingPosts.isEmpty {
                 VStack(spacing: AppSpacing.md) {
                     Spacer()
                         .frame(height: 60)
@@ -535,13 +568,26 @@ struct SocialView: View {
                         .font(.system(size: 40))
                         .foregroundColor(AppColors.textTertiary)
 
-                    Text("No trending posts yet")
-                        .subheadline(color: AppColors.textSecondary)
+                    if feedViewModel.trendingPosts.isEmpty {
+                        Text("No trending posts yet")
+                            .subheadline(color: AppColors.textSecondary)
 
-                    Text("Check back later for popular posts from the community")
-                        .caption(color: AppColors.textTertiary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, AppSpacing.xl)
+                        Text("Check back later for popular posts from the community")
+                            .caption(color: AppColors.textTertiary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, AppSpacing.xl)
+                    } else {
+                        Text("No discover posts match this filter")
+                            .subheadline(color: AppColors.textSecondary)
+
+                        Button {
+                            feedViewModel.contentFilter = .all
+                        } label: {
+                            Text("Show all posts")
+                                .subheadline(color: AppColors.accent2)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, AppSpacing.xl)
@@ -581,7 +627,7 @@ struct SocialView: View {
 
     private var trendingFeedList: some View {
         LazyVStack(spacing: 0) {
-            ForEach(feedViewModel.trendingPosts) { post in
+            ForEach(feedViewModel.filteredTrendingPosts) { post in
                 VStack(spacing: 0) {
                     Rectangle()
                         .fill(AppColors.surfaceTertiary.opacity(0.5))
@@ -617,6 +663,9 @@ struct SocialView: View {
                         },
                         onReport: post.post.authorId != feedViewModel.currentUserId ? {
                             postToReport = post
+                        } : nil,
+                        onHideAuthor: post.post.authorId != feedViewModel.currentUserId ? {
+                            feedViewModel.hideAuthor(post.post.authorId)
                         } : nil
                     )
                 }
