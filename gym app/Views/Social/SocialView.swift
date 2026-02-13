@@ -113,6 +113,12 @@ struct SocialView: View {
                         .padding(.horizontal, AppSpacing.screenPadding)
                         .padding(.bottom, AppSpacing.xs)
 
+                    if feedViewModel.feedMode == .feed {
+                        contentFilterSelector
+                            .padding(.horizontal, AppSpacing.screenPadding)
+                            .padding(.bottom, AppSpacing.xs)
+                    }
+
                     // Feed content (no wrapping LazyVStack - each branch handles its own lazy loading)
                     if feedViewModel.feedMode == .discover {
                         discoverContent
@@ -120,6 +126,8 @@ struct SocialView: View {
                         loadingView
                     } else if feedViewModel.posts.isEmpty {
                         emptyFeedState
+                    } else if feedViewModel.filteredFeedPosts.isEmpty {
+                        emptyFilteredFeedState
                     } else {
                         feedList
                     }
@@ -350,7 +358,7 @@ struct SocialView: View {
 
     private var feedList: some View {
         LazyVStack(spacing: 0) {
-            ForEach(feedViewModel.posts) { post in
+            ForEach(feedViewModel.filteredFeedPosts) { post in
                 VStack(spacing: 0) {
                     // Divider at top of each post
                     Rectangle()
@@ -398,7 +406,8 @@ struct SocialView: View {
                 }
                 .onAppear {
                     // Load more when reaching the end
-                    if post.id == feedViewModel.posts.last?.id {
+                    if feedViewModel.contentFilter == .all,
+                       post.id == feedViewModel.posts.last?.id {
                         Task<Void, Never> { @MainActor in
                             await feedViewModel.loadMorePosts()
                         }
@@ -415,9 +424,55 @@ struct SocialView: View {
                 ProgressView()
                     .tint(AppColors.accent2)
                     .padding(AppSpacing.lg)
+            } else if feedViewModel.contentFilter != .all {
+                Button {
+                    Task<Void, Never> { @MainActor in
+                        await feedViewModel.loadMorePosts()
+                    }
+                } label: {
+                    Text("Load more posts")
+                        .subheadline(color: AppColors.accent2)
+                        .padding(.vertical, AppSpacing.md)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(.bottom, 80) // Space for FAB
+    }
+
+    // MARK: - Content Filter Selector
+
+    private var contentFilterSelector: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: AppSpacing.sm) {
+                ForEach(FeedContentFilter.allCases) { filter in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            feedViewModel.contentFilter = filter
+                        }
+                    } label: {
+                        Text(filter.rawValue)
+                            .font(.caption.weight(.semibold))
+                            .foregroundColor(
+                                feedViewModel.contentFilter == filter
+                                ? AppColors.background
+                                : AppColors.textSecondary
+                            )
+                            .padding(.horizontal, AppSpacing.md)
+                            .padding(.vertical, AppSpacing.xs)
+                            .background(
+                                Capsule()
+                                    .fill(
+                                        feedViewModel.contentFilter == filter
+                                        ? AppColors.accent2
+                                        : AppColors.surfaceSecondary
+                                    )
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
     }
 
     // MARK: - Feed Mode Selector
@@ -494,6 +549,32 @@ struct SocialView: View {
                 trendingFeedList
             }
         }
+    }
+
+    private var emptyFilteredFeedState: some View {
+        VStack(spacing: AppSpacing.md) {
+            Spacer()
+                .frame(height: 60)
+
+            Image(systemName: "line.3.horizontal.decrease.circle")
+                .font(.system(size: 40))
+                .foregroundColor(AppColors.textTertiary)
+
+            Text("No posts in \(feedViewModel.contentFilter.rawValue)")
+                .headline(color: AppColors.textPrimary)
+
+            Button {
+                feedViewModel.contentFilter = .all
+            } label: {
+                Text("Show all posts")
+                    .subheadline(color: AppColors.accent2)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, AppSpacing.xs)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, AppSpacing.xl)
+        .padding(.bottom, 80)
     }
 
     // MARK: - Trending Feed List

@@ -18,6 +18,15 @@ enum FeedMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+enum FeedContentFilter: String, CaseIterable, Identifiable {
+    case all = "All"
+    case workouts = "Workouts"
+    case plans = "Plans"
+    case updates = "Updates"
+
+    var id: String { rawValue }
+}
+
 @MainActor
 class FeedViewModel: ObservableObject {
     @Published var posts: [PostWithAuthor] = []
@@ -27,6 +36,7 @@ class FeedViewModel: ObservableObject {
     @Published var isLoadingTrending = false
     @Published var error: Error?
     @Published var feedMode: FeedMode = .feed
+    @Published var contentFilter: FeedContentFilter = .all
 
     private let postRepo: PostRepository
     private let friendshipRepo: FriendshipRepository
@@ -43,6 +53,12 @@ class FeedViewModel: ObservableObject {
     private let activityService = FirestoreActivityService.shared
 
     var currentUserId: String? { authService.currentUser?.uid }
+    var filteredFeedPosts: [PostWithAuthor] {
+        filter(posts)
+    }
+    var filteredTrendingPosts: [PostWithAuthor] {
+        filter(trendingPosts)
+    }
 
     init(
         postRepo: PostRepository = PostRepository(),
@@ -449,6 +465,34 @@ class FeedViewModel: ObservableObject {
             trendingPosts = await loadAuthorsForPosts(posts, userId: userId)
         } catch {
             self.error = error
+        }
+    }
+
+    private func filter(_ source: [PostWithAuthor]) -> [PostWithAuthor] {
+        source.filter { post in
+            switch contentFilter {
+            case .all:
+                return true
+            case .workouts:
+                switch post.post.content {
+                case .session, .exercise, .set, .highlights, .completedModule:
+                    return true
+                default:
+                    return false
+                }
+            case .plans:
+                switch post.post.content {
+                case .program, .workout, .module:
+                    return true
+                default:
+                    return false
+                }
+            case .updates:
+                if case .text = post.post.content {
+                    return true
+                }
+                return false
+            }
         }
     }
 }
