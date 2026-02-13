@@ -62,11 +62,8 @@ struct AllSetsSection: View {
                                     if exercise.exerciseType != .recovery {
                                         let fullRest = flatSet.restPeriod ?? appState.defaultRestTime
                                         if !allSetsCompleted(exercise) {
-                                            if flatSet.setData.side == .left {
-                                                // Short rest between sides (half rest, min 10s)
-                                                sessionViewModel.startRestTimer(seconds: max(10, fullRest / 2))
-                                            } else if flatSet.setData.side == .right {
-                                                // Full rest before next set pair
+                                            if flatSet.setData.side == .left || flatSet.setData.side == .right {
+                                                // Full rest between sides and before next set pair
                                                 sessionViewModel.startRestTimer(seconds: fullRest)
                                             }
                                         }
@@ -477,22 +474,6 @@ struct UnilateralSideRow: View {
 
                 Spacer(minLength: 0)
 
-                // Timer button for duration-based types
-                if exercise.exerciseType == .cardio || exercise.exerciseType == .recovery || exercise.exerciseType == .isometric || (exercise.exerciseType == .mobility && exercise.mobilityTracking.tracksDuration) {
-                    Button {
-                        toggleTimer()
-                    } label: {
-                        Image(systemName: timerRunning ? "stop.fill" : "play.fill")
-                            .caption(color: timerRunning ? AppColors.warning : AppColors.accent1)
-                            .frame(width: 32, height: 32)
-                            .background(
-                                Circle()
-                                    .fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accent1.opacity(0.15))
-                            )
-                    }
-                    .buttonStyle(.bouncy)
-                }
-
                 // Log button
                 Button {
                     logSet()
@@ -518,9 +499,9 @@ struct UnilateralSideRow: View {
                       : (highlightNextSet && isFirstIncomplete ? AppColors.dominant.opacity(0.1) : AppColors.surfacePrimary))
         )
         .onAppear { loadDefaults() }
-        .onChange(of: sessionViewModel.isExerciseTimerRunning) { wasRunning, isRunning in
-            // When exercise timer auto-completes, capture elapsed time
-            if wasRunning && !isRunning && sessionViewModel.exerciseTimerSetId == nil {
+        .onChange(of: timerRunning) { wasRunning, isRunning in
+            // Capture elapsed only when this row's timer transitions from running to stopped.
+            if wasRunning && !isRunning {
                 let elapsed = sessionViewModel.exerciseTimerElapsed
                 if exercise.exerciseType == .isometric && elapsed > 0 {
                     inputHoldTime = elapsed
@@ -539,12 +520,137 @@ struct UnilateralSideRow: View {
 
     private func loadDefaults() {
         let setData = flatSet.setData
-        if let w = setData.weight { inputWeight = formatWeight(w) }
-        if let r = setData.reps { inputReps = "\(r)" }
+        let hasLoggedValues = setData.weight != nil || setData.reps != nil || setData.duration != nil || setData.holdTime != nil || setData.distance != nil
+
+        inputWeight = ""
+        inputReps = ""
+        inputRPE = ""
+        if !durationManuallySet {
+            inputDuration = 0
+        }
+        inputHoldTime = 0
+        inputDistance = ""
+        inputHeight = ""
+        inputTemperature = ""
+
+        if hasLoggedValues {
+            inputWeight = setData.weight.map { formatWeight($0) } ?? flatSet.targetWeight.map { formatWeight($0) } ?? ""
+            inputReps = setData.reps.map { "\($0)" } ?? flatSet.targetReps.map { "\($0)" } ?? ""
+            if !durationManuallySet {
+                inputDuration = setData.duration ?? flatSet.targetDuration ?? 0
+            }
+            inputHoldTime = setData.holdTime ?? flatSet.targetHoldTime ?? 0
+            inputDistance = setData.distance.map { formatDistanceValue($0) } ?? flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
+        } else if let suggestion = exercise.progressionSuggestion {
+            switch suggestion.metric {
+            case .weight:
+                let delta = max(suggestion.suggestedValue - suggestion.baseValue, 0)
+                let regressionStep = delta > 0 ? delta : 2.5
+                switch exercise.progressionRecommendation {
+                case .progress:
+                    inputWeight = formatWeight(suggestion.suggestedValue)
+                case .regress:
+                    inputWeight = formatWeight(max(0, suggestion.baseValue - regressionStep))
+                case .stay:
+                    inputWeight = formatWeight(suggestion.baseValue)
+                case nil:
+                    inputWeight = formatWeight(suggestion.isOutcomeAdjusted ? suggestion.suggestedValue : suggestion.baseValue)
+                }
+                inputReps = flatSet.targetReps.map { "\($0)" } ?? ""
+
+            case .reps:
+                let baseReps = Int(round(suggestion.baseValue))
+                let progressedReps = Int(round(suggestion.suggestedValue))
+                let repDelta = max(progressedReps - baseReps, 0)
+                let regressedReps = max(1, baseReps - max(repDelta, 1))
+
+                let prefilledReps: Int
+                switch exercise.progressionRecommendation {
+                case .progress:
+                    prefilledReps = max(1, progressedReps)
+                case .regress:
+                    prefilledReps = regressedReps
+                case .stay:
+                    prefilledReps = max(1, baseReps)
+                case nil:
+                    prefilledReps = suggestion.isOutcomeAdjusted ? max(1, progressedReps) : max(1, baseReps)
+                }
+
+                inputWeight = flatSet.targetWeight.map { formatWeight($0) } ?? ""
+                inputReps = "\(prefilledReps)"
+
+            case .duration:
+                let baseDuration = Int(round(suggestion.baseValue))
+                let progressedDuration = Int(round(suggestion.suggestedValue))
+                let durationDelta = max(progressedDuration - baseDuration, 1)
+                let regressedDuration = max(1, baseDuration - durationDelta)
+
+                let prefilledDuration: Int
+                switch exercise.progressionRecommendation {
+                case .progress:
+                    prefilledDuration = progressedDuration
+                case .regress:
+                    prefilledDuration = regressedDuration
+                case .stay:
+                    prefilledDuration = baseDuration
+                case nil:
+                    prefilledDuration = suggestion.isOutcomeAdjusted ? progressedDuration : baseDuration
+                }
+
+                if !durationManuallySet {
+                    inputDuration = max(1, prefilledDuration)
+                }
+                inputDistance = flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
+
+            case .distance:
+                let baseDistance = suggestion.baseValue
+                let progressedDistance = suggestion.suggestedValue
+                let distanceDelta = max(progressedDistance - baseDistance, 0.01)
+                let regressedDistance = max(0, baseDistance - distanceDelta)
+
+                let prefilledDistance: Double
+                switch exercise.progressionRecommendation {
+                case .progress:
+                    prefilledDistance = progressedDistance
+                case .regress:
+                    prefilledDistance = regressedDistance
+                case .stay:
+                    prefilledDistance = baseDistance
+                case nil:
+                    prefilledDistance = suggestion.isOutcomeAdjusted ? progressedDistance : baseDistance
+                }
+
+                inputDistance = formatDistanceValue(prefilledDistance)
+            }
+        } else {
+            inputWeight = flatSet.targetWeight.map { formatWeight($0) } ?? ""
+            inputReps = flatSet.targetReps.map { "\($0)" } ?? ""
+            if !durationManuallySet {
+                inputDuration = flatSet.targetDuration ?? 0
+            }
+            inputHoldTime = flatSet.targetHoldTime ?? 0
+            inputDistance = flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
+        }
+
+        if !hasLoggedValues && exercise.progressionSuggestion != nil {
+            if inputReps.isEmpty {
+                inputReps = flatSet.targetReps.map { "\($0)" } ?? ""
+            }
+            if inputWeight.isEmpty {
+                inputWeight = flatSet.targetWeight.map { formatWeight($0) } ?? ""
+            }
+            if !durationManuallySet && inputDuration == 0 {
+                inputDuration = flatSet.targetDuration ?? 0
+            }
+            if inputDistance.isEmpty {
+                inputDistance = flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
+            }
+            if inputHoldTime == 0 {
+                inputHoldTime = flatSet.targetHoldTime ?? 0
+            }
+        }
+
         if let rpe = setData.rpe { inputRPE = "\(rpe)" }
-        if let d = setData.duration { inputDuration = d }
-        if let h = setData.holdTime { inputHoldTime = h }
-        if let dist = setData.distance { inputDistance = formatDistanceValue(dist) }
         if let ht = setData.height { inputHeight = formatHeight(ht) }
         if let temp = setData.temperature { inputTemperature = "\(temp)" }
     }
@@ -556,8 +662,15 @@ struct UnilateralSideRow: View {
             durationManuallySet = true
         } else {
             if exercise.exerciseType == .isometric {
-                let target = flatSet.targetHoldTime ?? 30
+                let target = max(inputHoldTime, flatSet.targetHoldTime ?? 30)
                 sessionViewModel.startExerciseTimer(seconds: target, setId: timerSetId)
+            } else if exercise.exerciseType == .cardio || (exercise.exerciseType == .mobility && exercise.mobilityTracking.tracksDuration) {
+                let target = flatSet.targetDuration ?? 0
+                if target > 0 {
+                    sessionViewModel.startExerciseTimer(seconds: target, setId: timerSetId)
+                } else {
+                    sessionViewModel.startExerciseStopwatch(setId: timerSetId)
+                }
             } else {
                 sessionViewModel.startExerciseStopwatch(setId: timerSetId)
             }
@@ -595,25 +708,36 @@ struct UnilateralSideRow: View {
                     .caption2(color: AppColors.textTertiary)
 
             case .cardio:
-                // Duration tap button
+                // Duration control
                 if exercise.cardioMetric.tracksTime {
-                    Button {
-                        if timerRunning {
-                            toggleTimer()
-                        } else if inputDuration > 0 {
-                            showTimePicker = true
-                        } else {
-                            showTimePicker = true
+                    HStack(spacing: 6) {
+                        Button {
+                            if !timerRunning {
+                                showTimePicker = true
+                            }
+                        } label: {
+                            Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 6)
+                                .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
                         }
-                    } label: {
-                        Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 6)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                        .buttonStyle(.plain)
+
+                        Button {
+                            toggleTimer()
+                        } label: {
+                            Image(systemName: timerRunning ? "stop.fill" : ((flatSet.targetDuration ?? 0) > 0 ? "play.fill" : "stopwatch"))
+                                .caption(color: timerRunning ? AppColors.warning : AppColors.accent1)
+                                .frame(width: 28, height: 28)
+                                .background(
+                                    Circle()
+                                        .fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accent1.opacity(0.15))
+                                )
+                        }
+                        .buttonStyle(.bouncy)
                     }
-                    .buttonStyle(.plain)
                 }
                 // Distance field
                 if exercise.cardioMetric.tracksDistance {
@@ -693,34 +817,66 @@ struct UnilateralSideRow: View {
                         .caption2(color: AppColors.textTertiary)
                 }
                 if exercise.mobilityTracking.tracksDuration {
+                    HStack(spacing: 6) {
+                        Button {
+                            if !timerRunning {
+                                showTimePicker = true
+                            }
+                        } label: {
+                            Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
+                                .padding(.vertical, 6)
+                                .padding(.horizontal, 6)
+                                .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            toggleTimer()
+                        } label: {
+                            Image(systemName: timerRunning ? "stop.fill" : ((flatSet.targetDuration ?? 0) > 0 ? "play.fill" : "stopwatch"))
+                                .caption(color: timerRunning ? AppColors.warning : AppColors.accent1)
+                                .frame(width: 28, height: 28)
+                                .background(
+                                    Circle()
+                                        .fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accent1.opacity(0.15))
+                                )
+                        }
+                        .buttonStyle(.bouncy)
+                    }
+                }
+
+            case .recovery:
+                // Duration display with inline timer control
+                HStack(spacing: 6) {
                     Button {
-                        showTimePicker = true
+                        if !timerRunning {
+                            showTimePicker = true
+                        }
                     } label: {
-                        Text(inputDuration > 0 ? formatDuration(inputDuration) : "0:00")
+                        Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
                             .padding(.vertical, 6)
                             .padding(.horizontal, 6)
                             .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
                     }
                     .buttonStyle(.plain)
-                }
 
-            case .recovery:
-                // Duration display with timer
-                Button {
-                    if !timerRunning {
-                        showTimePicker = true
+                    Button {
+                        toggleTimer()
+                    } label: {
+                        Image(systemName: timerRunning ? "stop.fill" : "stopwatch")
+                            .caption(color: timerRunning ? AppColors.warning : AppColors.accent1)
+                            .frame(width: 28, height: 28)
+                            .background(
+                                Circle()
+                                    .fill(timerRunning ? AppColors.warning.opacity(0.15) : AppColors.accent1.opacity(0.15))
+                            )
                     }
-                } label: {
-                    Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 6)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    .buttonStyle(.bouncy)
                 }
-                .buttonStyle(.plain)
                 // Temperature field
                 TextField("°F", text: $inputTemperature)
                     .keyboardType(.numberPad)
@@ -749,7 +905,48 @@ struct UnilateralSideRow: View {
                 Text("RPE")
                     .caption2(color: AppColors.textTertiary)
             }
+
+            if let suggestion = inlineSuggestion {
+                Text(inlineSuggestionText(for: suggestion))
+                    .caption2(color: AppColors.textTertiary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: 140, alignment: .leading)
+            }
         }
+    }
+
+    private var inlineSuggestion: ProgressionSuggestion? {
+        guard !flatSet.setData.completed, let suggestion = exercise.progressionSuggestion else { return nil }
+
+        switch exercise.exerciseType {
+        case .strength:
+            return suggestion.metric == .weight || suggestion.metric == .reps ? suggestion : nil
+        case .cardio:
+            if exercise.cardioMetric.tracksTime && suggestion.metric == .duration { return suggestion }
+            if exercise.cardioMetric.tracksDistance && suggestion.metric == .distance { return suggestion }
+            return nil
+        case .isometric:
+            return suggestion.metric == .duration ? suggestion : nil
+        case .mobility:
+            return exercise.mobilityTracking.tracksDuration && suggestion.metric == .duration ? suggestion : nil
+        case .recovery:
+            return suggestion.metric == .duration ? suggestion : nil
+        case .explosive:
+            return nil
+        }
+    }
+
+    private func inlineSuggestionText(for suggestion: ProgressionSuggestion) -> String {
+        if let rationale = suggestion.rationale?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !rationale.isEmpty {
+            return rationale.replacingOccurrences(of: "\n", with: " ")
+        }
+
+        if let confidence = suggestion.confidenceLabel {
+            return "\(suggestion.formattedValue) · \(confidence)"
+        }
+        return suggestion.formattedValue
     }
 
     private var completedSummary: String {
@@ -978,7 +1175,6 @@ struct ProgressionButtonsSection: View {
     let exercise: SessionExercise
     let width: CGFloat
     let onProgressionUpdate: (SessionExercise, ProgressionRecommendation) -> Void
-    @State private var showingEngineDetails = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -993,41 +1189,20 @@ struct ProgressionButtonsSection: View {
             .frame(width: width - (AppSpacing.cardPadding * 2))
 
             if let suggestion = exercise.progressionSuggestion {
-                VStack(alignment: .leading, spacing: 2) {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            showingEngineDetails.toggle()
-                        }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: showingEngineDetails ? "chevron.down.circle.fill" : "chevron.right.circle")
-                                .caption2(color: AppColors.textTertiary)
-                            Text(suggestionSummaryText(for: suggestion))
-                                .caption2(color: AppColors.textSecondary)
-                            Spacer()
-                        }
+                HStack(spacing: AppSpacing.sm) {
+                    Text(suggestionSummaryText(for: suggestion))
+                        .caption2(color: AppColors.textSecondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+
+                    if let rationale = compactRationaleText(for: suggestion) {
+                        Text(rationale)
+                            .caption2(color: AppColors.textTertiary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
                     }
-                    .buttonStyle(.plain)
 
-                    if showingEngineDetails, let rationale = suggestion.rationale, !rationale.isEmpty {
-                        VStack(alignment: .leading, spacing: 4) {
-                            if let decisionCode = suggestion.decisionCode, !decisionCode.isEmpty {
-                                explanationChip(decisionCode.replacingOccurrences(of: "_", with: " "))
-                            }
-
-                            if let factors = suggestion.decisionFactors, !factors.isEmpty {
-                                HStack(spacing: 6) {
-                                    ForEach(Array(factors.prefix(2)), id: \.self) { factor in
-                                        explanationChip(factor)
-                                    }
-                                }
-                            }
-
-                            Text(rationale)
-                                .caption2(color: AppColors.textTertiary)
-                                .lineLimit(3)
-                        }
-                    }
+                    Spacer(minLength: 0)
                 }
                 .padding(.top, 2)
             }
@@ -1070,16 +1245,11 @@ struct ProgressionButtonsSection: View {
         return "Engine: \(suggestion.formattedSuggestion)"
     }
 
-    @ViewBuilder
-    private func explanationChip(_ text: String) -> some View {
-        Text(text.uppercased())
-            .font(.system(size: 9, weight: .semibold))
-            .foregroundColor(AppColors.textSecondary)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(
-                Capsule()
-                    .fill(AppColors.surfaceTertiary.opacity(0.9))
-            )
+    private func compactRationaleText(for suggestion: ProgressionSuggestion) -> String? {
+        guard let rationale = suggestion.rationale?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !rationale.isEmpty else {
+            return nil
+        }
+        return rationale.replacingOccurrences(of: "\n", with: " ")
     }
 }

@@ -46,6 +46,16 @@ struct CardioInputs: View {
         return suggestion
     }
 
+    private var inlineSuggestion: ProgressionSuggestion? {
+        if let durationSuggestion {
+            return durationSuggestion
+        }
+        if let distanceSuggestion {
+            return distanceSuggestion
+        }
+        return nil
+    }
+
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
             // Time input box - only show if tracking time
@@ -113,14 +123,6 @@ struct CardioInputs: View {
                     Text("time")
                         .caption2(color: AppColors.textTertiary)
                         .fontWeight(.medium)
-
-                    if let suggestion = durationSuggestion, !flatSet.setData.completed {
-                        Text(suggestionHintText(for: suggestion))
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(directionColor(for: suggestion))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
                 }
                 .fixedSize(horizontal: true, vertical: false)
             }
@@ -158,16 +160,16 @@ struct CardioInputs: View {
                     Text("distance")
                         .caption2(color: AppColors.textTertiary)
                         .fontWeight(.medium)
-
-                    if let suggestion = distanceSuggestion, !flatSet.setData.completed {
-                        Text(suggestionHintText(for: suggestion))
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(directionColor(for: suggestion))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
                 }
                 .fixedSize(horizontal: true, vertical: false)
+            }
+
+            if let suggestion = inlineSuggestion, !flatSet.setData.completed {
+                Text(inlineSuggestionText(for: suggestion))
+                    .caption2(color: AppColors.textTertiary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: 170, alignment: .leading)
             }
         }
         .confirmationDialog("Distance Unit", isPresented: $showDistanceUnitPicker, titleVisibility: .visible) {
@@ -213,10 +215,12 @@ struct CardioInputs: View {
         return "■"
     }
 
-    private func directionColor(for suggestion: ProgressionSuggestion) -> Color {
-        if suggestion.suggestedValue > suggestion.baseValue { return AppColors.success }
-        if suggestion.suggestedValue < suggestion.baseValue { return AppColors.warning }
-        return AppColors.textTertiary
+    private func inlineSuggestionText(for suggestion: ProgressionSuggestion) -> String {
+        if let rationale = suggestion.rationale?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !rationale.isEmpty {
+            return rationale.replacingOccurrences(of: "\n", with: " ")
+        }
+        return suggestionHintText(for: suggestion)
     }
 }
 

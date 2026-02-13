@@ -30,6 +30,11 @@ struct StrengthInputs: View {
         timerRunning && !sessionViewModel.exerciseTimerIsStopwatch ? sessionViewModel.exerciseTimerSeconds : 0
     }
 
+    private var inlineSuggestion: ProgressionSuggestion? {
+        guard !flatSet.setData.completed, let suggestion = exercise.progressionSuggestion else { return nil }
+        return suggestion.metric == .weight || suggestion.metric == .reps ? suggestion : nil
+    }
+
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
             // AMRAP indicator/timer
@@ -161,17 +166,6 @@ struct StrengthInputs: View {
                     Text("lbs")
                         .caption2(color: AppColors.textTertiary)
                         .fontWeight(.medium)
-
-                    // Progression suggestion hint
-                    if let suggestion = exercise.progressionSuggestion,
-                       suggestion.metric == .weight,
-                       !flatSet.setData.completed {
-                        Text(suggestionHintText(for: suggestion))
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(directionColor(for: suggestion))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
                 }
                 .fixedSize(horizontal: true, vertical: false)
             }
@@ -229,6 +223,14 @@ struct StrengthInputs: View {
                         .fontWeight(.medium)
                 }
                 .fixedSize(horizontal: true, vertical: false)
+            }
+
+            if let suggestion = inlineSuggestion {
+                Text(inlineSuggestionText(for: suggestion))
+                    .caption2(color: AppColors.textTertiary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: 160, alignment: .leading)
             }
         }
     }
@@ -305,13 +307,11 @@ struct StrengthInputs: View {
         return "■"
     }
 
-    private func directionColor(for suggestion: ProgressionSuggestion) -> Color {
-        if suggestion.percentageApplied > 0.01 { return AppColors.success }
-        if suggestion.percentageApplied < -0.01 { return AppColors.warning }
-        return AppColors.dominant
-    }
-
-    private func suggestionHintText(for suggestion: ProgressionSuggestion) -> String {
+    private func inlineSuggestionText(for suggestion: ProgressionSuggestion) -> String {
+        if let rationale = suggestion.rationale?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !rationale.isEmpty {
+            return rationale.replacingOccurrences(of: "\n", with: " ")
+        }
         if let label = suggestion.confidenceLabel {
             return "\(directionSymbol(for: suggestion)) \(suggestion.formattedValue) · \(label)"
         }

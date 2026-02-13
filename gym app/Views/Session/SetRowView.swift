@@ -117,9 +117,9 @@ struct SetRowView: View {
                 loadDefaults()
             }
         }
-        .onChange(of: sessionViewModel.isExerciseTimerRunning) { wasRunning, isRunning in
-            // When exercise timer stops (countdown complete), update input fields with elapsed time
-            if wasRunning && !isRunning && sessionViewModel.exerciseTimerSetId == nil {
+        .onChange(of: timerRunning) { wasRunning, isRunning in
+            // Update elapsed only when this row's timer transitions from running to stopped.
+            if wasRunning && !isRunning {
                 let elapsed = sessionViewModel.exerciseTimerElapsed
                 if exercise.exerciseType == .isometric && elapsed > 0 {
                     inputHoldTime = elapsed
@@ -543,6 +543,8 @@ struct SetRowView: View {
         let lastDistance = lastSessionSet?.distance
         let lastHeight = lastSessionSet?.height
         let lastBandColor = lastSessionSet?.bandColor ?? lastSessionSet?.implementMeasurableValues["Color"]?.stringValue
+        var didApplySuggestionDuration = false
+        var didApplySuggestionDistance = false
 
         if setData.weight != nil || setData.reps != nil || setData.duration != nil || setData.holdTime != nil || setData.distance != nil {
             inputWeight = setData.weight.map { formatWeight($0) } ?? flatSet.targetWeight.map { formatWeight($0) } ?? ""
@@ -634,6 +636,7 @@ struct SetRowView: View {
                         inputDistance = lastDistance.map { formatDistanceValue($0) }
                             ?? flatSet.targetDistance.map { formatDistanceValue($0) }
                             ?? ""
+                        didApplySuggestionDuration = true
 
                     case .distance:
                         let baseDistance = suggestion.baseValue
@@ -656,6 +659,7 @@ struct SetRowView: View {
                         }
 
                         inputDistance = formatDistanceValue(prefilledDistance)
+                        didApplySuggestionDistance = true
                     }
                 } else {
                     inputWeight = lastWeight.map { formatWeight($0) }
@@ -667,12 +671,14 @@ struct SetRowView: View {
                 }
             }
             inputHoldTime = lastHoldTime ?? flatSet.targetHoldTime ?? 0
-            if !durationManuallySet {
+            if !durationManuallySet && !didApplySuggestionDuration {
                 inputDuration = lastDuration ?? flatSet.targetDuration ?? 0
             }
-            inputDistance = lastDistance.map { formatDistanceValue($0) }
-                ?? flatSet.targetDistance.map { formatDistanceValue($0) }
-                ?? ""
+            if !didApplySuggestionDistance {
+                inputDistance = lastDistance.map { formatDistanceValue($0) }
+                    ?? flatSet.targetDistance.map { formatDistanceValue($0) }
+                    ?? ""
+            }
         }
 
         inputRPE = setData.rpe.map { "\($0)" } ?? ""
