@@ -22,6 +22,7 @@ class AuthService: NSObject, ObservableObject {
 
     private var authStateHandler: AuthStateDidChangeListenerHandle?
     private var authStateContinuation: CheckedContinuation<Bool, Never>?
+    private var lastObservedUserId: String?
 
     override init() {
         super.init()
@@ -39,6 +40,12 @@ class AuthService: NSObject, ObservableObject {
     private func setupAuthStateListener() {
         authStateHandler = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor in
+                let newUserId = user?.uid
+                if self?.lastObservedUserId != newUserId {
+                    ProfileCacheService.shared.clearCache()
+                    self?.lastObservedUserId = newUserId
+                }
+
                 self?.isAuthenticated = user != nil
                 if let user = user {
                     self?.currentUser = User(
@@ -201,7 +208,9 @@ class AuthService: NSObject, ObservableObject {
         // Clear FCM token before signing out (fire-and-forget)
         Task { await PushNotificationService.shared.clearFCMToken() }
 
+        ProfileCacheService.shared.clearCache()
         try Auth.auth().signOut()
+        lastObservedUserId = nil
         currentUser = nil
         isAuthenticated = false
     }
@@ -235,6 +244,8 @@ class AuthService: NSObject, ObservableObject {
         // Delete Firebase Auth account
         try await user.delete()
 
+        ProfileCacheService.shared.clearCache()
+        lastObservedUserId = nil
         currentUser = nil
         isAuthenticated = false
     }

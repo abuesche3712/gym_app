@@ -39,6 +39,7 @@ class FriendsViewModel: ObservableObject {
 
     private var friendshipListener: ListenerRegistration?
     private var searchTask: Task<Void, Never>?
+    private let minimumSearchQueryLength = 2
 
     var currentUserId: String? {
         authService.currentUser?.uid
@@ -185,6 +186,13 @@ class FriendsViewModel: ObservableObject {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             searchResults = []
+            isSearching = false
+            return
+        }
+
+        guard trimmed.count >= minimumSearchQueryLength else {
+            searchResults = []
+            isSearching = false
             return
         }
 

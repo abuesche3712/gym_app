@@ -14,6 +14,7 @@ class PostDetailViewModel: ObservableObject {
     @Published var comments: [CommentWithAuthor] = []  // Top-level comments only
     @Published var replies: [UUID: [CommentWithAuthor]] = [:]  // parentCommentId -> replies
     @Published var isLoading = false
+    @Published var isLoadingMoreComments = false
     @Published var isSendingComment = false
     @Published var error: Error?
 
@@ -26,8 +27,12 @@ class PostDetailViewModel: ObservableObject {
     private var postListener: ListenerRegistration?
     private let profileCache = ProfileCacheService.shared
     private let activityService = FirestoreActivityService.shared
+    private let initialCommentLimit = 50
+    private let commentsPageSize = 50
+    private var currentCommentLimit = 50
 
     var currentUserId: String? { authService.currentUser?.uid }
+    var hasMoreComments: Bool { loadedCommentCount < post.post.commentCount }
 
     init(post: PostWithAuthor, postRepo: PostRepository = PostRepository()) {
         self.post = post
@@ -42,17 +47,16 @@ class PostDetailViewModel: ObservableObject {
 
     // MARK: - Loading
 
-    func loadComments() {
+    func loadComments(resetPagination: Bool = true) {
+        if resetPagination {
+            currentCommentLimit = initialCommentLimit
+            isLoadingMoreComments = false
+        }
+
         isLoading = true
 
         // Set up real-time listener for comments
-        commentsListener?.remove()
-        commentsListener = firestoreService.listenToComments(postId: post.post.id, limit: 100) { [weak self] comments in
-            Task { @MainActor in
-                await self?.processComments(comments)
-                self?.isLoading = false
-            }
-        }
+        startCommentsListener(limit: currentCommentLimit)
 
         // Listen for post updates (counts, caption, content)
         postListener?.remove()
@@ -78,6 +82,28 @@ class PostDetailViewModel: ObservableObject {
                         isLikedByCurrentUser: isLiked
                     )
                 }
+            }
+        }
+    }
+
+    func loadMoreComments() {
+        guard hasMoreComments, !isLoadingMoreComments else { return }
+        isLoadingMoreComments = true
+        currentCommentLimit += commentsPageSize
+        startCommentsListener(limit: currentCommentLimit)
+    }
+
+    private var loadedCommentCount: Int {
+        comments.count + replies.values.reduce(0) { $0 + $1.count }
+    }
+
+    private func startCommentsListener(limit: Int) {
+        commentsListener?.remove()
+        commentsListener = firestoreService.listenToComments(postId: post.post.id, limit: limit) { [weak self] comments in
+            Task { @MainActor in
+                await self?.processComments(comments)
+                self?.isLoading = false
+                self?.isLoadingMoreComments = false
             }
         }
     }

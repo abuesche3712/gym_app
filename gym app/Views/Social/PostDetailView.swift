@@ -37,7 +37,7 @@ struct PostDetailView: View {
                     }
                     .padding(.vertical, AppSpacing.md)
                 }
-                .refreshable { viewModel.loadComments() }
+                .refreshable { viewModel.loadComments(resetPagination: true) }
                 .scrollDismissesKeyboard(.interactively)
 
                 // Comment input bar
@@ -55,7 +55,7 @@ struct PostDetailView: View {
                 }
             }
             .onAppear {
-                viewModel.loadComments()
+                viewModel.loadComments(resetPagination: true)
             }
             .alert("Edit Comment", isPresented: Binding(
                 get: { editingComment != nil },
@@ -319,70 +319,100 @@ struct PostDetailView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, AppSpacing.xl)
             } else {
-                VStack(spacing: 0) {
-                    ForEach(viewModel.comments) { comment in
-                        CommentRow(
-                            comment: comment,
-                            canDelete: comment.comment.authorId == viewModel.currentUserId ||
-                                       viewModel.post.post.authorId == viewModel.currentUserId,
-                            canEdit: comment.comment.authorId == viewModel.currentUserId,
-                            onDelete: {
-                                Task {
-                                    await viewModel.deleteComment(comment)
+                VStack(spacing: AppSpacing.md) {
+                    VStack(spacing: 0) {
+                        ForEach(viewModel.comments) { comment in
+                            CommentRow(
+                                comment: comment,
+                                canDelete: comment.comment.authorId == viewModel.currentUserId ||
+                                           viewModel.post.post.authorId == viewModel.currentUserId,
+                                canEdit: comment.comment.authorId == viewModel.currentUserId,
+                                onDelete: {
+                                    Task {
+                                        await viewModel.deleteComment(comment)
+                                    }
+                                },
+                                onEdit: comment.comment.authorId == viewModel.currentUserId ? {
+                                    editingComment = comment
+                                    editCommentText = comment.comment.text
+                                } : nil,
+                                onReply: {
+                                    replyingTo = comment
+                                    isCommentFieldFocused = true
                                 }
-                            },
-                            onEdit: comment.comment.authorId == viewModel.currentUserId ? {
-                                editingComment = comment
-                                editCommentText = comment.comment.text
-                            } : nil,
-                            onReply: {
-                                replyingTo = comment
-                                isCommentFieldFocused = true
-                            }
-                        )
+                            )
 
-                        // Show replies for this comment
-                        if let commentReplies = viewModel.replies[comment.comment.id], !commentReplies.isEmpty {
-                            ForEach(commentReplies) { reply in
-                                HStack(spacing: 0) {
-                                    Rectangle()
-                                        .fill(AppColors.surfaceTertiary.opacity(0.3))
-                                        .frame(width: 2)
-                                        .padding(.leading, 28)
+                            // Show replies for this comment
+                            if let commentReplies = viewModel.replies[comment.comment.id], !commentReplies.isEmpty {
+                                ForEach(commentReplies) { reply in
+                                    HStack(spacing: 0) {
+                                        Rectangle()
+                                            .fill(AppColors.surfaceTertiary.opacity(0.3))
+                                            .frame(width: 2)
+                                            .padding(.leading, 28)
 
-                                    CommentRow(
-                                        comment: reply,
-                                        canDelete: reply.comment.authorId == viewModel.currentUserId ||
-                                                   viewModel.post.post.authorId == viewModel.currentUserId,
-                                        canEdit: reply.comment.authorId == viewModel.currentUserId,
-                                        onDelete: {
-                                            Task {
-                                                await viewModel.deleteComment(reply)
-                                            }
-                                        },
-                                        onEdit: reply.comment.authorId == viewModel.currentUserId ? {
-                                            editingComment = reply
-                                            editCommentText = reply.comment.text
-                                        } : nil
-                                    )
+                                        CommentRow(
+                                            comment: reply,
+                                            canDelete: reply.comment.authorId == viewModel.currentUserId ||
+                                                       viewModel.post.post.authorId == viewModel.currentUserId,
+                                            canEdit: reply.comment.authorId == viewModel.currentUserId,
+                                            onDelete: {
+                                                Task {
+                                                    await viewModel.deleteComment(reply)
+                                                }
+                                            },
+                                            onEdit: reply.comment.authorId == viewModel.currentUserId ? {
+                                                editingComment = reply
+                                                editCommentText = reply.comment.text
+                                            } : nil
+                                        )
+                                    }
                                 }
                             }
-                        }
 
-                        if comment.id != viewModel.comments.last?.id {
-                            Divider()
-                                .background(AppColors.surfaceTertiary.opacity(0.3))
-                                .padding(.leading, 48)
+                            if comment.id != viewModel.comments.last?.id {
+                                Divider()
+                                    .background(AppColors.surfaceTertiary.opacity(0.3))
+                                    .padding(.leading, 48)
+                            }
                         }
                     }
+                    .background(AppColors.surfacePrimary)
+                    .clipShape(RoundedRectangle(cornerRadius: AppCorners.large))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppCorners.large)
+                            .stroke(AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
+                    )
+                    .padding(.horizontal, AppSpacing.md)
+
+                    if viewModel.hasMoreComments {
+                        Button {
+                            viewModel.loadMoreComments()
+                        } label: {
+                            HStack(spacing: AppSpacing.xs) {
+                                if viewModel.isLoadingMoreComments {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                }
+
+                                Text(viewModel.isLoadingMoreComments ? "Loading..." : "Load more comments")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundColor(AppColors.dominant)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, AppSpacing.sm)
+                            .background(AppColors.surfacePrimary)
+                            .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: AppCorners.medium)
+                                    .stroke(AppColors.surfaceTertiary.opacity(0.4), lineWidth: 1)
+                            )
+                            .padding(.horizontal, AppSpacing.md)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(viewModel.isLoadingMoreComments)
+                    }
                 }
-                .background(AppColors.surfacePrimary)
-                .clipShape(RoundedRectangle(cornerRadius: AppCorners.large))
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
-                )
-                .padding(.horizontal, AppSpacing.md)
             }
         }
     }

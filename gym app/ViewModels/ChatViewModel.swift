@@ -34,6 +34,7 @@ class ChatViewModel: ObservableObject {
     private let presenceService = PresenceService.shared
     private var typingDebounceTask: Task<Void, Never>?
     private let userDefaults = UserDefaults.standard
+    private let maxHiddenMessageIds = 500
 
     var currentUserId: String? {
         authService.currentUser?.uid
@@ -366,13 +367,23 @@ class ChatViewModel: ObservableObject {
     }
 
     private func hiddenMessageIds() -> Set<UUID> {
+        Set(hiddenMessageIdsOrdered())
+    }
+
+    private func hiddenMessageIdsOrdered() -> [UUID] {
         let stored = userDefaults.stringArray(forKey: hiddenMessagesKey) ?? []
-        return Set(stored.compactMap(UUID.init))
+        var seen: Set<UUID> = []
+        return stored
+            .compactMap(UUID.init)
+            .filter { seen.insert($0).inserted }
     }
 
     private func addHiddenMessageId(_ id: UUID) {
-        var ids = hiddenMessageIds()
-        ids.insert(id)
+        var ids = hiddenMessageIdsOrdered().filter { $0 != id }
+        ids.append(id)
+        if ids.count > maxHiddenMessageIds {
+            ids.removeFirst(ids.count - maxHiddenMessageIds)
+        }
         userDefaults.set(ids.map(\.uuidString), forKey: hiddenMessagesKey)
     }
 

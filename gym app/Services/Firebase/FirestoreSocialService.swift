@@ -137,17 +137,18 @@ class FirestoreSocialService: ObservableObject {
             .limit(to: limit)
             .getDocuments()
 
+        let orderedUserIds = snapshot.documents.compactMap { doc in
+            doc.data()["userId"] as? String
+        }
+        guard !orderedUserIds.isEmpty else { return [] }
+
+        let profilesByUserId = try await fetchProfilesBatched(userIds: Array(Set(orderedUserIds)))
+
         var results: [UserSearchResult] = []
-
-        for doc in snapshot.documents {
-            guard let firebaseUserId = doc.data()["userId"] as? String else { continue }
-
-            let profileDoc = try await core.db.collection(FirestoreCollections.users).document(firebaseUserId)
-                .collection(FirestoreCollections.profile).document(FirestoreCollections.profileSettings).getDocument()
-
-            if let data = profileDoc.data(),
-               let profile = decodeUserProfile(from: data) {
-                results.append(UserSearchResult(firebaseUserId: firebaseUserId, profile: profile))
+        results.reserveCapacity(orderedUserIds.count)
+        for userId in orderedUserIds {
+            if let profile = profilesByUserId[userId] {
+                results.append(UserSearchResult(firebaseUserId: userId, profile: profile))
             }
         }
 

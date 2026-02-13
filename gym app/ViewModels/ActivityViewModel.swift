@@ -52,6 +52,7 @@ class ActivityViewModel: ObservableObject {
             onChange: { [weak self] activities in
                 Task { @MainActor in
                     await self?.processActivities(activities)
+                    await self?.refreshUnreadCount(for: userId)
                     self?.isLoading = false
                 }
             },
@@ -65,8 +66,6 @@ class ActivityViewModel: ObservableObject {
     }
 
     private func processActivities(_ activities: [Activity]) async {
-        unreadCount = activities.filter { !$0.isRead }.count
-
         // Prefetch all unique actor profiles in parallel
         let uniqueActorIds = Array(Set(activities.map { $0.actorId }))
         await profileCache.prefetch(userIds: uniqueActorIds)
@@ -78,6 +77,15 @@ class ActivityViewModel: ObservableObject {
         }
 
         self.activities = result
+    }
+
+    private func refreshUnreadCount(for userId: String) async {
+        do {
+            unreadCount = try await firestoreService.fetchUnreadActivityCount(userId: userId)
+        } catch {
+            unreadCount = activities.filter { !$0.activity.isRead }.count
+            Logger.error(error, context: "ActivityViewModel.refreshUnreadCount")
+        }
     }
 
     // MARK: - Actions
@@ -94,8 +102,8 @@ class ActivityViewModel: ObservableObject {
                     var updated = activities[index].activity
                     updated.isRead = true
                     activities[index] = ActivityWithActor(activity: updated, actor: activities[index].actor)
-                    unreadCount = max(0, unreadCount - 1)
                 }
+                await refreshUnreadCount(for: userId)
             } catch {
                 Logger.error(error, context: "ActivityViewModel.markAsRead")
             }
@@ -115,7 +123,7 @@ class ActivityViewModel: ObservableObject {
                     updated.isRead = true
                     return ActivityWithActor(activity: updated, actor: item.actor)
                 }
-                unreadCount = 0
+                await refreshUnreadCount(for: userId)
             } catch {
                 Logger.error(error, context: "ActivityViewModel.markAllAsRead")
             }
