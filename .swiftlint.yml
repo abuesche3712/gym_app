@@ -1,0 +1,49 @@
+included:
+  - gym app
+  - gym appTests
+  - gym appUITests
+  - TodayWorkoutWidget
+
+excluded:
+  - gym app.xcodeproj
+  - .git
+  - .venv
+  - .uv-cache
+  - output
+  - design docs
+  - CLAUDE_CONTEXT.md
+  - CLAUDE.md
+  - PLAN.md
+
+line_length:
+  warning: 140
+  error: 180
+  ignores_comments: true
+  ignores_urls: true
+
+type_body_length:
+  warning: 400
+  error: 550
+
+function_body_length:
+  warning: 80
+  error: 120
+
+file_length:
+  warning: 700
+  error: 1000
+
+identifier_name:
+  min_length:
+    warning: 2
+  excluded:
+    - id
+    - x
+    - y
+    - z
+    - i
+    - j
+    - db
+    - ui
+
+reporter: "xcode"
