@@ -357,6 +357,9 @@ struct EditSetGroupSheet: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(AppColors.background.ignoresSafeArea())
+            .tint(AppColors.dominant)
             .navigationTitle("Edit Set Group")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

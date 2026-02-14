@@ -182,6 +182,9 @@ struct EditIndividualSetSheet: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(AppColors.background.ignoresSafeArea())
+            .tint(AppColors.dominant)
             .navigationTitle("Edit Set \(set.setNumber)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

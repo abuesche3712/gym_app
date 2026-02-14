@@ -567,7 +567,11 @@ final class AnalyticsViewModelTests: XCTestCase {
             self.delayNanos = delayNanos
         }
 
-        func compute(from sessions: [Session]) async -> AnalyticsComputationSnapshot {
+        func compute(
+            from sessions: [Session],
+            weeklyVolumeWeeks _: Int,
+            decisionWindowDays _: Int
+        ) async -> AnalyticsComputationSnapshot {
             callCount += 1
             if delayNanos > 0 {
                 try? await Task.sleep(nanoseconds: delayNanos)
@@ -586,7 +590,10 @@ final class AnalyticsViewModelTests: XCTestCase {
                 progressionAlerts: [],
                 dryRunProfiles: [],
                 dryRunInputCount: 0,
-                recentPRs: []
+                recentPRs: [],
+                muscleGroupVolume: [],
+                cardioSummary: .empty,
+                weeklyCardioTrend: []
             )
         }
     }

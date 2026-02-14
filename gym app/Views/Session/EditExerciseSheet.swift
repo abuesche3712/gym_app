@@ -113,6 +113,9 @@ struct EditExerciseSheet: View {
                 musclesAndEquipmentSection
                 infoSection
             }
+            .scrollContentBackground(.hidden)
+            .background(AppColors.background.ignoresSafeArea())
+            .tint(AppColors.dominant)
             .navigationTitle("Edit Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -224,13 +227,13 @@ struct EditExerciseSheet: View {
             } label: {
                 HStack {
                     Text("Exercise")
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.textPrimary)
                     Spacer()
                     Text(exerciseName.isEmpty ? "Select exercise..." : exerciseName)
-                        .foregroundColor(exerciseName.isEmpty ? .secondary : .primary)
+                        .foregroundColor(exerciseName.isEmpty ? AppColors.textTertiary : AppColors.textPrimary)
                     Image(systemName: "chevron.right")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textTertiary)
                 }
             }
 
@@ -330,13 +333,13 @@ struct EditExerciseSheet: View {
                 }
 
                 Text(setGroupSummary(setGroup))
-                    .caption(color: .secondary)
+                    .caption(color: AppColors.textSecondary)
             }
 
             Spacer()
 
             Text("\(setGroup.sets) sets")
-                .subheadline(color: .secondary)
+                .subheadline(color: AppColors.textSecondary)
 
             Image(systemName: "chevron.right")
                 .caption(color: AppColors.textTertiary)
@@ -509,7 +512,7 @@ struct EditExerciseSheet: View {
                 trackRPE: group.trackRPE,
                 completedSetsCount: completedSets.count,  // Keep actual count for preserving completed sets
                 completedSets: completedSets,
-                allSets: group.sets.allSatisfy({ $0.completed }) ? group.sets : [],
+                allSets: group.sets,
                 isInterval: group.isInterval,
                 workDuration: group.workDuration,
                 intervalRestDuration: group.intervalRestDuration,

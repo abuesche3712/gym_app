@@ -2,7 +2,7 @@
 //  ImportConversionService.swift
 //  gym app
 //
-//  Converts imported sessions (e.g., from Strong CSV) into reusable Workout templates
+//  Converts completed sessions into reusable Workout templates
 //
 
 import Foundation
@@ -16,7 +16,7 @@ class ImportConversionService {
         let matchedExercises: [String]   // Names matched to existing library
     }
 
-    /// Convert an imported Session into a Workout template with standalone exercises
+    /// Convert a completed Session into a Workout template with standalone exercises
     @MainActor
     func convertSessionToWorkout(_ session: Session) -> ConversionResult {
         var createdExercises: [String] = []
@@ -30,8 +30,8 @@ class ImportConversionService {
         for sessionExercise in allSessionExercises {
             let exerciseName = sessionExercise.exerciseName
 
-            // Try to find an existing template by name
-            var template = ExerciseResolver.shared.findTemplate(named: exerciseName)
+            // Match only exact exercise-name strings (case-insensitive, no fuzzy matching)
+            var template = findExactTemplate(named: exerciseName)
 
             if let t = template {
                 matchedExercises.append(t.name)
@@ -41,9 +41,9 @@ class ImportConversionService {
                     name: exerciseName,
                     exerciseType: sessionExercise.exerciseType
                 )
-                // Refresh the resolver cache and look it up
+                // Refresh resolver cache and try exact lookup again
                 ExerciseResolver.shared.refreshCache()
-                template = ExerciseResolver.shared.findTemplate(named: exerciseName)
+                template = findExactTemplate(named: exerciseName)
                 createdExercises.append(exerciseName)
             }
 
@@ -84,6 +84,17 @@ class ImportConversionService {
     }
 
     // MARK: - Private Helpers
+
+    private func findExactTemplate(named exerciseName: String) -> ExerciseTemplate? {
+        let normalizedTarget = normalizedExerciseName(exerciseName)
+        return ExerciseResolver.shared.allExercises.first { template in
+            normalizedExerciseName(template.name) == normalizedTarget
+        }
+    }
+
+    private func normalizedExerciseName(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
 
     /// Convert CompletedSetGroups into SetGroups for a workout template
     private func convertSetGroups(from completedGroups: [CompletedSetGroup]) -> [SetGroup] {

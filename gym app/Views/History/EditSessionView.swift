@@ -19,6 +19,7 @@ struct EditSessionView: View {
     @State private var duration: Int
     @State private var overallFeeling: Int?
     @State private var notes: String
+    @State private var selectedExerciseTarget: ExerciseEditTarget?
 
     init(session: Session) {
         self.session = session
@@ -32,72 +33,16 @@ struct EditSessionView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                // Session Info Section
-                Section("Session Info") {
-                    HStack {
-                        Text("Name")
-                        Spacer()
-                        TextField("Session name", text: $workoutName)
-                            .multilineTextAlignment(.trailing)
-                    }
-
-                    DatePicker("Date", selection: $sessionDate, displayedComponents: [.date, .hourAndMinute])
-
-                    HStack {
-                        Text("Duration")
-                        Spacer()
-                        TextField("Minutes", value: $duration, format: .number)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 80)
-                        Text("min")
-                            .foregroundColor(.secondary)
-                    }
-
-                    HStack {
-                        Text("Feeling")
-                        Spacer()
-                        Picker("", selection: Binding(
-                            get: { overallFeeling ?? 0 },
-                            set: { overallFeeling = $0 == 0 ? nil : $0 }
-                        )) {
-                            Text("Not set").tag(0)
-                            ForEach(1...10, id: \.self) { value in
-                                Text("\(value)/10").tag(value)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                    }
+            ScrollView {
+                VStack(spacing: AppSpacing.lg) {
+                    sessionInfoCard
+                    notesCard
+                    modulesCard
                 }
-
-                // Notes Section
-                Section("Notes") {
-                    TextField("Session notes", text: $notes, axis: .vertical)
-                        .lineLimit(3...6)
-                }
-
-                // Exercises Section
-                ForEach(Array(editedSession.completedModules.enumerated()), id: \.element.id) { moduleIndex, module in
-                    Section {
-                        HStack {
-                            Image(systemName: module.moduleType.icon)
-                                .foregroundStyle(module.moduleType.color)
-                            Text(module.moduleName)
-                                .fontWeight(.semibold)
-                        }
-
-                        ForEach(Array(module.completedExercises.enumerated()), id: \.element.id) { exerciseIndex, exercise in
-                            EditableExerciseRow(
-                                exercise: exercise,
-                                onChange: { updatedExercise in
-                                    editedSession.completedModules[moduleIndex].completedExercises[exerciseIndex] = updatedExercise
-                                }
-                            )
-                        }
-                    }
-                }
+                .padding(AppSpacing.screenPadding)
+                .padding(.bottom, AppSpacing.xl)
             }
+            .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Edit Session")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -112,6 +57,16 @@ struct EditSessionView: View {
                         saveChanges()
                     }
                 }
+            }
+            .sheet(item: $selectedExerciseTarget) { target in
+                EditExerciseSheet(
+                    exercise: target.exercise,
+                    moduleIndex: target.moduleIndex,
+                    exerciseIndex: target.exerciseIndex,
+                    onSave: { moduleIndex, exerciseIndex, updatedExercise in
+                        editedSession.completedModules[moduleIndex].completedExercises[exerciseIndex] = updatedExercise
+                    }
+                )
             }
         }
     }
@@ -129,19 +84,145 @@ struct EditSessionView: View {
         sessionViewModel.updateSession(updated)
         dismiss()
     }
+
+    private var sessionInfoCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("Session Info")
+                .smallCapsLabel(color: AppColors.textSecondary)
+
+            VStack(spacing: AppSpacing.md) {
+                HStack(spacing: AppSpacing.md) {
+                    Text("Name")
+                        .subheadline(color: AppColors.textPrimary)
+                    Spacer()
+                    TextField("Session name", text: $workoutName)
+                        .multilineTextAlignment(.trailing)
+                        .subheadline(color: AppColors.textPrimary)
+                }
+
+                Divider()
+
+                DatePicker("Date", selection: $sessionDate, displayedComponents: [.date, .hourAndMinute])
+                    .tint(AppColors.dominant)
+                    .subheadline(color: AppColors.textPrimary)
+
+                Divider()
+
+                HStack(spacing: AppSpacing.md) {
+                    Text("Duration")
+                        .subheadline(color: AppColors.textPrimary)
+                    Spacer()
+                    HStack(spacing: AppSpacing.xs) {
+                        TextField("0", value: $duration, format: .number)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 64)
+                            .subheadline(color: AppColors.textPrimary)
+                        Text("min")
+                            .caption(color: AppColors.textTertiary)
+                    }
+                }
+
+                Divider()
+
+                HStack(spacing: AppSpacing.md) {
+                    Text("Feeling")
+                        .subheadline(color: AppColors.textPrimary)
+                    Spacer()
+                    Picker("", selection: Binding(
+                        get: { overallFeeling ?? 0 },
+                        set: { overallFeeling = $0 == 0 ? nil : $0 }
+                    )) {
+                        Text("Not set").tag(0)
+                        ForEach(1...10, id: \.self) { value in
+                            Text("\(value)/10").tag(value)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(AppColors.dominant)
+                }
+            }
+        }
+        .flatCardStyle()
+    }
+
+    private var notesCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("Notes")
+                .smallCapsLabel(color: AppColors.textSecondary)
+
+            TextField("Session notes", text: $notes, axis: .vertical)
+                .lineLimit(3...8)
+                .padding(AppSpacing.md)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .fill(AppColors.surfaceTertiary.opacity(0.45))
+                )
+                .subheadline(color: AppColors.textPrimary)
+        }
+        .flatCardStyle()
+    }
+
+    private var modulesCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("Exercises")
+                .smallCapsLabel(color: AppColors.textSecondary)
+
+            ForEach(Array(editedSession.completedModules.enumerated()), id: \.element.id) { moduleIndex, module in
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    HStack(spacing: AppSpacing.sm) {
+                        Image(systemName: module.moduleType.icon)
+                            .subheadline(color: AppColors.moduleColor(module.moduleType))
+                        Text(module.moduleName)
+                            .subheadline(color: AppColors.textPrimary)
+                            .fontWeight(.semibold)
+                    }
+
+                    VStack(spacing: AppSpacing.xs) {
+                        ForEach(Array(module.completedExercises.enumerated()), id: \.element.id) { exerciseIndex, exercise in
+                            EditableExerciseRow(
+                                exercise: exercise,
+                                onTap: {
+                                    selectedExerciseTarget = ExerciseEditTarget(
+                                        moduleIndex: moduleIndex,
+                                        exerciseIndex: exerciseIndex,
+                                        exercise: exercise
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+                .padding(AppSpacing.md)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .fill(AppColors.surfaceTertiary.opacity(0.4))
+                )
+            }
+        }
+        .flatCardStyle()
+    }
+}
+
+private struct ExerciseEditTarget: Identifiable {
+    let moduleIndex: Int
+    let exerciseIndex: Int
+    let exercise: SessionExercise
+
+    var id: String {
+        "\(moduleIndex)-\(exerciseIndex)-\(exercise.id)"
+    }
 }
 
 // MARK: - Editable Exercise Row
 
 struct EditableExerciseRow: View {
     let exercise: SessionExercise
-    let onChange: (SessionExercise) -> Void
-
-    @State private var showEditSheet = false
+    let onTap: () -> Void
 
     var body: some View {
         Button {
-            showEditSheet = true
+            onTap()
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -160,21 +241,12 @@ struct EditableExerciseRow: View {
             }
         }
         .buttonStyle(.plain)
-        .padding(.vertical, 4)
-        .sheet(isPresented: $showEditSheet) {
-            NavigationStack {
-                ExerciseFormView(
-                    instance: nil,
-                    moduleId: UUID(),
-                    sessionExercise: exercise,
-                    sessionModuleIndex: 0,
-                    sessionExerciseIndex: 0,
-                    onSessionSave: { _, _, updatedExercise in
-                        onChange(updatedExercise)
-                    }
-                )
-            }
-        }
+        .padding(.horizontal, AppSpacing.sm)
+        .padding(.vertical, AppSpacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.small)
+                .fill(AppColors.surfacePrimary)
+        )
     }
 
     private var exerciseSummary: String {
@@ -211,7 +283,7 @@ struct EditableExerciseRow: View {
         workoutId: UUID(),
         workoutName: "Monday - Lower A",
         duration: 75,
-        overallFeeling: 4,
+        overallFeeling: 8,
         notes: "Great session!"
     ))
     .environmentObject(SessionViewModel())

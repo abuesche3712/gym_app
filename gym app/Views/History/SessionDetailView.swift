@@ -34,11 +34,35 @@ struct SessionDetailView: View {
     @State private var exerciseToPost: ShareableExercisePerformance?
     @State private var setToPost: ShareableSetPerformance?
     @State private var showConversionAlert = false
+    @State private var conversionAlertTitle = "Workout Created"
     @State private var conversionResultMessage = ""
 
     private var currentSession: Session {
         if readOnly { return session }
         return sessionViewModel.sessions.first { $0.id == session.id } ?? session
+    }
+
+    private var existingWorkoutTemplate: Workout? {
+        let normalizedName = normalizedWorkoutName(currentSession.workoutName)
+        return workoutViewModel.workouts.first { workout in
+            workout.id == currentSession.workoutId || normalizedWorkoutName(workout.name) == normalizedName
+        }
+    }
+
+    private var canConvertToWorkoutTemplate: Bool {
+        guard !readOnly else { return false }
+        guard currentSession.isImported || currentSession.isUnstructured else { return false }
+        return existingWorkoutTemplate == nil
+    }
+
+    private var conversionButtonTitle: String {
+        currentSession.isImported ? "Extract Workout Template" : "Create Workout Template"
+    }
+
+    private var conversionButtonSubtitle: String {
+        currentSession.isImported
+            ? "Create a reusable workout from this imported session"
+            : "Create a reusable workout from this completed session"
     }
 
     // Computed stats
@@ -55,7 +79,7 @@ struct SessionDetailView: View {
                 heroSection
 
                 // Import conversion banner
-                if session.isImported && !readOnly {
+                if canConvertToWorkoutTemplate {
                     Button {
                         convertToWorkout()
                     } label: {
@@ -63,10 +87,10 @@ struct SessionDetailView: View {
                             Image(systemName: "arrow.up.doc.fill")
                                 .displaySmall(color: AppColors.accent1)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Extract Workout Template")
+                                Text(conversionButtonTitle)
                                     .subheadline(color: AppColors.textPrimary)
                                     .fontWeight(.semibold)
-                                Text("Create a reusable workout from this imported session")
+                                Text(conversionButtonSubtitle)
                                     .caption(color: AppColors.textSecondary)
                             }
                             Spacer()
@@ -107,7 +131,7 @@ struct SessionDetailView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: AppSpacing.md) {
                         // Convert to Workout (imported sessions only)
-                        if session.isImported {
+                        if canConvertToWorkoutTemplate {
                             Button {
                                 convertToWorkout()
                             } label: {
@@ -235,7 +259,7 @@ struct SessionDetailView: View {
         .sheet(item: $setToPost) { setPerformance in
             ComposePostSheet(content: setPerformance)
         }
-        .alert("Workout Created", isPresented: $showConversionAlert) {
+        .alert(conversionAlertTitle, isPresented: $showConversionAlert) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(conversionResultMessage)
@@ -250,16 +274,31 @@ struct SessionDetailView: View {
     // MARK: - Convert to Workout
 
     private func convertToWorkout() {
-        let result = ImportConversionService.shared.convertSessionToWorkout(session)
+        if let existingWorkoutTemplate {
+            conversionAlertTitle = "Template Already Exists"
+            conversionResultMessage = "A workout template named '\(existingWorkoutTemplate.name)' already exists."
+            showConversionAlert = true
+            return
+        }
+
+        let result = ImportConversionService.shared.convertSessionToWorkout(currentSession)
         workoutViewModel.saveWorkout(result.workout)
 
         var message = "Created workout '\(result.workout.name)' with \(result.workout.standaloneExercises.count) exercises."
         if !result.createdExercises.isEmpty {
             message += "\n\nCreated \(result.createdExercises.count) new exercise\(result.createdExercises.count == 1 ? "" : "s"): \(result.createdExercises.joined(separator: ", "))"
         }
+        if !result.matchedExercises.isEmpty {
+            message += "\n\nMatched \(result.matchedExercises.count) existing exercise\(result.matchedExercises.count == 1 ? "" : "s")."
+        }
 
+        conversionAlertTitle = "Workout Created"
         conversionResultMessage = message
         showConversionAlert = true
+    }
+
+    private func normalizedWorkoutName(_ value: String) -> String {
+        value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 
     // MARK: - Hero Section
