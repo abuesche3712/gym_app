@@ -40,6 +40,7 @@
 		ANLMOD02BUILD001 /* AnalyticsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLMOD01FILE001 /* AnalyticsModels.swift */; };
 		ANLSVC02BUILD001 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLSVC01FILE001 /* AnalyticsService.swift */; };
 		ANLVMO02BUILD001 /* AnalyticsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLVMO01FILE001 /* AnalyticsViewModel.swift */; };
+		SHRSMY02BUILD01 /* ShareSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHRSMY01FILE001 /* ShareSummaryView.swift */; };
 		APPCFG02BUILD002 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPCFG01FILE001 /* AppConfig.swift */; };
 		EMPTST02BUILD001 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EMPTST01FILE001 /* EmptyStateView.swift */; };
 		B610AC032F15B4DD008B2C15 /* gym_appApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC022F15B4DD008B2C15 /* gym_appApp.swift */; };
@@ -326,6 +327,7 @@
 		ANLMOD01FILE001 /* AnalyticsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsModels.swift; sourceTree = "<group>"; };
 		ANLSVC01FILE001 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		ANLVMO01FILE001 /* AnalyticsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsViewModel.swift; sourceTree = "<group>"; };
+		SHRSMY01FILE001 /* ShareSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSummaryView.swift; sourceTree = "<group>"; };
 		APPCFG01FILE001 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		EMPTST01FILE001 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		B12D1154F7E74A3385D7FF2E /* DataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSeeder.swift; sourceTree = "<group>"; };
@@ -632,6 +634,7 @@
 				ANLCHT01FILE001 /* AnalyticsCharts.swift */,
 				ANLCAR01FILE001 /* AnalyticsCardModifier.swift */,
 				ANLYT001FILE001 /* AnalyticsView.swift */,
+				SHRSMY01FILE001 /* ShareSummaryView.swift */,
 			);
 			path = Analytics;
 			sourceTree = "<group>";
@@ -1519,6 +1522,7 @@
 				ANLVMO02BUILD001 /* AnalyticsViewModel.swift in Sources */,
 				ANLCHT02BUILD001 /* AnalyticsCharts.swift in Sources */,
 				ANLCAR02BUILD001 /* AnalyticsCardModifier.swift in Sources */,
+				SHRSMY02BUILD01 /* ShareSummaryView.swift in Sources */,
 				MOREV002BUILD002 /* MoreView.swift in Sources */,
 				USRPFL002BUILD002 /* UserProfile.swift in Sources */,
 				USNMVAL02BUILD01 /* UsernameValidation.swift in Sources */,

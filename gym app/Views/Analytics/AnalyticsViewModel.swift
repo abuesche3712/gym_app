@@ -21,6 +21,9 @@ struct AnalyticsComputationSnapshot {
     let dryRunProfiles: [DryRunProfileResult]
     let dryRunInputCount: Int
     let recentPRs: [PersonalRecordEvent]
+    let muscleGroupVolume: [MuscleGroupVolume]
+    let cardioSummary: CardioSummary
+    let weeklyCardioTrend: [WeeklyCardioPoint]
 }
 
 protocol AnalyticsComputationPerforming {
@@ -46,7 +49,10 @@ actor AnalyticsComputationActor: AnalyticsComputationPerforming {
             progressionAlerts: data.progressionAlerts,
             dryRunProfiles: data.dryRunProfiles,
             dryRunInputCount: data.dryRunInputCount,
-            recentPRs: data.recentPRs
+            recentPRs: data.recentPRs,
+            muscleGroupVolume: data.muscleGroupVolume,
+            cardioSummary: data.cardioSummary,
+            weeklyCardioTrend: data.weeklyCardioTrend
         )
     }
 }
@@ -88,6 +94,21 @@ private enum AnalyticsSessionFingerprint {
                         }
                     }
                 }
+
+                for exercise in module.completedExercises where exercise.exerciseType == .cardio {
+                    hasher.combine(exercise.id)
+                    hasher.combine(exercise.exerciseName)
+
+                    for setGroup in exercise.completedSetGroups {
+                        hasher.combine(setGroup.id)
+                        for set in setGroup.sets {
+                            hasher.combine(set.id)
+                            hasher.combine(set.completed)
+                            hasher.combine(set.duration ?? -1)
+                            hasher.combine(quantize(set.distance))
+                        }
+                    }
+                }
             }
         }
 
@@ -117,6 +138,9 @@ final class AnalyticsViewModel: ObservableObject {
     @Published private(set) var dryRunInputCount: Int = 0
     @Published private(set) var recentPRs: [PersonalRecordEvent] = []
     @Published private(set) var analyzedSessionCount = 0
+    @Published private(set) var muscleGroupVolume: [MuscleGroupVolume] = []
+    @Published private(set) var cardioSummary: CardioSummary = .empty
+    @Published private(set) var weeklyCardioTrend: [WeeklyCardioPoint] = []
     @Published var selectedTimeRange: AnalyticsTimeRange = .month
 
     private var computeTask: Task<Void, Never>?
@@ -202,5 +226,8 @@ final class AnalyticsViewModel: ObservableObject {
         dryRunProfiles = snapshot.dryRunProfiles
         dryRunInputCount = snapshot.dryRunInputCount
         recentPRs = snapshot.recentPRs
+        muscleGroupVolume = snapshot.muscleGroupVolume
+        cardioSummary = snapshot.cardioSummary
+        weeklyCardioTrend = snapshot.weeklyCardioTrend
     }
 }

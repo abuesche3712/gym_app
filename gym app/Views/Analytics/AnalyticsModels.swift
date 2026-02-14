@@ -245,6 +245,29 @@ struct PersonalRecordEvent: Identifiable, Hashable {
     }
 }
 
+struct MuscleGroupVolume: Identifiable, Hashable {
+    let muscleGroup: String
+    let totalVolume: Double
+    let sessionCount: Int
+    let percentageOfTotal: Double
+    var id: String { muscleGroup }
+}
+
+struct CardioSummary: Hashable {
+    let totalDuration: Int
+    let totalDistance: Double?
+    let sessionCount: Int
+    let avgDurationPerSession: Int
+
+    static let empty = CardioSummary(totalDuration: 0, totalDistance: nil, sessionCount: 0, avgDurationPerSession: 0)
+}
+
+struct WeeklyCardioPoint: Identifiable, Hashable {
+    let weekStart: Date
+    let totalDuration: Int
+    var id: Date { weekStart }
+}
+
 struct AnalyticsDashboardData {
     let analyzedSessionCount: Int
     let currentStreak: Int
@@ -259,4 +282,7 @@ struct AnalyticsDashboardData {
     let dryRunProfiles: [DryRunProfileResult]
     let dryRunInputCount: Int
     let recentPRs: [PersonalRecordEvent]
+    let muscleGroupVolume: [MuscleGroupVolume]
+    let cardioSummary: CardioSummary
+    let weeklyCardioTrend: [WeeklyCardioPoint]
 }

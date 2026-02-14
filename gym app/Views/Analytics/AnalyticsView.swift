@@ -16,6 +16,7 @@ struct AnalyticsView: View {
     @AppStorage("analytics_engineExpanded") private var engineExpanded = true
 
     @State private var showDryRunInfo = false
+    @State private var showingShareSummary = false
 
     var body: some View {
         NavigationStack {
@@ -32,6 +33,8 @@ struct AnalyticsView: View {
                         if trainingExpanded {
                             consistencyCard
                             volumeTrendCard
+                            muscleBalanceCard
+                            cardioSummaryCard
                             liftTrendsCard
                             recentPRsCard
                         }
@@ -57,6 +60,9 @@ struct AnalyticsView: View {
             }
             .background(AppColors.background.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
+            .sheet(isPresented: $showingShareSummary) {
+                ShareSummaryView(viewModel: viewModel)
+            }
             .onAppear {
                 viewModel.load(from: sessionViewModel.sessions)
             }
@@ -77,6 +83,14 @@ struct AnalyticsView: View {
                 }
 
                 Spacer()
+
+                Button { showingShareSummary = true } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(AppColors.textSecondary)
+                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+                }
+                .buttonStyle(.plain)
 
                 NavigationLink(destination: SettingsView()) {
                     Image(systemName: "gearshape.fill")
@@ -380,6 +394,63 @@ struct AnalyticsView: View {
             }
         }
         .analyticsCard()
+    }
+
+    private var muscleBalanceCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("Muscle Balance")
+                .headline(color: AppColors.textPrimary)
+
+            if viewModel.muscleGroupVolume.isEmpty {
+                Text("No strength data in this time range.")
+                    .caption(color: AppColors.textTertiary)
+            } else {
+                let maxPct = viewModel.muscleGroupVolume.first?.percentageOfTotal ?? 100
+                ForEach(viewModel.muscleGroupVolume) { item in
+                    MuscleBalanceBar(item: item, maxPercentage: maxPct)
+                }
+            }
+        }
+        .analyticsCard()
+    }
+
+    private var cardioSummaryCard: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("Cardio Summary")
+                .headline(color: AppColors.textPrimary)
+
+            if viewModel.cardioSummary.sessionCount == 0 {
+                Text("No cardio data in this time range.")
+                    .caption(color: AppColors.textTertiary)
+            } else {
+                HStack(spacing: AppSpacing.md) {
+                    analyticsStat(label: "Sessions", value: "\(viewModel.cardioSummary.sessionCount)", icon: "figure.run", color: AppColors.accent1)
+                    analyticsStat(label: "Total Time", value: formatCardioTotalDuration(viewModel.cardioSummary.totalDuration), icon: "clock.fill", color: AppColors.accent2)
+                }
+
+                if let distance = viewModel.cardioSummary.totalDistance, distance > 0 {
+                    HStack(spacing: AppSpacing.md) {
+                        analyticsStat(label: "Total Distance", value: "\(formatDistanceValue(distance)) mi", icon: "location.fill", color: AppColors.accent3)
+                        analyticsStat(label: "Avg / Session", value: formatDuration(viewModel.cardioSummary.avgDurationPerSession), icon: "timer", color: AppColors.dominant)
+                    }
+                }
+
+                if !viewModel.weeklyCardioTrend.allSatisfy({ $0.totalDuration == 0 }) {
+                    WeeklyCardioSwiftChart(points: viewModel.weeklyCardioTrend)
+                        .frame(height: 96)
+                }
+            }
+        }
+        .analyticsCard()
+    }
+
+    private func formatCardioTotalDuration(_ seconds: Int) -> String {
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        }
+        return "\(minutes)m"
     }
 
     private var engineHealthCard: some View {
