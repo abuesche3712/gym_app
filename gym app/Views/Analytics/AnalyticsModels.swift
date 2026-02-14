@@ -7,6 +7,30 @@
 
 import SwiftUI
 
+enum AnalyticsTimeRange: String, CaseIterable, Identifiable {
+    case month = "28d"
+    case quarter = "90d"
+    case allTime = "All"
+
+    var id: String { rawValue }
+
+    var decisionWindowDays: Int {
+        switch self {
+        case .month: return 28
+        case .quarter: return 90
+        case .allTime: return 0
+        }
+    }
+
+    var weeklyVolumeWeeks: Int {
+        switch self {
+        case .month: return 5
+        case .quarter: return 13
+        case .allTime: return 26
+        }
+    }
+}
+
 struct WeeklyVolumePoint: Identifiable, Hashable {
     let weekStart: Date
     let totalVolume: Double

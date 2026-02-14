@@ -24,14 +24,14 @@ struct AnalyticsComputationSnapshot {
 }
 
 protocol AnalyticsComputationPerforming {
-    func compute(from sessions: [Session]) async -> AnalyticsComputationSnapshot
+    func compute(from sessions: [Session], weeklyVolumeWeeks: Int, decisionWindowDays: Int) async -> AnalyticsComputationSnapshot
 }
 
 actor AnalyticsComputationActor: AnalyticsComputationPerforming {
     private let analyticsService = AnalyticsService()
 
-    func compute(from sessions: [Session]) async -> AnalyticsComputationSnapshot {
-        let data = analyticsService.dashboardData(from: sessions)
+    func compute(from sessions: [Session], weeklyVolumeWeeks: Int, decisionWindowDays: Int) async -> AnalyticsComputationSnapshot {
+        let data = analyticsService.dashboardData(from: sessions, weeklyVolumeWeeks: weeklyVolumeWeeks, decisionWindowDays: decisionWindowDays)
 
         return AnalyticsComputationSnapshot(
             analyzedSessionCount: data.analyzedSessionCount,
@@ -117,6 +117,7 @@ final class AnalyticsViewModel: ObservableObject {
     @Published private(set) var dryRunInputCount: Int = 0
     @Published private(set) var recentPRs: [PersonalRecordEvent] = []
     @Published private(set) var analyzedSessionCount = 0
+    @Published var selectedTimeRange: AnalyticsTimeRange = .month
 
     private var computeTask: Task<Void, Never>?
     private let computationPerformer: any AnalyticsComputationPerforming
@@ -152,7 +153,12 @@ final class AnalyticsViewModel: ObservableObject {
     }
 
     func load(from sessions: [Session]) {
-        let fingerprint = AnalyticsSessionFingerprint.make(from: sessions)
+        let range = selectedTimeRange
+        var hasher = Hasher()
+        hasher.combine(AnalyticsSessionFingerprint.make(from: sessions))
+        hasher.combine(range.rawValue)
+        let fingerprint = hasher.finalize()
+
         if lastSessionFingerprint == fingerprint {
             return
         }
@@ -162,7 +168,11 @@ final class AnalyticsViewModel: ObservableObject {
 
         computeTask?.cancel()
         computeTask = Task(priority: .userInitiated) {
-            let snapshot = await computationPerformer.compute(from: sessions)
+            let snapshot = await computationPerformer.compute(
+                from: sessions,
+                weeklyVolumeWeeks: range.weeklyVolumeWeeks,
+                decisionWindowDays: range.decisionWindowDays
+            )
             guard !Task.isCancelled else { return }
             apply(snapshot, preferredExercise: preferredExercise)
         }

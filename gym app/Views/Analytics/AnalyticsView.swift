@@ -11,24 +11,45 @@ struct AnalyticsView: View {
     @EnvironmentObject var sessionViewModel: SessionViewModel
     @StateObject private var viewModel = AnalyticsViewModel()
 
+    @AppStorage("analytics_trainingExpanded") private var trainingExpanded = true
+    @AppStorage("analytics_strengthExpanded") private var strengthExpanded = true
+    @AppStorage("analytics_engineExpanded") private var engineExpanded = true
+
+    @State private var showDryRunInfo = false
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: AppSpacing.xl) {
                     analyticsHeader
+                    timeRangePicker
 
                     if viewModel.analyzedSessionCount == 0 {
                         emptyState
                     } else {
-                        consistencyCard
-                        volumeTrendCard
-                        liftTrendsCard
-                        strengthProgressCard
-                        progressionBreakdownCard
-                        engineHealthCard
-                        progressionAlertsCard
-                        dryRunSimulatorCard
-                        recentPRsCard
+                        // Training Activity
+                        sectionHeader("TRAINING ACTIVITY", isExpanded: $trainingExpanded)
+                        if trainingExpanded {
+                            consistencyCard
+                            volumeTrendCard
+                            liftTrendsCard
+                            recentPRsCard
+                        }
+
+                        // Strength Progress
+                        sectionHeader("STRENGTH PROGRESS", isExpanded: $strengthExpanded)
+                        if strengthExpanded {
+                            strengthProgressCard
+                        }
+
+                        // Progression Engine
+                        sectionHeader("PROGRESSION ENGINE", isExpanded: $engineExpanded)
+                        if engineExpanded {
+                            progressionBreakdownCard
+                            engineHealthCard
+                            progressionAlertsCard
+                            dryRunSimulatorCard
+                        }
                     }
                 }
                 .padding(AppSpacing.screenPadding)
@@ -70,6 +91,37 @@ struct AnalyticsView: View {
                 .fill(AppColors.surfaceTertiary)
                 .frame(height: 1)
         }
+    }
+
+    private var timeRangePicker: some View {
+        Picker("Time Range", selection: $viewModel.selectedTimeRange) {
+            ForEach(AnalyticsTimeRange.allCases) { range in
+                Text(range.rawValue).tag(range)
+            }
+        }
+        .pickerStyle(.segmented)
+        .onChange(of: viewModel.selectedTimeRange) { _, _ in
+            viewModel.load(from: sessionViewModel.sessions)
+        }
+    }
+
+    private func sectionHeader(_ title: String, isExpanded: Binding<Bool>) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                isExpanded.wrappedValue.toggle()
+            }
+        } label: {
+            HStack {
+                Text(title)
+                    .elegantLabel(color: AppColors.textSecondary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
+                    .rotationEffect(.degrees(isExpanded.wrappedValue ? 90 : 0))
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     private var emptyState: some View {
@@ -140,10 +192,10 @@ struct AnalyticsView: View {
             }
 
             if points.allSatisfy({ $0.totalVolume == 0 }) {
-                Text("No logged strength volume in the last \(points.count) weeks.")
+                Text("No volume data in this time range.")
                     .caption(color: AppColors.textTertiary)
             } else {
-                VolumeTrendBars(points: points)
+                VolumeTrendSwiftChart(points: points)
                     .frame(height: 96)
 
                 HStack {
@@ -165,7 +217,7 @@ struct AnalyticsView: View {
                 .headline(color: AppColors.textPrimary)
 
             if viewModel.liftTrends.isEmpty {
-                Text("Log more strength sets to unlock lift trends.")
+                Text("No lift data yet. Complete strength exercises to see trends.")
                     .caption(color: AppColors.textTertiary)
             } else {
                 ForEach(viewModel.liftTrends) { trend in
@@ -212,7 +264,7 @@ struct AnalyticsView: View {
             }
 
             if viewModel.strengthExerciseOptions.isEmpty {
-                Text("Log strength sets with \(AnalyticsConfig.e1RMRepRange.lowerBound)-\(AnalyticsConfig.e1RMRepRange.upperBound) reps to view e1RM progression.")
+                Text("No e1RM data yet. Log sets in the 1-12 rep range.")
                     .caption(color: AppColors.textTertiary)
             } else {
                 Picker("Exercise", selection: $viewModel.selectedStrengthExercise) {
@@ -224,21 +276,11 @@ struct AnalyticsView: View {
 
                 let points = viewModel.selectedE1RMPoints
                 if points.isEmpty {
-                    Text("No qualifying sets yet for this exercise.")
+                    Text("No qualifying sets for this exercise yet.")
                         .caption(color: AppColors.textTertiary)
                 } else {
-                    E1RMTrendChart(points: points)
+                    E1RMSwiftChart(points: points)
                         .frame(height: 148)
-
-                    HStack {
-                        if let first = points.first, let last = points.last {
-                            Text(formatMonthDay(first.date))
-                                .caption(color: AppColors.textTertiary)
-                            Spacer()
-                            Text(formatMonthDay(last.date))
-                                .caption(color: AppColors.textTertiary)
-                        }
-                    }
 
                     HStack(spacing: AppSpacing.md) {
                         analyticsStat(
@@ -270,11 +312,11 @@ struct AnalyticsView: View {
         let breakdown = viewModel.progressionBreakdown
 
         return VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("Progression Decisions (\(AnalyticsConfig.defaultBreakdownWindowDays)d)")
+            Text("Progression Decisions (\(viewModel.selectedTimeRange.rawValue))")
                 .headline(color: AppColors.textPrimary)
 
             if breakdown.total == 0 {
-                Text("No progression decisions logged yet.")
+                Text("No progression data in this time range.")
                     .caption(color: AppColors.textTertiary)
             } else {
                 ProgressionBreakdownRow(
@@ -306,7 +348,7 @@ struct AnalyticsView: View {
                 .headline(color: AppColors.textPrimary)
 
             if viewModel.recentPRs.isEmpty {
-                Text("No personal records detected yet.")
+                Text("No PRs detected yet. Keep training!")
                     .caption(color: AppColors.textTertiary)
             } else {
                 ForEach(viewModel.recentPRs.prefix(3)) { pr in
@@ -348,7 +390,7 @@ struct AnalyticsView: View {
                 .headline(color: AppColors.textPrimary)
 
             if health.totalDecisions == 0 {
-                Text("No engine decisions captured yet.")
+                Text("No engine data in this time range.")
                     .caption(color: AppColors.textTertiary)
             } else {
                 HStack(spacing: AppSpacing.md) {
@@ -440,11 +482,27 @@ struct AnalyticsView: View {
         let runs = viewModel.dryRunProfiles
 
         return VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("Dry-Run Simulator")
-                .headline(color: AppColors.textPrimary)
+            HStack {
+                Text("Dry-Run Simulator")
+                    .headline(color: AppColors.textPrimary)
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { showDryRunInfo.toggle() }
+                } label: {
+                    Image(systemName: "info.circle")
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .buttonStyle(.plain)
+            }
+
+            if showDryRunInfo {
+                Text("Shows how your recent suggestions would have been routed under different confidence thresholds. \"Match\" indicates agreement with your actual decisions.")
+                    .caption(color: AppColors.textSecondary)
+                    .padding(.bottom, 4)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
 
             if runs.isEmpty {
-                Text("Need more suggestion history to simulate alternate profiles.")
+                Text("Not enough suggestion data to simulate profiles.")
                     .caption(color: AppColors.textTertiary)
             } else {
                 Text("How the last \(viewModel.dryRunInputCount) suggestions would route:")
