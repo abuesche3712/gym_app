@@ -188,6 +188,12 @@ extension SessionExercise {
             notes: notes
         )
     }
+
+    func withProgressionSuggestion(_ suggestion: ProgressionSuggestion?) -> SessionExercise {
+        var copy = self
+        copy.progressionSuggestion = suggestion
+        return copy
+    }
 }
 
 extension CompletedSetGroup {
@@ -557,6 +563,51 @@ final class SessionRepositoryTests: XCTestCase {
         XCTAssertEqual(loaded.first?.completedModules.first?.completedExercises.count, 1)
         XCTAssertEqual(loaded.first?.completedModules.first?.completedExercises.first?.exerciseName, "Squat")
         XCTAssertEqual(loaded.first?.completedModules.first?.completedExercises.first?.completedSetGroups.first?.sets.first?.weight, 100)
+    }
+
+    func testSaveSession_persistsProgressionSuggestion() throws {
+        // Given
+        let suggestion = ProgressionSuggestion(
+            baseValue: 200,
+            suggestedValue: 205,
+            metric: .weight,
+            percentageApplied: 2.5,
+            appliedOutcome: .progress,
+            confidence: 0.82,
+            decisionCode: "WEIGHTED_PROGRESS"
+        )
+        let exercise = SessionExercise.fixture(
+            exerciseName: "Bench",
+            completedSetGroups: [CompletedSetGroup.fixture(sets: [SetData.fixture(weight: 200, reps: 5)])]
+        ).withProgressionSuggestion(suggestion)
+
+        let module = CompletedModule.fixture(
+            moduleName: "Strength Work",
+            completedExercises: [exercise]
+        )
+        let session = Session.fixture(completedModules: [module])
+
+        // When
+        sessionRepo.save(session)
+        let loaded = sessionRepo.loadAll()
+
+        // Then
+        let loadedSuggestion = loaded
+            .first?
+            .completedModules
+            .first?
+            .completedExercises
+            .first?
+            .progressionSuggestion
+
+        XCTAssertNotNil(loadedSuggestion)
+        guard let loadedSuggestion else { return }
+
+        XCTAssertEqual(loadedSuggestion.baseValue, suggestion.baseValue, accuracy: 0.001)
+        XCTAssertEqual(loadedSuggestion.suggestedValue, suggestion.suggestedValue, accuracy: 0.001)
+        XCTAssertEqual(loadedSuggestion.metric, suggestion.metric)
+        XCTAssertEqual(loadedSuggestion.appliedOutcome, suggestion.appliedOutcome)
+        XCTAssertEqual(loadedSuggestion.decisionCode, suggestion.decisionCode)
     }
 
     // MARK: - Delete Tests

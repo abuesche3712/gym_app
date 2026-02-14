@@ -34,6 +34,12 @@
 		ADDEXR02BUILD002 /* AddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDEXR01FILE001 /* AddExerciseSheet.swift */; };
 		ANIMCO002BUILD002 /* AnimatedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANIMCO001FILE001 /* AnimatedComponents.swift */; };
 		ANLYT002BUILD002 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLYT001FILE001 /* AnalyticsView.swift */; };
+		ANLCAR02BUILD001 /* AnalyticsCardModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLCAR01FILE001 /* AnalyticsCardModifier.swift */; };
+		ANLCHT02BUILD001 /* AnalyticsCharts.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLCHT01FILE001 /* AnalyticsCharts.swift */; };
+		ANLCFG02BUILD001 /* AnalyticsConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLCFG01FILE001 /* AnalyticsConfig.swift */; };
+		ANLMOD02BUILD001 /* AnalyticsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLMOD01FILE001 /* AnalyticsModels.swift */; };
+		ANLSVC02BUILD001 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLSVC01FILE001 /* AnalyticsService.swift */; };
+		ANLVMO02BUILD001 /* AnalyticsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLVMO01FILE001 /* AnalyticsViewModel.swift */; };
 		APPCFG02BUILD002 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPCFG01FILE001 /* AppConfig.swift */; };
 		EMPTST02BUILD001 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EMPTST01FILE001 /* EmptyStateView.swift */; };
 		B610AC032F15B4DD008B2C15 /* gym_appApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC022F15B4DD008B2C15 /* gym_appApp.swift */; };
@@ -313,6 +319,12 @@
 		ADDEXR01FILE001 /* AddExerciseSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddExerciseSheet.swift; sourceTree = "<group>"; };
 		ANIMCO001FILE001 /* AnimatedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedComponents.swift; sourceTree = "<group>"; };
 		ANLYT001FILE001 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
+		ANLCAR01FILE001 /* AnalyticsCardModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsCardModifier.swift; sourceTree = "<group>"; };
+		ANLCHT01FILE001 /* AnalyticsCharts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsCharts.swift; sourceTree = "<group>"; };
+		ANLCFG01FILE001 /* AnalyticsConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsConfig.swift; sourceTree = "<group>"; };
+		ANLMOD01FILE001 /* AnalyticsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsModels.swift; sourceTree = "<group>"; };
+		ANLSVC01FILE001 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
+		ANLVMO01FILE001 /* AnalyticsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsViewModel.swift; sourceTree = "<group>"; };
 		APPCFG01FILE001 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		EMPTST01FILE001 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		B12D1154F7E74A3385D7FF2E /* DataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSeeder.swift; sourceTree = "<group>"; };
@@ -611,6 +623,12 @@
 		ANLYTGRP001GROUP001 /* Analytics */ = {
 			isa = PBXGroup;
 			children = (
+				ANLCFG01FILE001 /* AnalyticsConfig.swift */,
+				ANLMOD01FILE001 /* AnalyticsModels.swift */,
+				ANLSVC01FILE001 /* AnalyticsService.swift */,
+				ANLVMO01FILE001 /* AnalyticsViewModel.swift */,
+				ANLCHT01FILE001 /* AnalyticsCharts.swift */,
+				ANLCAR01FILE001 /* AnalyticsCardModifier.swift */,
 				ANLYT001FILE001 /* AnalyticsView.swift */,
 			);
 			path = Analytics;
@@ -1491,6 +1509,12 @@
 				PSTEDTLBR02BUILD001 /* PostEditorToolbar.swift in Sources */,
 				EDTPSTVM02BUILD001 /* EditPostViewModel.swift in Sources */,
 				ANLYT002BUILD002 /* AnalyticsView.swift in Sources */,
+				ANLCFG02BUILD001 /* AnalyticsConfig.swift in Sources */,
+				ANLMOD02BUILD001 /* AnalyticsModels.swift in Sources */,
+				ANLSVC02BUILD001 /* AnalyticsService.swift in Sources */,
+				ANLVMO02BUILD001 /* AnalyticsViewModel.swift in Sources */,
+				ANLCHT02BUILD001 /* AnalyticsCharts.swift in Sources */,
+				ANLCAR02BUILD001 /* AnalyticsCardModifier.swift in Sources */,
 				MOREV002BUILD002 /* MoreView.swift in Sources */,
 				USRPFL002BUILD002 /* UserProfile.swift in Sources */,
 				USNMVAL02BUILD01 /* UsernameValidation.swift in Sources */,

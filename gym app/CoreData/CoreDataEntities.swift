@@ -684,6 +684,7 @@ public class SessionExerciseEntity: NSManagedObject, SyncableEntity {
     @NSManaged public var completedModule: CompletedModuleEntity?
     @NSManaged public var completedSetGroups: NSOrderedSet?
     @NSManaged public var progressionRecommendationRaw: String?
+    @NSManaged public var progressionSuggestionData: Data?
     @NSManaged public var mobilityTrackingRaw: String?
     @NSManaged public var isBodyweight: Bool
     @NSManaged public var tracksAddedWeight: Bool
@@ -727,6 +728,16 @@ public class SessionExerciseEntity: NSManagedObject, SyncableEntity {
     var progressionRecommendation: ProgressionRecommendation? {
         get { progressionRecommendationRaw.flatMap { ProgressionRecommendation(rawValue: $0) } }
         set { progressionRecommendationRaw = newValue?.rawValue }
+    }
+
+    var progressionSuggestion: ProgressionSuggestion? {
+        get {
+            guard let progressionSuggestionData else { return nil }
+            return try? JSONDecoder().decode(ProgressionSuggestion.self, from: progressionSuggestionData)
+        }
+        set {
+            progressionSuggestionData = try? JSONEncoder().encode(newValue)
+        }
     }
 
     var mobilityTracking: MobilityTracking {

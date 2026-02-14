@@ -268,6 +268,144 @@ final class gym_appTests: XCTestCase {
         XCTAssertEqual(points[1].topSet.weight, 425, accuracy: 0.001)
     }
 
+    func testAnalyticsService_emptySessions_returnsZeroOrEmpty() {
+        let reference = makeDate(year: 2026, month: 2, day: 6)
+        let sessions: [Session] = []
+
+        XCTAssertEqual(service.currentStreak(from: sessions, referenceDate: reference), 0)
+        XCTAssertEqual(service.workoutsThisWeek(from: sessions, referenceDate: reference), 0)
+        XCTAssertEqual(service.weeklyVolumeTrend(from: sessions, weeks: 4, referenceDate: reference).count, 4)
+        XCTAssertEqual(service.progressionBreakdown(from: sessions, days: 28, referenceDate: reference), .empty)
+        XCTAssertEqual(service.engineHealth(from: sessions, days: 28, referenceDate: reference), .empty)
+        XCTAssertTrue(service.decisionProfileHealth(from: sessions, days: 28, referenceDate: reference).isEmpty)
+        XCTAssertTrue(service.progressionAlerts(from: sessions, days: 28, referenceDate: reference).isEmpty)
+
+        let dryRun = service.dryRunProfiles(from: sessions, recentSessionLimit: 12)
+        XCTAssertEqual(dryRun.inputCount, 0)
+        XCTAssertEqual(dryRun.results.count, 3)
+        XCTAssertTrue(service.recentPRs(sessions: sessions, limit: 5).isEmpty)
+    }
+
+    func testRecentPRs_singleRepSet_countsAsValidEstimatedOneRepMax() {
+        let day1 = makeDate(year: 2026, month: 1, day: 1)
+        let day2 = makeDate(year: 2026, month: 1, day: 8)
+
+        let sessions = [
+            makeSession(date: day1, exercises: [makeStrengthExercise(name: "Bench", weight: 200, reps: 1)]),
+            makeSession(date: day2, exercises: [makeStrengthExercise(name: "Bench", weight: 205, reps: 1)])
+        ]
+
+        let prs = service.recentPRs(sessions: sessions, limit: 5)
+        XCTAssertEqual(prs.count, 1)
+        XCTAssertEqual(prs[0].exerciseName, "Bench")
+        XCTAssertEqual(prs[0].date, day2)
+        XCTAssertEqual(prs[0].newBest, 205, accuracy: 0.001)
+    }
+
+    func testProgressionAlerts_requiresMinimumDecisionsPerExercise() {
+        let reference = makeDate(year: 2026, month: 2, day: 6)
+        let recentDate = calendar.date(byAdding: .day, value: -1, to: reference)!
+        let progressSuggestion = ProgressionSuggestion(
+            baseValue: 100,
+            suggestedValue: 105,
+            metric: .weight,
+            percentageApplied: 5,
+            appliedOutcome: .progress,
+            confidence: 0.65,
+            decisionCode: "WEIGHTED_PROGRESS"
+        )
+
+        let benchExercises = [
+            makeStrengthExercise(name: "Bench", weight: 100, reps: 5, recommendation: .stay, suggestion: progressSuggestion),
+            makeStrengthExercise(name: "Bench", weight: 100, reps: 5, recommendation: .stay, suggestion: progressSuggestion),
+            makeStrengthExercise(name: "Bench", weight: 100, reps: 5, recommendation: .regress, suggestion: progressSuggestion)
+        ]
+        let sessions = [makeSession(date: recentDate, exercises: benchExercises)]
+
+        let alerts = service.progressionAlerts(from: sessions, days: 28, referenceDate: reference)
+        XCTAssertTrue(alerts.isEmpty)
+    }
+
+    func testDashboardData_matchesExistingMetricMethods() {
+        let reference = makeDate(year: 2026, month: 2, day: 13)
+        let sessions = makeAnalyticsDataset(sessionCount: 80, referenceDate: reference)
+
+        let dashboard = service.dashboardData(from: sessions, referenceDate: reference)
+        XCTAssertEqual(dashboard.analyzedSessionCount, sessions.count)
+        XCTAssertEqual(dashboard.currentStreak, service.currentStreak(from: sessions, referenceDate: reference))
+        XCTAssertEqual(dashboard.workoutsThisWeek, service.workoutsThisWeek(from: sessions, referenceDate: reference))
+        XCTAssertEqual(
+            dashboard.weeklyVolumeTrend,
+            service.weeklyVolumeTrend(
+                from: sessions,
+                weeks: AnalyticsConfig.defaultWeeklyVolumeWeeks,
+                referenceDate: reference
+            )
+        )
+        XCTAssertEqual(
+            normalizedLiftTrends(dashboard.liftTrends),
+            normalizedLiftTrends(service.mostTrainedLiftTrends(from: sessions, limit: 3))
+        )
+        XCTAssertEqual(
+            dashboard.exerciseProgress,
+            service.strengthE1RMProgressByExercise(from: sessions)
+        )
+        XCTAssertEqual(
+            dashboard.progressionBreakdown,
+            service.progressionBreakdown(
+                from: sessions,
+                days: AnalyticsConfig.defaultBreakdownWindowDays,
+                referenceDate: reference
+            )
+        )
+        XCTAssertEqual(
+            dashboard.engineHealth,
+            service.engineHealth(
+                from: sessions,
+                days: AnalyticsConfig.defaultEngineHealthWindowDays,
+                referenceDate: reference
+            )
+        )
+        XCTAssertEqual(
+            dashboard.decisionProfileHealth,
+            service.decisionProfileHealth(
+                from: sessions,
+                days: AnalyticsConfig.defaultDecisionProfileWindowDays,
+                referenceDate: reference
+            )
+        )
+        XCTAssertEqual(
+            dashboard.progressionAlerts,
+            service.progressionAlerts(
+                from: sessions,
+                days: AnalyticsConfig.defaultAlertWindowDays,
+                referenceDate: reference
+            )
+        )
+
+        let dryRun = service.dryRunProfiles(
+            from: sessions,
+            recentSessionLimit: AnalyticsConfig.defaultRecentSessionLimit
+        )
+        XCTAssertEqual(dashboard.dryRunInputCount, dryRun.inputCount)
+        XCTAssertEqual(dashboard.dryRunProfiles, dryRun.results)
+        XCTAssertEqual(
+            normalizedPersonalRecordEvents(dashboard.recentPRs),
+            normalizedPersonalRecordEvents(
+                service.recentPRs(sessions: sessions, limit: AnalyticsConfig.defaultRecentPRLimit)
+            )
+        )
+    }
+
+    func testDashboardData_profileWith250Sessions() {
+        let reference = makeDate(year: 2026, month: 2, day: 13)
+        let sessions = makeAnalyticsDataset(sessionCount: 250, referenceDate: reference)
+
+        measure {
+            _ = service.dashboardData(from: sessions, referenceDate: reference)
+        }
+    }
+
     // MARK: - Helpers
 
     private func makeDate(year: Int, month: Int, day: Int) -> Date {
@@ -322,6 +460,235 @@ final class gym_appTests: XCTestCase {
                     moduleName: "Strength",
                     moduleType: .strength,
                     completedExercises: exercises
+                )
+            ]
+        )
+    }
+
+    private func makeAnalyticsDataset(sessionCount: Int, referenceDate: Date) -> [Session] {
+        var sessions: [Session] = []
+        for index in 0..<sessionCount {
+            guard let date = calendar.date(byAdding: .day, value: -index, to: referenceDate) else { continue }
+            let baseWeight = Double(185 + (index % 20))
+            let reps = 3 + (index % 6)
+
+            let suggestion = ProgressionSuggestion(
+                baseValue: baseWeight,
+                suggestedValue: baseWeight + 5,
+                metric: .weight,
+                percentageApplied: 2.5,
+                appliedOutcome: .progress,
+                confidence: 0.45 + (Double(index % 5) * 0.1),
+                decisionCode: index % 4 == 0 ? "READINESS_GATE" : "WEIGHTED_PROGRESS"
+            )
+
+            let bench = makeStrengthExercise(
+                name: "Bench",
+                sets: [
+                    SetData(setNumber: 1, weight: baseWeight, reps: reps, completed: true),
+                    SetData(setNumber: 2, weight: baseWeight + 10, reps: max(1, reps - 1), completed: true)
+                ],
+                recommendation: index.isMultiple(of: 3) ? .progress : .stay,
+                suggestion: suggestion
+            )
+
+            let squat = makeStrengthExercise(
+                name: "Squat",
+                sets: [SetData(setNumber: 1, weight: baseWeight + 30, reps: reps, completed: true)],
+                recommendation: index.isMultiple(of: 7) ? .regress : .progress,
+                suggestion: suggestion
+            )
+
+            sessions.append(makeSession(date: date, exercises: [bench, squat]))
+        }
+
+        return sessions
+    }
+
+    private struct LiftTrendComparable: Equatable {
+        let exerciseName: String
+        let latestDate: Date
+        let latestTopSet: StrengthTopSet
+        let previousTopSet: StrengthTopSet?
+        let sessionCount: Int
+    }
+
+    private struct PersonalRecordComparable: Equatable {
+        let exerciseName: String
+        let date: Date
+        let type: PersonalRecordType
+        let previousBest: Double
+        let newBest: Double
+        let topSet: StrengthTopSet
+    }
+
+    private func normalizedLiftTrends(_ trends: [LiftTrend]) -> [LiftTrendComparable] {
+        trends
+            .map {
+                LiftTrendComparable(
+                    exerciseName: $0.exerciseName,
+                    latestDate: $0.latestDate,
+                    latestTopSet: $0.latestTopSet,
+                    previousTopSet: $0.previousTopSet,
+                    sessionCount: $0.sessionCount
+                )
+            }
+            .sorted { lhs, rhs in
+                if lhs.exerciseName != rhs.exerciseName {
+                    return lhs.exerciseName < rhs.exerciseName
+                }
+                return lhs.latestDate < rhs.latestDate
+            }
+    }
+
+    private func normalizedPersonalRecordEvents(
+        _ events: [PersonalRecordEvent]
+    ) -> [PersonalRecordComparable] {
+        events.map {
+            PersonalRecordComparable(
+                exerciseName: $0.exerciseName,
+                date: $0.date,
+                type: $0.type,
+                previousBest: $0.previousBest,
+                newBest: $0.newBest,
+                topSet: $0.topSet
+            )
+        }
+    }
+}
+
+@MainActor
+final class AnalyticsViewModelTests: XCTestCase {
+    actor MockComputationPerformer: AnalyticsComputationPerforming {
+        private(set) var callCount = 0
+        private let delayNanos: UInt64
+
+        init(delayNanos: UInt64 = 0) {
+            self.delayNanos = delayNanos
+        }
+
+        func compute(from sessions: [Session]) async -> AnalyticsComputationSnapshot {
+            callCount += 1
+            if delayNanos > 0 {
+                try? await Task.sleep(nanoseconds: delayNanos)
+            }
+
+            return AnalyticsComputationSnapshot(
+                analyzedSessionCount: sessions.count,
+                currentStreak: sessions.count,
+                workoutsThisWeek: sessions.count,
+                weeklyVolumeTrend: [],
+                liftTrends: [],
+                exerciseProgress: [],
+                progressionBreakdown: .empty,
+                engineHealth: .empty,
+                decisionProfileHealth: [],
+                progressionAlerts: [],
+                dryRunProfiles: [],
+                dryRunInputCount: 0,
+                recentPRs: []
+            )
+        }
+    }
+
+    func testLoad_skipsRecomputeWhenFingerprintUnchanged() async {
+        let performer = MockComputationPerformer()
+        let viewModel = AnalyticsViewModel(computationPerformer: performer)
+        let sessions = [makeSession(reps: 5)]
+
+        viewModel.load(from: sessions)
+        await waitUntil("initial compute") {
+            await performer.callCount == 1 && viewModel.analyzedSessionCount == 1
+        }
+
+        viewModel.load(from: sessions)
+
+        try? await Task.sleep(nanoseconds: 80_000_000)
+        let callCount = await performer.callCount
+        XCTAssertEqual(callCount, 1)
+    }
+
+    func testLoad_recomputesWhenRelevantStrengthDataChanges() async {
+        let performer = MockComputationPerformer()
+        let viewModel = AnalyticsViewModel(computationPerformer: performer)
+
+        var sessions = [makeSession(reps: 5)]
+        viewModel.load(from: sessions)
+        await waitUntil("initial compute") { await performer.callCount == 1 }
+
+        sessions[0].completedModules[0].completedExercises[0].completedSetGroups[0].sets[0].reps = 6
+        viewModel.load(from: sessions)
+
+        await waitUntil("recompute") { await performer.callCount == 2 }
+        let callCount = await performer.callCount
+        XCTAssertEqual(callCount, 2)
+    }
+
+    func testLoad_cancelsStaleTaskAndAppliesLatestResult() async {
+        let performer = MockComputationPerformer(delayNanos: 250_000_000)
+        let viewModel = AnalyticsViewModel(computationPerformer: performer)
+
+        viewModel.load(from: [makeSession(reps: 5)])
+        viewModel.load(from: [makeSession(reps: 5), makeSession(reps: 6)])
+
+        await waitUntil("latest result") {
+            viewModel.analyzedSessionCount == 2 && viewModel.currentStreak == 2
+        }
+
+        XCTAssertEqual(viewModel.analyzedSessionCount, 2)
+        XCTAssertEqual(viewModel.currentStreak, 2)
+    }
+
+    private func waitUntil(
+        _ description: String,
+        timeout: TimeInterval = 2.0,
+        condition: @escaping () async -> Bool
+    ) async {
+        let start = Date()
+        while Date().timeIntervalSince(start) < timeout {
+            if await condition() {
+                return
+            }
+            try? await Task.sleep(nanoseconds: 20_000_000)
+        }
+        XCTFail("Timed out waiting for \(description)")
+    }
+
+    private func makeSession(reps: Int) -> Session {
+        let suggestion = ProgressionSuggestion(
+            baseValue: 100,
+            suggestedValue: 105,
+            metric: .weight,
+            percentageApplied: 5,
+            appliedOutcome: .progress,
+            confidence: 0.8,
+            decisionCode: "WEIGHTED_PROGRESS"
+        )
+
+        let exercise = SessionExercise(
+            exerciseId: UUID(),
+            exerciseName: "Bench",
+            exerciseType: .strength,
+            completedSetGroups: [
+                CompletedSetGroup(
+                    setGroupId: UUID(),
+                    sets: [SetData(setNumber: 1, weight: 100, reps: reps, completed: true)]
+                )
+            ],
+            progressionRecommendation: .progress,
+            progressionSuggestion: suggestion
+        )
+
+        return Session(
+            workoutId: UUID(),
+            workoutName: "Test",
+            date: Date(),
+            completedModules: [
+                CompletedModule(
+                    moduleId: UUID(),
+                    moduleName: "Strength",
+                    moduleType: .strength,
+                    completedExercises: [exercise]
                 )
             ]
         )

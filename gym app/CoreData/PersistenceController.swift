@@ -419,6 +419,7 @@ struct PersistenceController {
             createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             createAttribute("progressionRecommendationRaw", type: .stringAttributeType, optional: true),
+            createAttribute("progressionSuggestionData", type: .binaryDataAttributeType, optional: true),
             createAttribute("mobilityTrackingRaw", type: .stringAttributeType, optional: true),
             createAttribute("isBodyweight", type: .booleanAttributeType, optional: true),
             createAttribute("tracksAddedWeight", type: .booleanAttributeType, optional: true, defaultValue: true),

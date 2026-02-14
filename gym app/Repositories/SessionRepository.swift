@@ -96,7 +96,8 @@ class SessionRepository: CoreDataRepository {
                     originalExerciseName: exerciseEntity.originalExerciseName,
                     isAdHoc: exerciseEntity.isAdHoc,
                     sourceExerciseInstanceId: exerciseEntity.sourceExerciseInstanceId,
-                    progressionRecommendation: exerciseEntity.progressionRecommendation
+                    progressionRecommendation: exerciseEntity.progressionRecommendation,
+                    progressionSuggestion: exerciseEntity.progressionSuggestion
                 )
             }
 
@@ -181,6 +182,7 @@ class SessionRepository: CoreDataRepository {
                 exerciseEntity.orderIndex = Int32(exIndex)
                 exerciseEntity.completedModule = moduleEntity
                 exerciseEntity.progressionRecommendation = sessionExercise.progressionRecommendation
+                exerciseEntity.progressionSuggestion = sessionExercise.progressionSuggestion
                 exerciseEntity.mobilityTracking = sessionExercise.mobilityTracking
                 exerciseEntity.isBodyweight = sessionExercise.isBodyweight
                 exerciseEntity.tracksAddedWeight = sessionExercise.tracksAddedWeight
