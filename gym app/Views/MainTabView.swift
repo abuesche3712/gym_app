@@ -75,6 +75,14 @@ struct MainTabView: View {
                 // Custom tab bar - hide when requested (e.g., in chat view)
                 if !hideTabBar {
                     VStack(spacing: 0) {
+                        if sessionViewModel.undoToastMessage != nil {
+                            UndoToast(
+                                message: sessionViewModel.undoToastMessage ?? "",
+                                onUndo: { sessionViewModel.undoDelete() }
+                            )
+                            .padding(.bottom, AppSpacing.xs)
+                        }
+
                         if showMiniBar {
                             MiniSessionBar(sessionViewModel: sessionViewModel) {
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
@@ -85,6 +93,7 @@ struct MainTabView: View {
                         }
                         customTabBar
                     }
+                    .animation(AppAnimation.standard, value: sessionViewModel.undoToastMessage != nil)
                 }
             }
             .environment(\.hideTabBar, $hideTabBar)

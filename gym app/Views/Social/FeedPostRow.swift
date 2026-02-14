@@ -20,6 +20,7 @@ struct FeedPostRow: View {
     var onReact: ((ReactionType) -> Void)? = nil
     var onReport: (() -> Void)? = nil
     var onHideAuthor: (() -> Void)? = nil
+    var onRestoreSession: (() -> Void)? = nil
 
     @State private var showingDeleteConfirmation = false
     @State private var isLikeAnimating = false
@@ -122,13 +123,21 @@ struct FeedPostRow: View {
             Spacer()
 
             // More menu
-            if isOwnPost || onReport != nil || onHideAuthor != nil {
+            if isOwnPost || onReport != nil || onHideAuthor != nil || onRestoreSession != nil {
                 Menu {
                     if let onEdit = onEdit {
                         Button {
                             onEdit()
                         } label: {
                             Label("Edit", systemImage: "pencil")
+                        }
+                    }
+
+                    if let onRestoreSession = onRestoreSession {
+                        Button {
+                            onRestoreSession()
+                        } label: {
+                            Label("Restore to History", systemImage: "clock.arrow.counterclockwise")
                         }
                     }
 

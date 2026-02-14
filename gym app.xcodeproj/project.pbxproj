@@ -211,6 +211,7 @@
 		STRINP02BUILD002 /* StrengthInputsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = STRINP01FILE001 /* StrengthInputsView.swift */; };
 		SUPERSET002HELPER002 /* SupersetHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = SUPERSET001HELPER001 /* SupersetHelper.swift */; };
 		SYCERR002BUILD002 /* SyncErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = SYCERR001FILE001 /* SyncErrorBanner.swift */; };
+		UNDTST02BUILD002 /* UndoToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = UNDTST01FILE001 /* UndoToast.swift */; };
 		SYNCLOG02BUILD002 /* SyncLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = SYNCLOG01FILE001 /* SyncLogger.swift */; };
 		SYNCQU002BUILD002 /* SyncQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = SYNCQU001FILE001 /* SyncQueue.swift */; };
 		THEMEANIM01BUILD /* AppAnimations.swift in Sources */ = {isa = PBXBuildFile; fileRef = THEMEANIM01FILE01 /* AppAnimations.swift */; };
@@ -498,6 +499,7 @@
 		STRINP01FILE001 /* StrengthInputsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StrengthInputsView.swift; sourceTree = "<group>"; };
 		SUPERSET001HELPER001 /* SupersetHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SupersetHelper.swift; sourceTree = "<group>"; };
 		SYCERR001FILE001 /* SyncErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorBanner.swift; sourceTree = "<group>"; };
+		UNDTST01FILE001 /* UndoToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoToast.swift; sourceTree = "<group>"; };
 		SYNCLOG01FILE001 /* SyncLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncLogger.swift; sourceTree = "<group>"; };
 		SYNCQU001FILE001 /* SyncQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncQueue.swift; sourceTree = "<group>"; };
 		THEMEANIM01FILE01 /* AppAnimations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAnimations.swift; sourceTree = "<group>"; };
@@ -984,6 +986,7 @@
 				B6PHOTO042F2A000000D8C22D /* ProfilePhotoView.swift */,
 				USRROW01FILE001 /* UserRowView.swift */,
 				SYCERR001FILE001 /* SyncErrorBanner.swift */,
+				UNDTST01FILE001 /* UndoToast.swift */,
 				BLDRGRP001GROUP001 /* Builder */,
 			);
 			path = Components;
@@ -1456,6 +1459,7 @@
 				B6PHOTO072F2A000000D8C22D /* ProfilePhotoPickerSheet.swift in Sources */,
 				USRROW02BUILD001 /* UserRowView.swift in Sources */,
 				SYCERR002BUILD002 /* SyncErrorBanner.swift in Sources */,
+				UNDTST02BUILD002 /* UndoToast.swift in Sources */,
 				BLDREMT02BUILD002 /* BuilderEmptyState.swift in Sources */,
 				BLDRQAB02BUILD002 /* BuilderQuickAddBar.swift in Sources */,
 				BLDRSRR02BUILD002 /* BuilderSearchResultRow.swift in Sources */,

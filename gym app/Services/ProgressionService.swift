@@ -107,6 +107,7 @@ struct ProgressionService {
                 exerciseInstanceId: exerciseInstanceId,
                 exerciseName: exercise.exerciseName,
                 exerciseType: exercise.exerciseType,
+                targetMetric: rule.targetMetric,
                 workoutId: workoutId,
                 history: sessionHistory
             ) else {
@@ -159,6 +160,7 @@ struct ProgressionService {
             guard let lastExerciseData = findLastSessionData(
                 exerciseName: exercise.exerciseName,
                 exerciseType: exercise.exerciseType,
+                targetMetric: rule.targetMetric,
                 workoutId: workoutId,
                 history: sessionHistory
             ) else {
@@ -167,6 +169,46 @@ struct ProgressionService {
             }
 
             // Calculate suggestion based on rule
+            if let suggestion = calculateSuggestion(
+                from: lastExerciseData,
+                currentExercise: exercise,
+                rule: rule,
+                mode: .legacy,
+                progressionState: nil,
+                profile: profile
+            ) {
+                suggestions[exercise.id] = suggestion
+            }
+        }
+
+        return suggestions
+    }
+
+    /// Baseline suggestions for ad-hoc workouts without a bound program.
+    /// Uses conservative defaults by exercise type so downstream analytics remains populated.
+    func calculateSuggestionsWithoutProgram(
+        for exercises: [SessionExercise],
+        workoutId: UUID,
+        sessionHistory: [Session]
+    ) -> [UUID: ProgressionSuggestion] {
+        var suggestions: [UUID: ProgressionSuggestion] = [:]
+
+        for exercise in exercises {
+            guard isProgressionSupported(exercise) else { continue }
+
+            let rule = fallbackRule(for: exercise)
+            let profile = defaultProfile(for: exercise.exerciseType)
+
+            guard let lastExerciseData = findLastSessionData(
+                exerciseName: exercise.exerciseName,
+                exerciseType: exercise.exerciseType,
+                targetMetric: rule.targetMetric,
+                workoutId: workoutId,
+                history: sessionHistory
+            ) else {
+                continue
+            }
+
             if let suggestion = calculateSuggestion(
                 from: lastExerciseData,
                 currentExercise: exercise,
@@ -298,6 +340,7 @@ struct ProgressionService {
         exerciseInstanceId: UUID? = nil,
         exerciseName: String,
         exerciseType: ExerciseType,
+        targetMetric: ProgressionMetric? = nil,
         workoutId: UUID,
         history: [Session]
     ) -> SessionExercise? {
@@ -306,13 +349,15 @@ struct ProgressionService {
             for module in session.completedModules where !module.skipped {
                 if let exerciseInstanceId,
                    let exercise = module.completedExercises.first(where: {
-                       $0.sourceExerciseInstanceId == exerciseInstanceId && hasCompletedData($0, exerciseType: exerciseType)
+                       $0.sourceExerciseInstanceId == exerciseInstanceId &&
+                           hasCompletedData($0, exerciseType: exerciseType, targetMetric: targetMetric)
                    }) {
                     return exercise
                 }
 
                 if let exercise = module.completedExercises.first(where: {
-                    $0.exerciseName == exerciseName && hasCompletedData($0, exerciseType: exerciseType)
+                    $0.exerciseName == exerciseName &&
+                        hasCompletedData($0, exerciseType: exerciseType, targetMetric: targetMetric)
                 }) {
                     return exercise
                 }
@@ -322,19 +367,52 @@ struct ProgressionService {
     }
 
     /// Check if an exercise has completed sets with progression-relevant data.
-    private func hasCompletedData(_ exercise: SessionExercise, exerciseType: ExerciseType) -> Bool {
+    private func hasCompletedData(
+        _ exercise: SessionExercise,
+        exerciseType: ExerciseType,
+        targetMetric: ProgressionMetric?
+    ) -> Bool {
         exercise.completedSetGroups.contains { group in
             group.sets.contains { set in
                 guard set.completed else { return false }
-                switch exerciseType {
-                case .strength:
-                    return set.weight != nil && set.reps != nil
-                case .cardio:
-                    return set.duration != nil || set.distance != nil
-                default:
-                    return false
+                switch targetMetric {
+                case .weight:
+                    return set.weight != nil
+                case .reps:
+                    return set.reps != nil
+                case .duration:
+                    return set.duration != nil
+                case .distance:
+                    return set.distance != nil
+                case .none:
+                    switch exerciseType {
+                    case .strength:
+                        return set.weight != nil || set.reps != nil
+                    case .cardio:
+                        return set.duration != nil || set.distance != nil
+                    default:
+                        return false
+                    }
                 }
             }
+        }
+    }
+
+    private func fallbackRule(for exercise: SessionExercise) -> ProgressionRule {
+        switch exercise.exerciseType {
+        case .cardio:
+            if exercise.cardioMetric.tracksDistance {
+                return .cardioDistance
+            }
+            return .cardioDuration
+        case .strength:
+            if exercise.isBodyweight || !exercise.tracksAddedWeight {
+                return .repProgression
+            }
+            return .moderate
+        default:
+            // Not expected (caller guards to supported types), but keep a safe default.
+            return .moderate
         }
     }
 

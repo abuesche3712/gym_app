@@ -26,11 +26,24 @@ struct WorkoutOverviewSheet: View {
     @State private var addExerciseModuleIndex: Int? = nil
     @State private var showAddExerciseSheet = false
 
+    private var progressionSuggestionCount: Int {
+        guard let session else { return 0 }
+        return session.completedModules.reduce(0) { moduleSum, module in
+            moduleSum + module.completedExercises.filter { $0.progressionSuggestion != nil }.count
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollViewReader { proxy in
                 List {
                     if let session = session {
+                        if progressionSuggestionCount > 0 {
+                            Section {
+                                progressionSummaryRow
+                            }
+                        }
+
                         ForEach(Array(session.completedModules.enumerated()), id: \.offset) { moduleIndex, module in
                             Section {
                                 moduleHeader(module: module, moduleIndex: moduleIndex)
@@ -82,6 +95,24 @@ struct WorkoutOverviewSheet: View {
                 }
             }
         }
+    }
+
+    private var progressionSummaryRow: some View {
+        HStack(spacing: AppSpacing.md) {
+            Image(systemName: "arrow.up.right.circle.fill")
+                .subheadline(color: AppColors.success)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Progression suggestions ready")
+                    .subheadline(color: AppColors.textPrimary)
+                    .fontWeight(.semibold)
+                Text("\(progressionSuggestionCount) exercise\(progressionSuggestionCount == 1 ? "" : "s") include recommended targets.")
+                    .caption(color: AppColors.textTertiary)
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, 4)
     }
 
     // MARK: - Module Header
@@ -194,6 +225,22 @@ struct WorkoutOverviewSheet: View {
 
                     Text(exerciseSetSummary(exercise))
                         .caption(color: AppColors.textTertiary)
+
+                    if let suggestion = exercise.progressionSuggestion {
+                        HStack(spacing: 4) {
+                            if let expected = expectedRecommendation(from: suggestion) {
+                                Image(systemName: expected.icon)
+                                    .caption2(color: expected.color)
+                            } else {
+                                Image(systemName: "sparkles")
+                                    .caption2(color: AppColors.dominant)
+                            }
+
+                            Text("Suggested: \(suggestion.formattedSuggestion)")
+                                .caption(color: AppColors.textSecondary)
+                                .lineLimit(1)
+                        }
+                    }
                 }
 
                 Spacer()
@@ -310,6 +357,13 @@ struct WorkoutOverviewSheet: View {
             sum + group.sets.filter { $0.completed }.count
         }
         return "\(completedSets)/\(totalSets) sets"
+    }
+
+    private func expectedRecommendation(from suggestion: ProgressionSuggestion) -> ProgressionRecommendation? {
+        if let applied = suggestion.appliedOutcome { return applied }
+        if suggestion.suggestedValue > suggestion.baseValue + 0.0001 { return .progress }
+        if suggestion.suggestedValue < suggestion.baseValue - 0.0001 { return .regress }
+        return .stay
     }
 
     private func formatSetData(_ set: SetData, exerciseType: ExerciseType) -> String {

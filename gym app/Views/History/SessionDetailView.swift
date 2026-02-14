@@ -21,7 +21,6 @@ struct SessionDetailView: View {
         self.readOnly = readOnly
     }
 
-    @State private var showingDeleteConfirmation = false
     @State private var showingEditSession = false
     @State private var showingShareSheet = false
     @State private var showingShareWithFriend = false
@@ -162,7 +161,8 @@ struct SessionDetailView: View {
 
                         // Delete button
                         Button {
-                            showingDeleteConfirmation = true
+                            sessionViewModel.softDeleteSession(session)
+                            dismiss()
                         } label: {
                             Image(systemName: "trash")
                                 .font(.body.weight(.medium))
@@ -234,19 +234,6 @@ struct SessionDetailView: View {
         }
         .sheet(item: $setToPost) { setPerformance in
             ComposePostSheet(content: setPerformance)
-        }
-        .confirmationDialog(
-            "Delete Workout?",
-            isPresented: $showingDeleteConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) {
-                sessionViewModel.deleteSession(session)
-                dismiss()
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This will permanently delete this workout from your history.")
         }
         .alert("Workout Created", isPresented: $showConversionAlert) {
             Button("OK", role: .cancel) {}

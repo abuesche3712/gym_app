@@ -12,8 +12,6 @@ struct HistoryView: View {
     @EnvironmentObject var sessionViewModel: SessionViewModel
     @State private var searchText = ""
     @State private var selectedFilter: HistoryFilter = .all
-    @State private var sessionToDelete: Session?
-    @State private var showingDeleteConfirmation = false
     @State private var sessionToShare: Session?
     @State private var sessionToPost: Session?
     @State private var animateIn = false
@@ -39,7 +37,7 @@ struct HistoryView: View {
     }
 
     var filteredSessions: [Session] {
-        var sessions = sessionViewModel.sessions
+        var sessions = sessionViewModel.visibleSessions
 
         let now = Date()
         let calendar = Calendar.current
@@ -128,31 +126,6 @@ struct HistoryView: View {
             .refreshable {
                 sessionViewModel.loadAllSessions()
                 HapticManager.shared.success()
-            }
-            .confirmationDialog(
-                "Delete Workout?",
-                isPresented: $showingDeleteConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Delete", role: .destructive) {
-                    if let session = sessionToDelete {
-                        withAnimation(AppAnimation.standard) {
-                            sessionViewModel.deleteSession(session)
-                        }
-                        HapticManager.shared.impact()
-                    }
-                    sessionToDelete = nil
-                }
-                Button("Cancel", role: .cancel) {
-                    sessionToDelete = nil
-                }
-            } message: {
-                Text("This will permanently delete this workout from your history.")
-            }
-            .onChange(of: showingDeleteConfirmation) { _, isShowing in
-                if isShowing {
-                    HapticManager.shared.warning()
-                }
             }
             .onAppear {
                 withAnimation(AppAnimation.entrance) {
@@ -331,8 +304,9 @@ struct HistoryView: View {
                                     Divider()
 
                                     Button(role: .destructive) {
-                                        sessionToDelete = session
-                                        showingDeleteConfirmation = true
+                                        withAnimation(AppAnimation.standard) {
+                                            sessionViewModel.softDeleteSession(session)
+                                        }
                                     } label: {
                                         Label("Delete", systemImage: "trash")
                                     }

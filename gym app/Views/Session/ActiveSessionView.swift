@@ -253,6 +253,13 @@ struct ActiveSessionView: View {
                 }
             }
             .onAppear {
+                if sessionViewModel.shouldAutoShowWorkoutOverview() {
+                    sessionViewModel.markWorkoutOverviewShown()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        showWorkoutOverview = true
+                    }
+                }
+
                 // Hide toolbar buttons after 30 seconds
                 DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
                     withAnimation(.easeInOut(duration: 0.3)) {

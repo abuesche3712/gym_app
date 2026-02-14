@@ -171,6 +171,15 @@ class DataRepository: ObservableObject {
         }
     }
 
+    func restoreSession(_ session: Session) {
+        var restored = session
+        restored.id = UUID()
+        restored.syncStatus = .pendingSync
+        restored.createdAt = Date()
+        saveSession(restored)
+        logger.info("Restored session '\(restored.workoutName)' from shared content", context: "restoreSession")
+    }
+
     func deleteSession(_ session: Session) {
         sessionRepo.delete(session)
         loadSessions()

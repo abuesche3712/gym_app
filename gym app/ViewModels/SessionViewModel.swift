@@ -69,12 +69,24 @@ class SessionViewModel: ObservableObject {
     // History
     @Published var sessions: [Session] = []
 
+    // Soft-delete with undo
+    @Published var pendingDeletionIds: Set<UUID> = []
+    @Published var undoToastMessage: String? = nil
+    private var pendingDeletionSession: Session?
+    private var pendingDeletionTask: Task<Void, Never>?
+    private var backgroundCancellable: AnyCancellable?
+
+    var visibleSessions: [Session] {
+        sessions.filter { !pendingDeletionIds.contains($0.id) }
+    }
+
     private let repository: DataRepository
     private let libraryService = LibraryService.shared
     private var timerCancellable: AnyCancellable?
     private var sessionTimerCancellable: AnyCancellable?
     private var foregroundCancellable: AnyCancellable?
     private var libraryChangeCancellable: AnyCancellable?
+    private var overviewShownSessionId: UUID?
 
     // Auto-save debouncer for crash recovery (saves at most every 2 seconds)
     private let autoSaveDebouncer = Debouncer(delay: 2.0)
@@ -86,6 +98,7 @@ class SessionViewModel: ObservableObject {
         self.repository = repository ?? DataRepository.shared
         loadSessions()
         setupLibraryObserver()
+        setupBackgroundObserver()
     }
 
     func loadSessions() {
@@ -286,19 +299,13 @@ class SessionViewModel: ObservableObject {
         let sessionId = UUID()
         let sessionDate = Date()
 
-        // Look up program info if this session is from a scheduled program workout
-        var programName: String? = nil
-        var programWeekNumber: Int? = nil
-        if let programId = scheduledWorkout?.programId,
-           let program = repository.getProgram(id: programId) {
-            programName = program.name
-            // Calculate week number from program start date
-            if let startDate = program.startDate {
-                let calendar = Calendar.current
-                let weeks = calendar.dateComponents([.weekOfYear], from: startDate, to: sessionDate).weekOfYear ?? 0
-                programWeekNumber = weeks + 1  // 1-indexed week number
-            }
-        }
+        // Resolve program context from scheduled workout, or infer it when this workout
+        // maps to exactly one active program slot.
+        let programContext = resolveProgramContext(
+            workout: workout,
+            scheduledWorkout: scheduledWorkout,
+            sessionDate: sessionDate
+        )
 
         // Create sharing context for all nested entities
         let context = SessionSharingContext(
@@ -306,9 +313,9 @@ class SessionViewModel: ObservableObject {
             workoutId: workout.id,
             workoutName: workout.name,
             date: sessionDate,
-            programId: scheduledWorkout?.programId,
-            programName: programName,
-            programWeekNumber: programWeekNumber
+            programId: programContext.id,
+            programName: programContext.name,
+            programWeekNumber: programContext.weekNumber
         )
 
         // Resolve exercises through ExerciseResolver and convert to session format
@@ -357,39 +364,42 @@ class SessionViewModel: ObservableObject {
             completedModules.append(standaloneModule)
         }
 
-        // Calculate and apply progression suggestions if program has progression enabled
-        if let programId = scheduledWorkout?.programId,
+        // Calculate and apply progression suggestions.
+        // Program-aware suggestions are preferred; ad-hoc starts fall back to baseline rules.
+        let allExercises = completedModules.flatMap { $0.completedExercises }
+        let exerciseInstancePairs: [(UUID, UUID)] = allExercises.compactMap { exercise in
+            guard let sourceId = exercise.sourceExerciseInstanceId else { return nil }
+            return (exercise.id, sourceId)
+        }
+        let exerciseInstanceIds = Dictionary(uniqueKeysWithValues: exerciseInstancePairs)
+        let workoutHistory = sessions.filter { $0.workoutId == workout.id }
+
+        let progressionService = ProgressionService()
+        let suggestions: [UUID: ProgressionSuggestion]
+
+        if let programId = context.programId,
            let program = repository.getProgram(id: programId),
            program.progressionEnabled {
-
-            // Get all exercises from all modules
-            let allExercises = completedModules.flatMap { $0.completedExercises }
-            let exerciseInstancePairs: [(UUID, UUID)] = allExercises.compactMap { exercise in
-                guard let sourceId = exercise.sourceExerciseInstanceId else { return nil }
-                return (exercise.id, sourceId)
-            }
-            let exerciseInstanceIds = Dictionary(uniqueKeysWithValues: exerciseInstancePairs)
-
-            // Get session history for this workout (already sorted by date descending)
-            let workoutHistory = sessions.filter { $0.workoutId == workout.id }
-
-            // Calculate suggestions
-            let progressionService = ProgressionService()
-            let suggestions = progressionService.calculateSuggestions(
+            suggestions = progressionService.calculateSuggestions(
                 for: allExercises,
                 exerciseInstanceIds: exerciseInstanceIds,
                 workoutId: workout.id,
                 program: program,
                 sessionHistory: workoutHistory
             )
+        } else {
+            suggestions = progressionService.calculateSuggestionsWithoutProgram(
+                for: allExercises,
+                workoutId: workout.id,
+                sessionHistory: workoutHistory
+            )
+        }
 
-            // Apply suggestions to exercises
-            for moduleIdx in completedModules.indices {
-                for exerciseIdx in completedModules[moduleIdx].completedExercises.indices {
-                    let exerciseId = completedModules[moduleIdx].completedExercises[exerciseIdx].id
-                    if let suggestion = suggestions[exerciseId] {
-                        completedModules[moduleIdx].completedExercises[exerciseIdx].progressionSuggestion = suggestion
-                    }
+        for moduleIdx in completedModules.indices {
+            for exerciseIdx in completedModules[moduleIdx].completedExercises.indices {
+                let exerciseId = completedModules[moduleIdx].completedExercises[exerciseIdx].id
+                if let suggestion = suggestions[exerciseId] {
+                    completedModules[moduleIdx].completedExercises[exerciseIdx].progressionSuggestion = suggestion
                 }
             }
         }
@@ -400,7 +410,7 @@ class SessionViewModel: ObservableObject {
             workoutName: workout.name,
             date: sessionDate,
             completedModules: completedModules,
-            programId: scheduledWorkout?.programId,
+            programId: context.programId,
             programName: context.programName,
             programWeekNumber: context.programWeekNumber
         )
@@ -418,6 +428,47 @@ class SessionViewModel: ObservableObject {
 
         // Save in-progress session immediately for crash/background recovery
         autoSaveInProgressSession()
+    }
+
+    private func resolveProgramContext(
+        workout: Workout,
+        scheduledWorkout: ScheduledWorkout?,
+        sessionDate: Date
+    ) -> (id: UUID?, name: String?, weekNumber: Int?) {
+        if let scheduledProgramId = scheduledWorkout?.programId {
+            if let program = repository.getProgram(id: scheduledProgramId) {
+                return (
+                    id: scheduledProgramId,
+                    name: program.name,
+                    weekNumber: weekNumber(for: program, on: sessionDate)
+                )
+            }
+            return (id: scheduledProgramId, name: nil, weekNumber: nil)
+        }
+
+        // Fallback for ad-hoc launch paths: infer only when exactly one active
+        // program contains this workout, to avoid ambiguous attribution.
+        let matchingPrograms = repository.programs.filter { program in
+            program.isActive &&
+                program.workoutSlots.contains(where: { $0.workoutId == workout.id })
+        }
+
+        guard matchingPrograms.count == 1, let inferredProgram = matchingPrograms.first else {
+            return (id: nil, name: nil, weekNumber: nil)
+        }
+
+        return (
+            id: inferredProgram.id,
+            name: inferredProgram.name,
+            weekNumber: weekNumber(for: inferredProgram, on: sessionDate)
+        )
+    }
+
+    private func weekNumber(for program: Program, on date: Date) -> Int? {
+        guard let startDate = program.startDate else { return nil }
+        let calendar = Calendar.current
+        let weeks = calendar.dateComponents([.weekOfYear], from: startDate, to: date).weekOfYear ?? 0
+        return weeks + 1
     }
 
     // MARK: - Session Recovery
@@ -748,6 +799,23 @@ class SessionViewModel: ObservableObject {
         navigator = nil
         originalModules = []
         isSessionActive = false
+    }
+
+    /// Returns true exactly once per session when there are progression suggestions to review.
+    func shouldAutoShowWorkoutOverview() -> Bool {
+        guard let session = currentSession else { return false }
+        guard !session.isFreestyle else { return false }
+        guard overviewShownSessionId != session.id else { return false }
+
+        return session.completedModules.contains { module in
+            module.completedExercises.contains { $0.progressionSuggestion != nil }
+        }
+    }
+
+    /// Marks the launch overview as shown for the current session.
+    func markWorkoutOverviewShown() {
+        guard let sessionId = currentSession?.id else { return }
+        overviewShownSessionId = sessionId
     }
 
     // MARK: - Structural Change Detection
@@ -1296,12 +1364,7 @@ class SessionViewModel: ObservableObject {
                 if session.workoutId == targetId {
                     for module in session.completedModules {
                         if let exercise = module.completedExercises.first(where: {
-                            $0.exerciseName == exerciseName &&
-                            $0.completedSetGroups.contains { setGroup in
-                                setGroup.sets.contains { set in
-                                    set.completed && set.hasAnyMetricData
-                                }
-                            }
+                            $0.exerciseName == exerciseName && exerciseHasHistoryData($0)
                         }) {
                             return exercise
                         }
@@ -1315,12 +1378,7 @@ class SessionViewModel: ObservableObject {
             if session.id == currentSessionId { continue }
             for module in session.completedModules {
                 if let exercise = module.completedExercises.first(where: {
-                    $0.exerciseName == exerciseName &&
-                    $0.completedSetGroups.contains { setGroup in
-                        setGroup.sets.contains { set in
-                            set.completed && set.hasAnyMetricData
-                        }
-                    }
+                    $0.exerciseName == exerciseName && exerciseHasHistoryData($0)
                 }) {
                     return exercise
                 }
@@ -1342,12 +1400,7 @@ class SessionViewModel: ObservableObject {
             if session.workoutId == targetId {
                 for module in session.completedModules {
                     if module.completedExercises.contains(where: {
-                        $0.exerciseName == exerciseName &&
-                        $0.completedSetGroups.contains { setGroup in
-                            setGroup.sets.contains { set in
-                                set.completed && set.hasAnyMetricData
-                            }
-                        }
+                        $0.exerciseName == exerciseName && exerciseHasHistoryData($0)
                     }) {
                         return true
                     }
@@ -1356,5 +1409,77 @@ class SessionViewModel: ObservableObject {
         }
 
         return false
+    }
+
+    private func exerciseHasHistoryData(_ exercise: SessionExercise) -> Bool {
+        let hasCompletedMetricSet = exercise.completedSetGroups.contains { setGroup in
+            setGroup.sets.contains { set in
+                set.completed && set.hasAnyMetricData
+            }
+        }
+
+        return hasCompletedMetricSet || exercise.progressionRecommendation != nil
+    }
+
+    // MARK: - Soft Delete with Undo
+
+    func softDeleteSession(_ session: Session) {
+        // Commit any existing pending delete first
+        commitPendingDeletion()
+
+        pendingDeletionSession = session
+        pendingDeletionIds.insert(session.id)
+        undoToastMessage = "\"\(session.workoutName)\" deleted"
+        HapticManager.shared.impact()
+
+        pendingDeletionTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            guard !Task.isCancelled else { return }
+            await self?.commitPendingDeletion()
+        }
+    }
+
+    func undoDelete() {
+        pendingDeletionTask?.cancel()
+        pendingDeletionTask = nil
+
+        if let session = pendingDeletionSession {
+            pendingDeletionIds.remove(session.id)
+        }
+        pendingDeletionSession = nil
+        undoToastMessage = nil
+        HapticManager.shared.success()
+    }
+
+    func commitPendingDeletion() {
+        pendingDeletionTask?.cancel()
+        pendingDeletionTask = nil
+
+        if let session = pendingDeletionSession {
+            pendingDeletionIds.remove(session.id)
+            deleteSession(session)
+        }
+        pendingDeletionSession = nil
+        undoToastMessage = nil
+    }
+
+    private func setupBackgroundObserver() {
+        backgroundCancellable = NotificationCenter.default
+            .publisher(for: UIApplication.willResignActiveNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.commitPendingDeletion()
+            }
+    }
+
+    // MARK: - Restore Session from Post
+
+    func restoreSessionFromPost(_ post: Post) -> Bool {
+        guard case .session(_, _, _, let snapshot) = post.content else { return false }
+        guard let bundle = try? SessionShareBundle.decode(from: snapshot) else { return false }
+        repository.restoreSession(bundle.session)
+        loadSessions()
+        HapticManager.shared.success()
+        return true
     }
 }

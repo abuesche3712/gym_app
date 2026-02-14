@@ -15,6 +15,8 @@ struct SocialView: View {
     @StateObject private var conversationsViewModel = ConversationsViewModel()
     @StateObject private var activityViewModel = ActivityViewModel()
 
+    @EnvironmentObject var sessionViewModel: SessionViewModel
+
     @State private var showingSignIn = false
     @State private var showingComposeSheet = false
     @State private var selectedPost: PostWithAuthor?
@@ -22,6 +24,7 @@ struct SocialView: View {
     @State private var postToShare: PostWithAuthor?
     @State private var postToReport: PostWithAuthor?
     @State private var profileToView: PostWithAuthor?
+    @State private var showRestoreSuccess = false
 
     private var profileRepo: ProfileRepository {
         dataRepository.profileRepo
@@ -92,6 +95,11 @@ struct SocialView: View {
             } else {
                 stopSocialListeners()
             }
+        }
+        .alert("Session Restored", isPresented: $showRestoreSuccess) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("The workout has been added to your history.")
         }
     }
 
@@ -408,6 +416,11 @@ struct SocialView: View {
                         } : nil,
                         onHideAuthor: post.post.authorId != feedViewModel.currentUserId ? {
                             feedViewModel.hideAuthor(post.post.authorId)
+                        } : nil,
+                        onRestoreSession: post.post.authorId == feedViewModel.currentUserId && isSessionPost(post.post.content) ? {
+                            if sessionViewModel.restoreSessionFromPost(post.post) {
+                                showRestoreSuccess = true
+                            }
                         } : nil
                     )
                 }
@@ -799,6 +812,11 @@ struct SocialView: View {
         friendsViewModel.stopListening(clearData: true)
         conversationsViewModel.stopListening(clearData: true)
         activityViewModel.stopListening(clearData: true)
+    }
+
+    private func isSessionPost(_ content: PostContent) -> Bool {
+        if case .session = content { return true }
+        return false
     }
 }
 
