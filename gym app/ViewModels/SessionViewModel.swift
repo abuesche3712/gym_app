@@ -801,15 +801,12 @@ class SessionViewModel: ObservableObject {
         isSessionActive = false
     }
 
-    /// Returns true exactly once per session when there are progression suggestions to review.
+    /// Returns true exactly once per non-freestyle session.
     func shouldAutoShowWorkoutOverview() -> Bool {
         guard let session = currentSession else { return false }
         guard !session.isFreestyle else { return false }
         guard overviewShownSessionId != session.id else { return false }
-
-        return session.completedModules.contains { module in
-            module.completedExercises.contains { $0.progressionSuggestion != nil }
-        }
+        return true
     }
 
     /// Marks the launch overview as shown for the current session.

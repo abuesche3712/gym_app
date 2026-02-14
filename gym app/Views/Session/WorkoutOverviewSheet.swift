@@ -38,10 +38,8 @@ struct WorkoutOverviewSheet: View {
             ScrollViewReader { proxy in
                 List {
                     if let session = session {
-                        if progressionSuggestionCount > 0 {
-                            Section {
-                                progressionSummaryRow
-                            }
+                        Section {
+                            progressionSummaryRow
                         }
 
                         ForEach(Array(session.completedModules.enumerated()), id: \.offset) { moduleIndex, module in
@@ -99,20 +97,27 @@ struct WorkoutOverviewSheet: View {
 
     private var progressionSummaryRow: some View {
         HStack(spacing: AppSpacing.md) {
-            Image(systemName: "arrow.up.right.circle.fill")
-                .subheadline(color: AppColors.success)
+            Image(systemName: progressionSuggestionCount > 0 ? "arrow.up.right.circle.fill" : "info.circle")
+                .subheadline(color: progressionSuggestionCount > 0 ? AppColors.success : AppColors.textTertiary)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Progression suggestions ready")
+                Text(progressionSuggestionCount > 0 ? "Progression suggestions ready" : "No progression suggestions yet")
                     .subheadline(color: AppColors.textPrimary)
                     .fontWeight(.semibold)
-                Text("\(progressionSuggestionCount) exercise\(progressionSuggestionCount == 1 ? "" : "s") include recommended targets.")
+                Text(summaryDetailText)
                     .caption(color: AppColors.textTertiary)
             }
 
             Spacer()
         }
         .padding(.vertical, 4)
+    }
+
+    private var summaryDetailText: String {
+        if progressionSuggestionCount > 0 {
+            return "\(progressionSuggestionCount) exercise\(progressionSuggestionCount == 1 ? "" : "s") include recommended targets."
+        }
+        return "Complete this workout once to seed recommendations for next time."
     }
 
     // MARK: - Module Header

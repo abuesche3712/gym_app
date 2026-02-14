@@ -36,6 +36,7 @@ struct ActiveSessionView: View {
     @State private var showIntervalTimer = false
     @State private var intervalSetGroupIndex: Int = 0
     @State private var highlightNextSet = false
+    @State private var launchOverviewQueued = false
 
     // Structural change review state
     @State private var pendingStructuralChanges: [StructuralChange] = []
@@ -253,12 +254,7 @@ struct ActiveSessionView: View {
                 }
             }
             .onAppear {
-                if sessionViewModel.shouldAutoShowWorkoutOverview() {
-                    sessionViewModel.markWorkoutOverviewShown()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        showWorkoutOverview = true
-                    }
-                }
+                queueLaunchOverviewIfNeeded()
 
                 // Hide toolbar buttons after 30 seconds
                 DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
@@ -266,6 +262,9 @@ struct ActiveSessionView: View {
                         hideToolbarButtons = true
                     }
                 }
+            }
+            .onChange(of: sessionViewModel.currentSession?.id) { _, _ in
+                queueLaunchOverviewIfNeeded()
             }
             .onChange(of: sessionViewModel.isRestTimerRunning) { wasRunning, isRunning in
                 // Highlight next set when rest timer ends (moved to body level for reliability)
@@ -403,6 +402,18 @@ struct ActiveSessionView: View {
                     }
                 )
             }
+        }
+    }
+
+    private func queueLaunchOverviewIfNeeded() {
+        guard !launchOverviewQueued else { return }
+        guard sessionViewModel.shouldAutoShowWorkoutOverview() else { return }
+        launchOverviewQueued = true
+        sessionViewModel.markWorkoutOverviewShown()
+
+        // Present after the full-screen transition settles.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+            showWorkoutOverview = true
         }
     }
 
