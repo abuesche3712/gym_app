@@ -208,15 +208,7 @@ struct ModuleDetailView: View {
             Text("Are you sure you want to delete \"\(currentModule.name)\"? This action cannot be undone.")
         }
         .sheet(isPresented: $showingShareSheet) {
-            ShareWithFriendSheet(content: currentModule) { conversationWithProfile in
-                let chatViewModel = ChatViewModel(
-                    conversation: conversationWithProfile.conversation,
-                    otherParticipant: conversationWithProfile.otherParticipant,
-                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
-                )
-                let content = try currentModule.createMessageContent()
-                try await chatViewModel.sendSharedContent(content)
-            }
+            ShareWithFriendSheet(content: currentModule)
         }
         .sheet(isPresented: $showingPostToFeed) {
             ComposePostSheet(content: currentModule)

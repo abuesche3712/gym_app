@@ -49,8 +49,8 @@ class FriendsViewModel: ObservableObject {
         incomingRequests.count
     }
 
-    init(friendshipRepo: FriendshipRepository = DataRepository.shared.friendshipRepo) {
-        self.friendshipRepo = friendshipRepo
+    init(friendshipRepo: FriendshipRepository? = nil) {
+        self.friendshipRepo = friendshipRepo ?? DataRepository.shared.friendshipRepo
     }
 
     deinit {

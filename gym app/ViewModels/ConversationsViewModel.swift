@@ -47,12 +47,12 @@ class ConversationsViewModel: ObservableObject {
         conversations.reduce(0) { $0 + $1.conversation.unreadCount }
     }
 
-    init(conversationRepo: ConversationRepository = DataRepository.shared.conversationRepo,
-         messageRepo: MessageRepository = DataRepository.shared.messageRepo,
-         friendshipRepo: FriendshipRepository = DataRepository.shared.friendshipRepo) {
-        self.conversationRepo = conversationRepo
-        self.messageRepo = messageRepo
-        self.friendshipRepo = friendshipRepo
+    init(conversationRepo: ConversationRepository? = nil,
+         messageRepo: MessageRepository? = nil,
+         friendshipRepo: FriendshipRepository? = nil) {
+        self.conversationRepo = conversationRepo ?? DataRepository.shared.conversationRepo
+        self.messageRepo = messageRepo ?? DataRepository.shared.messageRepo
+        self.friendshipRepo = friendshipRepo ?? DataRepository.shared.friendshipRepo
     }
 
     deinit {

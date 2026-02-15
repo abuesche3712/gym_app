@@ -6,7 +6,6 @@
 //
 //  NOTE: Use ExerciseResolver.shared for all exercise lookups.
 //  This class manages persistence of custom exercises.
-//  Query methods below are deprecated - use ExerciseResolver instead.
 //
 
 import Foundation
@@ -183,27 +182,6 @@ class CustomExerciseLibrary: ObservableObject {
         } catch {
             Logger.error(error, context: "deleteCustomExerciseByName")
         }
-    }
-
-    // MARK: - Search (Deprecated - Use ExerciseResolver)
-
-    /// Deprecated: Use ExerciseResolver.shared.search() instead
-    @available(*, deprecated, message: "Use ExerciseResolver.shared.search() instead")
-    func search(_ query: String) -> [ExerciseTemplate] {
-        guard !query.isEmpty else { return exercises }
-        return exercises.filter { $0.name.localizedCaseInsensitiveContains(query) }
-    }
-
-    /// Deprecated: Use ExerciseResolver.shared.exercises(for:) instead
-    @available(*, deprecated, message: "Use ExerciseResolver.shared.exercises(for:) instead")
-    func exercises(for category: ExerciseCategory) -> [ExerciseTemplate] {
-        exercises.filter { $0.category == category }
-    }
-
-    /// Deprecated: Use ExerciseResolver.shared.findTemplate(named:) instead
-    @available(*, deprecated, message: "Use ExerciseResolver.shared.findTemplate(named:) instead")
-    func template(named name: String) -> ExerciseTemplate? {
-        exercises.first { $0.name.lowercased() == name.lowercased() }
     }
 
     /// For duplicate checking during add - still valid to use

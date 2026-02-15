@@ -12,6 +12,30 @@
 
 import SwiftUI
 
+struct EditableSetSummaryRow: View {
+    let summary: String
+    var summaryColor: Color = AppColors.textPrimary
+    var trailingIcon: String? = nil
+    var iconColor: Color = AppColors.textTertiary
+
+    var body: some View {
+        HStack(spacing: AppSpacing.xs) {
+            Text(summary)
+                .subheadline(color: summaryColor)
+                .fontWeight(.medium)
+
+            Spacer(minLength: 0)
+
+            if let trailingIcon {
+                Image(systemName: trailingIcon)
+                    .subheadline(color: iconColor)
+                    .fontWeight(.medium)
+                    .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+            }
+        }
+    }
+}
+
 struct SetRowView: View {
     @EnvironmentObject var sessionViewModel: SessionViewModel
 
@@ -226,16 +250,12 @@ struct SetRowView: View {
         Button {
             onUncheck?()
         } label: {
-            HStack {
-                Text(completedSummary)
-                    .subheadline(color: AppColors.textPrimary)
-                    .fontWeight(.medium)
-                Spacer()
-                Image(systemName: "pencil")
-                    .subheadline(color: AppColors.textTertiary)
-                    .fontWeight(.medium)
-                    .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
-            }
+            EditableSetSummaryRow(
+                summary: completedSummary,
+                summaryColor: AppColors.textPrimary,
+                trailingIcon: "pencil",
+                iconColor: AppColors.textTertiary
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

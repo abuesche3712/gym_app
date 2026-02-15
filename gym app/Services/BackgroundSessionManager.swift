@@ -133,7 +133,7 @@ class BackgroundSessionManager: NSObject, ObservableObject {
         // This will run as long as the app is in background task mode
         Task {
             try? await Task.sleep(nanoseconds: UInt64(sessionTimeout * 1_000_000_000))
-            await checkAndEndSessionIfTimeout()
+            checkAndEndSessionIfTimeout()
         }
     }
 

@@ -147,7 +147,7 @@ class PushNotificationService: NSObject, ObservableObject {
     // MARK: - Deep Link Handling
 
     /// Parse notification payload and return a deep link if applicable.
-    private func parseDeepLink(from userInfo: [AnyHashable: Any]) -> NotificationDeepLink? {
+    nonisolated private static func parseDeepLink(from userInfo: [AnyHashable: Any]) -> NotificationDeepLink? {
         guard let typeString = userInfo["type"] as? String else { return nil }
 
         switch typeString {
@@ -193,9 +193,10 @@ extension PushNotificationService: UNUserNotificationCenterDelegate {
     ) async {
         let userInfo = response.notification.request.content.userInfo
         Logger.debug("PushNotificationService: notification tapped, payload: \(userInfo)")
+        let deepLink = Self.parseDeepLink(from: userInfo)
 
         await MainActor.run {
-            if let deepLink = parseDeepLink(from: userInfo) {
+            if let deepLink {
                 pendingDeepLink = deepLink
             }
         }
@@ -208,7 +209,7 @@ extension PushNotificationService: @preconcurrency MessagingDelegate {
 
     /// Called when FCM token is generated or refreshed.
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        guard let token = fcmToken else { return }
+        guard fcmToken != nil else { return }
         Logger.debug("PushNotificationService: FCM token refreshed")
 
         Task {

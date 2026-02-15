@@ -69,12 +69,6 @@ class ExerciseResolver: ObservableObject {
         Array(templateCache.values)
     }
 
-    /// Legacy alias for allExercises
-    @available(*, deprecated, renamed: "allExercises")
-    var allTemplates: [ExerciseTemplate] {
-        allExercises
-    }
-
     /// Built-in exercises only
     var builtInExercises: [ExerciseTemplate] {
         allExercises.filter { !$0.isCustom }
@@ -192,23 +186,5 @@ class ExerciseResolver: ObservableObject {
     /// Finds a template by name (case-insensitive)
     func findTemplate(named name: String) -> ExerciseTemplate? {
         templateCache.values.first { $0.name.lowercased() == name.lowercased() }
-    }
-
-    /// Legacy alias for search()
-    @available(*, deprecated, renamed: "search")
-    func searchTemplates(_ query: String) -> [ExerciseTemplate] {
-        search(query)
-    }
-
-    /// Legacy alias for exercises(for category:)
-    @available(*, deprecated, message: "Use exercises(for:) instead")
-    func templates(for category: ExerciseCategory) -> [ExerciseTemplate] {
-        exercises(for: category)
-    }
-
-    /// Legacy alias for exercises(for type:)
-    @available(*, deprecated, message: "Use exercises(for:) instead")
-    func templates(for exerciseType: ExerciseType) -> [ExerciseTemplate] {
-        exercises(for: exerciseType)
     }
 }

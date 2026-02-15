@@ -78,17 +78,7 @@ struct PostDetailView: View {
                 Text("Edit your comment")
             }
             .sheet(isPresented: $showingShareSheet) {
-                ShareWithFriendSheet(
-                    content: ShareablePostContent(post: viewModel.post.post)
-                ) { conversationWithProfile in
-                    let chatViewModel = ChatViewModel(
-                        conversation: conversationWithProfile.conversation,
-                        otherParticipant: conversationWithProfile.otherParticipant,
-                        otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
-                    )
-                    let messageContent = viewModel.post.post.content.toMessageContent()
-                    try await chatViewModel.sendSharedContent(messageContent)
-                }
+                ShareWithFriendSheet(content: viewModel.post.post)
             }
             .sheet(item: $previewingContent) { content in
                 SharedContentPreviewSheet(

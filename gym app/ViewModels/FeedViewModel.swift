@@ -66,10 +66,10 @@ class FeedViewModel: ObservableObject {
 
     init(
         postRepo: PostRepository = PostRepository(),
-        friendshipRepo: FriendshipRepository = DataRepository.shared.friendshipRepo
+        friendshipRepo: FriendshipRepository? = nil
     ) {
         self.postRepo = postRepo
-        self.friendshipRepo = friendshipRepo
+        self.friendshipRepo = friendshipRepo ?? DataRepository.shared.friendshipRepo
         setupNotificationObserver()
         setupFriendshipObserver()
     }
@@ -91,11 +91,11 @@ class FeedViewModel: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            guard let self = self,
-                  let post = notification.object as? Post,
-                  let userId = self.currentUserId else { return }
+            guard let post = notification.object as? Post else { return }
 
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
+                guard let self = self,
+                      let userId = self.currentUserId else { return }
                 // Optimistically add the new post to the top of the feed
                 await self.addNewPostToFeed(post, userId: userId)
             }

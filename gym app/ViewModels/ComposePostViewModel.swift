@@ -32,11 +32,10 @@ class ComposePostViewModel: ObservableObject {
     /// Initialize with shareable content
     init(content: any ShareableContent, postRepo: PostRepository = PostRepository()) {
         do {
-            let messageContent = try content.createMessageContent()
-            self.content = PostContent(from: messageContent)
+            self.content = try Self.postContent(from: content)
             self.contentCreationError = nil
         } catch {
-            print("[ComposePostViewModel] Error creating content: \(error)")
+            Logger.error(error, context: "ComposePostViewModel.init(content:)")
             self.content = .text("Error creating content: \(error.localizedDescription)")
             self.contentCreationError = error
         }
@@ -61,8 +60,7 @@ class ComposePostViewModel: ObservableObject {
     /// Set content from a shareable item
     func setContent(_ shareableContent: any ShareableContent) {
         do {
-            let messageContent = try shareableContent.createMessageContent()
-            self.content = PostContent(from: messageContent)
+            self.content = try Self.postContent(from: shareableContent)
             self.contentCreationError = nil
         } catch {
             Logger.error(error, context: "ComposePostViewModel.setContent")
@@ -184,23 +182,22 @@ class ComposePostViewModel: ObservableObject {
     func clearDraft() {
         UserDefaults.standard.removeObject(forKey: Self.draftCaptionKey)
     }
+
+    private static func postContent(from shareableContent: any ShareableContent) throws -> PostContent {
+        let messageContent = try shareableContent.createMessageContent()
+        return PostContent(from: messageContent)
+    }
 }
 
 // MARK: - Post Errors
 
 enum PostError: LocalizedError {
     case notAuthenticated
-    case contentMissing
-    case postFailed
 
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
             return "You must be signed in to post"
-        case .contentMissing:
-            return "Post content is missing"
-        case .postFailed:
-            return "Failed to create post"
         }
     }
 }

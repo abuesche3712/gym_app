@@ -48,17 +48,7 @@ struct SocialView: View {
             PostDetailView(post: post)
         }
         .sheet(item: $postToShare) { postWithAuthor in
-            ShareWithFriendSheet(
-                content: ShareablePostContent(post: postWithAuthor.post)
-            ) { conversationWithProfile in
-                let chatViewModel = ChatViewModel(
-                    conversation: conversationWithProfile.conversation,
-                    otherParticipant: conversationWithProfile.otherParticipant,
-                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
-                )
-                let messageContent = postWithAuthor.post.content.toMessageContent()
-                try await chatViewModel.sendSharedContent(messageContent)
-            }
+            ShareWithFriendSheet(content: postWithAuthor.post)
         }
         .sheet(item: $profileToView) { postWithAuthor in
             NavigationStack {

@@ -117,15 +117,7 @@ struct ProgramDetailView: View {
             Text("This will permanently delete the program. Scheduled workouts will be kept.")
         }
         .sheet(isPresented: $showingShareSheet) {
-            ShareWithFriendSheet(content: currentProgram) { conversationWithProfile in
-                let chatViewModel = ChatViewModel(
-                    conversation: conversationWithProfile.conversation,
-                    otherParticipant: conversationWithProfile.otherParticipant,
-                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
-                )
-                let content = try currentProgram.createMessageContent()
-                try await chatViewModel.sendSharedContent(content)
-            }
+            ShareWithFriendSheet(content: currentProgram)
         }
         .sheet(isPresented: $showingPostToFeed) {
             ComposePostSheet(content: currentProgram)
@@ -431,15 +423,7 @@ struct EditProgramSheet: View {
                 }
             }
             .sheet(isPresented: $showingShareSheet) {
-                ShareWithFriendSheet(content: program) { conversationWithProfile in
-                    let chatViewModel = ChatViewModel(
-                        conversation: conversationWithProfile.conversation,
-                        otherParticipant: conversationWithProfile.otherParticipant,
-                        otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
-                    )
-                    let content = try program.createMessageContent()
-                    try await chatViewModel.sendSharedContent(content)
-                }
+                ShareWithFriendSheet(content: program)
             }
             .sheet(isPresented: $showingPostToFeed) {
                 ComposePostSheet(content: program)

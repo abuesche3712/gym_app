@@ -244,14 +244,6 @@ enum SyncStatus: String, Codable {
     case conflict
 }
 
-// MARK: - Sync Operation
-
-enum SyncOperation: String, Codable {
-    case create
-    case update
-    case delete
-}
-
 // MARK: - Weight Unit
 
 enum WeightUnit: String, Codable, CaseIterable {

@@ -33,6 +33,7 @@ struct SessionDetailView: View {
     @State private var setToShare: ShareableSetPerformance?
     @State private var exerciseToPost: ShareableExercisePerformance?
     @State private var setToPost: ShareableSetPerformance?
+    @State private var quickEditSet: EditingSetInfo?
     @State private var showConversionAlert = false
     @State private var conversionAlertTitle = "Workout Created"
     @State private var conversionResultMessage = ""
@@ -67,7 +68,7 @@ struct SessionDetailView: View {
 
     // Computed stats
     private var totalVolume: Double {
-        session.completedModules.filter { !$0.skipped }.reduce(0) { moduleTotal, module in
+        currentSession.completedModules.filter { !$0.skipped }.reduce(0) { moduleTotal, module in
             moduleTotal + module.completedExercises.reduce(0) { $0 + $1.totalVolume }
         }
     }
@@ -114,7 +115,7 @@ struct SessionDetailView: View {
                 statsGrid
 
                 // Notes (if any)
-                if let notes = session.notes, !notes.isEmpty {
+                if let notes = currentSession.notes, !notes.isEmpty {
                     notesSection(notes)
                 }
 
@@ -204,51 +205,19 @@ struct SessionDetailView: View {
             SessionShareSheet(items: [shareContent])
         }
         .sheet(isPresented: $showingShareWithFriend) {
-            ShareWithFriendSheet(content: currentSession) { conversationWithProfile in
-                let chatViewModel = ChatViewModel(
-                    conversation: conversationWithProfile.conversation,
-                    otherParticipant: conversationWithProfile.otherParticipant,
-                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
-                )
-                let content = try currentSession.createMessageContent()
-                try await chatViewModel.sendSharedContent(content)
-            }
+            ShareWithFriendSheet(content: currentSession)
         }
         .sheet(item: $exerciseToShare) { exercise in
-            ShareWithFriendSheet(content: exercise) { conversationWithProfile in
-                let chatViewModel = ChatViewModel(
-                    conversation: conversationWithProfile.conversation,
-                    otherParticipant: conversationWithProfile.otherParticipant,
-                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
-                )
-                let content = try exercise.createMessageContent()
-                try await chatViewModel.sendSharedContent(content)
-            }
+            ShareWithFriendSheet(content: exercise)
         }
         .sheet(item: $setToShare) { setPerformance in
-            ShareWithFriendSheet(content: setPerformance) { conversationWithProfile in
-                let chatViewModel = ChatViewModel(
-                    conversation: conversationWithProfile.conversation,
-                    otherParticipant: conversationWithProfile.otherParticipant,
-                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
-                )
-                let content = try setPerformance.createMessageContent()
-                try await chatViewModel.sendSharedContent(content)
-            }
+            ShareWithFriendSheet(content: setPerformance)
         }
         .sheet(isPresented: $showingPostToFeed) {
             ComposePostSheet(content: currentSession)
         }
         .sheet(item: $moduleToShare) { modulePerformance in
-            ShareWithFriendSheet(content: modulePerformance) { conversationWithProfile in
-                let chatViewModel = ChatViewModel(
-                    conversation: conversationWithProfile.conversation,
-                    otherParticipant: conversationWithProfile.otherParticipant,
-                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
-                )
-                let content = try modulePerformance.createMessageContent()
-                try await chatViewModel.sendSharedContent(content)
-            }
+            ShareWithFriendSheet(content: modulePerformance)
         }
         .sheet(item: $moduleToPost) { modulePerformance in
             ComposePostSheet(content: modulePerformance)
@@ -258,6 +227,15 @@ struct SessionDetailView: View {
         }
         .sheet(item: $setToPost) { setPerformance in
             ComposePostSheet(content: setPerformance)
+        }
+        .sheet(item: $quickEditSet) { editing in
+            SetEditSheet(
+                setData: quickEditBinding(for: editing),
+                exerciseType: editing.exerciseType,
+                isBodyweight: editing.isBodyweight,
+                distanceUnit: editing.distanceUnit
+            )
+            .tint(AppColors.dominant)
         }
         .alert(conversionAlertTitle, isPresented: $showConversionAlert) {
             Button("OK", role: .cancel) {}
@@ -306,22 +284,22 @@ struct SessionDetailView: View {
     private var heroSection: some View {
         VStack(spacing: AppSpacing.md) {
             // Workout name
-            Text(session.workoutName)
+            Text(currentSession.workoutName)
                 .displayMedium(color: AppColors.textPrimary)
                 .fontWeight(.bold)
                 .multilineTextAlignment(.center)
 
             // Date, duration, feeling
             HStack(spacing: AppSpacing.md) {
-                Label(session.formattedDate, systemImage: "calendar")
+                Label(currentSession.formattedDate, systemImage: "calendar")
 
-                if let duration = session.formattedDuration {
+                if let duration = currentSession.formattedDuration {
                     Text("·")
                         .foregroundColor(AppColors.textTertiary)
                     Label(duration, systemImage: "clock")
                 }
 
-                if let feeling = session.overallFeeling {
+                if let feeling = currentSession.overallFeeling {
                     Text("·")
                         .foregroundColor(AppColors.textTertiary)
                     Label("\(feeling)/10", systemImage: "star.fill")
@@ -331,14 +309,14 @@ struct SessionDetailView: View {
             .subheadline(color: AppColors.textSecondary)
 
             // Program context (if available)
-            if let programName = session.programName {
+            if let programName = currentSession.programName {
                 HStack(spacing: AppSpacing.xs) {
                     Image(systemName: "text.book.closed.fill")
                         .caption(color: AppColors.accent2)
                     Text(programName)
                         .caption(color: AppColors.accent2)
                         .fontWeight(.medium)
-                    if let week = session.programWeekNumber {
+                    if let week = currentSession.programWeekNumber {
                         Text("· Week \(week)")
                             .caption(color: AppColors.accent2)
                     }
@@ -361,13 +339,13 @@ struct SessionDetailView: View {
     private var statsGrid: some View {
         HStack(spacing: AppSpacing.md) {
             statCard(
-                value: "\(session.totalSetsCompleted)",
+                value: "\(currentSession.totalSetsCompleted)",
                 label: "SETS",
                 color: AppColors.dominant
             )
 
             statCard(
-                value: "\(session.totalExercisesCompleted)",
+                value: "\(currentSession.totalExercisesCompleted)",
                 label: "EXERCISES",
                 color: AppColors.accent1
             )
@@ -433,13 +411,14 @@ struct SessionDetailView: View {
             Text("BREAKDOWN")
                 .elegantLabel(color: AppColors.textSecondary)
 
-            ForEach(Array(session.completedModules.enumerated()), id: \.element.id) { index, module in
+            ForEach(Array(currentSession.completedModules.enumerated()), id: \.element.id) { index, module in
                 SessionModuleCard(
                     module: module,
                     sessionViewModel: sessionViewModel,
-                    workoutId: session.workoutId,
-                    workoutName: session.workoutName,
-                    sessionDate: session.date,
+                    workoutId: currentSession.workoutId,
+                    workoutName: currentSession.workoutName,
+                    sessionDate: currentSession.date,
+                    allowsQuickCorrection: !readOnly && currentSession.isEditable,
                     onShareText: { content in
                         shareContent = content
                         showingShareSheet = true
@@ -447,22 +426,22 @@ struct SessionDetailView: View {
                     onShareModuleWithFriend: { completedModule in
                         moduleToShare = ShareableModulePerformance(
                             module: completedModule,
-                            workoutName: session.workoutName,
-                            date: session.date
+                            workoutName: currentSession.workoutName,
+                            date: currentSession.date
                         )
                     },
                     onPostModuleToFeed: { completedModule in
                         moduleToPost = ShareableModulePerformance(
                             module: completedModule,
-                            workoutName: session.workoutName,
-                            date: session.date
+                            workoutName: currentSession.workoutName,
+                            date: currentSession.date
                         )
                     },
                     onShareExerciseWithFriend: { exercise in
                         exerciseToShare = ShareableExercisePerformance(
                             exercise: exercise,
-                            workoutName: session.workoutName,
-                            date: session.date
+                            workoutName: currentSession.workoutName,
+                            date: currentSession.date
                         )
                     },
                     onShareSetWithFriend: { set, exerciseName, exerciseType, distanceUnit in
@@ -471,15 +450,15 @@ struct SessionDetailView: View {
                             exerciseName: exerciseName,
                             exerciseType: exerciseType,
                             distanceUnit: distanceUnit,
-                            workoutName: session.workoutName,
-                            date: session.date
+                            workoutName: currentSession.workoutName,
+                            date: currentSession.date
                         )
                     },
                     onPostExerciseToFeed: { exercise in
                         exerciseToPost = ShareableExercisePerformance(
                             exercise: exercise,
-                            workoutName: session.workoutName,
-                            date: session.date
+                            workoutName: currentSession.workoutName,
+                            date: currentSession.date
                         )
                     },
                     onPostSetToFeed: { set, exerciseName, exerciseType, distanceUnit in
@@ -488,8 +467,19 @@ struct SessionDetailView: View {
                             exerciseName: exerciseName,
                             exerciseType: exerciseType,
                             distanceUnit: distanceUnit,
-                            workoutName: session.workoutName,
-                            date: session.date
+                            workoutName: currentSession.workoutName,
+                            date: currentSession.date
+                        )
+                    },
+                    onQuickCorrectSet: { moduleId, exercise, setGroupId, set in
+                        quickEditSet = EditingSetInfo(
+                            moduleId: moduleId,
+                            exerciseId: exercise.id,
+                            setGroupId: setGroupId,
+                            setId: set.id,
+                            exerciseType: exercise.exerciseType,
+                            isBodyweight: exercise.isBodyweight,
+                            distanceUnit: exercise.distanceUnit
                         )
                     }
                 )
@@ -522,21 +512,21 @@ struct SessionDetailView: View {
     }
 
     private func generateSessionShareText() -> String {
-        var text = "\(session.workoutName)\n"
-        text += "\(session.formattedDate)"
-        if let duration = session.formattedDuration {
+        var text = "\(currentSession.workoutName)\n"
+        text += "\(currentSession.formattedDate)"
+        if let duration = currentSession.formattedDuration {
             text += " · \(duration)"
         }
         text += "\n\n"
-        text += "\(session.totalSetsCompleted) sets · "
-        text += "\(session.totalExercisesCompleted) exercises"
+        text += "\(currentSession.totalSetsCompleted) sets · "
+        text += "\(currentSession.totalExercisesCompleted) exercises"
         if totalVolume > 0 {
             text += " · \(formatVolume(totalVolume)) lbs"
         }
         text += "\n"
 
         // Add module summaries
-        for module in session.completedModules where !module.skipped {
+        for module in currentSession.completedModules where !module.skipped {
             text += "\n\(module.moduleName):\n"
             for exercise in module.completedExercises {
                 if let summary = exerciseSummaryText(exercise) {
@@ -584,6 +574,48 @@ struct SessionDetailView: View {
         }
         return nil
     }
+
+    private func quickEditBinding(for editing: EditingSetInfo) -> Binding<SetData> {
+        Binding(
+            get: {
+                let sourceSession = currentSession
+                for module in sourceSession.completedModules where module.id == editing.moduleId {
+                    for exercise in module.completedExercises where exercise.id == editing.exerciseId {
+                        for setGroup in exercise.completedSetGroups where setGroup.id == editing.setGroupId {
+                            if let set = setGroup.sets.first(where: { $0.id == editing.setId }) {
+                                return set
+                            }
+                        }
+                    }
+                }
+                return SetData(setNumber: 1)
+            },
+            set: { newValue in
+                guard !readOnly else { return }
+                guard var updatedSession = sessionViewModel.sessions.first(where: { $0.id == currentSession.id }) else { return }
+
+                for moduleIndex in updatedSession.completedModules.indices {
+                    if updatedSession.completedModules[moduleIndex].id == editing.moduleId {
+                        for exerciseIndex in updatedSession.completedModules[moduleIndex].completedExercises.indices {
+                            if updatedSession.completedModules[moduleIndex].completedExercises[exerciseIndex].id == editing.exerciseId {
+                                for setGroupIndex in updatedSession.completedModules[moduleIndex].completedExercises[exerciseIndex].completedSetGroups.indices {
+                                    if updatedSession.completedModules[moduleIndex].completedExercises[exerciseIndex].completedSetGroups[setGroupIndex].id == editing.setGroupId {
+                                        for setIndex in updatedSession.completedModules[moduleIndex].completedExercises[exerciseIndex].completedSetGroups[setGroupIndex].sets.indices {
+                                            if updatedSession.completedModules[moduleIndex].completedExercises[exerciseIndex].completedSetGroups[setGroupIndex].sets[setIndex].id == editing.setId {
+                                                updatedSession.completedModules[moduleIndex].completedExercises[exerciseIndex].completedSetGroups[setGroupIndex].sets[setIndex] = newValue
+                                                sessionViewModel.updateSession(updatedSession)
+                                                return
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        )
+    }
 }
 
 // MARK: - Session Module Card
@@ -594,6 +626,7 @@ struct SessionModuleCard: View {
     let workoutId: UUID
     let workoutName: String
     let sessionDate: Date
+    let allowsQuickCorrection: Bool
     let onShareText: (String) -> Void
     let onShareModuleWithFriend: (CompletedModule) -> Void
     let onPostModuleToFeed: (CompletedModule) -> Void
@@ -601,6 +634,7 @@ struct SessionModuleCard: View {
     let onShareSetWithFriend: (SetData, String, ExerciseType, DistanceUnit) -> Void
     let onPostExerciseToFeed: (SessionExercise) -> Void
     let onPostSetToFeed: (SetData, String, ExerciseType, DistanceUnit) -> Void
+    let onQuickCorrectSet: (UUID, SessionExercise, UUID, SetData) -> Void
 
     @State private var isExpanded = true
 
@@ -709,7 +743,10 @@ struct SessionModuleCard: View {
                             onPostToFeed: { onPostExerciseToFeed(exercise) },
                             onPostSetToFeed: { set in
                                 onPostSetToFeed(set, exercise.exerciseName, exercise.exerciseType, exercise.distanceUnit)
-                            }
+                            },
+                            onQuickCorrectSet: allowsQuickCorrection ? { setGroupId, set in
+                                onQuickCorrectSet(module.id, exercise, setGroupId, set)
+                            } : nil
                         )
 
                         if exercise.id != module.completedExercises.last?.id {
@@ -786,6 +823,7 @@ struct SessionExerciseCard: View {
     let onShareSetWithFriend: (SetData) -> Void
     let onPostToFeed: () -> Void
     let onPostSetToFeed: (SetData) -> Void
+    let onQuickCorrectSet: ((UUID, SetData) -> Void)?
 
     @State private var isExpanded = false
 
@@ -879,7 +917,10 @@ struct SessionExerciseCard: View {
                                     moduleColor: moduleColor,
                                     onShareText: onShareText,
                                     onShareWithFriend: { onShareSetWithFriend(set) },
-                                    onPostToFeed: { onPostSetToFeed(set) }
+                                    onPostToFeed: { onPostSetToFeed(set) },
+                                    onQuickCorrect: onQuickCorrectSet.map { callback in
+                                        { callback(setGroup.id, set) }
+                                    }
                                 )
                             }
                         }
@@ -1106,6 +1147,7 @@ struct SessionSetRow: View {
     let onShareText: (String) -> Void
     let onShareWithFriend: () -> Void
     let onPostToFeed: () -> Void
+    let onQuickCorrect: (() -> Void)?
 
     var body: some View {
         HStack(spacing: AppSpacing.md) {
@@ -1129,15 +1171,36 @@ struct SessionSetRow: View {
 
             // Set data
             if let formatted = formattedSetData {
-                Text(formatted)
-                    .caption(color: set.completed ? AppColors.textPrimary : AppColors.textTertiary)
+                EditableSetSummaryRow(
+                    summary: formatted,
+                    summaryColor: set.completed ? AppColors.textPrimary : AppColors.textTertiary
+                )
             }
-
-            Spacer()
 
             // Share single set
             if set.completed {
+                if let onQuickCorrect {
+                    Button {
+                        onQuickCorrect()
+                    } label: {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(AppColors.textTertiary.opacity(0.8))
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 Menu {
+                    if let onQuickCorrect {
+                        Button {
+                            onQuickCorrect()
+                        } label: {
+                            Label("Quick Correct", systemImage: "pencil")
+                        }
+
+                        Divider()
+                    }
+
                     Button {
                         onPostToFeed()
                     } label: {
@@ -1172,6 +1235,11 @@ struct SessionSetRow: View {
         }
         .padding(.vertical, AppSpacing.xs)
         .padding(.leading, AppSpacing.lg)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard set.completed else { return }
+            onQuickCorrect?()
+        }
     }
 
     private var formattedSetData: String? {

@@ -133,15 +133,7 @@ struct HistoryView: View {
                 }
             }
             .sheet(item: $sessionToShare) { session in
-                ShareWithFriendSheet(content: session) { conversationWithProfile in
-                    let chatViewModel = ChatViewModel(
-                        conversation: conversationWithProfile.conversation,
-                        otherParticipant: conversationWithProfile.otherParticipant,
-                        otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
-                    )
-                    let content = try session.createMessageContent()
-                    try await chatViewModel.sendSharedContent(content)
-                }
+                ShareWithFriendSheet(content: session)
             }
             .sheet(item: $sessionToPost) { session in
                 ComposePostSheet(content: session)

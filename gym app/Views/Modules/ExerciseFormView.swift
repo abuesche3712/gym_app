@@ -742,7 +742,7 @@ struct ExerciseFormView: View {
                             var leftSet = existingSet
                             leftSet.side = .left
                             sets.append(leftSet)
-                            var rightSet = SetData(
+                            let rightSet = SetData(
                                 setNumber: existingSet.setNumber,
                                 weight: existingSet.weight,
                                 reps: existingSet.reps,
@@ -778,7 +778,7 @@ struct ExerciseFormView: View {
                             var leftSet = existingSet
                             leftSet.side = .left
                             sets.append(leftSet)
-                            var rightSet = SetData(
+                            let rightSet = SetData(
                                 setNumber: existingSet.setNumber,
                                 weight: existingSet.weight,
                                 reps: existingSet.reps,

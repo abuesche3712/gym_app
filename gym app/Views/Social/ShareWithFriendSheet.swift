@@ -17,6 +17,20 @@ protocol ShareableContent {
     func createMessageContent() throws -> MessageContent
 }
 
+extension ShareableContent {
+    /// Shared delivery path used by multiple screens to send shareable content over chat.
+    @MainActor
+    func deliverSharedContent(to conversationWithProfile: ConversationWithProfile) async throws {
+        let chatViewModel = ChatViewModel(
+            conversation: conversationWithProfile.conversation,
+            otherParticipant: conversationWithProfile.otherParticipant,
+            otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
+        )
+        let messageContent = try createMessageContent()
+        try await chatViewModel.sendSharedContent(messageContent)
+    }
+}
+
 // MARK: - Program Conformance
 
 extension Program: ShareableContent {
@@ -336,6 +350,44 @@ struct ShareableHighlightBundle: ShareableContent, Identifiable {
 
     var shareIcon: String { "star.fill" }
 
+    /// Collapses highlight picker output into one shareable payload.
+    static func aggregate(
+        from highlights: [any ShareableContent],
+        workoutName: String,
+        date: Date
+    ) -> (any ShareableContent)? {
+        guard !highlights.isEmpty else { return nil }
+        if highlights.count == 1 {
+            return highlights[0]
+        }
+
+        var exercises: [ShareableExercisePerformance] = []
+        var sets: [ShareableSetPerformance] = []
+
+        for highlight in highlights {
+            if let exercise = highlight as? ShareableExercisePerformance {
+                exercises.append(exercise)
+            } else if let set = highlight as? ShareableSetPerformance {
+                sets.append(set)
+            } else if let sessionWithHighlights = highlight as? ShareableSessionWithHighlights {
+                return sessionWithHighlights
+            } else if let session = highlight as? Session {
+                return session
+            }
+        }
+
+        if exercises.isEmpty && sets.isEmpty {
+            return highlights[0]
+        }
+
+        return ShareableHighlightBundle(
+            workoutName: workoutName,
+            date: date,
+            exercises: exercises,
+            sets: sets
+        )
+    }
+
     /// Label for display in compose preview
     var contentTypeLabel: String? {
         var parts: [String] = []
@@ -391,7 +443,6 @@ struct ShareableHighlightBundle: ShareableContent, Identifiable {
 
 struct ShareWithFriendSheet: View {
     let content: any ShareableContent
-    let onShare: (ConversationWithProfile) async throws -> Void
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var friendsViewModel = FriendsViewModel()
@@ -533,7 +584,7 @@ struct ShareWithFriendSheet: View {
                 otherParticipantFirebaseId: friendFirebaseId
             )
 
-            try await onShare(conversationWithProfile)
+            try await content.deliverSharedContent(to: conversationWithProfile)
 
             // Send personal message if provided
             let trimmedMessage = personalMessage.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -609,24 +660,15 @@ struct SharePreviewHeader: View {
     }
 }
 
-// MARK: - Shareable Post Content
+// MARK: - Post Conformance
 
-/// Wrapper for sharing a Post via DM
-struct ShareablePostContent: ShareableContent, Identifiable {
-    let id: UUID
-    let post: Post
-
-    init(post: Post) {
-        self.id = post.id
-        self.post = post
-    }
-
-    var shareTitle: String { post.content.displayTitle }
-    var shareSubtitle: String? { post.caption.flatMap { String($0.prefix(60)) } }
-    var shareIcon: String { post.content.icon }
+extension Post: ShareableContent {
+    var shareTitle: String { content.displayTitle }
+    var shareSubtitle: String? { caption.flatMap { String($0.prefix(60)) } }
+    var shareIcon: String { content.icon }
 
     func createMessageContent() throws -> MessageContent {
-        return post.content.toMessageContent()
+        content.toMessageContent()
     }
 }
 

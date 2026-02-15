@@ -497,7 +497,6 @@ struct EditExerciseSheet: View {
             // For unilateral exercises, the logical set count is half the SetData count
             // (since each logical set has left + right)
             let logicalSetCount = group.isUnilateral ? group.sets.count / 2 : group.sets.count
-            let completedLogicalSetsCount = group.isUnilateral ? completedSets.count / 2 : completedSets.count
 
             return EditableSetGroup(
                 id: group.setGroupId,

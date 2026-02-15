@@ -107,38 +107,11 @@ struct WorkoutSummaryView: View {
             }
             .sheet(isPresented: $showHighlightPicker) {
                 HighlightPickerView(session: session) { highlights in
-                    if highlights.count == 1, let single = highlights.first {
-                        selectedShareContent = single
-                    } else if highlights.count > 1 {
-                        var exercises: [ShareableExercisePerformance] = []
-                        var sets: [ShareableSetPerformance] = []
-
-                        for highlight in highlights {
-                            if let ex = highlight as? ShareableExercisePerformance {
-                                exercises.append(ex)
-                            } else if let s = highlight as? ShareableSetPerformance {
-                                sets.append(s)
-                            } else if let sessionWithHighlights = highlight as? ShareableSessionWithHighlights {
-                                selectedShareContent = sessionWithHighlights
-                                showPostToFeed = true
-                                return
-                            } else if let sess = highlight as? Session {
-                                selectedShareContent = sess
-                                showPostToFeed = true
-                                return
-                            }
-                        }
-
-                        selectedShareContent = ShareableHighlightBundle(
-                            workoutName: session.workoutName,
-                            date: session.date,
-                            exercises: exercises,
-                            sets: sets
-                        )
-                    } else {
-                        // No highlights selected, share full session
-                        selectedShareContent = session
-                    }
+                    selectedShareContent = ShareableHighlightBundle.aggregate(
+                        from: highlights,
+                        workoutName: session.workoutName,
+                        date: session.date
+                    ) ?? session
                     showPostToFeed = true
                 }
             }
@@ -150,15 +123,7 @@ struct WorkoutSummaryView: View {
                 }
             }
             .sheet(isPresented: $showShareWithFriend) {
-                ShareWithFriendSheet(content: session) { conversationWithProfile in
-                    let chatViewModel = ChatViewModel(
-                        conversation: conversationWithProfile.conversation,
-                        otherParticipant: conversationWithProfile.otherParticipant,
-                        otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
-                    )
-                    let content = try session.createMessageContent()
-                    try await chatViewModel.sendSharedContent(content)
-                }
+                ShareWithFriendSheet(content: session)
             }
         }
         .onAppear {

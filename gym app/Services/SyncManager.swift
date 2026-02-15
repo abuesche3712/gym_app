@@ -28,20 +28,24 @@ actor SyncQueueProcessor {
     init(persistence: PersistenceController, firestoreService: FirestoreService) {
         self.persistence = persistence
         self.firestoreService = firestoreService
-        registerHandlers()
+        self.handlers = Self.makeHandlers(firestoreService: firestoreService)
     }
 
-    private func registerHandlers() {
+    private static func makeHandlers(firestoreService: FirestoreService) -> [SyncEntityType: AnySyncHandler] {
+        var handlers: [SyncEntityType: AnySyncHandler] = [:]
+
+        func register<H: SyncHandler>(_ handler: H) {
+            handlers[handler.entityType] = AnySyncHandler(handler)
+        }
+
         register(ModuleSyncHandler(firestoreService: firestoreService))
         register(WorkoutSyncHandler(firestoreService: firestoreService))
         register(SessionSyncHandler(firestoreService: firestoreService))
         register(ProgramSyncHandler(firestoreService: firestoreService))
         register(ScheduledWorkoutSyncHandler(firestoreService: firestoreService))
         register(CustomExerciseSyncHandler(firestoreService: firestoreService))
-    }
 
-    private func register<H: SyncHandler>(_ handler: H) {
-        handlers[handler.entityType] = AnySyncHandler(handler)
+        return handlers
     }
 
     // Non-blocking log helpers to avoid MainActor deadlock

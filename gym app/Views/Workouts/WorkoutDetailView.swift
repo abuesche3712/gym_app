@@ -167,15 +167,7 @@ struct WorkoutDetailView: View {
             Text("Are you sure you want to delete \"\(currentWorkout.name)\"? This action cannot be undone.")
         }
         .sheet(isPresented: $showingShareSheet) {
-            ShareWithFriendSheet(content: currentWorkout) { conversationWithProfile in
-                let chatViewModel = ChatViewModel(
-                    conversation: conversationWithProfile.conversation,
-                    otherParticipant: conversationWithProfile.otherParticipant,
-                    otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
-                )
-                let content = try currentWorkout.createMessageContent()
-                try await chatViewModel.sendSharedContent(content)
-            }
+            ShareWithFriendSheet(content: currentWorkout)
         }
         .sheet(isPresented: $showingPostToFeed) {
             ComposePostSheet(content: currentWorkout)

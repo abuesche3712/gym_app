@@ -91,7 +91,7 @@ struct WorkoutFormView: View {
             }
 
             ToolbarItem(placement: .primaryAction) {
-                if isEditing, let existingWorkout = workout {
+                if isEditing, workout != nil {
                     Menu {
                         Button {
                             showingShareSheet = true
@@ -150,15 +150,7 @@ struct WorkoutFormView: View {
         .sheet(isPresented: $showingShareSheet) {
             if let existingWorkout = workout,
                let currentWorkout = workoutViewModel.getWorkout(id: existingWorkout.id) {
-                ShareWithFriendSheet(content: currentWorkout) { conversationWithProfile in
-                    let chatViewModel = ChatViewModel(
-                        conversation: conversationWithProfile.conversation,
-                        otherParticipant: conversationWithProfile.otherParticipant,
-                        otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
-                    )
-                    let content = try currentWorkout.createMessageContent()
-                    try await chatViewModel.sendSharedContent(content)
-                }
+                ShareWithFriendSheet(content: currentWorkout)
             }
         }
         .sheet(isPresented: $showingPostToFeed) {

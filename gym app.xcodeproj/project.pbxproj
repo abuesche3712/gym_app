@@ -22,7 +22,6 @@
 		7E1FF5EBF4BFBD7B730535A2 /* FirestoreMessagingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00DB70BA70750F2B1167A8DC /* FirestoreMessagingService.swift */; };
 		7E3A26543EA449B5824C3A63 /* WorkoutOverviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */; };
 		7F3EC832EE57150180BE8044 /* FirestoreSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261588C9A91F154B9EB4D4AC /* FirestoreSyncService.swift */; };
-		809C1B452DCD4B8AB156DBCE /* RecentSetsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41BC86B3BCEE40829E96B24B /* RecentSetsSheet.swift */; };
 		827E4547CA7D42C1BCD2A93B /* SessionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7892D49050054B958D767C66 /* SessionModels.swift */; };
 		8D91368656994D20964FF8D1 /* gym app/Services/LibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F384AAD9014FF9A582680C /* gym app/Services/LibraryService.swift */; };
 		9245BCBAC81C4E3C9670553C /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C36DDB57BAA44FEF866BE090 /* AuthService.swift */; };
@@ -63,7 +62,6 @@
 		B63EBF182F15E73700D8C22D /* Workout.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF02F15E73700D8C22D /* Workout.swift */; };
 		B63EBF192F15E73700D8C22D /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF22F15E73700D8C22D /* HistoryView.swift */; };
 		B63EBF1A2F15E73700D8C22D /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF32F15E73700D8C22D /* SessionDetailView.swift */; };
-		B63EBF1B2F15E73700D8C22D /* ExerciseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF52F15E73700D8C22D /* ExerciseDetailView.swift */; };
 		B63EBF1C2F15E73700D8C22D /* ExerciseFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF62F15E73700D8C22D /* ExerciseFormView.swift */; };
 		B63EBF1D2F15E73700D8C22D /* ModuleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF72F15E73700D8C22D /* ModuleDetailView.swift */; };
 		B63EBF1E2F15E73700D8C22D /* ModuleFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63EBEF82F15E73700D8C22D /* ModuleFormView.swift */; };
@@ -154,7 +152,6 @@
 		LOGGER02BUILD002 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = LOGGER01FILE001 /* Logger.swift */; };
 		MEASVAL02BUILD002 /* MeasurableValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = MEASVAL01FILE001 /* MeasurableValue.swift */; };
 		MODREP002BUILD002 /* ModuleRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = MODREP001FILE001 /* ModuleRepository.swift */; };
-		MOREV002BUILD002 /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MOREV001FILE001 /* MoreView.swift */; };
 		MSGMDL002BUILD /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = MSGMDL001FILE /* Message.swift */; };
 		MSGREP002BUILD /* MessageRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = MSGREP001FILE /* MessageRepository.swift */; };
 		NEWCNV002BUILD /* NewConversationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = NEWCNV001FILE /* NewConversationSheet.swift */; };
@@ -163,11 +160,10 @@
 		PREVPER2BUILD002 /* PreviousPerformanceSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = PREVPER1FILE001 /* PreviousPerformanceSection.swift */; };
 		PRFLEDT02BUILD01 /* ProfileEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRFLEDT01FILE001 /* ProfileEditView.swift */; };
 		PRFLREP02BUILD01 /* ProfileRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRFLREP01FILE001 /* ProfileRepository.swift */; };
-		PRFLVIW02BUILD01 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRFLVIW01FILE001 /* ProfileView.swift */; };
 		PRGACT002BUILD002 /* ActivateProgramSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGACT001FILE001 /* ActivateProgramSheet.swift */; };
 		PRGADD002BUILD002 /* AddWorkoutSlotSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGADD001FILE001 /* AddWorkoutSlotSheet.swift */; };
 		PRGCFG002BUILD002 /* ProgressionConfigurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGCFG001FILE001 /* ProgressionConfigurationView.swift */; };
-		PRGCRE002BUILD002 /* CreateProgramSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGCRE001FILE001 /* CreateProgramSheet.swift */; };
+		FLOWLAY02BUILD001 /* FlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = FLOWLAY01FILE001 /* FlowLayout.swift */; };
 		PRGDET002BUILD002 /* ProgramDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGDET001FILE001 /* ProgramDetailView.swift */; };
 		PRGFRM002BUILD002 /* ProgramFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGFRM001FILE001 /* ProgramFormView.swift */; };
 		PRGLST002BUILD002 /* ProgramsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGLST001FILE001 /* ProgramsListView.swift */; };
@@ -304,7 +300,6 @@
 		197B16182F2569D8006135E4 /* BackgroundSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundSessionManager.swift; sourceTree = "<group>"; };
 		261588C9A91F154B9EB4D4AC /* FirestoreSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreSyncService.swift; sourceTree = "<group>"; };
 		387043A6FC4F49ABB2403548 /* CompletedProgram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedProgram.swift; sourceTree = "<group>"; };
-		41BC86B3BCEE40829E96B24B /* RecentSetsSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecentSetsSheet.swift; sourceTree = "<group>"; };
 		4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreDeletionService.swift; sourceTree = "<group>"; };
 		67FA42E2E5A4400DBB4D6761 /* gym app/Views/Library/ImplementPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Views/Library/ImplementPickerView.swift"; sourceTree = SOURCE_ROOT; };
 		73B47EA18754D362A6C72724 /* SyncHandlers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncHandlers.swift; sourceTree = "<group>"; };
@@ -353,7 +348,6 @@
 		B63EBEF02F15E73700D8C22D /* Workout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Workout.swift; sourceTree = "<group>"; };
 		B63EBEF22F15E73700D8C22D /* HistoryView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		B63EBEF32F15E73700D8C22D /* SessionDetailView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
-		B63EBEF52F15E73700D8C22D /* ExerciseDetailView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseDetailView.swift; sourceTree = "<group>"; };
 		B63EBEF62F15E73700D8C22D /* ExerciseFormView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExerciseFormView.swift; sourceTree = "<group>"; };
 		B63EBEF72F15E73700D8C22D /* ModuleDetailView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModuleDetailView.swift; sourceTree = "<group>"; };
 		B63EBEF82F15E73700D8C22D /* ModuleFormView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModuleFormView.swift; sourceTree = "<group>"; };
@@ -443,7 +437,6 @@
 		LOGGER01FILE001 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		MEASVAL01FILE001 /* MeasurableValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeasurableValue.swift; sourceTree = "<group>"; };
 		MODREP001FILE001 /* ModuleRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModuleRepository.swift; sourceTree = "<group>"; };
-		MOREV001FILE001 /* MoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreView.swift; sourceTree = "<group>"; };
 		MSGMDL001FILE /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
 		MSGREP001FILE /* MessageRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageRepository.swift; sourceTree = "<group>"; };
 		NEWCNV001FILE /* NewConversationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewConversationSheet.swift; sourceTree = "<group>"; };
@@ -452,11 +445,10 @@
 		PREVPER1FILE001 /* PreviousPerformanceSection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreviousPerformanceSection.swift; sourceTree = "<group>"; };
 		PRFLEDT01FILE001 /* ProfileEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileEditView.swift; sourceTree = "<group>"; };
 		PRFLREP01FILE001 /* ProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRepository.swift; sourceTree = "<group>"; };
-		PRFLVIW01FILE001 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		PRGACT001FILE001 /* ActivateProgramSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivateProgramSheet.swift; sourceTree = "<group>"; };
 		PRGADD001FILE001 /* AddWorkoutSlotSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddWorkoutSlotSheet.swift; sourceTree = "<group>"; };
 		PRGCFG001FILE001 /* ProgressionConfigurationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionConfigurationView.swift; sourceTree = "<group>"; };
-		PRGCRE001FILE001 /* CreateProgramSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateProgramSheet.swift; sourceTree = "<group>"; };
+		FLOWLAY01FILE001 /* FlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLayout.swift; sourceTree = "<group>"; };
 		PRGDET001FILE001 /* ProgramDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramDetailView.swift; sourceTree = "<group>"; };
 		PRGFRM001FILE001 /* ProgramFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramFormView.swift; sourceTree = "<group>"; };
 		PRGLST001FILE001 /* ProgramsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramsListView.swift; sourceTree = "<group>"; };
@@ -785,7 +777,6 @@
 		B63EBEFA2F15E73700D8C22D /* Modules */ = {
 			isa = PBXGroup;
 			children = (
-				B63EBEF52F15E73700D8C22D /* ExerciseDetailView.swift */,
 				B63EBEF62F15E73700D8C22D /* ExerciseFormView.swift */,
 				D3E5F7A9B1C3D5E7F9A1B3C5 /* SetGroupFormView.swift */,
 				F5A7B9D1C3E5F7A9B1D3E5F7 /* ExercisePickerView.swift */,
@@ -817,7 +808,6 @@
 				A1B2C3D4E5F647890123456A /* IntervalTimerView.swift */,
 				C8C0101650AF44AEA8A6F8A1 /* EndSessionSheet.swift */,
 				96AA7ABE49544DD3B54CEF8B /* WorkoutSummaryView.swift */,
-				41BC86B3BCEE40829E96B24B /* RecentSetsSheet.swift */,
 				819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */,
 				RVWCHG01FILE001 /* ReviewChangesView.swift */,
 			);
@@ -986,6 +976,7 @@
 			children = (
 				ANIMCO001FILE001 /* AnimatedComponents.swift */,
 				EMPTST01FILE001 /* EmptyStateView.swift */,
+				FLOWLAY01FILE001 /* FlowLayout.swift */,
 				B6PHOTO042F2A000000D8C22D /* ProfilePhotoView.swift */,
 				USRROW01FILE001 /* UserRowView.swift */,
 				SYCERR001FILE001 /* SyncErrorBanner.swift */,
@@ -1014,7 +1005,6 @@
 		MOREVGRP001GROUP001 /* More */ = {
 			isa = PBXGroup;
 			children = (
-				MOREV001FILE001 /* MoreView.swift */,
 			);
 			path = More;
 			sourceTree = "<group>";
@@ -1025,7 +1015,6 @@
 				ACCPRVWFILE0001 /* AccountProfileView.swift */,
 				PRFLEDT01FILE001 /* ProfileEditView.swift */,
 				B6PHOTO062F2A000000D8C22D /* ProfilePhotoPickerSheet.swift */,
-				PRFLVIW01FILE001 /* ProfileView.swift */,
 			);
 			path = Profile;
 			sourceTree = "<group>";
@@ -1034,7 +1023,6 @@
 			isa = PBXGroup;
 			children = (
 				PRGLST001FILE001 /* ProgramsListView.swift */,
-				PRGCRE001FILE001 /* CreateProgramSheet.swift */,
 				PRGDET001FILE001 /* ProgramDetailView.swift */,
 				PRGFRM001FILE001 /* ProgramFormView.swift */,
 				PRGWKL001FILE001 /* ProgramWeeklyGridView.swift */,
@@ -1276,7 +1264,7 @@
 		B610ABFD2F15B4DD008B2C15 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
-			files = (
+				files = (
 				B610AC0A2F15B4DE008B2C15 /* Preview Assets.xcassets in Resources */,
 				B610AC072F15B4DE008B2C15 /* Assets.xcassets in Resources */,
 				196485342F25516E00078F82 /* GoogleService-Info.plist in Resources */,
@@ -1365,7 +1353,6 @@
 				D7BE18369D46FE792E6CE8B4 /* FirestoreConflictService.swift in Sources */,
 				0DAF3A6CC5EE6557FE86D3E0 /* FirestoreDeletionService.swift in Sources */,
 				B63EBF252F15E73700D8C22D /* HomeView.swift in Sources */,
-				B63EBF1B2F15E73700D8C22D /* ExerciseDetailView.swift in Sources */,
 				B63EBF162F15E73700D8C22D /* Session.swift in Sources */,
 				MEASVAL02BUILD002 /* MeasurableValue.swift in Sources */,
 				SETDATA02BUILD002 /* SetData.swift in Sources */,
@@ -1440,7 +1427,6 @@
 				F9E8D7C6B5A443218765432B /* IntervalTimerView.swift in Sources */,
 				39DB3468001A45CEA0E01B1F /* EndSessionSheet.swift in Sources */,
 				1C651C6390424CC3A0E14293 /* WorkoutSummaryView.swift in Sources */,
-				809C1B452DCD4B8AB156DBCE /* RecentSetsSheet.swift in Sources */,
 				7E3A26543EA449B5824C3A63 /* WorkoutOverviewSheet.swift in Sources */,
 				8D91368656994D20964FF8D1 /* gym app/Services/LibraryService.swift in Sources */,
 				3065561983B445E59E349151 /* gym app/Views/Library/MuscleGroupPickerView.swift in Sources */,
@@ -1475,7 +1461,6 @@
 				PRGSVC002BUILD002 /* ProgressionService.swift in Sources */,
 				PROGVM002BUILD002 /* ProgramViewModel.swift in Sources */,
 				PRGLST002BUILD002 /* ProgramsListView.swift in Sources */,
-				PRGCRE002BUILD002 /* CreateProgramSheet.swift in Sources */,
 				PRGDET002BUILD002 /* ProgramDetailView.swift in Sources */,
 				PRGFRM002BUILD002 /* ProgramFormView.swift in Sources */,
 				PRGWKL002BUILD002 /* ProgramWeeklyGridView.swift in Sources */,
@@ -1523,12 +1508,11 @@
 				ANLCHT02BUILD001 /* AnalyticsCharts.swift in Sources */,
 				ANLCAR02BUILD001 /* AnalyticsCardModifier.swift in Sources */,
 				SHRSMY02BUILD01 /* ShareSummaryView.swift in Sources */,
-				MOREV002BUILD002 /* MoreView.swift in Sources */,
 				USRPFL002BUILD002 /* UserProfile.swift in Sources */,
 				USNMVAL02BUILD01 /* UsernameValidation.swift in Sources */,
 				PRFLREP02BUILD01 /* ProfileRepository.swift in Sources */,
 				PRFLEDT02BUILD01 /* ProfileEditView.swift in Sources */,
-				PRFLVIW02BUILD01 /* ProfileView.swift in Sources */,
+					FLOWLAY02BUILD001 /* FlowLayout.swift in Sources */,
 				ACCPRVWBUILD001 /* AccountProfileView.swift in Sources */,
 				SYNCQU002BUILD002 /* SyncQueue.swift in Sources */,
 				SYNCLOG02BUILD002 /* SyncLogger.swift in Sources */,

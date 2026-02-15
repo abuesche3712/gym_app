@@ -249,7 +249,7 @@ struct EditPostSheet: View {
     // MARK: - Helpers
 
     private var contentIcon: String {
-        if let bundle = viewModel.sessionBundle {
+        if viewModel.sessionBundle != nil {
             return "checkmark.circle.fill"
         }
         return "doc.fill"

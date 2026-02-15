@@ -533,7 +533,6 @@ class StrongImportService {
 
     private func findDuplicates(sessions: [Session], existingSessions: [Session]) -> [Session] {
         var duplicates: [Session] = []
-        let calendar = Calendar.current
 
         for session in sessions {
             let isDuplicate = existingSessions.contains { existing in
@@ -574,7 +573,6 @@ class StrongImportService {
         let uuid5 = UInt16(truncatingIfNeeded: hash &* 13)
         let uuid6 = UInt16(truncatingIfNeeded: hash &* 17)
         let uuid7 = UInt16(truncatingIfNeeded: hash &* 23)
-        let uuid8 = UInt16(truncatingIfNeeded: hash &* 29)
 
         return UUID(uuid: (
             UInt8(truncatingIfNeeded: uuid1),

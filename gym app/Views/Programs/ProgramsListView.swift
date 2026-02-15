@@ -7,10 +7,9 @@
 
 import SwiftUI
 
-// MARK: - Date Identifiable Extension
-
-extension Date: Identifiable {
-    public var id: TimeInterval { timeIntervalSince1970 }
+private struct CalendarSelectionDate: Identifiable {
+    let date: Date
+    var id: TimeInterval { date.timeIntervalSince1970 }
 }
 
 struct ProgramsListView: View {
@@ -20,7 +19,7 @@ struct ProgramsListView: View {
     @State private var showingCreateSheet = false
     @State private var showingProgramsSheet = false
     @State private var selectedMonth: Date = Date()
-    @State private var selectedDate: Date?
+    @State private var selectedDate: CalendarSelectionDate?
     @State private var selectedProgram: Program?
 
     // Selection mode support for share flow
@@ -62,10 +61,10 @@ struct ProgramsListView: View {
         .sheet(isPresented: $showingProgramsSheet) {
             ProgramsManagementSheet()
         }
-        .sheet(item: $selectedDate) { date in
+        .sheet(item: $selectedDate) { selected in
             DayDetailSheet(
-                date: date,
-                scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date),
+                date: selected.date,
+                scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: selected.date),
                 workouts: workoutViewModel.workouts
             )
         }
@@ -256,7 +255,7 @@ struct ProgramsListView: View {
                         scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date),
                         isToday: Calendar.current.isDateInToday(date),
                         onTap: {
-                            selectedDate = date
+                            selectedDate = CalendarSelectionDate(date: date)
                         }
                     )
                 }

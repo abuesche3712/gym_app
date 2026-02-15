@@ -1245,7 +1245,7 @@ class SessionViewModel: ObservableObject {
                 exerciseTimerSeconds = remaining
             } else {
                 exerciseTimerSeconds = 0
-                stopExerciseTimer(completed: true)
+                _ = stopExerciseTimer(completed: true)
             }
         }
     }
@@ -1432,7 +1432,7 @@ class SessionViewModel: ObservableObject {
         pendingDeletionTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 5_000_000_000)
             guard !Task.isCancelled else { return }
-            await self?.commitPendingDeletion()
+            self?.commitPendingDeletion()
         }
     }
 

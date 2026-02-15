@@ -408,8 +408,8 @@ struct ExercisePickerView: View {
             )
         }
 
-        // Create template to return - either from library or as temporary
-        let template = customLibrary.template(named: trimmedName)
+        // Create template to return - either from resolver cache or as temporary
+        let template = resolver.findTemplate(named: trimmedName)
             ?? ExerciseTemplate(
                 id: UUID(),
                 name: trimmedName,

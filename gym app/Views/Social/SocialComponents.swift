@@ -371,7 +371,7 @@ struct SessionPostContent: View {
                 // Generate summary based on first completed set
                 var summary: String? = nil
                 if let firstSet = completedSets.first {
-                    if let weight = firstSet.weight, let reps = firstSet.reps, weight > 0 {
+                    if let weight = firstSet.weight, firstSet.reps != nil, weight > 0 {
                         summary = "\(completedSets.count)×\(Int(weight))lbs"
                     } else if let reps = firstSet.reps, reps > 0 {
                         summary = "\(completedSets.count)×\(reps)"

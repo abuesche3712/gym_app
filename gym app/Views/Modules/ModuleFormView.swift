@@ -89,7 +89,7 @@ struct ModuleFormView: View {
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
             }
 
-            if isEditing, let module = module {
+            if isEditing, module != nil {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button {
@@ -111,15 +111,7 @@ struct ModuleFormView: View {
         }
         .sheet(isPresented: $showingShareSheet) {
             if let module = module {
-                ShareWithFriendSheet(content: module) { conversationWithProfile in
-                    let chatViewModel = ChatViewModel(
-                        conversation: conversationWithProfile.conversation,
-                        otherParticipant: conversationWithProfile.otherParticipant,
-                        otherParticipantFirebaseId: conversationWithProfile.otherParticipantFirebaseId
-                    )
-                    let content = try module.createMessageContent()
-                    try await chatViewModel.sendSharedContent(content)
-                }
+                ShareWithFriendSheet(content: module)
             }
         }
         .sheet(isPresented: $showingPostToFeed) {

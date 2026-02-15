@@ -53,15 +53,15 @@ class ChatViewModel: ObservableObject {
     init(conversation: Conversation,
          otherParticipant: UserProfile,
          otherParticipantFirebaseId: String,
-         messageRepo: MessageRepository = DataRepository.shared.messageRepo,
-         conversationRepo: ConversationRepository = DataRepository.shared.conversationRepo,
-         friendshipRepo: FriendshipRepository = DataRepository.shared.friendshipRepo) {
+         messageRepo: MessageRepository? = nil,
+         conversationRepo: ConversationRepository? = nil,
+         friendshipRepo: FriendshipRepository? = nil) {
         self.conversation = conversation
         self.otherParticipant = otherParticipant
         self.otherParticipantFirebaseId = otherParticipantFirebaseId
-        self.messageRepo = messageRepo
-        self.conversationRepo = conversationRepo
-        self.friendshipRepo = friendshipRepo
+        self.messageRepo = messageRepo ?? DataRepository.shared.messageRepo
+        self.conversationRepo = conversationRepo ?? DataRepository.shared.conversationRepo
+        self.friendshipRepo = friendshipRepo ?? DataRepository.shared.friendshipRepo
     }
 
     deinit {

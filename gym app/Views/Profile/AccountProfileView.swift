@@ -436,69 +436,61 @@ struct AccountProfileView: View {
         isSaving = true
 
         Task {
-            do {
-                let normalized = UsernameValidator.normalize(username)
+            let normalized = UsernameValidator.normalize(username)
 
-                // Handle username claiming/releasing (only if username is non-empty)
-                // This is best-effort - profile saves even if username claim fails
-                if !normalized.isEmpty {
-                    do {
-                        if let existingProfile = profileRepo.currentProfile,
-                           !existingProfile.username.isEmpty,
-                           existingProfile.username != normalized {
-                            // Release old username and claim new one
-                            try await FirestoreService.shared.releaseUsername(existingProfile.username)
-                            try await FirestoreService.shared.claimUsername(normalized)
-                        } else if profileRepo.currentProfile?.username.isEmpty != false {
-                            // For new profiles or empty usernames, claim the username
-                            try await FirestoreService.shared.claimUsername(normalized)
-                        }
-                    } catch {
-                        // Username claiming failed (likely permissions) - continue with profile save
-                        print("Username claim failed: \(error.localizedDescription)")
-                    }
-                }
-
-                // Update or create profile (local save always succeeds)
-                var profile: UserProfile
-                if var existingProfile = profileRepo.currentProfile {
-                    existingProfile.username = normalized
-                    existingProfile.displayName = displayName.isEmpty ? nil : displayName
-                    existingProfile.bio = bio.isEmpty ? nil : bio
-                    existingProfile.isPublic = isPublic
-                    existingProfile.updatedAt = Date()
-                    existingProfile.syncStatus = .pendingSync
-                    profileRepo.save(existingProfile)
-                    profile = existingProfile
-                } else {
-                    var newProfile = profileRepo.createProfile(
-                        username: normalized,
-                        displayName: displayName.isEmpty ? nil : displayName
-                    )
-                    newProfile.bio = bio.isEmpty ? nil : bio
-                    newProfile.isPublic = isPublic
-                    profileRepo.save(newProfile)
-                    profile = newProfile
-                }
-
-                // Try to sync to cloud (non-blocking - local save already done)
+            // Handle username claiming/releasing (only if username is non-empty)
+            // This is best-effort - profile saves even if username claim fails
+            if !normalized.isEmpty {
                 do {
-                    try await FirestoreService.shared.saveUserProfile(profile)
+                    if let existingProfile = profileRepo.currentProfile,
+                       !existingProfile.username.isEmpty,
+                       existingProfile.username != normalized {
+                        // Release old username and claim new one
+                        try await FirestoreService.shared.releaseUsername(existingProfile.username)
+                        try await FirestoreService.shared.claimUsername(normalized)
+                    } else if profileRepo.currentProfile?.username.isEmpty != false {
+                        // For new profiles or empty usernames, claim the username
+                        try await FirestoreService.shared.claimUsername(normalized)
+                    }
                 } catch {
-                    // Cloud sync failed but local save succeeded
-                    print("Cloud profile sync failed: \(error.localizedDescription)")
+                    // Username claiming failed (likely permissions) - continue with profile save
+                    print("Username claim failed: \(error.localizedDescription)")
                 }
+            }
 
-                await MainActor.run {
-                    isSaving = false
-                    hasUnsavedChanges = false
-                }
+            // Update or create profile (local save always succeeds)
+            var profile: UserProfile
+            if var existingProfile = profileRepo.currentProfile {
+                existingProfile.username = normalized
+                existingProfile.displayName = displayName.isEmpty ? nil : displayName
+                existingProfile.bio = bio.isEmpty ? nil : bio
+                existingProfile.isPublic = isPublic
+                existingProfile.updatedAt = Date()
+                existingProfile.syncStatus = .pendingSync
+                profileRepo.save(existingProfile)
+                profile = existingProfile
+            } else {
+                var newProfile = profileRepo.createProfile(
+                    username: normalized,
+                    displayName: displayName.isEmpty ? nil : displayName
+                )
+                newProfile.bio = bio.isEmpty ? nil : bio
+                newProfile.isPublic = isPublic
+                profileRepo.save(newProfile)
+                profile = newProfile
+            }
+
+            // Try to sync to cloud (non-blocking - local save already done)
+            do {
+                try await FirestoreService.shared.saveUserProfile(profile)
             } catch {
-                await MainActor.run {
-                    isSaving = false
-                    errorMessage = "Failed to save profile: \(error.localizedDescription)"
-                    showError = true
-                }
+                // Cloud sync failed but local save succeeded
+                print("Cloud profile sync failed: \(error.localizedDescription)")
+            }
+
+            await MainActor.run {
+                isSaving = false
+                hasUnsavedChanges = false
             }
         }
     }

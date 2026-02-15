@@ -15,7 +15,6 @@ struct ComposePostSheet: View {
 
     // Content selection state
     @State private var showingContentPicker = false
-    @State private var selectedContentType: ContentPickerType?
     @State private var didSubmit = false
     @State private var showDraftRestored = false
 
@@ -342,40 +341,12 @@ struct ContentPickerSheet: View {
             .sheet(isPresented: $showingHighlightPicker) {
                 if let session = selectedSession {
                     HighlightPickerView(session: session) { highlights in
-                        // Handle multiple highlights by bundling them together
-                        if highlights.count == 1, let single = highlights.first {
-                            // Single item - use as-is
-                            onSelect(single)
-                        } else if highlights.count > 1 {
-                            // Multiple items - bundle them together
-                            var exercises: [ShareableExercisePerformance] = []
-                            var sets: [ShareableSetPerformance] = []
-
-                            for highlight in highlights {
-                                if let ex = highlight as? ShareableExercisePerformance {
-                                    exercises.append(ex)
-                                } else if let s = highlight as? ShareableSetPerformance {
-                                    sets.append(s)
-                                } else if let sessionWithHighlights = highlight as? ShareableSessionWithHighlights {
-                                    // Full workout with user-selected highlights
-                                    onSelect(sessionWithHighlights)
-                                    dismiss()
-                                    return
-                                } else if let sess = highlight as? Session {
-                                    // If entire session was selected, use it directly
-                                    onSelect(sess)
-                                    dismiss()
-                                    return
-                                }
-                            }
-
-                            let bundle = ShareableHighlightBundle(
-                                workoutName: session.workoutName,
-                                date: session.date,
-                                exercises: exercises,
-                                sets: sets
-                            )
-                            onSelect(bundle)
+                        if let content = ShareableHighlightBundle.aggregate(
+                            from: highlights,
+                            workoutName: session.workoutName,
+                            date: session.date
+                        ) {
+                            onSelect(content)
                         }
                         dismiss()
                     }

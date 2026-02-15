@@ -27,11 +27,11 @@ class OtherUserProfileViewModel: ObservableObject {
     init(
         profile: UserProfile,
         firebaseUserId: String,
-        friendshipRepo: FriendshipRepository = DataRepository.shared.friendshipRepo
+        friendshipRepo: FriendshipRepository? = nil
     ) {
         self.profile = profile
         self.firebaseUserId = firebaseUserId
-        self.friendshipRepo = friendshipRepo
+        self.friendshipRepo = friendshipRepo ?? DataRepository.shared.friendshipRepo
     }
 
     // MARK: - Loading
@@ -128,7 +128,7 @@ class OtherUserProfileViewModel: ObservableObject {
     }
 
     func startConversation() async throws -> Conversation {
-        guard let myId = currentUserId else {
+        guard currentUserId != nil else {
             throw MessageError.notAuthenticated
         }
 
