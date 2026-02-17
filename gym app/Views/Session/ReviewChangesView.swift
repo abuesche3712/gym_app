@@ -234,6 +234,9 @@ struct ChangeRow: View {
         case .exerciseReordered(_, _, _, _, let from, let to):
             let direction = to < from ? "Moved up" : "Moved down"
             return "\(direction) in order"
+
+        case .exerciseSubstituted(_, let originalName, let newName, _, _):
+            return "\(originalName) → \(newName)"
         }
     }
 }

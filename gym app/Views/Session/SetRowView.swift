@@ -616,8 +616,7 @@ struct SetRowView: View {
                         case .stay:
                             inputWeight = formatWeight(suggestion.baseValue)
                         case nil:
-                            // If the suggestion was already adjusted from a prior outcome, apply it directly.
-                            inputWeight = formatWeight(suggestion.isOutcomeAdjusted ? suggestion.suggestedValue : suggestion.baseValue)
+                            inputWeight = formatWeight(suggestion.baseValue)
                         }
 
                         inputReps = lastReps.map { "\($0)" }
@@ -643,9 +642,7 @@ struct SetRowView: View {
                         case .stay:
                             prefilledReps = max(1, baseReps)
                         case nil:
-                            prefilledReps = suggestion.isOutcomeAdjusted
-                                ? max(1, progressedReps)
-                                : max(1, baseReps)
+                            prefilledReps = max(1, baseReps)
                         }
 
                         inputReps = "\(prefilledReps)"
@@ -665,9 +662,7 @@ struct SetRowView: View {
                         case .stay:
                             prefilledDuration = baseDuration
                         case nil:
-                            prefilledDuration = suggestion.isOutcomeAdjusted
-                                ? progressedDuration
-                                : baseDuration
+                            prefilledDuration = baseDuration
                         }
 
                         if !durationManuallySet {
@@ -693,9 +688,7 @@ struct SetRowView: View {
                         case .stay:
                             prefilledDistance = baseDistance
                         case nil:
-                            prefilledDistance = suggestion.isOutcomeAdjusted
-                                ? progressedDistance
-                                : baseDistance
+                            prefilledDistance = baseDistance
                         }
 
                         inputDistance = formatDistanceValue(prefilledDistance)

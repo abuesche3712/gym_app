@@ -82,7 +82,25 @@ class WorkoutDiffService {
                 }
             }
 
-            // 4. Detect REORDERING
+            // 4. Detect SUBSTITUTIONS (name changed for matched exercises)
+            for sessionEx in sessionExercises {
+                guard let sourceId = sessionEx.sourceExerciseInstanceId,
+                      let originalEx = originalExercises.first(where: { $0.id == sourceId }) else {
+                    continue
+                }
+
+                if sessionEx.exerciseName != originalEx.name {
+                    changes.append(.exerciseSubstituted(
+                        sourceExerciseInstanceId: sourceId,
+                        originalName: originalEx.name,
+                        newName: sessionEx.exerciseName,
+                        moduleId: originalModule.id,
+                        moduleName: originalModule.name
+                    ))
+                }
+            }
+
+            // 5. Detect REORDERING
             let reorderChanges = detectReordering(
                 originalExercises: originalExercises,
                 sessionExercises: sessionExercises,
@@ -135,6 +153,14 @@ class WorkoutDiffService {
                     exerciseId: exerciseId,
                     moduleId: moduleId,
                     toIndex: toIndex,
+                    modules: &updatedModules
+                )
+
+            case .exerciseSubstituted(let exerciseId, _, let newName, let moduleId, _):
+                applyExerciseSubstituted(
+                    exerciseId: exerciseId,
+                    moduleId: moduleId,
+                    newName: newName,
                     modules: &updatedModules
                 )
             }
@@ -291,6 +317,20 @@ class WorkoutDiffService {
         for i in 0..<modules[moduleIndex].exercises.count {
             modules[moduleIndex].exercises[i].order = i
         }
+    }
+
+    private func applyExerciseSubstituted(
+        exerciseId: UUID,
+        moduleId: UUID,
+        newName: String,
+        modules: inout [Module]
+    ) {
+        guard let moduleIndex = modules.firstIndex(where: { $0.id == moduleId }),
+              let exerciseIndex = modules[moduleIndex].exercises.firstIndex(where: { $0.id == exerciseId }) else {
+            return
+        }
+
+        modules[moduleIndex].exercises[exerciseIndex].name = newName
     }
 
     private func adjustSetCount(for exercise: inout ExerciseInstance, to targetCount: Int) {

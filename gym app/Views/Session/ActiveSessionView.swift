@@ -89,6 +89,11 @@ struct ActiveSessionView: View {
                                         }
                                     )
 
+                                    // Progression Info Card (shown when engine has a suggestion)
+                                    if let suggestion = currentExercise.progressionSuggestion {
+                                        ProgressionInfoCard(suggestion: suggestion, recommendation: currentExercise.progressionRecommendation)
+                                    }
+
                                     // All Sets (expandable rows) - pass fixed width to prevent layout shifts
                                     AllSetsSection(
                                         exercise: currentExercise,
@@ -336,6 +341,19 @@ struct ActiveSessionView: View {
                             sessionExerciseIndex: sessionViewModel.currentExerciseIndex,
                             onSessionSave: { moduleIndex, exerciseIndex, updatedExercise in
                                 updateExerciseAt(moduleIndex: moduleIndex, exerciseIndex: exerciseIndex, exercise: updatedExercise)
+
+                                // Write attribute changes back to library
+                                if let sourceId = updatedExercise.sourceExerciseInstanceId {
+                                    sessionViewModel.saveExerciseAttributesToLibrary(
+                                        sourceExerciseInstanceId: sourceId,
+                                        name: updatedExercise.exerciseName,
+                                        exerciseType: updatedExercise.exerciseType,
+                                        primaryMuscles: updatedExercise.primaryMuscles,
+                                        secondaryMuscles: updatedExercise.secondaryMuscles,
+                                        implementIds: updatedExercise.implementIds,
+                                        isUnilateral: updatedExercise.completedSetGroups.first?.isUnilateral ?? false
+                                    )
+                                }
                             }
                         )
                     }
@@ -994,6 +1012,51 @@ struct ActiveSessionView: View {
     }
 }
 
+
+// MARK: - Progression Info Card
+
+private struct ProgressionInfoCard: View {
+    let suggestion: ProgressionSuggestion
+    let recommendation: ProgressionRecommendation?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack(spacing: AppSpacing.xs) {
+                Image(systemName: "gearshape.2.fill")
+                    .caption(color: AppColors.dominant)
+                Text("Progression Engine")
+                    .caption(color: AppColors.textSecondary)
+                    .fontWeight(.semibold)
+            }
+
+            Text("Suggests: \(suggestion.formattedSuggestion)")
+                .subheadline(color: AppColors.dominant)
+                .fontWeight(.semibold)
+
+            if let confidence = suggestion.confidenceLabel {
+                Text("\(confidence) confidence")
+                    .caption(color: AppColors.textSecondary)
+            }
+
+            if let rationale = suggestion.rationale?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !rationale.isEmpty {
+                Text(rationale)
+                    .caption(color: AppColors.textTertiary)
+                    .lineLimit(3)
+            }
+        }
+        .padding(AppSpacing.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.medium)
+                .fill(AppColors.surfaceSecondary)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .stroke(AppColors.dominant.opacity(0.2), lineWidth: 1)
+                )
+        )
+    }
+}
 
 #Preview {
     ActiveSessionView()

@@ -842,6 +842,62 @@ class SessionViewModel: ObservableObject {
         )
     }
 
+    // MARK: - Exercise Library Write-Back
+
+    /// Save exercise attribute changes back to the module template and custom library
+    func saveExerciseAttributesToLibrary(
+        sourceExerciseInstanceId: UUID,
+        name: String,
+        exerciseType: ExerciseType,
+        primaryMuscles: [MuscleGroup],
+        secondaryMuscles: [MuscleGroup],
+        implementIds: Set<UUID>,
+        isUnilateral: Bool
+    ) {
+        // Find the module that contains this exercise instance
+        for module in originalModules {
+            if let exerciseIndex = module.exercises.firstIndex(where: { $0.id == sourceExerciseInstanceId }) {
+                var updatedModule = module
+                var exercise = updatedModule.exercises[exerciseIndex]
+
+                exercise.name = name
+                exercise.exerciseType = exerciseType
+                exercise.primaryMuscles = primaryMuscles
+                exercise.secondaryMuscles = secondaryMuscles
+                exercise.implementIds = implementIds
+                exercise.isUnilateral = isUnilateral
+                exercise.updatedAt = Date()
+
+                updatedModule.exercises[exerciseIndex] = exercise
+                updatedModule.updatedAt = Date()
+                updatedModule.syncStatus = .pendingSync
+                repository.saveModule(updatedModule)
+
+                // Also update the original modules array so we have fresh state
+                if let origIndex = originalModules.firstIndex(where: { $0.id == module.id }) {
+                    originalModules[origIndex] = updatedModule
+                }
+
+                // If linked to a custom template, update that too
+                if let templateId = exercise.templateId {
+                    let customLibrary = CustomExerciseLibrary.shared
+                    if let customTemplate = customLibrary.exercises.first(where: { $0.id == templateId }) {
+                        var updatedTemplate = customTemplate
+                        updatedTemplate.name = name
+                        updatedTemplate.exerciseType = exerciseType
+                        updatedTemplate.primaryMuscles = primaryMuscles
+                        updatedTemplate.secondaryMuscles = secondaryMuscles
+                        updatedTemplate.isUnilateral = isUnilateral
+                        updatedTemplate.implementIds = implementIds
+                        customLibrary.updateExercise(updatedTemplate)
+                    }
+                }
+
+                break
+            }
+        }
+    }
+
     // MARK: - Set Logging
 
     func logSet(
@@ -1414,8 +1470,9 @@ class SessionViewModel: ObservableObject {
                 set.completed && set.hasAnyMetricData
             }
         }
+        let hasNotes = exercise.notes != nil && !(exercise.notes?.isEmpty ?? true)
 
-        return hasCompletedMetricSet || exercise.progressionRecommendation != nil
+        return hasCompletedMetricSet || exercise.progressionRecommendation != nil || hasNotes
     }
 
     // MARK: - Soft Delete with Undo

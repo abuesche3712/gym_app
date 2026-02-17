@@ -46,6 +46,15 @@ enum StructuralChange: Identifiable, Equatable {
         toIndex: Int
     )
 
+    /// Exercise substituted (name changed during session)
+    case exerciseSubstituted(
+        sourceExerciseInstanceId: UUID,
+        originalName: String,
+        newName: String,
+        moduleId: UUID,
+        moduleName: String
+    )
+
     // MARK: - Identifiable
 
     var id: String {
@@ -58,6 +67,8 @@ enum StructuralChange: Identifiable, Equatable {
             return "removed-\(id.uuidString)"
         case .exerciseReordered(let id, _, _, _, _, _):
             return "reordered-\(id.uuidString)"
+        case .exerciseSubstituted(let id, _, _, _, _):
+            return "substituted-\(id.uuidString)"
         }
     }
 
@@ -73,6 +84,8 @@ enum StructuralChange: Identifiable, Equatable {
             return moduleId
         case .exerciseReordered(_, _, let moduleId, _, _, _):
             return moduleId
+        case .exerciseSubstituted(_, _, _, let moduleId, _):
+            return moduleId
         }
     }
 
@@ -86,6 +99,8 @@ enum StructuralChange: Identifiable, Equatable {
             return name
         case .exerciseReordered(_, _, _, let name, _, _):
             return name
+        case .exerciseSubstituted(_, _, _, _, let name):
+            return name
         }
     }
 
@@ -98,6 +113,8 @@ enum StructuralChange: Identifiable, Equatable {
         case .exerciseRemoved(_, let name, _, _):
             return name
         case .exerciseReordered(_, let name, _, _, _, _):
+            return name
+        case .exerciseSubstituted(_, _, let name, _, _):
             return name
         }
     }
@@ -120,6 +137,9 @@ enum StructuralChange: Identifiable, Equatable {
         case .exerciseReordered(_, let name, _, _, let from, let to):
             let direction = to < from ? "up" : "down"
             return "Moved \(name) \(direction)"
+
+        case .exerciseSubstituted(_, let originalName, let newName, _, _):
+            return "\(originalName) → \(newName)"
         }
     }
 
@@ -134,6 +154,8 @@ enum StructuralChange: Identifiable, Equatable {
             return "trash"
         case .exerciseReordered:
             return "arrow.up.arrow.down"
+        case .exerciseSubstituted:
+            return "arrow.triangle.swap"
         }
     }
 
@@ -147,6 +169,8 @@ enum StructuralChange: Identifiable, Equatable {
         case .exerciseRemoved:
             return "error"
         case .exerciseReordered:
+            return "dominant"
+        case .exerciseSubstituted:
             return "dominant"
         }
     }

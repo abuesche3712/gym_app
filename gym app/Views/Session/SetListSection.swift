@@ -58,12 +58,11 @@ struct AllSetsSection: View {
                                 onLog: { flatSet, weight, reps, rpe, duration, holdTime, distance, height, intensity, temperature, bandColor, implementMeasurableValues in
                                     onLogSet(flatSet, weight, reps, rpe, duration, holdTime, distance, height, intensity, temperature, bandColor, implementMeasurableValues)
                                     onHighlightClear()
-                                    // Start rest timer between sides and between set pairs
+                                    // Start rest timer only after completing the RIGHT side (not left)
                                     if exercise.exerciseType != .recovery {
                                         let fullRest = flatSet.restPeriod ?? appState.defaultRestTime
                                         if !allSetsCompleted(exercise) {
-                                            if flatSet.setData.side == .left || flatSet.setData.side == .right {
-                                                // Full rest between sides and before next set pair
+                                            if flatSet.setData.side == .right || flatSet.setData.side == nil {
                                                 sessionViewModel.startRestTimer(seconds: fullRest)
                                             }
                                         }
@@ -370,7 +369,8 @@ struct UnilateralSetPairView: View {
                         highlightNextSet: highlightNextSet,
                         isFirstIncomplete: isFirstIncompleteLeft,
                         onLog: onLog,
-                        onUncheck: onUncheck
+                        onUncheck: onUncheck,
+                        lastSessionExercise: lastSessionExercise
                     )
                 }
 
@@ -382,7 +382,8 @@ struct UnilateralSetPairView: View {
                         highlightNextSet: highlightNextSet,
                         isFirstIncomplete: isFirstIncompleteRight,
                         onLog: onLog,
-                        onUncheck: onUncheck
+                        onUncheck: onUncheck,
+                        lastSessionExercise: lastSessionExercise
                     )
                 }
             }
@@ -418,6 +419,7 @@ struct UnilateralSideRow: View {
     let isFirstIncomplete: Bool
     let onLog: (FlatSet, Double?, Int?, Int?, Int?, Int?, Double?, Double?, Int?, Int?, String?, [String: String]?) -> Void
     var onUncheck: ((FlatSet) -> Void)?
+    var lastSessionExercise: SessionExercise? = nil
 
     // Shared input state
     @State private var inputWeight: String = ""
@@ -430,6 +432,8 @@ struct UnilateralSideRow: View {
     @State private var inputDistance: String = ""
     @State private var inputHeight: String = ""
     @State private var inputTemperature: String = ""
+    @State private var inputBandColor: String = ""
+    @State private var inputMeasurableValues: [String: String] = [:]
     @State private var showTimePicker: Bool = false
     @State private var durationManuallySet: Bool = false
 
@@ -522,6 +526,17 @@ struct UnilateralSideRow: View {
         let setData = flatSet.setData
         let hasLoggedValues = setData.weight != nil || setData.reps != nil || setData.duration != nil || setData.holdTime != nil || setData.distance != nil
 
+        // Extract last session data matching this side
+        let lastSessionSet = lastSessionExercise?.completedSetGroups
+            .flatMap { $0.sets }
+            .first { $0.completed && $0.side == side }
+        let lastWeight = lastSessionSet?.weight
+        let lastReps = lastSessionSet?.reps
+        let lastDuration = lastSessionSet?.duration
+        let lastHoldTime = lastSessionSet?.holdTime
+        let lastDistance = lastSessionSet?.distance
+        let lastBandColor = lastSessionSet?.bandColor
+
         inputWeight = ""
         inputReps = ""
         inputRPE = ""
@@ -532,6 +547,7 @@ struct UnilateralSideRow: View {
         inputDistance = ""
         inputHeight = ""
         inputTemperature = ""
+        inputBandColor = ""
 
         if hasLoggedValues {
             inputWeight = setData.weight.map { formatWeight($0) } ?? flatSet.targetWeight.map { formatWeight($0) } ?? ""
@@ -541,6 +557,7 @@ struct UnilateralSideRow: View {
             }
             inputHoldTime = setData.holdTime ?? flatSet.targetHoldTime ?? 0
             inputDistance = setData.distance.map { formatDistanceValue($0) } ?? flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
+            inputBandColor = setData.bandColor ?? lastBandColor ?? ""
         } else if let suggestion = exercise.progressionSuggestion {
             switch suggestion.metric {
             case .weight:
@@ -554,9 +571,9 @@ struct UnilateralSideRow: View {
                 case .stay:
                     inputWeight = formatWeight(suggestion.baseValue)
                 case nil:
-                    inputWeight = formatWeight(suggestion.isOutcomeAdjusted ? suggestion.suggestedValue : suggestion.baseValue)
+                    inputWeight = formatWeight(suggestion.baseValue)
                 }
-                inputReps = flatSet.targetReps.map { "\($0)" } ?? ""
+                inputReps = lastReps.map { "\($0)" } ?? flatSet.targetReps.map { "\($0)" } ?? ""
 
             case .reps:
                 let baseReps = Int(round(suggestion.baseValue))
@@ -573,10 +590,10 @@ struct UnilateralSideRow: View {
                 case .stay:
                     prefilledReps = max(1, baseReps)
                 case nil:
-                    prefilledReps = suggestion.isOutcomeAdjusted ? max(1, progressedReps) : max(1, baseReps)
+                    prefilledReps = max(1, baseReps)
                 }
 
-                inputWeight = flatSet.targetWeight.map { formatWeight($0) } ?? ""
+                inputWeight = lastWeight.map { formatWeight($0) } ?? flatSet.targetWeight.map { formatWeight($0) } ?? ""
                 inputReps = "\(prefilledReps)"
 
             case .duration:
@@ -594,13 +611,13 @@ struct UnilateralSideRow: View {
                 case .stay:
                     prefilledDuration = baseDuration
                 case nil:
-                    prefilledDuration = suggestion.isOutcomeAdjusted ? progressedDuration : baseDuration
+                    prefilledDuration = baseDuration
                 }
 
                 if !durationManuallySet {
                     inputDuration = max(1, prefilledDuration)
                 }
-                inputDistance = flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
+                inputDistance = lastDistance.map { formatDistanceValue($0) } ?? flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
 
             case .distance:
                 let baseDistance = suggestion.baseValue
@@ -617,42 +634,56 @@ struct UnilateralSideRow: View {
                 case .stay:
                     prefilledDistance = baseDistance
                 case nil:
-                    prefilledDistance = suggestion.isOutcomeAdjusted ? progressedDistance : baseDistance
+                    prefilledDistance = baseDistance
                 }
 
                 inputDistance = formatDistanceValue(prefilledDistance)
             }
         } else {
-            inputWeight = flatSet.targetWeight.map { formatWeight($0) } ?? ""
-            inputReps = flatSet.targetReps.map { "\($0)" } ?? ""
+            // No progression suggestion - use lastSession data as fallback, then targets
+            inputWeight = lastWeight.map { formatWeight($0) }
+                ?? flatSet.targetWeight.map { formatWeight($0) }
+                ?? ""
+            inputReps = lastReps.map { "\($0)" }
+                ?? flatSet.targetReps.map { "\($0)" }
+                ?? ""
             if !durationManuallySet {
-                inputDuration = flatSet.targetDuration ?? 0
+                inputDuration = lastDuration ?? flatSet.targetDuration ?? 0
             }
-            inputHoldTime = flatSet.targetHoldTime ?? 0
-            inputDistance = flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
+            inputHoldTime = lastHoldTime ?? flatSet.targetHoldTime ?? 0
+            inputDistance = lastDistance.map { formatDistanceValue($0) }
+                ?? flatSet.targetDistance.map { formatDistanceValue($0) }
+                ?? ""
+            inputBandColor = lastBandColor ?? ""
         }
 
         if !hasLoggedValues && exercise.progressionSuggestion != nil {
             if inputReps.isEmpty {
-                inputReps = flatSet.targetReps.map { "\($0)" } ?? ""
+                inputReps = lastReps.map { "\($0)" } ?? flatSet.targetReps.map { "\($0)" } ?? ""
             }
             if inputWeight.isEmpty {
-                inputWeight = flatSet.targetWeight.map { formatWeight($0) } ?? ""
+                inputWeight = lastWeight.map { formatWeight($0) } ?? flatSet.targetWeight.map { formatWeight($0) } ?? ""
             }
             if !durationManuallySet && inputDuration == 0 {
-                inputDuration = flatSet.targetDuration ?? 0
+                inputDuration = lastDuration ?? flatSet.targetDuration ?? 0
             }
             if inputDistance.isEmpty {
-                inputDistance = flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
+                inputDistance = lastDistance.map { formatDistanceValue($0) } ?? flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
             }
             if inputHoldTime == 0 {
-                inputHoldTime = flatSet.targetHoldTime ?? 0
+                inputHoldTime = lastHoldTime ?? flatSet.targetHoldTime ?? 0
+            }
+            if inputBandColor.isEmpty {
+                inputBandColor = lastBandColor ?? ""
             }
         }
 
         if let rpe = setData.rpe { inputRPE = "\(rpe)" }
         if let ht = setData.height { inputHeight = formatHeight(ht) }
         if let temp = setData.temperature { inputTemperature = "\(temp)" }
+        if inputBandColor.isEmpty {
+            inputBandColor = setData.bandColor ?? lastBandColor ?? ""
+        }
     }
 
     private func toggleTimer() {
@@ -679,7 +710,7 @@ struct UnilateralSideRow: View {
 
     @ViewBuilder
     private var inputFields: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 6) {
             switch exercise.exerciseType {
             case .strength:
                 if !exercise.isBodyweight {
@@ -688,7 +719,7 @@ struct UnilateralSideRow: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
-                        .frame(width: 40)
+                        .frame(width: 44)
                         .padding(.vertical, 6)
                         .padding(.horizontal, 4)
                         .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
@@ -700,7 +731,7 @@ struct UnilateralSideRow: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
-                    .frame(width: 36)
+                    .frame(width: 40)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 4)
                     .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
@@ -719,6 +750,7 @@ struct UnilateralSideRow: View {
                             Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
+                                .frame(minWidth: 48)
                                 .padding(.vertical, 6)
                                 .padding(.horizontal, 6)
                                 .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
@@ -770,6 +802,7 @@ struct UnilateralSideRow: View {
                     Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputHoldTime > 0 ? "\(inputHoldTime)s" : "0s"))
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
+                        .frame(minWidth: 48)
                         .padding(.vertical, 6)
                         .padding(.horizontal, 6)
                         .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
@@ -826,6 +859,7 @@ struct UnilateralSideRow: View {
                             Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
+                                .frame(minWidth: 48)
                                 .padding(.vertical, 6)
                                 .padding(.horizontal, 6)
                                 .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
@@ -858,6 +892,7 @@ struct UnilateralSideRow: View {
                         Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
+                            .frame(minWidth: 48)
                             .padding(.vertical, 6)
                             .padding(.horizontal, 6)
                             .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
@@ -895,7 +930,7 @@ struct UnilateralSideRow: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
-                    .frame(width: 32)
+                    .frame(width: 36)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 4)
                     .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
@@ -905,56 +940,17 @@ struct UnilateralSideRow: View {
                 Text("RPE")
                     .caption2(color: AppColors.textTertiary)
             }
-
-            if let suggestion = inlineSuggestion {
-                Text(inlineSuggestionText(for: suggestion))
-                    .caption2(color: AppColors.textTertiary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: 140, alignment: .leading)
-            }
         }
-    }
-
-    private var inlineSuggestion: ProgressionSuggestion? {
-        guard !flatSet.setData.completed, let suggestion = exercise.progressionSuggestion else { return nil }
-
-        switch exercise.exerciseType {
-        case .strength:
-            return suggestion.metric == .weight || suggestion.metric == .reps ? suggestion : nil
-        case .cardio:
-            if exercise.cardioMetric.tracksTime && suggestion.metric == .duration { return suggestion }
-            if exercise.cardioMetric.tracksDistance && suggestion.metric == .distance { return suggestion }
-            return nil
-        case .isometric:
-            return suggestion.metric == .duration ? suggestion : nil
-        case .mobility:
-            return exercise.mobilityTracking.tracksDuration && suggestion.metric == .duration ? suggestion : nil
-        case .recovery:
-            return suggestion.metric == .duration ? suggestion : nil
-        case .explosive:
-            return nil
-        }
-    }
-
-    private func inlineSuggestionText(for suggestion: ProgressionSuggestion) -> String {
-        if let rationale = suggestion.rationale?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !rationale.isEmpty {
-            return rationale.replacingOccurrences(of: "\n", with: " ")
-        }
-
-        if let confidence = suggestion.confidenceLabel {
-            return "\(suggestion.formattedValue) · \(confidence)"
-        }
-        return suggestion.formattedValue
     }
 
     private var completedSummary: String {
         let set = flatSet.setData
-        let summary: String
+        var summary: String
         switch exercise.exerciseType {
         case .strength:
-            if let weight = set.weight, let reps = set.reps {
+            if let band = set.bandColor, !band.isEmpty, let reps = set.reps {
+                summary = "\(band) × \(reps)"
+            } else if let weight = set.weight, let reps = set.reps {
                 summary = exercise.isBodyweight ? "BW+\(formatWeight(weight)) × \(reps)" : "\(formatWeight(weight)) × \(reps)"
             } else if let reps = set.reps {
                 summary = exercise.isBodyweight ? "BW × \(reps)" : "\(reps) reps"
@@ -989,6 +985,21 @@ struct UnilateralSideRow: View {
                 summary = result
             } else {
                 summary = "Done"
+            }
+        }
+        // Append implement measurable values
+        if !set.implementMeasurableValues.isEmpty {
+            let measurableStrings = set.implementMeasurableValues.compactMap { (key, value) -> String? in
+                if let numericValue = value.numericValue {
+                    let formatted = numericValue.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(numericValue))" : String(format: "%.1f", numericValue)
+                    return "\(key): \(formatted)"
+                } else if let stringValue = value.stringValue {
+                    return "\(key): \(stringValue)"
+                }
+                return nil
+            }
+            if !measurableStrings.isEmpty {
+                summary += " · " + measurableStrings.joined(separator: " · ")
             }
         }
         if let rpe = set.rpe {
@@ -1032,8 +1043,8 @@ struct UnilateralSideRow: View {
             Double(inputHeight),
             nil, // intensity
             Int(inputTemperature),
-            nil, // bandColor
-            nil  // implementMeasurableValues
+            inputBandColor.isEmpty ? nil : inputBandColor,
+            inputMeasurableValues.isEmpty ? nil : inputMeasurableValues
         )
     }
 }
@@ -1192,13 +1203,13 @@ struct ProgressionButtonsSection: View {
                 HStack(spacing: AppSpacing.sm) {
                     Text(suggestionSummaryText(for: suggestion))
                         .caption2(color: AppColors.textSecondary)
-                        .lineLimit(1)
+                        .lineLimit(2)
                         .truncationMode(.tail)
 
                     if let rationale = compactRationaleText(for: suggestion) {
                         Text(rationale)
                             .caption2(color: AppColors.textTertiary)
-                            .lineLimit(1)
+                            .lineLimit(2)
                             .truncationMode(.tail)
                     }
 

@@ -36,26 +36,6 @@ struct CardioInputs: View {
         timerRunning && sessionViewModel.exerciseTimerIsStopwatch ? sessionViewModel.exerciseTimerSeconds : 0
     }
 
-    private var durationSuggestion: ProgressionSuggestion? {
-        guard let suggestion = exercise.progressionSuggestion, suggestion.metric == .duration else { return nil }
-        return suggestion
-    }
-
-    private var distanceSuggestion: ProgressionSuggestion? {
-        guard let suggestion = exercise.progressionSuggestion, suggestion.metric == .distance else { return nil }
-        return suggestion
-    }
-
-    private var inlineSuggestion: ProgressionSuggestion? {
-        if let durationSuggestion {
-            return durationSuggestion
-        }
-        if let distanceSuggestion {
-            return distanceSuggestion
-        }
-        return nil
-    }
-
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
             // Time input box - only show if tracking time
@@ -164,13 +144,6 @@ struct CardioInputs: View {
                 .fixedSize(horizontal: true, vertical: false)
             }
 
-            if let suggestion = inlineSuggestion, !flatSet.setData.completed {
-                Text(inlineSuggestionText(for: suggestion))
-                    .caption2(color: AppColors.textTertiary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: 170, alignment: .leading)
-            }
         }
         .confirmationDialog("Distance Unit", isPresented: $showDistanceUnitPicker, titleVisibility: .visible) {
             ForEach(DistanceUnit.allCases) { unit in
@@ -202,26 +175,6 @@ struct CardioInputs: View {
         }
     }
 
-    private func suggestionHintText(for suggestion: ProgressionSuggestion) -> String {
-        if let label = suggestion.confidenceLabel {
-            return "\(directionSymbol(for: suggestion)) \(suggestion.formattedValue) · \(label)"
-        }
-        return "\(directionSymbol(for: suggestion)) \(suggestion.formattedValue)"
-    }
-
-    private func directionSymbol(for suggestion: ProgressionSuggestion) -> String {
-        if suggestion.suggestedValue > suggestion.baseValue { return "▲" }
-        if suggestion.suggestedValue < suggestion.baseValue { return "▼" }
-        return "■"
-    }
-
-    private func inlineSuggestionText(for suggestion: ProgressionSuggestion) -> String {
-        if let rationale = suggestion.rationale?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !rationale.isEmpty {
-            return rationale.replacingOccurrences(of: "\n", with: " ")
-        }
-        return suggestionHintText(for: suggestion)
-    }
 }
 
 // MARK: - Isometric Inputs

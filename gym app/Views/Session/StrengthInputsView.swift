@@ -30,11 +30,6 @@ struct StrengthInputs: View {
         timerRunning && !sessionViewModel.exerciseTimerIsStopwatch ? sessionViewModel.exerciseTimerSeconds : 0
     }
 
-    private var inlineSuggestion: ProgressionSuggestion? {
-        guard !flatSet.setData.completed, let suggestion = exercise.progressionSuggestion else { return nil }
-        return suggestion.metric == .weight || suggestion.metric == .reps ? suggestion : nil
-    }
-
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
             // AMRAP indicator/timer
@@ -225,13 +220,6 @@ struct StrengthInputs: View {
                 .fixedSize(horizontal: true, vertical: false)
             }
 
-            if let suggestion = inlineSuggestion {
-                Text(inlineSuggestionText(for: suggestion))
-                    .caption2(color: AppColors.textTertiary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: 160, alignment: .leading)
-            }
         }
     }
 
@@ -306,22 +294,6 @@ struct StrengthInputs: View {
         }
     }
 
-    private func directionSymbol(for suggestion: ProgressionSuggestion) -> String {
-        if suggestion.percentageApplied > 0.01 { return "▲" }
-        if suggestion.percentageApplied < -0.01 { return "▼" }
-        return "■"
-    }
-
-    private func inlineSuggestionText(for suggestion: ProgressionSuggestion) -> String {
-        if let rationale = suggestion.rationale?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !rationale.isEmpty {
-            return rationale.replacingOccurrences(of: "\n", with: " ")
-        }
-        if let label = suggestion.confidenceLabel {
-            return "\(directionSymbol(for: suggestion)) \(suggestion.formattedValue) · \(label)"
-        }
-        return "\(directionSymbol(for: suggestion)) \(suggestion.formattedValue)"
-    }
 }
 
 // MARK: - Field Type Enum

@@ -311,6 +311,10 @@ struct ExerciseCard: View {
             notesText = exercise.notes ?? ""
             if !notesText.isEmpty { showNotes = true }
         }
+        .onChange(of: exercise.id) { _, _ in
+            notesText = exercise.notes ?? ""
+            showNotes = !notesText.isEmpty
+        }
     }
 
     private var exerciseSetsSummary: String {
