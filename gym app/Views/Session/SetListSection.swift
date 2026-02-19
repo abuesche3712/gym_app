@@ -218,7 +218,7 @@ struct AllSetsSection: View {
         var result: [FlatSet] = []
         for (setIndex, setData) in setGroup.sets.enumerated() {
             result.append(FlatSet(
-                id: "\(exercise.exerciseId)-\(groupIndex)-\(setIndex)",
+                id: "\(exercise.exerciseId.uuidString)-\(setData.id.uuidString)",
                 setGroupIndex: groupIndex,
                 setIndex: setIndex,
                 setNumber: runningSetNumber,
@@ -272,9 +272,12 @@ struct AllSetsSection: View {
     }
 
     private func canDeleteSet(exercise: SessionExercise) -> Bool {
-        // Can delete if there's more than 1 set total in the exercise
-        let totalSets = exercise.completedSetGroups.reduce(0) { $0 + $1.sets.count }
-        return totalSets > 1
+        // Can delete if there's more than 1 logical set in the exercise.
+        // Unilateral groups store two SetData rows (L/R) per logical set.
+        let totalLogicalSets = exercise.completedSetGroups.reduce(0) { partialResult, group in
+            partialResult + (group.isUnilateral ? ((group.sets.count + 1) / 2) : group.sets.count)
+        }
+        return totalLogicalSets > 1
     }
 
     /// Groups unilateral sets by set number (left and right paired together)
@@ -445,6 +448,10 @@ struct UnilateralSideRow: View {
         sessionViewModel.isExerciseTimerRunning && sessionViewModel.exerciseTimerSetId == timerSetId
     }
 
+    private var targetFingerprint: String {
+        "\(flatSet.targetWeight ?? 0)-\(flatSet.targetReps ?? 0)-\(flatSet.targetDuration ?? 0)-\(flatSet.targetHoldTime ?? 0)-\(flatSet.targetDistance ?? 0)-\(exercise.exerciseType.rawValue)-\(exercise.cardioMetric.rawValue)-\(exercise.mobilityTracking.rawValue)"
+    }
+
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
             // Side indicator
@@ -503,6 +510,11 @@ struct UnilateralSideRow: View {
                       : (highlightNextSet && isFirstIncomplete ? AppColors.dominant.opacity(0.1) : AppColors.surfacePrimary))
         )
         .onAppear { loadDefaults() }
+        .onChange(of: targetFingerprint) { _, _ in
+            if !flatSet.setData.completed {
+                loadDefaults()
+            }
+        }
         .onChange(of: timerRunning) { wasRunning, isRunning in
             // Capture elapsed only when this row's timer transitions from running to stopped.
             if wasRunning && !isRunning {
@@ -514,6 +526,16 @@ struct UnilateralSideRow: View {
                     durationManuallySet = true
                 }
             }
+        }
+        .onChange(of: flatSet.setData.completed) { wasCompleted, isCompleted in
+            if wasCompleted && !isCompleted {
+                durationManuallySet = false
+                loadDefaults()
+            }
+        }
+        .onChange(of: flatSet.id) { _, _ in
+            durationManuallySet = false
+            loadDefaults()
         }
         .sheet(isPresented: $showTimePicker) {
             TimePickerSheet(totalSeconds: $inputDuration, title: "Enter Time", onSave: {
@@ -548,6 +570,7 @@ struct UnilateralSideRow: View {
         inputHeight = ""
         inputTemperature = ""
         inputBandColor = ""
+        inputMeasurableValues = [:]
 
         if hasLoggedValues {
             inputWeight = setData.weight.map { formatWeight($0) } ?? flatSet.targetWeight.map { formatWeight($0) } ?? ""
@@ -684,6 +707,49 @@ struct UnilateralSideRow: View {
         if inputBandColor.isEmpty {
             inputBandColor = setData.bandColor ?? lastBandColor ?? ""
         }
+
+        for measurable in flatSet.implementMeasurables {
+            let storageKey = measurableStorageKey(for: measurable)
+            if let loggedValue = measurableValue(for: measurable, in: setData.implementMeasurableValues) {
+                if let numericValue = loggedValue.numericValue {
+                    inputMeasurableValues[storageKey] = formatMeasurableValue(numericValue)
+                } else if let stringValue = loggedValue.stringValue {
+                    inputMeasurableValues[storageKey] = stringValue
+                }
+            } else if let lastValue = measurableValue(for: measurable, in: lastSessionSet?.implementMeasurableValues ?? [:]) {
+                if let numericValue = lastValue.numericValue {
+                    inputMeasurableValues[storageKey] = formatMeasurableValue(numericValue)
+                } else if let stringValue = lastValue.stringValue {
+                    inputMeasurableValues[storageKey] = stringValue
+                }
+            } else if let targetNumeric = measurable.targetValue {
+                inputMeasurableValues[storageKey] = formatMeasurableValue(targetNumeric)
+            } else if let targetString = measurable.targetStringValue {
+                inputMeasurableValues[storageKey] = targetString
+            }
+        }
+    }
+
+    private func formatMeasurableValue(_ value: Double) -> String {
+        if value.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(value))"
+        } else {
+            return String(format: "%.1f", value)
+        }
+    }
+
+    private func measurableStorageKey(for measurable: ImplementMeasurableTarget) -> String {
+        "\(measurable.implementId.uuidString)|\(measurable.measurableName)"
+    }
+
+    private func measurableValue(
+        for measurable: ImplementMeasurableTarget,
+        in values: [String: MeasurableValue]
+    ) -> MeasurableValue? {
+        if let currentValue = values[measurableStorageKey(for: measurable)] {
+            return currentValue
+        }
+        return values[measurable.measurableName]
     }
 
     private func toggleTimer() {

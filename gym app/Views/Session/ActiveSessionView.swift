@@ -603,10 +603,7 @@ struct ActiveSessionView: View {
         module.completedExercises[sessionViewModel.currentExerciseIndex] = exercise
         session.completedModules[sessionViewModel.currentModuleIndex] = module
 
-        sessionViewModel.currentSession = session
-
-        // Refresh the navigator so it sees the new set
-        sessionViewModel.refreshNavigator()
+        sessionViewModel.commitCurrentSession(session, refreshNavigation: true)
     }
 
     // MARK: - Delete Set
@@ -659,10 +656,7 @@ struct ActiveSessionView: View {
         module.completedExercises[sessionViewModel.currentExerciseIndex] = exercise
         session.completedModules[sessionViewModel.currentModuleIndex] = module
 
-        sessionViewModel.currentSession = session
-
-        // Refresh the navigator so it sees the updated structure
-        sessionViewModel.refreshNavigator()
+        sessionViewModel.commitCurrentSession(session, refreshNavigation: true)
     }
 
     // MARK: - Update Exercise
@@ -673,13 +667,7 @@ struct ActiveSessionView: View {
         guard exerciseIndex < session.completedModules[moduleIndex].completedExercises.count else { return }
 
         session.completedModules[moduleIndex].completedExercises[exerciseIndex] = exercise
-        sessionViewModel.currentSession = session
-
-        // Trigger auto-save to persist the changes
-        sessionViewModel.triggerAutoSave()
-
-        // Refresh the navigator so it sees the updated structure
-        sessionViewModel.refreshNavigator()
+        sessionViewModel.commitCurrentSession(session, refreshNavigation: true)
 
         // Reset set indices if we're on the current exercise
         if moduleIndex == sessionViewModel.currentModuleIndex && exerciseIndex == sessionViewModel.currentExerciseIndex {
@@ -767,10 +755,7 @@ struct ActiveSessionView: View {
 
         // Add to the specified module
         session.completedModules[moduleIndex].completedExercises.append(newExercise)
-        sessionViewModel.currentSession = session
-
-        // Refresh the navigator so it sees the new exercise
-        sessionViewModel.refreshNavigator()
+        sessionViewModel.commitCurrentSession(session, refreshNavigation: true)
     }
 
     // MARK: - Reorder Exercise
@@ -787,7 +772,7 @@ struct ActiveSessionView: View {
         module.completedExercises.insert(exercise, at: to)
 
         session.completedModules[moduleIndex] = module
-        sessionViewModel.currentSession = session
+        sessionViewModel.commitCurrentSession(session, refreshNavigation: true)
 
         // Update current exercise index if needed
         if moduleIndex == sessionViewModel.currentModuleIndex {
@@ -833,7 +818,7 @@ struct ActiveSessionView: View {
         module.completedExercises[exerciseIndex] = exercise
         session.completedModules[moduleIndex] = module
 
-        sessionViewModel.currentSession = session
+        sessionViewModel.commitCurrentSession(session)
     }
 
     private func logSetAt(flatSet: FlatSet, weight: Double?, reps: Int?, rpe: Int?, duration: Int?, holdTime: Int?, distance: Double?, height: Double? = nil, intensity: Int? = nil, temperature: Int? = nil, bandColor: String? = nil, implementMeasurableValues: [String: String]? = nil) {
@@ -882,7 +867,7 @@ struct ActiveSessionView: View {
         module.completedExercises[sessionViewModel.currentExerciseIndex] = exercise
         session.completedModules[sessionViewModel.currentModuleIndex] = module
 
-        sessionViewModel.currentSession = session
+        sessionViewModel.commitCurrentSession(session)
     }
 
     /// Uncheck a completed set to allow editing
@@ -902,7 +887,7 @@ struct ActiveSessionView: View {
         module.completedExercises[sessionViewModel.currentExerciseIndex] = exercise
         session.completedModules[sessionViewModel.currentModuleIndex] = module
 
-        sessionViewModel.currentSession = session
+        sessionViewModel.commitCurrentSession(session)
     }
 
     // MARK: - Interval Logging
@@ -926,7 +911,7 @@ struct ActiveSessionView: View {
         module.completedExercises[sessionViewModel.currentExerciseIndex] = exercise
         session.completedModules[sessionViewModel.currentModuleIndex] = module
 
-        sessionViewModel.currentSession = session
+        sessionViewModel.commitCurrentSession(session)
 
         // If all sets in this exercise are complete, start rest timer
         if allSetsCompleted(exercise), let restPeriod = setGroup.restPeriod {

@@ -34,20 +34,7 @@ class CustomExerciseLibrary: ObservableObject {
 
         do {
             let entities = try viewContext.fetch(request)
-            exercises = entities.map { entity in
-                ExerciseTemplate(
-                    id: entity.id,
-                    name: entity.name,
-                    category: .fullBody,
-                    exerciseType: entity.exerciseType,
-                    primary: entity.primaryMuscles,
-                    secondary: entity.secondaryMuscles,
-                    isBodyweight: false,
-                    isUnilateral: entity.isUnilateral,
-                    implementIds: entity.implementIds,
-                    isCustom: true
-                )
-            }
+            exercises = entities.map(exerciseTemplate(from:))
         } catch {
             Logger.error(error, context: "loadCustomExercises")
         }
@@ -60,10 +47,23 @@ class CustomExerciseLibrary: ObservableObject {
     func addExercise(
         name: String,
         exerciseType: ExerciseType,
+        category: ExerciseCategory = .fullBody,
+        cardioMetric: CardioMetric = .timeOnly,
+        mobilityTracking: MobilityTracking = .repsOnly,
+        distanceUnit: DistanceUnit = .meters,
         primary: [MuscleGroup] = [],
         secondary: [MuscleGroup] = [],
+        isBodyweight: Bool = false,
         isUnilateral: Bool = false,
-        implementIds: Set<UUID> = []
+        recoveryActivityType: RecoveryActivityType? = nil,
+        implementIds: Set<UUID> = [],
+        defaultSetGroups: [SetGroup] = [],
+        defaultNotes: String? = nil,
+        isArchived: Bool = false,
+        isCustom: Bool = true,
+        id: UUID = UUID(),
+        createdAt: Date = Date(),
+        updatedAt: Date = Date()
     ) -> Bool {
         // Validate name is not empty
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -78,17 +78,30 @@ class CustomExerciseLibrary: ObservableObject {
             return false
         }
 
+        let template = ExerciseTemplate(
+            id: id,
+            name: trimmedName,
+            category: category,
+            exerciseType: exerciseType,
+            cardioMetric: cardioMetric,
+            mobilityTracking: mobilityTracking,
+            distanceUnit: distanceUnit,
+            primary: primary,
+            secondary: secondary,
+            isBodyweight: isBodyweight,
+            isUnilateral: isUnilateral,
+            recoveryActivityType: recoveryActivityType,
+            implementIds: implementIds,
+            defaultSetGroups: defaultSetGroups,
+            defaultNotes: defaultNotes,
+            isArchived: isArchived,
+            isCustom: isCustom,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        )
+
         let entity = CustomExerciseTemplateEntity(context: viewContext)
-        entity.id = UUID()
-        entity.name = trimmedName
-        entity.categoryRaw = ExerciseCategory.fullBody.rawValue
-        entity.exerciseType = exerciseType
-        entity.primaryMuscles = primary
-        entity.secondaryMuscles = secondary
-        entity.isUnilateral = isUnilateral
-        entity.implementIds = implementIds
-        entity.createdAt = Date()
-        entity.updatedAt = Date()
+        apply(template: template, to: entity)
 
         save()
         loadExercises()
@@ -106,9 +119,23 @@ class CustomExerciseLibrary: ObservableObject {
         return addExercise(
             name: template.name,
             exerciseType: template.exerciseType,
+            category: template.category,
+            cardioMetric: template.cardioMetric,
+            mobilityTracking: template.mobilityTracking,
+            distanceUnit: template.distanceUnit,
             primary: template.primaryMuscles,
             secondary: template.secondaryMuscles,
-            implementIds: template.implementIds
+            isBodyweight: template.isBodyweight,
+            isUnilateral: template.isUnilateral,
+            recoveryActivityType: template.recoveryActivityType,
+            implementIds: template.implementIds,
+            defaultSetGroups: template.defaultSetGroups,
+            defaultNotes: template.defaultNotes,
+            isArchived: template.isArchived,
+            isCustom: template.isCustom,
+            id: template.id,
+            createdAt: template.createdAt,
+            updatedAt: template.updatedAt
         )
     }
 
@@ -120,13 +147,7 @@ class CustomExerciseLibrary: ObservableObject {
 
         do {
             if let entity = try viewContext.fetch(request).first {
-                entity.name = template.name
-                entity.exerciseType = template.exerciseType
-                entity.primaryMuscles = template.primaryMuscles
-                entity.secondaryMuscles = template.secondaryMuscles
-                entity.isUnilateral = template.isUnilateral
-                entity.implementIds = template.implementIds
-                entity.updatedAt = Date()
+                apply(template: template, to: entity, preserveCreatedAt: true)
                 save()
                 loadExercises()
             }
@@ -190,6 +211,78 @@ class CustomExerciseLibrary: ObservableObject {
     }
 
     // MARK: - Private
+
+    private func exerciseTemplate(from entity: CustomExerciseTemplateEntity) -> ExerciseTemplate {
+        ExerciseTemplate(
+            id: entity.id,
+            name: entity.name,
+            category: entity.category,
+            exerciseType: entity.exerciseType,
+            cardioMetric: entity.cardioMetric,
+            mobilityTracking: entity.mobilityTracking,
+            distanceUnit: entity.distanceUnit,
+            primary: entity.primaryMuscles,
+            secondary: entity.secondaryMuscles,
+            isBodyweight: entity.isBodyweight,
+            isUnilateral: entity.isUnilateral,
+            recoveryActivityType: entity.recoveryActivityType,
+            implementIds: entity.implementIds,
+            defaultSetGroups: decodeDefaultSetGroups(from: entity.defaultSetGroupsData),
+            defaultNotes: entity.defaultNotes,
+            isArchived: entity.isArchived,
+            isCustom: entity.isCustom,
+            createdAt: entity.createdAt ?? Date(),
+            updatedAt: entity.updatedAt ?? Date()
+        )
+    }
+
+    private func apply(
+        template: ExerciseTemplate,
+        to entity: CustomExerciseTemplateEntity,
+        preserveCreatedAt: Bool = false
+    ) {
+        entity.id = template.id
+        entity.name = template.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        entity.category = template.category
+        entity.exerciseType = template.exerciseType
+        entity.cardioMetric = template.cardioMetric
+        entity.mobilityTracking = template.mobilityTracking
+        entity.distanceUnit = template.distanceUnit
+        entity.primaryMuscles = template.primaryMuscles
+        entity.secondaryMuscles = template.secondaryMuscles
+        entity.isBodyweight = template.isBodyweight
+        entity.isUnilateral = template.isUnilateral
+        entity.recoveryActivityType = template.recoveryActivityType
+        entity.implementIds = template.implementIds
+        entity.defaultSetGroupsData = encodeDefaultSetGroups(template.defaultSetGroups)
+        entity.defaultNotes = template.defaultNotes
+        entity.isArchived = template.isArchived
+        entity.isCustom = template.isCustom
+        if !preserveCreatedAt || entity.createdAt == nil {
+            entity.createdAt = template.createdAt
+        }
+        entity.updatedAt = template.updatedAt
+    }
+
+    private func decodeDefaultSetGroups(from data: Data?) -> [SetGroup] {
+        guard let data else { return [] }
+        do {
+            return try JSONDecoder().decode([SetGroup].self, from: data)
+        } catch {
+            Logger.error(error, context: "decodeCustomExerciseDefaultSetGroups")
+            return []
+        }
+    }
+
+    private func encodeDefaultSetGroups(_ setGroups: [SetGroup]) -> Data? {
+        guard !setGroups.isEmpty else { return nil }
+        do {
+            return try JSONEncoder().encode(setGroups)
+        } catch {
+            Logger.error(error, context: "encodeCustomExerciseDefaultSetGroups")
+            return nil
+        }
+    }
 
     private func save() {
         persistence.save()
