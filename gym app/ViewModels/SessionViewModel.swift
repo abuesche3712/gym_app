@@ -60,7 +60,7 @@ class SessionViewModel: ObservableObject {
     @Published var exerciseTimerTotal = 0
     @Published var isExerciseTimerRunning = false
     @Published var exerciseTimerIsStopwatch = false  // true = counting up, false = countdown
-    @Published var exerciseTimerSetId: String?  // Which set this timer is for (e.g., "0-0")
+    @Published var exerciseTimerSetId: String?  // Which set this timer is for (stable set identifier)
     @Published var exerciseTimerElapsed: Int = 0  // Elapsed time when timer stops (for auto-complete)
     private var exerciseTimerStartTime: Date?
     private var exerciseTimerDuration: Int = 0
@@ -162,8 +162,7 @@ class SessionViewModel: ObservableObject {
         }
 
         if didMutateSession {
-            currentSession = session
-            autoSaveInProgressSession()
+            commitCurrentSession(session)
         } else {
             // Refresh computed equipment UI state (names, capabilities, etc.).
             objectWillChange.send()
@@ -546,7 +545,7 @@ class SessionViewModel: ObservableObject {
             distanceUnit: distanceUnit
         )
 
-        self.currentSession = session
+        commitCurrentSession(session)
 
         // Rebuild navigator to include new exercise
         self.navigator = SessionNavigator(modules: session.completedModules)
@@ -565,7 +564,73 @@ class SessionViewModel: ObservableObject {
             )
         }
 
-        autoSaveInProgressSession()
+    }
+
+    /// Add a single module template to the active freestyle session
+    func addModuleToFreestyle(_ module: Module) {
+        addModulesToFreestyle([module])
+    }
+
+    /// Add module templates to the active freestyle session
+    func addModulesToFreestyle(_ modules: [Module]) {
+        guard var session = currentSession, session.isFreestyle else { return }
+        guard !modules.isEmpty else { return }
+
+        let sessionContext = SessionSharingContext(
+            sessionId: session.id,
+            workoutId: session.workoutId,
+            workoutName: session.workoutName,
+            date: session.date,
+            programId: nil,
+            programName: nil,
+            programWeekNumber: nil
+        )
+
+        var lastAddedPosition: (moduleIndex: Int, exerciseIndex: Int)?
+
+        for module in modules {
+            let moduleContext = ModuleSharingContext(
+                sessionContext: sessionContext,
+                moduleId: module.id,
+                moduleName: module.name
+            )
+
+            let resolvedExercises = module.resolvedExercises()
+            guard !resolvedExercises.isEmpty else {
+                Logger.warning("Skipping freestyle module '\(module.name)' because it has no exercises")
+                continue
+            }
+
+            let completedExercises = resolvedExercises.map { resolved in
+                var sessionExercise = convertResolvedExerciseToSession(resolved, context: moduleContext)
+                // Freestyle insertions are ad-hoc relative to the session template.
+                sessionExercise.isAdHoc = true
+                return sessionExercise
+            }
+
+            if let moduleIndex = QuickLogService.shared.addCompletedModule(
+                to: &session,
+                sourceModuleId: module.id,
+                moduleName: module.name,
+                moduleType: module.type,
+                exercises: completedExercises
+            ) {
+                lastAddedPosition = (moduleIndex: moduleIndex, exerciseIndex: 0)
+            }
+        }
+
+        guard let target = lastAddedPosition else { return }
+
+        commitCurrentSession(session)
+
+        // Rebuild navigator to include newly added modules and move to first exercise.
+        self.navigator = SessionNavigator(modules: session.completedModules)
+        navigator?.setPosition(
+            moduleIndex: target.moduleIndex,
+            exerciseIndex: target.exerciseIndex,
+            setGroupIndex: 0,
+            setIndex: 0
+        )
     }
 
     /// Remove an exercise from the active freestyle session (only if no sets completed)
@@ -583,10 +648,9 @@ class SessionViewModel: ObservableObject {
 
         QuickLogService.shared.removeExercise(from: &session, moduleId: moduleId, exerciseId: exerciseId)
 
-        self.currentSession = session
+        commitCurrentSession(session)
         self.navigator = SessionNavigator(modules: session.completedModules)
 
-        autoSaveInProgressSession()
     }
 
     /// Finds the first incomplete set and navigates to it
@@ -940,10 +1004,7 @@ class SessionViewModel: ObservableObject {
         module.completedExercises[nav.currentExerciseIndex] = exercise
         session.completedModules[nav.currentModuleIndex] = module
 
-        currentSession = session
-
-        // Auto-save for crash recovery
-        autoSaveInProgressSession()
+        commitCurrentSession(session)
 
         // Auto-advance to next set
         advanceToNextSet()
@@ -961,6 +1022,16 @@ class SessionViewModel: ObservableObject {
     /// Trigger auto-save when the session is modified externally (e.g., from EditExerciseSheet)
     /// Call this after directly modifying currentSession from views
     func triggerAutoSave() {
+        autoSaveInProgressSession()
+    }
+
+    /// Commits a full session value update and persists in-progress state.
+    /// Use this for all live-session mutations to avoid missing autosaves.
+    func commitCurrentSession(_ session: Session, refreshNavigation: Bool = false) {
+        currentSession = session
+        if refreshNavigation {
+            refreshNavigator()
+        }
         autoSaveInProgressSession()
     }
 
@@ -983,7 +1054,7 @@ class SessionViewModel: ObservableObject {
         if let skippedModuleId = navigator?.skipModule() {
             // Track the skipped module in the session
             session.skippedModuleIds.append(skippedModuleId)
-            currentSession = session
+            commitCurrentSession(session)
         }
         objectWillChange.send()
     }
@@ -1042,7 +1113,7 @@ class SessionViewModel: ObservableObject {
 
         // Update distance unit in current session
         session.completedModules[moduleIndex].completedExercises[exerciseIndex].distanceUnit = unit
-        currentSession = session
+        commitCurrentSession(session)
 
         // Persist to module so it remembers for next session
         let exerciseId = session.completedModules[moduleIndex].completedExercises[exerciseIndex].exerciseId
@@ -1060,8 +1131,6 @@ class SessionViewModel: ObservableObject {
             }
         }
 
-        // Auto-save for crash recovery
-        autoSaveInProgressSession()
     }
 
     /// Update the progression recommendation for an exercise during the active session
@@ -1071,10 +1140,7 @@ class SessionViewModel: ObservableObject {
               exerciseIndex < session.completedModules[moduleIndex].completedExercises.count else { return }
 
         session.completedModules[moduleIndex].completedExercises[exerciseIndex].progressionRecommendation = recommendation
-        currentSession = session
-
-        // Auto-save for crash recovery
-        autoSaveInProgressSession()
+        commitCurrentSession(session)
     }
 
     /// Delete an exercise from a module during the active session
@@ -1099,7 +1165,7 @@ class SessionViewModel: ObservableObject {
         }
 
         session.completedModules[moduleIndex].completedExercises.remove(at: exerciseIndex)
-        currentSession = session
+        commitCurrentSession(session)
 
         // Recreate navigator with updated modules and adjusted position
         navigator = SessionNavigator(
@@ -1352,8 +1418,7 @@ class SessionViewModel: ObservableObject {
               exerciseIndex < session.completedModules[moduleIndex].completedExercises.count else { return }
 
         session.completedModules[moduleIndex].completedExercises[exerciseIndex].notes = notes
-        currentSession = session
-        autoSaveInProgressSession()
+        commitCurrentSession(session)
     }
 
     // MARK: - History

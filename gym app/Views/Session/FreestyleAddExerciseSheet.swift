@@ -10,11 +10,12 @@ import SwiftUI
 struct FreestyleAddExerciseSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var sessionViewModel: SessionViewModel
+    @EnvironmentObject var moduleViewModel: ModuleViewModel
 
-    // Search/picker state
-    @State private var searchText = ""
+    // Exercise picker state
     @State private var selectedTemplate: ExerciseTemplate?
     @State private var showingExercisePicker = false
+    @State private var showingModulePicker = false
 
     // Quick add state
     @State private var customName = ""
@@ -30,6 +31,9 @@ struct FreestyleAddExerciseSheet: View {
                     // Search from library
                     searchFromLibrarySection
 
+                    // Add complete modules
+                    modulesFromLibrarySection
+
                     // Recent exercises
                     if !recentExercises.isEmpty {
                         recentExercisesSection
@@ -44,7 +48,7 @@ struct FreestyleAddExerciseSheet: View {
                 .padding(AppSpacing.screenPadding)
             }
             .background(AppColors.background)
-            .navigationTitle("Add Exercise")
+            .navigationTitle("Add to Freestyle")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -63,6 +67,11 @@ struct FreestyleAddExerciseSheet: View {
                 )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showingModulePicker) {
+                FreestyleModulePickerSheet { modules in
+                    addModules(modules)
+                }
             }
             .onAppear {
                 loadRecentExercises()
@@ -101,6 +110,56 @@ struct FreestyleAddExerciseSheet: View {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    // MARK: - Modules From Library
+
+    private var modulesFromLibrarySection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Text("MODULES")
+                .elegantLabel(color: AppColors.textTertiary)
+
+            Button {
+                showingModulePicker = true
+            } label: {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "square.stack.3d.up")
+                        .foregroundColor(AppColors.textTertiary)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Add module from library")
+                            .body(color: AppColors.textPrimary)
+                        Text(modulePickerSubtitle)
+                            .caption(color: AppColors.textTertiary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .padding(AppSpacing.md)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .fill(AppColors.surfacePrimary)
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(!hasAddableModules)
+            .opacity(hasAddableModules ? 1 : 0.7)
+        }
+    }
+
+    private var hasAddableModules: Bool {
+        moduleViewModel.modules.contains(where: { $0.hasExercises })
+    }
+
+    private var modulePickerSubtitle: String {
+        let count = moduleViewModel.modules.filter(\.hasExercises).count
+        return count == 0
+            ? "Create a module with exercises first"
+            : "\(count) module\(count == 1 ? "" : "s") available"
     }
 
     // MARK: - Recent Exercises Section
@@ -265,6 +324,13 @@ struct FreestyleAddExerciseSheet: View {
         dismiss()
     }
 
+    private func addModules(_ modules: [Module]) {
+        guard !modules.isEmpty else { return }
+        sessionViewModel.addModulesToFreestyle(modules)
+        HapticManager.shared.tap()
+        dismiss()
+    }
+
     // MARK: - Data Loading
 
     private func loadRecentExercises() {
@@ -293,6 +359,130 @@ struct FreestyleAddExerciseSheet: View {
         }
 
         recentExercises = recent
+    }
+}
+
+// MARK: - Freestyle Module Picker
+
+private struct FreestyleModulePickerSheet: View {
+    @EnvironmentObject var moduleViewModel: ModuleViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    let onAdd: ([Module]) -> Void
+
+    @State private var searchText = ""
+    @State private var selectedType: ModuleType?
+    @State private var pendingSelections: Set<UUID> = []
+
+    private var filteredModules: [Module] {
+        var modules = moduleViewModel.modules.filter(\.hasExercises)
+
+        if let type = selectedType {
+            modules = modules.filter { $0.type == type }
+        }
+
+        if !searchText.isEmpty {
+            modules = modules.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        }
+
+        return modules.sorted { $0.name < $1.name }
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: AppSpacing.sm) {
+                        CategoryPill(title: "All", isSelected: selectedType == nil) {
+                            selectedType = nil
+                        }
+
+                        ForEach(ModuleType.allCases) { type in
+                            CategoryPill(title: type.displayName, isSelected: selectedType == type) {
+                                selectedType = type
+                            }
+                        }
+                    }
+                    .padding(.horizontal, AppSpacing.screenPadding)
+                    .padding(.vertical, AppSpacing.md)
+                }
+                .background(AppColors.surfaceTertiary)
+
+                List {
+                    if filteredModules.isEmpty {
+                        ContentUnavailableView(
+                            "No Modules",
+                            systemImage: "square.stack.3d.up",
+                            description: Text("No modules with exercises match this filter")
+                        )
+                    } else {
+                        ForEach(filteredModules) { module in
+                            Button {
+                                toggleSelection(module.id)
+                            } label: {
+                                HStack(spacing: AppSpacing.md) {
+                                    Image(systemName: module.type.icon)
+                                        .foregroundColor(AppColors.moduleColor(module.type))
+                                        .frame(width: 24)
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(module.name)
+                                            .subheadline(color: AppColors.textPrimary)
+                                        Text("\(module.exercises.count) exercises")
+                                            .caption(color: AppColors.textSecondary)
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: pendingSelections.contains(module.id) ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(pendingSelections.contains(module.id) ? AppColors.success : AppColors.textTertiary)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .listStyle(.plain)
+
+                if !pendingSelections.isEmpty {
+                    Button {
+                        let selectedModules = moduleViewModel.modules.filter { pendingSelections.contains($0.id) }
+                        onAdd(selectedModules)
+                        dismiss()
+                    } label: {
+                        HStack(spacing: AppSpacing.sm) {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Add \(pendingSelections.count) Module\(pendingSelections.count == 1 ? "" : "s")")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, AppSpacing.md)
+                        .background(AppColors.dominant)
+                        .foregroundColor(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
+                    }
+                    .padding(AppSpacing.screenPadding)
+                    .background(AppColors.background)
+                }
+            }
+            .background(AppColors.background.ignoresSafeArea())
+            .navigationTitle("Module Library")
+            .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $searchText, prompt: "Search modules...")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func toggleSelection(_ id: UUID) {
+        if pendingSelections.contains(id) {
+            pendingSelections.remove(id)
+        } else {
+            pendingSelections.insert(id)
+        }
     }
 }
 

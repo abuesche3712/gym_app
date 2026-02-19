@@ -701,3 +701,65 @@ final class AnalyticsViewModelTests: XCTestCase {
         )
     }
 }
+
+final class QuickLogServiceFreestyleTests: XCTestCase {
+    func testAddCompletedModuleToFreestyleSession_appendsModuleAndNormalizesMetadata() {
+        let service = QuickLogService.shared
+        var session = service.createFreestyleSession(name: "Custom Freestyle")
+
+        let sessionExercise = SessionExercise(
+            exerciseId: UUID(),
+            exerciseName: "Bench Press",
+            exerciseType: .strength,
+            completedSetGroups: [
+                CompletedSetGroup(
+                    setGroupId: UUID(),
+                    sets: [SetData(setNumber: 1, completed: false)]
+                )
+            ]
+        )
+
+        let sourceModuleId = UUID()
+        let insertedIndex = service.addCompletedModule(
+            to: &session,
+            sourceModuleId: sourceModuleId,
+            moduleName: "Push Block",
+            moduleType: .strength,
+            exercises: [sessionExercise]
+        )
+
+        XCTAssertEqual(insertedIndex, 0)
+        XCTAssertEqual(session.completedModules.count, 1)
+
+        let addedModule = session.completedModules[0]
+        XCTAssertEqual(addedModule.moduleId, sourceModuleId)
+        XCTAssertEqual(addedModule.moduleName, "Push Block")
+        XCTAssertEqual(addedModule.moduleType, .strength)
+        XCTAssertEqual(addedModule.completedExercises.count, 1)
+
+        let addedExercise = addedModule.completedExercises[0]
+        XCTAssertTrue(addedExercise.isAdHoc)
+        XCTAssertEqual(addedExercise.moduleId, addedModule.id)
+        XCTAssertEqual(addedExercise.moduleName, "Push Block")
+        XCTAssertEqual(addedExercise.sessionId, session.id)
+        XCTAssertEqual(addedExercise.workoutId, session.workoutId)
+        XCTAssertEqual(addedExercise.workoutName, session.workoutName)
+        XCTAssertEqual(addedExercise.date, session.date)
+    }
+
+    func testAddCompletedModuleToFreestyleSession_withNoExercisesDoesNothing() {
+        let service = QuickLogService.shared
+        var session = service.createFreestyleSession()
+
+        let insertedIndex = service.addCompletedModule(
+            to: &session,
+            sourceModuleId: UUID(),
+            moduleName: "Empty Block",
+            moduleType: .strength,
+            exercises: []
+        )
+
+        XCTAssertNil(insertedIndex)
+        XCTAssertTrue(session.completedModules.isEmpty)
+    }
+}

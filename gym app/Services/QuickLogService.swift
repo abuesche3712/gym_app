@@ -201,6 +201,47 @@ class QuickLogService {
         }
     }
 
+    /// Add a pre-built module of exercises to an active freestyle session.
+    /// Returns the inserted module index when added, nil when exercises are empty.
+    @discardableResult
+    func addCompletedModule(
+        to session: inout Session,
+        sourceModuleId: UUID,
+        moduleName: String,
+        moduleType: ModuleType,
+        exercises: [SessionExercise]
+    ) -> Int? {
+        guard !exercises.isEmpty else { return nil }
+
+        let sessionModuleId = UUID()
+        let normalizedExercises = exercises.map { exercise in
+            var updated = exercise
+            updated.isAdHoc = true
+            updated.moduleId = sessionModuleId
+            updated.moduleName = moduleName
+            updated.sessionId = session.id
+            updated.workoutId = session.workoutId
+            updated.workoutName = session.workoutName
+            updated.date = session.date
+            return updated
+        }
+
+        let completedModule = CompletedModule(
+            id: sessionModuleId,
+            moduleId: sourceModuleId,
+            moduleName: moduleName,
+            moduleType: moduleType,
+            completedExercises: normalizedExercises,
+            sessionId: session.id,
+            workoutId: session.workoutId,
+            workoutName: session.workoutName,
+            date: session.date
+        )
+
+        session.completedModules.append(completedModule)
+        return session.completedModules.count - 1
+    }
+
     /// Remove an exercise from a freestyle session
     func removeExercise(from session: inout Session, moduleId: UUID, exerciseId: UUID) {
         guard let moduleIndex = session.completedModules.firstIndex(where: { $0.id == moduleId }) else {
