@@ -16,6 +16,7 @@ struct FreestyleAddExerciseSheet: View {
     @State private var selectedTemplate: ExerciseTemplate?
     @State private var showingExercisePicker = false
     @State private var showingModulePicker = false
+    @State private var selectedModuleIds: [UUID] = []
 
     // Quick add state
     @State private var customName = ""
@@ -69,8 +70,10 @@ struct FreestyleAddExerciseSheet: View {
                 .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingModulePicker) {
-                FreestyleModulePickerSheet { modules in
-                    addModules(modules)
+                NavigationStack {
+                    ModulePickerSheet(selectedModuleIds: $selectedModuleIds) {
+                        addSelectedModules()
+                    }
                 }
             }
             .onAppear {
@@ -331,6 +334,14 @@ struct FreestyleAddExerciseSheet: View {
         dismiss()
     }
 
+    private func addSelectedModules() {
+        let selected = moduleViewModel.modules
+            .filter { selectedModuleIds.contains($0.id) }
+            .filter(\.hasExercises)
+        selectedModuleIds.removeAll()
+        addModules(selected)
+    }
+
     // MARK: - Data Loading
 
     private func loadRecentExercises() {
@@ -359,130 +370,6 @@ struct FreestyleAddExerciseSheet: View {
         }
 
         recentExercises = recent
-    }
-}
-
-// MARK: - Freestyle Module Picker
-
-private struct FreestyleModulePickerSheet: View {
-    @EnvironmentObject var moduleViewModel: ModuleViewModel
-    @Environment(\.dismiss) private var dismiss
-
-    let onAdd: ([Module]) -> Void
-
-    @State private var searchText = ""
-    @State private var selectedType: ModuleType?
-    @State private var pendingSelections: Set<UUID> = []
-
-    private var filteredModules: [Module] {
-        var modules = moduleViewModel.modules.filter(\.hasExercises)
-
-        if let type = selectedType {
-            modules = modules.filter { $0.type == type }
-        }
-
-        if !searchText.isEmpty {
-            modules = modules.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-        }
-
-        return modules.sorted { $0.name < $1.name }
-    }
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: AppSpacing.sm) {
-                        CategoryPill(title: "All", isSelected: selectedType == nil) {
-                            selectedType = nil
-                        }
-
-                        ForEach(ModuleType.allCases) { type in
-                            CategoryPill(title: type.displayName, isSelected: selectedType == type) {
-                                selectedType = type
-                            }
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.screenPadding)
-                    .padding(.vertical, AppSpacing.md)
-                }
-                .background(AppColors.surfaceTertiary)
-
-                List {
-                    if filteredModules.isEmpty {
-                        ContentUnavailableView(
-                            "No Modules",
-                            systemImage: "square.stack.3d.up",
-                            description: Text("No modules with exercises match this filter")
-                        )
-                    } else {
-                        ForEach(filteredModules) { module in
-                            Button {
-                                toggleSelection(module.id)
-                            } label: {
-                                HStack(spacing: AppSpacing.md) {
-                                    Image(systemName: module.type.icon)
-                                        .foregroundColor(AppColors.moduleColor(module.type))
-                                        .frame(width: 24)
-
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(module.name)
-                                            .subheadline(color: AppColors.textPrimary)
-                                        Text("\(module.exercises.count) exercises")
-                                            .caption(color: AppColors.textSecondary)
-                                    }
-
-                                    Spacer()
-
-                                    Image(systemName: pendingSelections.contains(module.id) ? "checkmark.circle.fill" : "circle")
-                                        .foregroundColor(pendingSelections.contains(module.id) ? AppColors.success : AppColors.textTertiary)
-                                }
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-                .listStyle(.plain)
-
-                if !pendingSelections.isEmpty {
-                    Button {
-                        let selectedModules = moduleViewModel.modules.filter { pendingSelections.contains($0.id) }
-                        onAdd(selectedModules)
-                        dismiss()
-                    } label: {
-                        HStack(spacing: AppSpacing.sm) {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Add \(pendingSelections.count) Module\(pendingSelections.count == 1 ? "" : "s")")
-                                .fontWeight(.semibold)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.md)
-                        .background(AppColors.dominant)
-                        .foregroundColor(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
-                    }
-                    .padding(AppSpacing.screenPadding)
-                    .background(AppColors.background)
-                }
-            }
-            .background(AppColors.background.ignoresSafeArea())
-            .navigationTitle("Module Library")
-            .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $searchText, prompt: "Search modules...")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
-        }
-    }
-
-    private func toggleSelection(_ id: UUID) {
-        if pendingSelections.contains(id) {
-            pendingSelections.remove(id)
-        } else {
-            pendingSelections.insert(id)
-        }
     }
 }
 
