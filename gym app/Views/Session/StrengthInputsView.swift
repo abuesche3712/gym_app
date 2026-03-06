@@ -30,6 +30,19 @@ struct StrengthInputs: View {
         timerRunning && !sessionViewModel.exerciseTimerIsStopwatch ? sessionViewModel.exerciseTimerSeconds : 0
     }
 
+    /// Measurables that should appear in the ForEach, excluding those
+    /// already rendered by a dedicated input field (band color, box height).
+    private var filteredImplementMeasurables: [ImplementMeasurableTarget] {
+        flatSet.implementMeasurables.filter { measurable in
+            // String-based measurables (e.g., band color) are already rendered
+            // by the dedicated implementStringMeasurable field above.
+            if measurable.isStringBased && exercise.implementStringMeasurable != nil {
+                return false
+            }
+            return true
+        }
+    }
+
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
             // AMRAP indicator/timer
@@ -189,7 +202,9 @@ struct StrengthInputs: View {
             .fixedSize(horizontal: true, vertical: false)
 
             // Multi-measurable inputs (Height, Incline, etc.)
-            ForEach(flatSet.implementMeasurables) { measurable in
+            // Filter out measurables already rendered by dedicated input fields above
+            // to prevent duplicate fields for band color, box height, etc.
+            ForEach(filteredImplementMeasurables) { measurable in
                 measurableInputField(measurable: measurable)
             }
 
