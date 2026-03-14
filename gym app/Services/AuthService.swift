@@ -217,6 +217,25 @@ class AuthService: NSObject, ObservableObject {
         isAuthenticated = false
     }
 
+    // MARK: - Re-authentication
+
+    /// Re-authenticate the current user with Apple credentials (required before sensitive operations like account deletion)
+    func reauthenticate(with authorization: ASAuthorization) async throws {
+        guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
+              let identityToken = appleIDCredential.identityToken,
+              let tokenString = String(data: identityToken, encoding: .utf8) else {
+            throw AuthError.invalidCredential
+        }
+
+        let credential = OAuthProvider.appleCredential(
+            withIDToken: tokenString,
+            rawNonce: nil,
+            fullName: appleIDCredential.fullName
+        )
+
+        try await Auth.auth().currentUser?.reauthenticate(with: credential)
+    }
+
     // MARK: - Delete Account
 
     func deleteAccount() async throws {
@@ -341,7 +360,15 @@ class AuthService: NSObject, ObservableObject {
         try await userRef.delete()
 
         // 10. Delete the Firebase Auth account
-        try await user.delete()
+        do {
+            try await user.delete()
+        } catch {
+            let nsError = error as NSError
+            if nsError.code == AuthErrorCode.requiresRecentLogin.rawValue {
+                throw AuthError.requiresReauthentication
+            }
+            throw error
+        }
 
         // 11. Clear local state
         clearLocalData()
@@ -437,7 +464,9 @@ struct User: Identifiable, Codable {
 enum AuthError: LocalizedError {
     case invalidCredential
     case notAuthenticated
+    case requiresReauthentication
     case signInFailed(String)
+    case deletionFailed(String)
 
     var errorDescription: String? {
         switch self {
@@ -445,8 +474,12 @@ enum AuthError: LocalizedError {
             return "Invalid credentials received from Apple Sign In."
         case .notAuthenticated:
             return "Not authenticated. Please sign in."
+        case .requiresReauthentication:
+            return "For security, please verify your identity to complete this action."
         case .signInFailed(let message):
             return "Sign in failed: \(message)"
+        case .deletionFailed(let message):
+            return "Account deletion failed: \(message)"
         }
     }
 }

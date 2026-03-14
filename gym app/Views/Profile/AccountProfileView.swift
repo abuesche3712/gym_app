@@ -30,6 +30,9 @@ struct AccountProfileView: View {
     @State private var errorMessage: String = ""
     @State private var showingSignIn: Bool = false
     @State private var showingDeleteConfirmation: Bool = false
+    @State private var showingReauthSheet: Bool = false
+    @State private var showingDeleteError: Bool = false
+    @State private var deleteErrorMessage: String = ""
     @State private var showingPhotoPicker: Bool = false
     @State private var hasUnsavedChanges: Bool = false
 
@@ -86,12 +89,37 @@ struct AccountProfileView: View {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
                 Task {
-                    try? await authService.deleteAccount()
-                    dismiss()
+                    do {
+                        try await authService.deleteAccount()
+                        dismiss()
+                    } catch AuthError.requiresReauthentication {
+                        showingReauthSheet = true
+                    } catch {
+                        deleteErrorMessage = error.localizedDescription
+                        showingDeleteError = true
+                    }
                 }
             }
         } message: {
             Text("This will permanently delete your account and all cloud data. Local data will remain on this device. This cannot be undone.")
+        }
+        .alert("Deletion Failed", isPresented: $showingDeleteError) {
+            Button("OK") { }
+        } message: {
+            Text(deleteErrorMessage)
+        }
+        .sheet(isPresented: $showingReauthSheet) {
+            ReauthenticationView {
+                Task {
+                    do {
+                        try await authService.deleteAccount()
+                        dismiss()
+                    } catch {
+                        deleteErrorMessage = error.localizedDescription
+                        showingDeleteError = true
+                    }
+                }
+            }
         }
         .sheet(isPresented: $showingPhotoPicker) {
             ProfilePhotoPickerSheet(profileRepository: profileRepo)

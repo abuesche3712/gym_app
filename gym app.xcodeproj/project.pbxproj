@@ -27,6 +27,7 @@
 		9245BCBAC81C4E3C9670553C /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C36DDB57BAA44FEF866BE090 /* AuthService.swift */; };
 		PRFCCH01BUILD01 /* ProfileCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRFCCH01FILE001 /* ProfileCacheService.swift */; };
 		A0B1C2D3E4F5067890123457 /* CustomExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */; };
+		REAUTH00000000000000000002 /* ReauthenticationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = REAUTH00000000000000000001 /* ReauthenticationView.swift */; };
 		AB8059E04FED4CAC94B1D5DB /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D9B5EAEA83B489586ACDC15 /* SignInView.swift */; };
 		AC0ED3886796C115F34301E5 /* EditSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E042C6DBCCF889BD355F6AC1 /* EditSessionView.swift */; };
 		ACCPRVWBUILD001 /* AccountProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCPRVWFILE0001 /* AccountProfileView.swift */; };
@@ -308,6 +309,7 @@
 		819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WorkoutOverviewSheet.swift; sourceTree = "<group>"; };
 		89217DA0F8957EE059AB3FF9 /* FirestoreCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreCore.swift; sourceTree = "<group>"; };
 		8D9B5EAEA83B489586ACDC15 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		REAUTH00000000000000000001 /* ReauthenticationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReauthenticationView.swift; sourceTree = "<group>"; };
 		96AA7ABE49544DD3B54CEF8B /* WorkoutSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSummaryView.swift; sourceTree = "<group>"; };
 		9A95B76FC49816E35CDDF867 /* FirestoreFeedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreFeedService.swift; sourceTree = "<group>"; };
 		9FF6E38FBE904533D715F6D3 /* FirestoreSocialService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreSocialService.swift; sourceTree = "<group>"; };
@@ -1000,6 +1002,7 @@
 		E7C11766A68E4A17A1EC57EE /* Auth */ = {
 			isa = PBXGroup;
 			children = (
+				REAUTH00000000000000000001 /* ReauthenticationView.swift */,
 				8D9B5EAEA83B489586ACDC15 /* SignInView.swift */,
 			);
 			path = Auth;
@@ -1441,6 +1444,7 @@
 				9245BCBAC81C4E3C9670553C /* AuthService.swift in Sources */,
 				PRFCCH01BUILD01 /* ProfileCacheService.swift in Sources */,
 				AB8059E04FED4CAC94B1D5DB /* SignInView.swift in Sources */,
+				REAUTH00000000000000000002 /* ReauthenticationView.swift in Sources */,
 				EXINST002BUILD002 /* ExerciseInstance.swift in Sources */,
 				RESOLV002BUILD002 /* ResolvedExercise.swift in Sources */,
 				EXRSLV002BUILD002 /* ExerciseResolver.swift in Sources */,
