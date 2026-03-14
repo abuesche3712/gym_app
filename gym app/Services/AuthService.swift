@@ -6,9 +6,11 @@
 //
 
 import Foundation
+import CoreData
 import AuthenticationServices
 import FirebaseAuth
 import FirebaseFirestore
+import FirebaseStorage
 
 @preconcurrency @MainActor
 class AuthService: NSObject, ObservableObject {
@@ -222,29 +224,180 @@ class AuthService: NSObject, ObservableObject {
             throw AuthError.notAuthenticated
         }
 
-        // Clear FCM token
+        let db = Firestore.firestore()
+        let uid = user.uid
+        let userRef = db.collection(FirestoreCollections.users).document(uid)
+        var deletionErrors: [String] = []
+
+        // 1. Clear FCM token
         await PushNotificationService.shared.clearFCMToken()
 
-        // Delete user data from Firestore
-        let db = Firestore.firestore()
-        let userRef = db.collection(FirestoreCollections.users).document(user.uid)
-
-        // Delete subcollections
-        let subcollections = [FirestoreCollections.modules, FirestoreCollections.workouts, FirestoreCollections.sessions, FirestoreCollections.customExercises, FirestoreCollections.programs, FirestoreCollections.scheduledWorkouts]
+        // 2. Delete user-scoped subcollections
+        let subcollections = [
+            FirestoreCollections.modules,
+            FirestoreCollections.workouts,
+            FirestoreCollections.sessions,
+            FirestoreCollections.customExercises,
+            FirestoreCollections.programs,
+            FirestoreCollections.scheduledWorkouts,
+            FirestoreCollections.profile,
+            FirestoreCollections.exerciseLibrary,
+            FirestoreCollections.deletions,
+            FirestoreCollections.activities
+        ]
         for collection in subcollections {
-            let snapshot = try await userRef.collection(collection).getDocuments()
-            for doc in snapshot.documents {
-                try await doc.reference.delete()
+            do {
+                try await deleteSubcollection(userRef.collection(collection), db: db)
+            } catch {
+                Logger.error(error, context: "deleteAccount: failed to delete subcollection \(collection)")
+                deletionErrors.append(collection)
             }
         }
 
-        // Delete user document
+        // 3. Delete user's posts and their nested likes/comments
+        do {
+            let postsSnapshot = try await db.collection(FirestoreCollections.posts)
+                .whereField("authorId", isEqualTo: uid)
+                .getDocuments()
+            for doc in postsSnapshot.documents {
+                let postRef = doc.reference
+                try await deleteSubcollection(postRef.collection(FirestoreCollections.likes), db: db)
+                try await deleteSubcollection(postRef.collection(FirestoreCollections.comments), db: db)
+                try await postRef.delete()
+            }
+        } catch {
+            Logger.error(error, context: "deleteAccount: failed to delete posts")
+            deletionErrors.append("posts")
+        }
+
+        // 4. Delete friendships involving the user
+        do {
+            let requestedSnapshot = try await db.collection(FirestoreCollections.friendships)
+                .whereField("requesterId", isEqualTo: uid)
+                .getDocuments()
+            let receivedSnapshot = try await db.collection(FirestoreCollections.friendships)
+                .whereField("addresseeId", isEqualTo: uid)
+                .getDocuments()
+            let allFriendshipDocs = requestedSnapshot.documents + receivedSnapshot.documents
+            for doc in allFriendshipDocs {
+                try await doc.reference.delete()
+            }
+        } catch {
+            Logger.error(error, context: "deleteAccount: failed to delete friendships")
+            deletionErrors.append("friendships")
+        }
+
+        // 5. Delete conversations the user is part of (and their messages/typing)
+        do {
+            let convSnapshot = try await db.collection(FirestoreCollections.conversations)
+                .whereField("participantIds", arrayContains: uid)
+                .getDocuments()
+            for doc in convSnapshot.documents {
+                let convRef = doc.reference
+                try await deleteSubcollection(convRef.collection(FirestoreCollections.messages), db: db)
+                try await deleteSubcollection(convRef.collection(FirestoreCollections.typing), db: db)
+                try await convRef.delete()
+            }
+        } catch {
+            Logger.error(error, context: "deleteAccount: failed to delete conversations")
+            deletionErrors.append("conversations")
+        }
+
+        // 6. Delete username claim
+        do {
+            let usernameSnapshot = try await db.collection(FirestoreCollections.usernames)
+                .whereField("userId", isEqualTo: uid)
+                .getDocuments()
+            for doc in usernameSnapshot.documents {
+                try await doc.reference.delete()
+            }
+        } catch {
+            Logger.error(error, context: "deleteAccount: failed to delete username claim")
+            deletionErrors.append("usernames")
+        }
+
+        // 7. Delete presence document
+        do {
+            try await db.collection(FirestoreCollections.presence).document(uid).delete()
+        } catch {
+            Logger.error(error, context: "deleteAccount: failed to delete presence")
+            deletionErrors.append("presence")
+        }
+
+        // 8. Delete profile photo from Firebase Storage
+        do {
+            let storageRef = Storage.storage().reference().child("profile-photos/\(uid).jpg")
+            try await storageRef.delete()
+        } catch let error as NSError {
+            // Ignore "object not found" (no photo uploaded) and permission errors
+            if error.code != StorageErrorCode.objectNotFound.rawValue &&
+               error.code != StorageErrorCode.unauthorized.rawValue {
+                Logger.error(error, context: "deleteAccount: failed to delete profile photo")
+                deletionErrors.append("storage")
+            }
+        }
+
+        // 9. Delete the user document itself
         try await userRef.delete()
 
-        // Delete Firebase Auth account
+        // 10. Delete the Firebase Auth account
         try await user.delete()
 
+        // 11. Clear local state
+        clearLocalData()
+
+        if !deletionErrors.isEmpty {
+            Logger.error("deleteAccount completed with partial failures: \(deletionErrors.joined(separator: ", "))")
+        }
+    }
+
+    /// Batch-delete all documents in a subcollection
+    private func deleteSubcollection(_ collectionRef: CollectionReference, db: Firestore, batchSize: Int = 400) async throws {
+        while true {
+            let snapshot = try await collectionRef.limit(to: batchSize).getDocuments()
+            if snapshot.documents.isEmpty { return }
+
+            let batch = db.batch()
+            for document in snapshot.documents {
+                batch.deleteDocument(document.reference)
+            }
+            try await batch.commit()
+        }
+    }
+
+    /// Clear all local data stores (CoreData, UserDefaults, caches)
+    private func clearLocalData() {
+        // Clear CoreData
+        let context = PersistenceController.shared.container.viewContext
+        let entityNames = PersistenceController.shared.container.managedObjectModel.entities.compactMap { $0.name }
+        for entityName in entityNames {
+            let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: entityName)
+            if let objects = try? context.fetch(fetchRequest) {
+                for object in objects {
+                    context.delete(object)
+                }
+            }
+        }
+        try? context.save()
+
+        // Clear user-specific UserDefaults
+        let userDefaultsKeys = [
+            "weightUnit", "distanceUnit", "defaultRestTime", "lastSyncDate",
+            "pushNotificationPermissionRequested", "scheduledWorkoutsKey",
+            "draftCaptionKey", "friendIdsMigratedKey",
+            "deletedModuleIds", "deletedWorkoutIds", "deletedProgramIds",
+            "deletedSessionIds", "deletedScheduledWorkoutIdsKey",
+            "analytics_trainingExpanded", "analytics_strengthExpanded",
+            "analytics_engineExpanded"
+        ]
+        for key in userDefaultsKeys {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+
+        // Clear caches and in-memory state
         ProfileCacheService.shared.clearCache()
+        DataRepository.shared.loadAllData()
+
         lastObservedUserId = nil
         currentUser = nil
         isAuthenticated = false

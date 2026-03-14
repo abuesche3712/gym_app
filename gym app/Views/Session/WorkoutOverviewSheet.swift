@@ -277,9 +277,22 @@ struct WorkoutOverviewSheet: View {
         VStack(spacing: 4) {
             var setNumber = 1
             ForEach(Array(exercise.completedSetGroups.enumerated()), id: \.offset) { setGroupIndex, setGroup in
-                ForEach(Array(setGroup.sets.enumerated()), id: \.offset) { setIndex, setData in
+                ForEach(Array(setGroup.sets.enumerated()), id: \.element.id) { setIndex, setData in
                     let currentSetNum = setNumber
-                    let _ = (setNumber += 1)
+                    // For unilateral, show L/R labels and only increment after right side
+                    let sideLabel: String = {
+                        if let side = setData.side {
+                            return " \(side.abbreviation)"
+                        }
+                        return ""
+                    }()
+                    let _ = {
+                        if setGroup.isUnilateral {
+                            if setData.side == .right || setData.side == nil { setNumber += 1 }
+                        } else {
+                            setNumber += 1
+                        }
+                    }()
 
                     Button {
                         editingSetLocation = SetLocation(
@@ -294,9 +307,9 @@ struct WorkoutOverviewSheet: View {
                         )
                     } label: {
                         HStack(spacing: AppSpacing.sm) {
-                            Text("Set \(currentSetNum)")
+                            Text("Set \(currentSetNum)\(sideLabel)")
                                 .caption(color: AppColors.textTertiary)
-                                .frame(width: 44, alignment: .leading)
+                                .frame(width: 56, alignment: .leading)
 
                             if setData.completed {
                                 Image(systemName: "checkmark")
@@ -357,9 +370,13 @@ struct WorkoutOverviewSheet: View {
     // MARK: - Helpers
 
     private func exerciseSetSummary(_ exercise: SessionExercise) -> String {
-        let totalSets = exercise.completedSetGroups.reduce(0) { $0 + $1.sets.count }
+        let totalSets = exercise.completedSetGroups.reduce(0) { total, group in
+            let rawCount = group.sets.count
+            return total + (group.isUnilateral ? rawCount / 2 : rawCount)
+        }
         let completedSets = exercise.completedSetGroups.reduce(0) { sum, group in
-            sum + group.sets.filter { $0.completed }.count
+            let completedRaw = group.sets.filter { $0.completed }.count
+            return sum + (group.isUnilateral ? completedRaw / 2 : completedRaw)
         }
         return "\(completedSets)/\(totalSets) sets"
     }

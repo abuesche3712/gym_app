@@ -18,15 +18,25 @@ class WorkoutDiffService {
     /// Detect structural changes between completed session and original templates
     func detectChanges(
         session: Session,
-        originalModules: [Module]
+        originalModules: [Module],
+        standaloneExercises: [WorkoutExercise] = []
     ) -> [StructuralChange] {
         var changes: [StructuralChange] = []
+        let matchedModuleIds = Set(originalModules.map { $0.id })
 
         for completedModule in session.completedModules {
             // Skip if module was skipped entirely
             guard !completedModule.skipped else { continue }
 
             guard let originalModule = originalModules.first(where: { $0.id == completedModule.moduleId }) else {
+                // Check if this unmatched module contains standalone exercises
+                if !standaloneExercises.isEmpty {
+                    let standaloneChanges = detectStandaloneChanges(
+                        completedModule: completedModule,
+                        standaloneExercises: standaloneExercises
+                    )
+                    changes.append(contentsOf: standaloneChanges)
+                }
                 continue
             }
 
@@ -95,7 +105,8 @@ class WorkoutDiffService {
                         originalName: originalEx.name,
                         newName: sessionEx.exerciseName,
                         moduleId: originalModule.id,
-                        moduleName: originalModule.name
+                        moduleName: originalModule.name,
+                        sessionExercise: sessionEx
                     ))
                 }
             }
@@ -108,6 +119,78 @@ class WorkoutDiffService {
                 moduleName: originalModule.name
             )
             changes.append(contentsOf: reorderChanges)
+        }
+
+        return changes
+    }
+
+    /// Detect changes for standalone workout exercises in an unmatched completed module
+    private func detectStandaloneChanges(
+        completedModule: CompletedModule,
+        standaloneExercises: [WorkoutExercise]
+    ) -> [StructuralChange] {
+        var changes: [StructuralChange] = []
+        let sessionExercises = completedModule.completedExercises
+
+        // Detect added exercises (ad-hoc or no source)
+        for (index, sessionEx) in sessionExercises.enumerated() {
+            if let sourceId = sessionEx.sourceExerciseInstanceId {
+                if let origWE = standaloneExercises.first(where: { $0.exercise.id == sourceId }) {
+                    // Check set count changes
+                    let originalSetCount = totalSetCount(for: origWE.exercise)
+                    let sessionSetCount = totalSetCount(for: sessionEx)
+                    if originalSetCount != sessionSetCount {
+                        changes.append(.setCountChanged(
+                            exerciseInstanceId: sourceId,
+                            exerciseName: sessionEx.exerciseName,
+                            moduleId: completedModule.id,
+                            moduleName: completedModule.moduleName,
+                            from: originalSetCount,
+                            to: sessionSetCount
+                        ))
+                    }
+                    // Check substitution
+                    if sessionEx.exerciseName != origWE.exercise.name {
+                        changes.append(.exerciseSubstituted(
+                            sourceExerciseInstanceId: sourceId,
+                            originalName: origWE.exercise.name,
+                            newName: sessionEx.exerciseName,
+                            moduleId: completedModule.id,
+                            moduleName: completedModule.moduleName,
+                            sessionExercise: sessionEx
+                        ))
+                    }
+                } else if sessionEx.isAdHoc {
+                    changes.append(.exerciseAdded(
+                        sessionExercise: sessionEx,
+                        moduleId: completedModule.id,
+                        moduleName: completedModule.moduleName,
+                        atIndex: index
+                    ))
+                }
+            } else if sessionEx.isAdHoc {
+                changes.append(.exerciseAdded(
+                    sessionExercise: sessionEx,
+                    moduleId: completedModule.id,
+                    moduleName: completedModule.moduleName,
+                    atIndex: index
+                ))
+            }
+        }
+
+        // Detect removed standalone exercises
+        for origWE in standaloneExercises {
+            let existsInSession = sessionExercises.contains {
+                $0.sourceExerciseInstanceId == origWE.exercise.id
+            }
+            if !existsInSession {
+                changes.append(.exerciseRemoved(
+                    exerciseInstanceId: origWE.exercise.id,
+                    exerciseName: origWE.exercise.name,
+                    moduleId: completedModule.id,
+                    moduleName: completedModule.moduleName
+                ))
+            }
         }
 
         return changes
@@ -156,11 +239,11 @@ class WorkoutDiffService {
                     modules: &updatedModules
                 )
 
-            case .exerciseSubstituted(let exerciseId, _, let newName, let moduleId, _):
+            case .exerciseSubstituted(let exerciseId, _, _, let moduleId, _, let sessionExercise):
                 applyExerciseSubstituted(
                     exerciseId: exerciseId,
                     moduleId: moduleId,
-                    newName: newName,
+                    sessionExercise: sessionExercise,
                     modules: &updatedModules
                 )
             }
@@ -322,7 +405,7 @@ class WorkoutDiffService {
     private func applyExerciseSubstituted(
         exerciseId: UUID,
         moduleId: UUID,
-        newName: String,
+        sessionExercise: SessionExercise,
         modules: inout [Module]
     ) {
         guard let moduleIndex = modules.firstIndex(where: { $0.id == moduleId }),
@@ -330,7 +413,14 @@ class WorkoutDiffService {
             return
         }
 
-        modules[moduleIndex].exercises[exerciseIndex].name = newName
+        // Write back all exercise attributes from the session substitution
+        modules[moduleIndex].exercises[exerciseIndex].name = sessionExercise.exerciseName
+        modules[moduleIndex].exercises[exerciseIndex].exerciseType = sessionExercise.exerciseType
+        modules[moduleIndex].exercises[exerciseIndex].primaryMuscles = sessionExercise.primaryMuscles
+        modules[moduleIndex].exercises[exerciseIndex].secondaryMuscles = sessionExercise.secondaryMuscles
+        modules[moduleIndex].exercises[exerciseIndex].implementIds = sessionExercise.implementIds
+        modules[moduleIndex].exercises[exerciseIndex].isUnilateral = sessionExercise.completedSetGroups.first?.isUnilateral ?? false
+        modules[moduleIndex].exercises[exerciseIndex].updatedAt = Date()
     }
 
     private func adjustSetCount(for exercise: inout ExerciseInstance, to targetCount: Int) {

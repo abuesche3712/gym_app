@@ -884,9 +884,11 @@ class SessionViewModel: ObservableObject {
     /// Detect structural changes made during this session compared to original templates
     func detectStructuralChanges() -> [StructuralChange] {
         guard let session = currentSession else { return [] }
+        let standaloneExercises = repository.getWorkout(id: session.workoutId)?.standaloneExercises ?? []
         return WorkoutDiffService.shared.detectChanges(
             session: session,
-            originalModules: originalModules
+            originalModules: originalModules,
+            standaloneExercises: standaloneExercises
         )
     }
 
@@ -919,6 +921,7 @@ class SessionViewModel: ObservableObject {
         isUnilateral: Bool
     ) {
         // Find the module that contains this exercise instance
+        var foundInModule = false
         for module in originalModules {
             if let exerciseIndex = module.exercises.firstIndex(where: { $0.id == sourceExerciseInstanceId }) {
                 var updatedModule = module
@@ -943,22 +946,63 @@ class SessionViewModel: ObservableObject {
                 }
 
                 // If linked to a custom template, update that too
-                if let templateId = exercise.templateId {
-                    let customLibrary = CustomExerciseLibrary.shared
-                    if let customTemplate = customLibrary.exercises.first(where: { $0.id == templateId }) {
-                        var updatedTemplate = customTemplate
-                        updatedTemplate.name = name
-                        updatedTemplate.exerciseType = exerciseType
-                        updatedTemplate.primaryMuscles = primaryMuscles
-                        updatedTemplate.secondaryMuscles = secondaryMuscles
-                        updatedTemplate.isUnilateral = isUnilateral
-                        updatedTemplate.implementIds = implementIds
-                        customLibrary.updateExercise(updatedTemplate)
-                    }
-                }
+                updateCustomTemplate(
+                    templateId: exercise.templateId,
+                    name: name, exerciseType: exerciseType,
+                    primaryMuscles: primaryMuscles, secondaryMuscles: secondaryMuscles,
+                    implementIds: implementIds, isUnilateral: isUnilateral
+                )
 
+                foundInModule = true
                 break
             }
+        }
+
+        // Fallback: search workout's standalone exercises
+        if !foundInModule, let session = currentSession,
+           var workout = repository.getWorkout(id: session.workoutId) {
+            if let weIndex = workout.standaloneExercises.firstIndex(where: { $0.exercise.id == sourceExerciseInstanceId }) {
+                var exercise = workout.standaloneExercises[weIndex].exercise
+                exercise.name = name
+                exercise.exerciseType = exerciseType
+                exercise.primaryMuscles = primaryMuscles
+                exercise.secondaryMuscles = secondaryMuscles
+                exercise.implementIds = implementIds
+                exercise.isUnilateral = isUnilateral
+                exercise.updatedAt = Date()
+                workout.standaloneExercises[weIndex].exercise = exercise
+                workout.updatedAt = Date()
+                workout.syncStatus = .pendingSync
+                repository.saveWorkout(workout)
+
+                updateCustomTemplate(
+                    templateId: exercise.templateId,
+                    name: name, exerciseType: exerciseType,
+                    primaryMuscles: primaryMuscles, secondaryMuscles: secondaryMuscles,
+                    implementIds: implementIds, isUnilateral: isUnilateral
+                )
+            }
+        }
+    }
+
+    /// Helper: update a custom template in the library if it exists
+    private func updateCustomTemplate(
+        templateId: UUID?,
+        name: String, exerciseType: ExerciseType,
+        primaryMuscles: [MuscleGroup], secondaryMuscles: [MuscleGroup],
+        implementIds: Set<UUID>, isUnilateral: Bool
+    ) {
+        guard let templateId = templateId else { return }
+        let customLibrary = CustomExerciseLibrary.shared
+        if let customTemplate = customLibrary.exercises.first(where: { $0.id == templateId }) {
+            var updatedTemplate = customTemplate
+            updatedTemplate.name = name
+            updatedTemplate.exerciseType = exerciseType
+            updatedTemplate.primaryMuscles = primaryMuscles
+            updatedTemplate.secondaryMuscles = secondaryMuscles
+            updatedTemplate.isUnilateral = isUnilateral
+            updatedTemplate.implementIds = implementIds
+            customLibrary.updateExercise(updatedTemplate)
         }
     }
 
@@ -1210,7 +1254,7 @@ class SessionViewModel: ObservableObject {
         isRestTimerRunning = true
         updateRestTimer()
 
-        timerCancellable = Timer.publish(every: 1, on: .main, in: .common)
+        timerCancellable = Timer.publish(every: 0.1, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 self?.updateRestTimer()
@@ -1320,7 +1364,7 @@ class SessionViewModel: ObservableObject {
         isExerciseTimerRunning = true
         updateExerciseTimer()
 
-        exerciseTimerCancellable = Timer.publish(every: 1, on: .main, in: .common)
+        exerciseTimerCancellable = Timer.publish(every: 0.1, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 self?.updateExerciseTimer()
@@ -1339,7 +1383,7 @@ class SessionViewModel: ObservableObject {
         exerciseTimerSeconds = 0
         isExerciseTimerRunning = true
 
-        exerciseTimerCancellable = Timer.publish(every: 1, on: .main, in: .common)
+        exerciseTimerCancellable = Timer.publish(every: 0.1, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 self?.updateExerciseTimer()

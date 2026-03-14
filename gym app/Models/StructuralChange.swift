@@ -52,7 +52,8 @@ enum StructuralChange: Identifiable, Equatable {
         originalName: String,
         newName: String,
         moduleId: UUID,
-        moduleName: String
+        moduleName: String,
+        sessionExercise: SessionExercise
     )
 
     // MARK: - Identifiable
@@ -67,7 +68,7 @@ enum StructuralChange: Identifiable, Equatable {
             return "removed-\(id.uuidString)"
         case .exerciseReordered(let id, _, _, _, _, _):
             return "reordered-\(id.uuidString)"
-        case .exerciseSubstituted(let id, _, _, _, _):
+        case .exerciseSubstituted(let id, _, _, _, _, _):
             return "substituted-\(id.uuidString)"
         }
     }
@@ -84,7 +85,7 @@ enum StructuralChange: Identifiable, Equatable {
             return moduleId
         case .exerciseReordered(_, _, let moduleId, _, _, _):
             return moduleId
-        case .exerciseSubstituted(_, _, _, let moduleId, _):
+        case .exerciseSubstituted(_, _, _, let moduleId, _, _):
             return moduleId
         }
     }
@@ -99,7 +100,7 @@ enum StructuralChange: Identifiable, Equatable {
             return name
         case .exerciseReordered(_, _, _, let name, _, _):
             return name
-        case .exerciseSubstituted(_, _, _, _, let name):
+        case .exerciseSubstituted(_, _, _, _, let name, _):
             return name
         }
     }
@@ -114,7 +115,7 @@ enum StructuralChange: Identifiable, Equatable {
             return name
         case .exerciseReordered(_, let name, _, _, _, _):
             return name
-        case .exerciseSubstituted(_, _, let name, _, _):
+        case .exerciseSubstituted(_, _, let name, _, _, _):
             return name
         }
     }
@@ -138,7 +139,7 @@ enum StructuralChange: Identifiable, Equatable {
             let direction = to < from ? "up" : "down"
             return "Moved \(name) \(direction)"
 
-        case .exerciseSubstituted(_, let originalName, let newName, _, _):
+        case .exerciseSubstituted(_, let originalName, let newName, _, _, _):
             return "\(originalName) → \(newName)"
         }
     }

@@ -454,7 +454,7 @@ struct AccountProfileView: View {
                     }
                 } catch {
                     // Username claiming failed (likely permissions) - continue with profile save
-                    print("Username claim failed: \(error.localizedDescription)")
+                    Logger.error(error, context: "Username claim failed")
                 }
             }
 
@@ -485,7 +485,7 @@ struct AccountProfileView: View {
                 try await FirestoreService.shared.saveUserProfile(profile)
             } catch {
                 // Cloud sync failed but local save succeeded
-                print("Cloud profile sync failed: \(error.localizedDescription)")
+                Logger.error(error, context: "Cloud profile sync failed")
             }
 
             await MainActor.run {

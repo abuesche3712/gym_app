@@ -170,16 +170,6 @@ class BackgroundSessionManager: NSObject, ObservableObject {
         )
     }
 
-    /// Request notification permission
-    func requestNotificationPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-                Logger.error(error, context: "Failed to request notification permission")
-            }
-            Logger.debug("Notification permission granted: \(granted)")
-        }
-    }
-
     deinit {
         NotificationCenter.default.removeObserver(self)
         endBackgroundTask()

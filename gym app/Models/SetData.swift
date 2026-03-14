@@ -166,7 +166,9 @@ struct SetData: Identifiable, Codable, Hashable {
     var formattedStrength: String? {
         guard let reps = reps else { return nil }
         var result: String
-        if let band = bandColor, !band.isEmpty {
+        // Prefer implementMeasurableValues["Color"] over legacy bandColor
+        let bandValue = implementMeasurableValues["Color"]?.stringValue ?? bandColor
+        if let band = bandValue, !band.isEmpty {
             result = "\(band) x \(reps)"
         } else if let weight = weight {
             result = "\(formatWeight(weight)) x \(reps)"
@@ -180,7 +182,9 @@ struct SetData: Identifiable, Codable, Hashable {
     }
 
     var formattedBand: String? {
-        guard let band = bandColor, !band.isEmpty, let reps = reps else { return nil }
+        // Prefer implementMeasurableValues["Color"] over legacy bandColor
+        let bandValue = implementMeasurableValues["Color"]?.stringValue ?? bandColor
+        guard let band = bandValue, !band.isEmpty, let reps = reps else { return nil }
         var result = "\(band) band x \(reps)"
         if let rpe = rpe {
             result += " @ RPE \(rpe)"

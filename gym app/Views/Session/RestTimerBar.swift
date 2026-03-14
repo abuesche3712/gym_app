@@ -20,7 +20,7 @@ struct RestTimerBar: View {
     }
 
     private var isLongRest: Bool {
-        sessionViewModel.restTimerTotal >= 180
+        sessionViewModel.restTimerTotal > 120
     }
 
     private var timeDisplay: String {

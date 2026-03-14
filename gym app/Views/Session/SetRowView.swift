@@ -586,7 +586,8 @@ struct SetRowView: View {
         var didApplySuggestionDuration = false
         var didApplySuggestionDistance = false
 
-        if setData.weight != nil || setData.reps != nil || setData.duration != nil || setData.holdTime != nil || setData.distance != nil {
+        if setData.completed && (setData.weight != nil || setData.reps != nil || setData.duration != nil || setData.holdTime != nil || setData.distance != nil) {
+            // For completed sets, use the actual logged values
             inputWeight = setData.weight.map { formatWeight($0) } ?? flatSet.targetWeight.map { formatWeight($0) } ?? ""
             inputReps = setData.reps.map { "\($0)" } ?? flatSet.targetReps.map { "\($0)" } ?? ""
             if !durationManuallySet {
@@ -619,13 +620,15 @@ struct SetRowView: View {
                             inputWeight = formatWeight(suggestion.baseValue)
                         }
 
-                        inputReps = lastReps.map { "\($0)" }
-                            ?? flatSet.targetReps.map { "\($0)" }
+                        // Prefer template reps over last-session reps
+                        inputReps = flatSet.targetReps.map { "\($0)" }
+                            ?? lastReps.map { "\($0)" }
                             ?? ""
 
                     case .reps:
-                        inputWeight = lastWeight.map { formatWeight($0) }
-                            ?? flatSet.targetWeight.map { formatWeight($0) }
+                        // Prefer template weight over last-session weight
+                        inputWeight = flatSet.targetWeight.map { formatWeight($0) }
+                            ?? lastWeight.map { formatWeight($0) }
                             ?? ""
 
                         let baseReps = Int(round(suggestion.baseValue))
@@ -695,21 +698,23 @@ struct SetRowView: View {
                         didApplySuggestionDistance = true
                     }
                 } else {
-                    inputWeight = lastWeight.map { formatWeight($0) }
-                        ?? flatSet.targetWeight.map { formatWeight($0) }
+                    // Prefer template targets over last-session for uncompleted sets
+                    inputWeight = flatSet.targetWeight.map { formatWeight($0) }
+                        ?? lastWeight.map { formatWeight($0) }
                         ?? ""
-                    inputReps = lastReps.map { "\($0)" }
-                        ?? flatSet.targetReps.map { "\($0)" }
+                    inputReps = flatSet.targetReps.map { "\($0)" }
+                        ?? lastReps.map { "\($0)" }
                         ?? ""
                 }
             }
-            inputHoldTime = lastHoldTime ?? flatSet.targetHoldTime ?? 0
+            // Prefer template targets over last-session for remaining fields
+            inputHoldTime = flatSet.targetHoldTime ?? lastHoldTime ?? 0
             if !durationManuallySet && !didApplySuggestionDuration {
-                inputDuration = lastDuration ?? flatSet.targetDuration ?? 0
+                inputDuration = flatSet.targetDuration ?? lastDuration ?? 0
             }
             if !didApplySuggestionDistance {
-                inputDistance = lastDistance.map { formatDistanceValue($0) }
-                    ?? flatSet.targetDistance.map { formatDistanceValue($0) }
+                inputDistance = flatSet.targetDistance.map { formatDistanceValue($0) }
+                    ?? lastDistance.map { formatDistanceValue($0) }
                     ?? ""
             }
         }

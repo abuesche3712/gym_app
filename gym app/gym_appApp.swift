@@ -25,9 +25,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Initialize background session manager for workout persistence
         _ = BackgroundSessionManager.shared
 
-        // Request notification permissions for workout warnings
-        BackgroundSessionManager.shared.requestNotificationPermission()
-
         return true
     }
 

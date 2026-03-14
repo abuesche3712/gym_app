@@ -174,14 +174,48 @@ class QuickLogService {
             date: session.date
         )
 
-        // Find or create module of the appropriate type
+        // For freestyle sessions, route all exercises into a single "Exercises" module
+        // to preserve insertion order (cardio -> strength -> cardio stays in that order)
+        if session.isFreestyle {
+            // Find or create the single freestyle exercises module
+            // Only look at modules that were created by addExercise (not library modules from addCompletedModule)
+            let freestyleModuleIndex = session.completedModules.firstIndex(where: {
+                $0.moduleName == "Exercises" && $0.moduleId == $0.id
+            })
+
+            if let moduleIndex = freestyleModuleIndex {
+                var updatedExercise = exercise
+                updatedExercise.moduleId = session.completedModules[moduleIndex].id
+                updatedExercise.moduleName = "Exercises"
+                session.completedModules[moduleIndex].completedExercises.append(updatedExercise)
+            } else {
+                let moduleId = UUID()
+                var updatedExercise = exercise
+                updatedExercise.moduleId = moduleId
+                updatedExercise.moduleName = "Exercises"
+
+                let module = CompletedModule(
+                    id: moduleId,
+                    moduleId: moduleId,
+                    moduleName: "Exercises",
+                    moduleType: .strength,
+                    completedExercises: [updatedExercise],
+                    sessionId: session.id,
+                    workoutId: Self.freestyleWorkoutId,
+                    workoutName: "Freestyle",
+                    date: session.date
+                )
+                session.completedModules.append(module)
+            }
+            return
+        }
+
+        // Non-freestyle: group by module type
         if let moduleIndex = session.completedModules.firstIndex(where: { $0.moduleType == moduleType }) {
-            // Add to existing module
             var updatedExercise = exercise
             updatedExercise.moduleId = session.completedModules[moduleIndex].id
             session.completedModules[moduleIndex].completedExercises.append(updatedExercise)
         } else {
-            // Create new module
             let moduleId = UUID()
             var updatedExercise = exercise
             updatedExercise.moduleId = moduleId

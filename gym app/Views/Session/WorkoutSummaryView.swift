@@ -8,6 +8,13 @@
 
 import SwiftUI
 
+/// Actions that require structural review before execution
+enum PendingShareAction {
+    case postToFeed
+    case shareWithFriend
+    case shareVia
+}
+
 struct WorkoutSummaryView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var sessionViewModel: SessionViewModel
@@ -16,6 +23,7 @@ struct WorkoutSummaryView: View {
     let elapsedSeconds: Int
     let onReviewAndSave: () -> Void
     let onQuickSave: (Int?, String?) -> Void
+    var onShareAction: ((PendingShareAction) -> Void)?
 
     @State private var animateIn = false
     @State private var showShareSheet = false
@@ -76,14 +84,23 @@ struct WorkoutSummaryView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Button {
-                            onQuickSave(nil, nil)
-                            showHighlightPicker = true
+                            if let onShareAction {
+                                onShareAction(.postToFeed)
+                            } else {
+                                // Fallback: legacy path
+                                onQuickSave(nil, nil)
+                                showHighlightPicker = true
+                            }
                         } label: {
                             Label("Post to Feed", systemImage: "rectangle.stack")
                         }
 
                         Button {
-                            showShareWithFriend = true
+                            if let onShareAction {
+                                onShareAction(.shareWithFriend)
+                            } else {
+                                showShareWithFriend = true
+                            }
                         } label: {
                             Label("Share with Friend", systemImage: "paperplane")
                         }
@@ -91,7 +108,11 @@ struct WorkoutSummaryView: View {
                         Divider()
 
                         Button {
-                            showShareSheet = true
+                            if let onShareAction {
+                                onShareAction(.shareVia)
+                            } else {
+                                showShareSheet = true
+                            }
                         } label: {
                             Label("Share via...", systemImage: "square.and.arrow.up")
                         }

@@ -769,11 +769,6 @@ struct SetGroupFormView: View {
             ))
         }
 
-        // Legacy single measurable support (for backward compatibility)
-        let measurableLabel = implementStringMeasurable?.measurableName
-        let measurableUnit = implementStringMeasurable?.unit
-        let measurableStringValue = !implementMeasurableStringValue.isEmpty ? implementMeasurableStringValue : nil
-
         let setGroup = SetGroup(
             id: existingSetGroup?.id ?? UUID(),
             sets: sets,
@@ -794,9 +789,10 @@ struct SetGroupFormView: View {
             isUnilateral: false,  // Now tracked at exercise level, not set group level
             trackRPE: trackRPE,
             implementMeasurables: measurableTargets,
-            implementMeasurableLabel: measurableLabel,
-            implementMeasurableUnit: measurableUnit,
-            implementMeasurableStringValue: isAMRAP || !isInterval ? measurableStringValue : nil
+            // Legacy fields deprecated - use implementMeasurables only
+            implementMeasurableLabel: nil,
+            implementMeasurableUnit: nil,
+            implementMeasurableStringValue: nil
         )
         onSave(setGroup)
         dismiss()

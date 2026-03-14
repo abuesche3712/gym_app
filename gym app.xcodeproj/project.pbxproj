@@ -115,6 +115,7 @@
 		D7BE18369D46FE792E6CE8B4 /* FirestoreConflictService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112F204E54595BC864A784E2 /* FirestoreConflictService.swift */; };
 		DA6EFC77B9DEDA4DC1F1671D /* FirestoreSocialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF6E38FBE904533D715F6D3 /* FirestoreSocialService.swift */; };
 		DATAREPO02BUILD01 /* DataRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DATAREPO01FILE01 /* DataRepositoryTests.swift */; };
+		REGRTEST02BUILD /* RegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = REGRTEST01FILE /* RegressionTests.swift */; };
 		DB4505338C4FD921A7C6EBA4 /* FirestoreCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89217DA0F8957EE059AB3FF9 /* FirestoreCore.swift */; };
 		DBGSYN02BUILD002 /* DebugSyncLogsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBGSYN01FILE001 /* DebugSyncLogsView.swift */; };
 		DEBOUNCER002BUILD002 /* Debouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEBOUNCER001FILE001 /* Debouncer.swift */; };
@@ -401,6 +402,7 @@
 		CONVVM001FILE /* ConversationsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsViewModel.swift; sourceTree = "<group>"; };
 		D3E5F7A9B1C3D5E7F9A1B3C5 /* SetGroupFormView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetGroupFormView.swift; sourceTree = "<group>"; };
 		DATAREPO01FILE01 /* DataRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataRepositoryTests.swift; sourceTree = "<group>"; };
+		REGRTEST01FILE /* RegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegressionTests.swift; sourceTree = "<group>"; };
 		DBGSYN01FILE001 /* DebugSyncLogsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSyncLogsView.swift; sourceTree = "<group>"; };
 		DEBOUNCER001FILE001 /* Debouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debouncer.swift; sourceTree = "<group>"; };
 		DELTRC01FILE001 /* DeletionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionTracker.swift; sourceTree = "<group>"; };
@@ -691,6 +693,7 @@
 				SSNVTST01FILE001 /* SessionNavigatorTests.swift */,
 				EXINSTST01FILE /* ExerciseInstanceTests.swift */,
 				DATAREPO01FILE01 /* DataRepositoryTests.swift */,
+				REGRTEST01FILE /* RegressionTests.swift */,
 			);
 			path = "gym appTests";
 			sourceTree = "<group>";
@@ -1564,6 +1567,7 @@
 				SSNVTST02BUILD002 /* SessionNavigatorTests.swift in Sources */,
 				EXINSTST02BUILD /* ExerciseInstanceTests.swift in Sources */,
 				DATAREPO02BUILD01 /* DataRepositoryTests.swift in Sources */,
+				REGRTEST02BUILD /* RegressionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

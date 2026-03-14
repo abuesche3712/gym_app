@@ -58,13 +58,12 @@ struct AllSetsSection: View {
                                 onLog: { flatSet, weight, reps, rpe, duration, holdTime, distance, height, intensity, temperature, bandColor, implementMeasurableValues in
                                     onLogSet(flatSet, weight, reps, rpe, duration, holdTime, distance, height, intensity, temperature, bandColor, implementMeasurableValues)
                                     onHighlightClear()
-                                    // Start rest timer only after completing the RIGHT side (not left)
+                                    // Start rest timer after completing each side
+                                    // Use the same rest duration for all transitions (L→R, R→L between sets)
                                     if exercise.exerciseType != .recovery {
                                         let fullRest = flatSet.restPeriod ?? appState.defaultRestTime
                                         if !allSetsCompleted(exercise) {
-                                            if flatSet.setData.side == .right || flatSet.setData.side == nil {
-                                                sessionViewModel.startRestTimer(seconds: fullRest)
-                                            }
+                                            sessionViewModel.startRestTimer(seconds: fullRest)
                                         }
                                     }
                                 },
@@ -81,6 +80,17 @@ struct AllSetsSection: View {
                                 lastSessionExercise: lastSessionExercise,
                                 contentWidth: width - (AppSpacing.cardPadding * 2)
                             )
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                if canDeleteSet(exercise: exercise), let leftSet = group.leftSet {
+                                    Button(role: .destructive) {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            onDeleteSet(leftSet)
+                                        }
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            }
                         }
                     } else {
                         // Non-unilateral sets - render individually
@@ -117,6 +127,17 @@ struct AllSetsSection: View {
                                 lastSessionExercise: lastSessionExercise,
                                 contentWidth: width - (AppSpacing.cardPadding * 2)
                             )
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                if canDeleteSet(exercise: exercise) {
+                                    Button(role: .destructive) {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            onDeleteSet(flatSet)
+                                        }
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            }
                             .contextMenu {
                                 if canDeleteSet(exercise: exercise) {
                                     Button(role: .destructive) {
@@ -572,7 +593,8 @@ struct UnilateralSideRow: View {
         inputBandColor = ""
         inputMeasurableValues = [:]
 
-        if hasLoggedValues {
+        if setData.completed && hasLoggedValues {
+            // For completed sets, use the actual logged values
             inputWeight = setData.weight.map { formatWeight($0) } ?? flatSet.targetWeight.map { formatWeight($0) } ?? ""
             inputReps = setData.reps.map { "\($0)" } ?? flatSet.targetReps.map { "\($0)" } ?? ""
             if !durationManuallySet {
@@ -596,7 +618,8 @@ struct UnilateralSideRow: View {
                 case nil:
                     inputWeight = formatWeight(suggestion.baseValue)
                 }
-                inputReps = lastReps.map { "\($0)" } ?? flatSet.targetReps.map { "\($0)" } ?? ""
+                // Prefer template reps over last-session reps
+                inputReps = flatSet.targetReps.map { "\($0)" } ?? lastReps.map { "\($0)" } ?? ""
 
             case .reps:
                 let baseReps = Int(round(suggestion.baseValue))
@@ -616,7 +639,8 @@ struct UnilateralSideRow: View {
                     prefilledReps = max(1, baseReps)
                 }
 
-                inputWeight = lastWeight.map { formatWeight($0) } ?? flatSet.targetWeight.map { formatWeight($0) } ?? ""
+                // Prefer template weight over last-session weight
+                inputWeight = flatSet.targetWeight.map { formatWeight($0) } ?? lastWeight.map { formatWeight($0) } ?? ""
                 inputReps = "\(prefilledReps)"
 
             case .duration:
@@ -663,38 +687,39 @@ struct UnilateralSideRow: View {
                 inputDistance = formatDistanceValue(prefilledDistance)
             }
         } else {
-            // No progression suggestion - use lastSession data as fallback, then targets
-            inputWeight = lastWeight.map { formatWeight($0) }
-                ?? flatSet.targetWeight.map { formatWeight($0) }
+            // No progression suggestion - prefer template targets over last-session for uncompleted sets
+            inputWeight = flatSet.targetWeight.map { formatWeight($0) }
+                ?? lastWeight.map { formatWeight($0) }
                 ?? ""
-            inputReps = lastReps.map { "\($0)" }
-                ?? flatSet.targetReps.map { "\($0)" }
+            inputReps = flatSet.targetReps.map { "\($0)" }
+                ?? lastReps.map { "\($0)" }
                 ?? ""
             if !durationManuallySet {
-                inputDuration = lastDuration ?? flatSet.targetDuration ?? 0
+                inputDuration = flatSet.targetDuration ?? lastDuration ?? 0
             }
-            inputHoldTime = lastHoldTime ?? flatSet.targetHoldTime ?? 0
-            inputDistance = lastDistance.map { formatDistanceValue($0) }
-                ?? flatSet.targetDistance.map { formatDistanceValue($0) }
+            inputHoldTime = flatSet.targetHoldTime ?? lastHoldTime ?? 0
+            inputDistance = flatSet.targetDistance.map { formatDistanceValue($0) }
+                ?? lastDistance.map { formatDistanceValue($0) }
                 ?? ""
             inputBandColor = lastBandColor ?? ""
         }
 
         if !hasLoggedValues && exercise.progressionSuggestion != nil {
+            // Prefer template targets over last-session for remaining empty fields
             if inputReps.isEmpty {
-                inputReps = lastReps.map { "\($0)" } ?? flatSet.targetReps.map { "\($0)" } ?? ""
+                inputReps = flatSet.targetReps.map { "\($0)" } ?? lastReps.map { "\($0)" } ?? ""
             }
             if inputWeight.isEmpty {
-                inputWeight = lastWeight.map { formatWeight($0) } ?? flatSet.targetWeight.map { formatWeight($0) } ?? ""
+                inputWeight = flatSet.targetWeight.map { formatWeight($0) } ?? lastWeight.map { formatWeight($0) } ?? ""
             }
             if !durationManuallySet && inputDuration == 0 {
-                inputDuration = lastDuration ?? flatSet.targetDuration ?? 0
+                inputDuration = flatSet.targetDuration ?? lastDuration ?? 0
             }
             if inputDistance.isEmpty {
-                inputDistance = lastDistance.map { formatDistanceValue($0) } ?? flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
+                inputDistance = flatSet.targetDistance.map { formatDistanceValue($0) } ?? lastDistance.map { formatDistanceValue($0) } ?? ""
             }
             if inputHoldTime == 0 {
-                inputHoldTime = lastHoldTime ?? flatSet.targetHoldTime ?? 0
+                inputHoldTime = flatSet.targetHoldTime ?? lastHoldTime ?? 0
             }
             if inputBandColor.isEmpty {
                 inputBandColor = lastBandColor ?? ""
@@ -803,6 +828,39 @@ struct UnilateralSideRow: View {
                     .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
                 Text("reps")
                     .caption2(color: AppColors.textTertiary)
+
+                // Band color / string-based implement input
+                if let stringMeasurable = exercise.implementStringMeasurable {
+                    TextField(stringMeasurable.measurableName, text: $inputBandColor)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .frame(width: 50)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 4)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    Text(stringMeasurable.implementName.lowercased())
+                        .caption2(color: AppColors.textTertiary)
+                }
+
+                // Numeric implement measurable inputs
+                ForEach(flatSet.implementMeasurables.filter { !$0.isStringBased }, id: \.id) { measurable in
+                    let measurableKey = measurableStorageKey(for: measurable)
+                    TextField("0", text: Binding(
+                        get: { inputMeasurableValues[measurableKey] ?? "" },
+                        set: { inputMeasurableValues[measurableKey] = $0 }
+                    ))
+                    .keyboardType(.decimalPad)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 44)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 4)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    Text(measurable.unit.isEmpty ? measurable.measurableName : measurable.unit)
+                        .caption2(color: AppColors.textTertiary)
+                }
 
             case .cardio:
                 // Duration control

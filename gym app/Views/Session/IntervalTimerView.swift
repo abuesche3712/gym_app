@@ -465,10 +465,10 @@ struct IntervalTimerView: View {
         restDuration: 30,
         exerciseName: "Jump Rope",
         onComplete: { durations in
-            print("Completed with durations: \(durations)")
+            Logger.debug("Completed with durations: \(durations)")
         },
         onCancel: {
-            print("Cancelled")
+            Logger.debug("Cancelled")
         }
     )
 }

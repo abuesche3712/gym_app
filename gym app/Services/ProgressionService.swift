@@ -1194,8 +1194,13 @@ struct ProgressionService {
         // Round to the specified increment
         let rounded = round(rawSuggested / rule.roundingIncrement) * rule.roundingIncrement
 
-        // Ensure we don't suggest the same weight (always progress by at least one increment)
-        let finalSuggested = max(rounded, maxWeight + rule.roundingIncrement)
+        // Ensure progress: only force +increment when rounding erased the gain
+        let finalSuggested: Double
+        if rounded > maxWeight {
+            finalSuggested = rounded
+        } else {
+            finalSuggested = maxWeight + rule.roundingIncrement
+        }
 
         // Calculate the actual percentage applied after rounding
         let actualPercent = ((finalSuggested - maxWeight) / maxWeight) * 100.0
@@ -1241,8 +1246,13 @@ struct ProgressionService {
         // Round to the specified increment (for reps, usually 1)
         let rounded = round(rawSuggested / rule.roundingIncrement) * rule.roundingIncrement
 
-        // Ensure we progress by at least one rep
-        let finalSuggested = max(rounded, baseValue + 1)
+        // Ensure progress: only force +1 when rounding erased the gain
+        let finalSuggested: Double
+        if rounded > baseValue {
+            finalSuggested = rounded
+        } else {
+            finalSuggested = baseValue + 1
+        }
 
         // Calculate the actual percentage applied after rounding
         let actualPercent = ((finalSuggested - baseValue) / baseValue) * 100.0
@@ -1276,7 +1286,13 @@ struct ProgressionService {
 
         let rawSuggested = baseValue + increase
         let rounded = round(rawSuggested / rule.roundingIncrement) * rule.roundingIncrement
-        let finalSuggested = max(rounded, baseValue + rule.roundingIncrement)
+        // Ensure progress: only force +increment when rounding erased the gain
+        let finalSuggested: Double
+        if rounded > baseValue {
+            finalSuggested = rounded
+        } else {
+            finalSuggested = baseValue + rule.roundingIncrement
+        }
         let actualPercent = ((finalSuggested - baseValue) / baseValue) * 100.0
 
         return ProgressionSuggestion(
@@ -1307,7 +1323,13 @@ struct ProgressionService {
 
         let rawSuggested = maxDistance + increase
         let rounded = round(rawSuggested / rule.roundingIncrement) * rule.roundingIncrement
-        let finalSuggested = max(rounded, maxDistance + rule.roundingIncrement)
+        // Ensure progress: only force +increment when rounding erased the gain
+        let finalSuggested: Double
+        if rounded > maxDistance {
+            finalSuggested = rounded
+        } else {
+            finalSuggested = maxDistance + rule.roundingIncrement
+        }
         let actualPercent = ((finalSuggested - maxDistance) / maxDistance) * 100.0
 
         return ProgressionSuggestion(

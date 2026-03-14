@@ -57,6 +57,8 @@ final class HapticManager: @unchecked Sendable {
     private func activateAudioSession() {
         guard !isAudioSessionActive else { return }
         do {
+            // Re-set category each time in case another app/framework reset it
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
             try AVAudioSession.sharedInstance().setActive(true)
             isAudioSessionActive = true
         } catch {
@@ -76,22 +78,40 @@ final class HapticManager: @unchecked Sendable {
     }
 
     private func prepareSounds() {
-        // Timer complete sound - use system sound file
+        // Timer complete sound
         if let soundURL = Bundle.main.url(forResource: "timer_complete", withExtension: "wav") {
-            timerCompletePlayer = try? AVAudioPlayer(contentsOf: soundURL)
-            timerCompletePlayer?.prepareToPlay()
+            do {
+                timerCompletePlayer = try AVAudioPlayer(contentsOf: soundURL)
+                timerCompletePlayer?.prepareToPlay()
+            } catch {
+                Logger.error(error, context: "Failed to load timer_complete.wav")
+            }
+        } else {
+            Logger.debug("timer_complete.wav not found in bundle - will use system fallback")
         }
 
-        // Countdown beep - use system sound file
+        // Countdown beep
         if let soundURL = Bundle.main.url(forResource: "countdown_beep", withExtension: "wav") {
-            countdownBeepPlayer = try? AVAudioPlayer(contentsOf: soundURL)
-            countdownBeepPlayer?.prepareToPlay()
+            do {
+                countdownBeepPlayer = try AVAudioPlayer(contentsOf: soundURL)
+                countdownBeepPlayer?.prepareToPlay()
+            } catch {
+                Logger.error(error, context: "Failed to load countdown_beep.wav")
+            }
+        } else {
+            Logger.debug("countdown_beep.wav not found in bundle - will use system fallback")
         }
 
         // Phase transition sound
         if let soundURL = Bundle.main.url(forResource: "phase_transition", withExtension: "wav") {
-            phaseTransitionPlayer = try? AVAudioPlayer(contentsOf: soundURL)
-            phaseTransitionPlayer?.prepareToPlay()
+            do {
+                phaseTransitionPlayer = try AVAudioPlayer(contentsOf: soundURL)
+                phaseTransitionPlayer?.prepareToPlay()
+            } catch {
+                Logger.error(error, context: "Failed to load phase_transition.wav")
+            }
+        } else {
+            Logger.debug("phase_transition.wav not found in bundle - will use system fallback")
         }
     }
 
@@ -210,14 +230,32 @@ final class HapticManager: @unchecked Sendable {
         if let player = timerCompletePlayer {
             player.volume = 1.0
             player.currentTime = 0
-            player.play()
-            // Deactivate session after sound finishes
-            scheduleDeactivation(after: player.duration + 0.1)
+            if player.play() {
+                scheduleDeactivation(after: player.duration + 0.1)
+            } else {
+                // Retry: reload and play once
+                Logger.debug("Timer complete sound failed to play, reloading...")
+                prepareSounds()
+                if let reloaded = timerCompletePlayer {
+                    reloaded.volume = 1.0
+                    reloaded.currentTime = 0
+                    if reloaded.play() {
+                        scheduleDeactivation(after: reloaded.duration + 0.1)
+                        return
+                    }
+                }
+                playSystemFallbackSound()
+            }
         } else {
-            // Fallback: Use system sound
-            AudioServicesPlaySystemSound(SystemSoundID(1304))
-            scheduleDeactivation(after: 0.5)
+            playSystemFallbackSound()
         }
+    }
+
+    /// System sound + vibration fallback for guaranteed feedback
+    private func playSystemFallbackSound() {
+        AudioServicesPlaySystemSound(SystemSoundID(1304))
+        AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+        scheduleDeactivation(after: 0.5)
     }
 
     /// Play countdown beep sound

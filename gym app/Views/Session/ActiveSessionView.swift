@@ -43,6 +43,15 @@ struct ActiveSessionView: View {
     @State private var showingReviewChanges = false
     @State private var pendingFeeling: Int?
     @State private var pendingNotes: String?
+    @State private var pendingShareAction: PendingShareAction?
+
+    // Share sheets triggered after structural review
+    @State private var showPostFeedAfterReview = false
+    @State private var showShareFriendAfterReview = false
+    @State private var showShareViaAfterReview = false
+    @State private var showComposePostAfterReview = false
+    @State private var shareHighlightContent: (any ShareableContent)?
+    @State private var savedSessionForSharing: Session?
 
     // Freestyle mode state
     @State private var showFreestyleAddExercise = false
@@ -301,6 +310,12 @@ struct ActiveSessionView: View {
                             showingWorkoutSummary = false
                             // Check for structural changes before finalizing
                             checkAndHandleStructuralChanges(feeling: feeling, notes: notes)
+                        },
+                        onShareAction: { action in
+                            pendingShareAction = action
+                            showingWorkoutSummary = false
+                            // Route through structural review before sharing
+                            checkAndHandleStructuralChanges(feeling: nil, notes: nil)
                         }
                     )
                     .environmentObject(sessionViewModel)
@@ -419,6 +434,56 @@ struct ActiveSessionView: View {
                         sessionViewModel.deleteExercise(moduleIndex: moduleIndex, exerciseIndex: exerciseIndex)
                     }
                 )
+            }
+            // Post-review share sheets (shown after structural review completes)
+            .sheet(isPresented: $showPostFeedAfterReview, onDismiss: {
+                // If user cancelled highlight picker without composing, clean up
+                if !showComposePostAfterReview {
+                    savedSessionForSharing = nil
+                    shareHighlightContent = nil
+                    dismiss()
+                }
+            }) {
+                if let session = savedSessionForSharing {
+                    HighlightPickerView(session: session) { highlights in
+                        shareHighlightContent = ShareableHighlightBundle.aggregate(
+                            from: highlights,
+                            workoutName: session.workoutName,
+                            date: session.date
+                        ) ?? session
+                        showPostFeedAfterReview = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            showComposePostAfterReview = true
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: $showComposePostAfterReview, onDismiss: {
+                savedSessionForSharing = nil
+                shareHighlightContent = nil
+                dismiss()
+            }) {
+                if let content = shareHighlightContent {
+                    ComposePostSheet(content: content)
+                } else if let session = savedSessionForSharing {
+                    ComposePostSheet(content: session)
+                }
+            }
+            .sheet(isPresented: $showShareFriendAfterReview, onDismiss: {
+                savedSessionForSharing = nil
+                dismiss()
+            }) {
+                if let session = savedSessionForSharing {
+                    ShareWithFriendSheet(content: session)
+                }
+            }
+            .sheet(isPresented: $showShareViaAfterReview, onDismiss: {
+                savedSessionForSharing = nil
+                dismiss()
+            }) {
+                if let session = savedSessionForSharing {
+                    ShareViaActivitySheet(session: session)
+                }
             }
         }
     }
@@ -710,6 +775,14 @@ struct ActiveSessionView: View {
 
     /// Finalize the session (save and dismiss)
     private func finalizeSession() {
+        // Capture share action and session before clearing state
+        let shareAction = pendingShareAction
+
+        if shareAction != nil {
+            // Save session snapshot for sharing after endSession clears it
+            savedSessionForSharing = sessionViewModel.currentSession
+        }
+
         if let session = sessionViewModel.currentSession {
             workoutViewModel.markScheduledWorkoutsCompleted(
                 workoutId: session.workoutId,
@@ -717,14 +790,30 @@ struct ActiveSessionView: View {
                 sessionDate: session.date
             )
         }
+
         sessionViewModel.endSession(feeling: pendingFeeling, notes: pendingNotes)
 
         // Clear pending state
         pendingFeeling = nil
         pendingNotes = nil
         pendingStructuralChanges = []
+        pendingShareAction = nil
 
-        dismiss()
+        if let shareAction {
+            // Trigger the appropriate share sheet after a short delay for sheet dismissal
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                switch shareAction {
+                case .postToFeed:
+                    showPostFeedAfterReview = true
+                case .shareWithFriend:
+                    showShareFriendAfterReview = true
+                case .shareVia:
+                    showShareViaAfterReview = true
+                }
+            }
+        } else {
+            dismiss()
+        }
     }
 
     // MARK: - Add Exercise to Module
@@ -1040,6 +1129,36 @@ private struct ProgressionInfoCard: View {
                         .stroke(AppColors.dominant.opacity(0.2), lineWidth: 1)
                 )
         )
+    }
+}
+
+// MARK: - Share Via Activity Sheet
+
+private struct ShareViaActivitySheet: UIViewControllerRepresentable {
+    let session: Session
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let text = generateShareText()
+        return UIActivityViewController(activityItems: [text], applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+
+    private func generateShareText() -> String {
+        let duration = session.duration ?? 0
+        let hours = duration / 60
+        let minutes = duration % 60
+        let durationStr = hours > 0 ? "\(hours)h \(minutes)m" : "\(minutes)m"
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, MMM d"
+        let dateStr = formatter.string(from: session.date)
+
+        var text = "\(session.workoutName)\n"
+        text += "\(dateStr) · \(durationStr)\n\n"
+        text += "\(session.totalSetsCompleted) sets · "
+        text += "\(session.totalExercisesCompleted) exercises\n"
+        return text
     }
 }
 

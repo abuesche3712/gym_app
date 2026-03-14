@@ -106,17 +106,23 @@ struct SettingsView: View {
 
                     // About Section (triple-tap "About" title to access debug logs)
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("ABOUT")
-                            .caption(color: AppColors.textTertiary)
-                            .fontWeight(.semibold)
-                            .padding(.leading, AppSpacing.xs)
-                            .onTapGesture(count: 3) {
-                                showingSyncLogs = true
+                        Group {
+                            if AppConfig.showDebugUI {
+                                Text("ABOUT")
+                                    .onTapGesture(count: 3) {
+                                        showingSyncLogs = true
+                                    }
+                            } else {
+                                Text("ABOUT")
                             }
+                        }
+                        .caption(color: AppColors.textTertiary)
+                        .fontWeight(.semibold)
+                        .padding(.leading, AppSpacing.xs)
 
                         VStack(spacing: 0) {
                             SettingsRow(icon: "info.circle", title: "Version") {
-                                Text("1.0.0 MVP")
+                                Text("1.0.0")
                                     .subheadline(color: AppColors.textSecondary)
                             }
 
@@ -649,7 +655,7 @@ struct AboutView: View {
                             .displayMedium(color: AppColors.textPrimary)
                             .fontWeight(.bold)
 
-                        Text("Version 1.0.0 (MVP)")
+                        Text("Version 1.0.0")
                             .subheadline(color: AppColors.textSecondary)
                     }
 
@@ -669,7 +675,7 @@ struct AboutView: View {
                         VStack(alignment: .leading, spacing: AppSpacing.md) {
                             FeatureRow(icon: "square.stack.3d.up", text: "Modular workout design")
                             FeatureRow(icon: "timer", text: "Built-in rest timer")
-                            FeatureRow(icon: "icloud", text: "Cloud sync (coming soon)")
+                            FeatureRow(icon: "icloud", text: "Cloud sync across devices")
                             FeatureRow(icon: "chart.line.uptrend.xyaxis", text: "Progress tracking")
                         }
                     }

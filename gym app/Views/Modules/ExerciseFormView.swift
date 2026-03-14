@@ -698,7 +698,16 @@ struct ExerciseFormView: View {
             var newSetGroups: [CompletedSetGroup] = []
             for setGroup in setGroups {
                 var sets: [SetData] = []
-                let wasUnilateral = setGroup.isUnilateral
+                // Infer prior unilateral state from actual SetData.side values,
+                // not setGroup.isUnilateral which is always false (tracked at exercise level)
+                let wasUnilateral: Bool
+                if let allSets = allSetsMap[setGroup.id], !allSets.isEmpty {
+                    wasUnilateral = allSets.contains { $0.side != nil }
+                } else if let completedSets = completedSetsMap[setGroup.id], !completedSets.isEmpty {
+                    wasUnilateral = completedSets.contains { $0.side != nil }
+                } else {
+                    wasUnilateral = false
+                }
                 let nowUnilateral = isUnilateral
 
                 // Check if we have preserved all sets from history editing
