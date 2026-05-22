@@ -363,10 +363,29 @@ struct MobilityInputs: View {
 // MARK: - Explosive Inputs
 
 struct ExplosiveInputs: View {
+    let flatSet: FlatSet
+    let exercise: SessionExercise
+
     @Binding var inputReps: String
     @Binding var inputHeight: String
+    @Binding var inputRPE: String
+    @Binding var inputMeasurableValues: [String: String]
 
     var focusedField: FocusState<SetRowFieldType?>.Binding
+
+    private var hasHeightMeasurable: Bool {
+        flatSet.implementMeasurables.contains {
+            $0.measurableName.lowercased().contains("height")
+        }
+    }
+
+    private var filteredImplementMeasurables: [ImplementMeasurableTarget] {
+        flatSet.implementMeasurables
+    }
+
+    private var showLegacyHeightInput: Bool {
+        !hasHeightMeasurable && (exercise.usesBox || flatSet.setData.height != nil)
+    }
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
@@ -389,25 +408,83 @@ struct ExplosiveInputs: View {
             }
             .fixedSize(horizontal: true, vertical: false)
 
-            // Height input box
-            VStack(spacing: 4) {
-                TextField("0", text: $inputHeight)
-                    .keyboardType(.decimalPad)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(AppColors.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .frame(width: 44)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 6)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
-                    .focused(focusedField, equals: .height)
-
-                Text("in")
-                    .caption2(color: AppColors.textTertiary)
-                    .fontWeight(.medium)
+            ForEach(filteredImplementMeasurables) { measurable in
+                measurableInputField(measurable: measurable)
             }
-            .fixedSize(horizontal: true, vertical: false)
+
+            if showLegacyHeightInput {
+                VStack(spacing: 4) {
+                    TextField("0", text: $inputHeight)
+                        .keyboardType(.decimalPad)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .frame(width: 44)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 6)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                        .focused(focusedField, equals: .height)
+
+                    Text("in")
+                        .caption2(color: AppColors.textTertiary)
+                        .fontWeight(.medium)
+                }
+                .fixedSize(horizontal: true, vertical: false)
+            }
+
+            if flatSet.trackRPE {
+                VStack(spacing: 4) {
+                    TextField("-", text: $inputRPE)
+                        .keyboardType(.numberPad)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .frame(width: 36)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 6)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                        .focused(focusedField, equals: .rpe)
+                        .onChange(of: inputRPE) { _, newValue in
+                            if let rpe = Int(newValue), rpe > 10 {
+                                inputRPE = "10"
+                            }
+                        }
+
+                    Text("RPE")
+                        .caption2(color: AppColors.textTertiary)
+                        .fontWeight(.medium)
+                }
+                .fixedSize(horizontal: true, vertical: false)
+            }
         }
+    }
+
+    @ViewBuilder
+    private func measurableInputField(measurable: ImplementMeasurableTarget) -> some View {
+        let measurableKey = measurableStorageKey(for: measurable)
+        VStack(spacing: 4) {
+            TextField(measurable.isStringBased ? measurable.measurableName : "0", text: Binding(
+                get: { inputMeasurableValues[measurableKey] ?? "" },
+                set: { inputMeasurableValues[measurableKey] = $0 }
+            ))
+            .keyboardType(measurable.isStringBased ? .default : .decimalPad)
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundColor(AppColors.textPrimary)
+            .multilineTextAlignment(.center)
+            .frame(width: measurable.isStringBased ? 64 : 48)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 6)
+            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+
+            Text(measurable.unit.isEmpty ? measurable.measurableName : measurable.unit)
+                .caption2(color: AppColors.textTertiary)
+                .fontWeight(.medium)
+        }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private func measurableStorageKey(for measurable: ImplementMeasurableTarget) -> String {
+        "\(measurable.implementId.uuidString)|\(measurable.measurableName)"
     }
 }
 

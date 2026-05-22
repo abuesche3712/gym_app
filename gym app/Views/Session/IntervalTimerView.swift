@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import UIKit
+import UserNotifications
 
 enum IntervalPhase {
     case getReady
@@ -47,13 +49,13 @@ struct IntervalTimerView: View {
     @State private var secondsRemaining: Int = leadInDuration
     @State private var isPaused: Bool = false
     @State private var timer: Timer?
-    @State private var roundDurations: [Int] = []  // Actual work duration for each round
-    @State private var currentWorkElapsed: Int = 0  // Time spent in current work phase
 
-    // Background-safe timing
-    @State private var phaseStartTime: Date?
-    @State private var pausedTimeAccumulated: TimeInterval = 0
-    @State private var pauseStartTime: Date?
+    // Timeline-based tracking survives background/foreground transitions.
+    @State private var timelineAnchorTime: Date?
+    @State private var elapsedBeforeAnchor: TimeInterval = 0
+
+    // Local notification while app is backgrounded during work phase.
+    @State private var workEndNotificationId: String?
 
     @Environment(\.dismiss) private var dismiss
 
@@ -82,6 +84,9 @@ struct IntervalTimerView: View {
 
                     Text(exerciseName)
                         .headline(color: AppColors.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .truncationMode(.tail)
 
                     Spacer()
 
@@ -116,6 +121,13 @@ struct IntervalTimerView: View {
         .onDisappear {
             stopTimer()
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+            scheduleBackgroundWorkEndNotificationIfNeeded()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            cancelWorkEndNotification()
+            updateFromTimeline()
+        }
     }
 
     // MARK: - Timer View
@@ -140,6 +152,9 @@ struct IntervalTimerView: View {
                     .displaySmall(color: AppColors.textSecondary)
                     .fontWeight(.medium)
                     .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                    .padding(.horizontal, AppSpacing.lg)
             } else {
                 // Round indicator
                 HStack(spacing: AppSpacing.sm) {
@@ -157,9 +172,9 @@ struct IntervalTimerView: View {
 
                 // Progress info
                 VStack(spacing: 4) {
-                    let totalTime = (workDuration + restDuration) * rounds - restDuration
+                    let totalTime = totalTimelineDuration()
                     let elapsed = elapsedTime()
-                    Text("Total: \(formatTime(totalTime - elapsed)) remaining")
+                    Text("Total: \(formatTime(max(0, totalTime - elapsed))) remaining")
                         .subheadline(color: AppColors.textTertiary)
                 }
             }
@@ -186,7 +201,7 @@ struct IntervalTimerView: View {
                 .displaySmall(color: AppColors.textSecondary)
 
             Button {
-                onComplete(roundDurations)
+                onComplete(completedWorkDurations())
                 dismiss()
             } label: {
                 Text("Done")
@@ -210,11 +225,7 @@ struct IntervalTimerView: View {
             // Stop button
             Button {
                 stopTimer()
-                // Log partial progress
-                if phase == .work && currentWorkElapsed > 0 {
-                    roundDurations.append(currentWorkElapsed)
-                }
-                onComplete(roundDurations)
+                onComplete(loggedWorkDurationsForStop())
                 dismiss()
             } label: {
                 VStack(spacing: 4) {
@@ -273,157 +284,232 @@ struct IntervalTimerView: View {
     // MARK: - Timer Logic
 
     private func startTimer() {
-        phaseStartTime = Date()
-        pausedTimeAccumulated = 0
+        timelineAnchorTime = Date()
+        elapsedBeforeAnchor = 0
+        isPaused = false
 
-        updateFromStartTime()
+        updateFromTimeline()
 
-        // Create timer with faster interval for smooth visual updates
-        // Using 0.25s interval prevents frame skipping while staying battery-efficient
+        // Create timer with faster interval for smooth visual updates.
         let newTimer = Timer(timeInterval: 0.25, repeats: true) { [self] _ in
             guard !self.isPaused else { return }
-            self.updateFromStartTime()
+            self.updateFromTimeline()
         }
-        // Set small tolerance for smoother updates
         newTimer.tolerance = 0.02  // 20ms tolerance
-        // Add to common mode so timer continues during UI interactions
         RunLoop.current.add(newTimer, forMode: .common)
         timer = newTimer
 
-        // Listen for foreground to update timer
-        NotificationCenter.default.addObserver(
-            forName: UIApplication.willEnterForegroundNotification,
-            object: nil,
-            queue: .main
-        ) { _ in
-            updateFromStartTime()
-        }
+        scheduleBackgroundWorkEndNotificationIfNeeded()
     }
 
     private func stopTimer() {
         timer?.invalidate()
         timer = nil
-        NotificationCenter.default.removeObserver(self, name: UIApplication.willEnterForegroundNotification, object: nil)
+        cancelWorkEndNotification()
     }
 
     private func togglePause() {
         if isPaused {
-            // Resuming - add paused time to accumulated
-            if let pauseStart = pauseStartTime {
-                pausedTimeAccumulated += Date().timeIntervalSince(pauseStart)
-            }
-            pauseStartTime = nil
-        } else {
-            // Pausing - record when pause started
-            pauseStartTime = Date()
+            timelineAnchorTime = Date()
+            isPaused = false
+            scheduleBackgroundWorkEndNotificationIfNeeded()
+        } else if let anchor = timelineAnchorTime {
+            elapsedBeforeAnchor += Date().timeIntervalSince(anchor)
+            timelineAnchorTime = nil
+            isPaused = true
+            cancelWorkEndNotification()
         }
-        isPaused.toggle()
 
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
+        updateFromTimeline()
     }
 
-    private func updateFromStartTime() {
-        guard let startTime = phaseStartTime else { return }
+    private func updateFromTimeline() {
+        let previousPhase = phase
+        let previousRound = currentRound
+        let previousSecondsRemaining = secondsRemaining
 
-        // Calculate total paused time including current pause
-        var totalPaused = pausedTimeAccumulated
-        if isPaused, let pauseStart = pauseStartTime {
-            totalPaused += Date().timeIntervalSince(pauseStart)
-        }
+        let elapsed = currentElapsedSeconds()
+        let totalDuration = totalTimelineDuration()
 
-        let elapsed = Int(Date().timeIntervalSince(startTime) - totalPaused)
-        let phaseDuration: Int
-        switch phase {
-        case .getReady:
-            phaseDuration = leadInDuration
-        case .work:
-            phaseDuration = workDuration
-        case .rest:
-            phaseDuration = restDuration
-        case .complete:
-            phaseDuration = 0
-        }
-        let remaining = phaseDuration - elapsed
-
-        if phase == .work {
-            currentWorkElapsed = elapsed
-        }
-
-        if remaining > 0 {
-            // Countdown beeps for last 3 seconds (except during getReady)
-            if phase != .getReady && remaining <= 3 && secondsRemaining != remaining {
-                HapticManager.shared.countdownBeep()
-            }
-            secondsRemaining = remaining
+        if elapsed >= totalDuration {
+            phase = .complete
+            currentRound = rounds
+            secondsRemaining = 0
+        } else if elapsed < leadInDuration {
+            phase = .getReady
+            currentRound = 1
+            secondsRemaining = max(0, leadInDuration - elapsed)
         } else {
-            transitionPhase()
-        }
-    }
+            let workoutElapsed = elapsed - leadInDuration
+            let cycleDuration = workDuration + restDuration
+            let zeroBasedRound = min(workoutElapsed / cycleDuration, rounds - 1)
+            let elapsedInRound = workoutElapsed - (zeroBasedRound * cycleDuration)
 
-    private func transitionPhase() {
-        switch phase {
-        case .getReady:
-            // Lead-in complete, start first work interval
-            phase = .work
-            secondsRemaining = workDuration
-            phaseStartTime = Date()
-            pausedTimeAccumulated = 0
-            // Sound + haptic for work phase start
-            HapticManager.shared.phaseTransition(isWorkPhase: true)
-
-        case .work:
-            // Save work duration for this round
-            roundDurations.append(currentWorkElapsed)
-            currentWorkElapsed = 0
-
-            if currentRound < rounds {
-                // Go to rest
-                phase = .rest
-                secondsRemaining = restDuration
-                // Reset timing for new phase
-                phaseStartTime = Date()
-                pausedTimeAccumulated = 0
-                // Sound + haptic for rest phase
-                HapticManager.shared.phaseTransition(isWorkPhase: false)
+            currentRound = zeroBasedRound + 1
+            if elapsedInRound < workDuration {
+                phase = .work
+                secondsRemaining = max(0, workDuration - elapsedInRound)
             } else {
-                // Last round complete
-                phase = .complete
-                // Final completion sound
-                HapticManager.shared.timerComplete()
-                stopTimer()
+                phase = .rest
+                secondsRemaining = max(0, restDuration - (elapsedInRound - workDuration))
             }
+        }
+
+        // Countdown beeps for last 3 seconds (except get ready).
+        if phase != .getReady && phase != .complete && secondsRemaining <= 3 && previousSecondsRemaining != secondsRemaining {
+            HapticManager.shared.countdownBeep()
+        }
+
+        guard phase != previousPhase || currentRound != previousRound else { return }
+
+        switch phase {
+        case .work:
+            HapticManager.shared.phaseTransition(isWorkPhase: true)
+            scheduleBackgroundWorkEndNotificationIfNeeded()
 
         case .rest:
-            // Go to next work round
-            currentRound += 1
-            phase = .work
-            secondsRemaining = workDuration
-            // Reset timing for new phase
-            phaseStartTime = Date()
-            pausedTimeAccumulated = 0
-            // Sound + haptic for work phase start
-            HapticManager.shared.phaseTransition(isWorkPhase: true)
+            HapticManager.shared.phaseTransition(isWorkPhase: false)
+            cancelWorkEndNotification()
 
         case .complete:
-            break
+            HapticManager.shared.timerComplete()
+            stopTimer()
+
+        case .getReady:
+            cancelWorkEndNotification()
         }
     }
 
     private func skipPhase() {
-        // Haptic
+        guard phase != .complete else { return }
+
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
 
-        if phase == .work {
-            // Log partial work time
-            roundDurations.append(currentWorkElapsed)
-            currentWorkElapsed = 0
-        }
-        // For getReady phase, just skip to work without logging anything
+        let elapsed = currentElapsedSeconds()
+        let targetElapsed: Int
 
-        secondsRemaining = 0
-        transitionPhase()
+        switch phase {
+        case .getReady:
+            targetElapsed = leadInDuration
+        case .work:
+            targetElapsed = workEndElapsed(for: currentRound)
+        case .rest:
+            targetElapsed = restEndElapsed(for: currentRound)
+        case .complete:
+            targetElapsed = elapsed
+        }
+
+        if targetElapsed > elapsed {
+            seekToElapsedSeconds(targetElapsed)
+        }
+        updateFromTimeline()
+    }
+
+    // MARK: - Timing Helpers
+
+    private func currentElapsedSeconds() -> Int {
+        if isPaused || timelineAnchorTime == nil {
+            return max(0, Int(elapsedBeforeAnchor))
+        }
+
+        guard let anchor = timelineAnchorTime else {
+            return max(0, Int(elapsedBeforeAnchor))
+        }
+
+        return max(0, Int(elapsedBeforeAnchor + Date().timeIntervalSince(anchor)))
+    }
+
+    private func seekToElapsedSeconds(_ elapsed: Int) {
+        elapsedBeforeAnchor = TimeInterval(max(0, elapsed))
+        if !isPaused {
+            timelineAnchorTime = Date()
+        }
+        scheduleBackgroundWorkEndNotificationIfNeeded()
+    }
+
+    private func totalTimelineDuration() -> Int {
+        leadInDuration + (workDuration * rounds) + (restDuration * max(0, rounds - 1))
+    }
+
+    private func workStartElapsed(for round: Int) -> Int {
+        leadInDuration + ((round - 1) * (workDuration + restDuration))
+    }
+
+    private func workEndElapsed(for round: Int) -> Int {
+        workStartElapsed(for: round) + workDuration
+    }
+
+    private func restEndElapsed(for round: Int) -> Int {
+        workStartElapsed(for: round) + workDuration + restDuration
+    }
+
+    private func completedWorkDurations() -> [Int] {
+        Array(repeating: workDuration, count: rounds)
+    }
+
+    private func loggedWorkDurationsForStop() -> [Int] {
+        let elapsed = currentElapsedSeconds()
+        var durations: [Int] = []
+
+        for round in 1...rounds {
+            let start = workStartElapsed(for: round)
+            let end = workEndElapsed(for: round)
+
+            if elapsed >= end {
+                durations.append(workDuration)
+                continue
+            }
+
+            if elapsed > start {
+                durations.append(elapsed - start)
+            }
+            break
+        }
+
+        return durations
+    }
+
+    // MARK: - Background Notification
+
+    private func scheduleBackgroundWorkEndNotificationIfNeeded() {
+        guard UIApplication.shared.applicationState != .active else {
+            cancelWorkEndNotification()
+            return
+        }
+        guard !isPaused, phase == .work, secondsRemaining > 0 else {
+            cancelWorkEndNotification()
+            return
+        }
+
+        cancelWorkEndNotification()
+
+        let content = UNMutableNotificationContent()
+        content.title = "Work Interval Complete"
+        content.body = "\(exerciseName): Round \(currentRound) work finished."
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(
+            timeInterval: TimeInterval(secondsRemaining),
+            repeats: false
+        )
+        let identifier = "interval-work-end-\(UUID().uuidString)"
+        workEndNotificationId = identifier
+
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                Logger.error(error, context: "Failed to schedule interval work-end notification")
+            }
+        }
+    }
+
+    private func cancelWorkEndNotification() {
+        guard let identifier = workEndNotificationId else { return }
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [identifier])
+        workEndNotificationId = nil
     }
 
     // MARK: - Helpers
@@ -439,22 +525,7 @@ struct IntervalTimerView: View {
     }
 
     private func elapsedTime() -> Int {
-        // Calculate total elapsed time
-        var elapsed = 0
-
-        // Completed rounds
-        for _ in 0..<(currentRound - 1) {
-            elapsed += workDuration + restDuration
-        }
-
-        // Current round progress
-        if phase == .work {
-            elapsed += workDuration - secondsRemaining
-        } else if phase == .rest {
-            elapsed += workDuration + (restDuration - secondsRemaining)
-        }
-
-        return elapsed
+        min(totalTimelineDuration(), currentElapsedSeconds())
     }
 }
 

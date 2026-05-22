@@ -458,7 +458,7 @@ struct SetGroupFormView: View {
         }
 
         // Equipment-Specific Attributes (automatically shown based on selected equipment)
-        if !implementSpecificMeasurables.isEmpty && exerciseType == .strength {
+        if !implementSpecificMeasurables.isEmpty && (exerciseType == .strength || exerciseType == .explosive) {
             equipmentAttributesSection
         }
 
@@ -662,6 +662,29 @@ struct SetGroupFormView: View {
             styledRow(icon: "number", label: "Reps") {
                 Stepper("\(targetReps)", value: $targetReps, in: 1...20)
                     .fixedSize()
+            }
+
+            FormDivider()
+
+            styledRow(icon: "gauge.with.dots.needle.67percent", label: "Track RPE") {
+                Toggle("", isOn: $trackRPE)
+                    .labelsHidden()
+                    .tint(AppColors.dominant)
+            }
+
+            if trackRPE {
+                FormDivider()
+
+                styledRow(icon: "target", label: "Target RPE") {
+                    Picker("", selection: $targetRPE) {
+                        Text("None").tag(0)
+                        ForEach(5...10, id: \.self) { rpe in
+                            Text("\(rpe)").tag(rpe)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(AppColors.textPrimary)
+                }
             }
 
         case .recovery:

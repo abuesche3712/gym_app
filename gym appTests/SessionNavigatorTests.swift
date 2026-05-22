@@ -542,6 +542,106 @@ final class SessionNavigatorTests: XCTestCase {
         XCTAssertEqual(navigator.currentSet?.setNumber, 1)
     }
 
+    // MARK: - Live Set Defaulting Tests
+
+    func testFlatSetMatchesPreviousAMRAPGroupInsteadOfFirstCompletedSet() {
+        let prescribedGroupId = UUID()
+        let amrapGroupId = UUID()
+
+        let prescribedSet = SetData(setNumber: 1, weight: 95, reps: 5, completed: false)
+        let amrapSet = SetData(setNumber: 1, weight: 205, completed: false)
+        let currentExercise = SessionExercise(
+            exerciseId: UUID(),
+            exerciseName: "Bench Press",
+            exerciseType: .strength,
+            completedSetGroups: [
+                CompletedSetGroup(setGroupId: prescribedGroupId, sets: [prescribedSet]),
+                CompletedSetGroup(setGroupId: amrapGroupId, sets: [amrapSet], isAMRAP: true)
+            ]
+        )
+
+        let lastSessionExercise = SessionExercise(
+            exerciseId: UUID(),
+            exerciseName: "Bench Press",
+            exerciseType: .strength,
+            completedSetGroups: [
+                CompletedSetGroup(
+                    setGroupId: prescribedGroupId,
+                    sets: [SetData(setNumber: 1, weight: 100, reps: 5, completed: true)]
+                ),
+                CompletedSetGroup(
+                    setGroupId: amrapGroupId,
+                    sets: [SetData(setNumber: 1, weight: 215, reps: 8, completed: true)],
+                    isAMRAP: true
+                )
+            ]
+        )
+
+        let prescribedFlatSet = FlatSet(
+            id: "prescribed",
+            setGroupIndex: 0,
+            setIndex: 0,
+            setNumber: 1,
+            setData: prescribedSet
+        )
+        let amrapFlatSet = FlatSet(
+            id: "amrap",
+            setGroupIndex: 1,
+            setIndex: 0,
+            setNumber: 2,
+            setData: amrapSet,
+            isAMRAP: true
+        )
+
+        XCTAssertEqual(
+            prescribedFlatSet.lastCompletedMatchingSet(
+                in: lastSessionExercise,
+                currentExercise: currentExercise
+            )?.weight,
+            100
+        )
+        XCTAssertEqual(
+            amrapFlatSet.lastCompletedMatchingSet(
+                in: lastSessionExercise,
+                currentExercise: currentExercise
+            )?.weight,
+            215
+        )
+    }
+
+    func testFlatSetAppliesMixedModeSuggestionOnlyToAMRAPRows() {
+        let prescribedSet = SetData(setNumber: 1, weight: 95, reps: 5, completed: false)
+        let amrapSet = SetData(setNumber: 1, weight: 205, completed: false)
+        let exercise = SessionExercise(
+            exerciseId: UUID(),
+            exerciseName: "Bench Press",
+            exerciseType: .strength,
+            completedSetGroups: [
+                CompletedSetGroup(setGroupId: UUID(), sets: [prescribedSet]),
+                CompletedSetGroup(setGroupId: UUID(), sets: [amrapSet], isAMRAP: true)
+            ]
+        )
+
+        let prescribedFlatSet = FlatSet(
+            id: "prescribed",
+            setGroupIndex: 0,
+            setIndex: 0,
+            setNumber: 1,
+            setData: prescribedSet
+        )
+        let amrapFlatSet = FlatSet(
+            id: "amrap",
+            setGroupIndex: 1,
+            setIndex: 0,
+            setNumber: 2,
+            setData: amrapSet,
+            isAMRAP: true
+        )
+
+        XCTAssertFalse(prescribedFlatSet.shouldApplyProgressionSuggestion(in: exercise))
+        XCTAssertTrue(amrapFlatSet.shouldApplyProgressionSuggestion(in: exercise))
+    }
+
     // MARK: - Edge Cases
 
     func testModuleWithNoExercises() {

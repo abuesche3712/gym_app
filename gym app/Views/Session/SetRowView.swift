@@ -23,6 +23,8 @@ struct EditableSetSummaryRow: View {
             Text(summary)
                 .subheadline(color: summaryColor)
                 .fontWeight(.medium)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
 
             Spacer(minLength: 0)
 
@@ -86,6 +88,21 @@ struct SetRowView: View {
     // Fingerprint of target values - used to detect when exercise targets change via edit sheet
     private var targetFingerprint: String {
         "\(flatSet.targetWeight ?? 0)-\(flatSet.targetReps ?? 0)-\(flatSet.targetDuration ?? 0)-\(flatSet.targetHoldTime ?? 0)-\(flatSet.targetDistance ?? 0)-\(exercise.exerciseType.rawValue)-\(exercise.cardioMetric.rawValue)-\(exercise.mobilityTracking.rawValue)"
+    }
+
+    private var shouldTrackRPE: Bool {
+        flatSet.trackRPE && (exercise.exerciseType == .strength || exercise.exerciseType == .explosive)
+    }
+
+    private var shouldPersistLegacyHeight: Bool {
+        if exercise.exerciseType == .strength {
+            return exercise.usesBox
+        }
+        guard exercise.exerciseType == .explosive else { return false }
+        let hasHeightMeasurable = flatSet.implementMeasurables.contains {
+            $0.measurableName.lowercased().contains("height")
+        }
+        return !hasHeightMeasurable && (exercise.usesBox || flatSet.setData.height != nil)
     }
 
     var body: some View {
@@ -314,8 +331,12 @@ struct SetRowView: View {
             )
         case .explosive:
             ExplosiveInputs(
+                flatSet: flatSet,
+                exercise: exercise,
                 inputReps: $inputReps,
                 inputHeight: $inputHeight,
+                inputRPE: $inputRPE,
+                inputMeasurableValues: $inputMeasurableValues,
                 focusedField: $focusedField
             )
         case .mobility:
@@ -349,7 +370,12 @@ struct SetRowView: View {
             HapticManager.shared.setCompleted()
 
             let rpeValue = Int(inputRPE)
-            let validRPE = rpeValue.flatMap { $0 >= 1 && $0 <= 10 ? $0 : nil }
+            let validRPE: Int?
+            if shouldTrackRPE {
+                validRPE = rpeValue.flatMap { $0 >= 1 && $0 <= 10 ? $0 : nil }
+            } else {
+                validRPE = nil
+            }
 
             let durationToSave: Int?
             if exercise.exerciseType == .cardio || exercise.exerciseType == .recovery {
@@ -361,6 +387,7 @@ struct SetRowView: View {
             let hasStringMeasurable = exercise.implementStringMeasurable != nil
             let weightToSave = hasStringMeasurable ? nil : Double(inputWeight)
             let bandColorToSave = hasStringMeasurable && !inputBandColor.isEmpty ? inputBandColor : nil
+            let heightToSave = shouldPersistLegacyHeight ? Double(inputHeight) : nil
 
             onLog(
                 weightToSave,
@@ -369,7 +396,7 @@ struct SetRowView: View {
                 durationToSave,
                 inputHoldTime > 0 ? inputHoldTime : nil,
                 Double(inputDistance),
-                Double(inputHeight),
+                heightToSave,
                 inputIntensity > 0 ? inputIntensity : nil,
                 Int(inputTemperature),
                 bandColorToSave,
@@ -498,6 +525,9 @@ struct SetRowView: View {
             if let height = set.height {
                 parts.append("@ \(formatHeight(height))")
             }
+            if shouldTrackRPE, let rpe = set.rpe {
+                parts.append("@ RPE \(rpe)")
+            }
             mainSummary = parts.isEmpty ? "Completed" : parts.joined(separator: " ")
         case .mobility:
             var parts: [String] = []
@@ -567,9 +597,13 @@ struct SetRowView: View {
     private func loadDefaults() {
         let setData = flatSet.setData
 
-        let lastSessionSet = lastSessionExercise?.completedSetGroups
-            .flatMap { $0.sets }
-            .first { $0.completed }
+        let lastSessionSet = flatSet.lastCompletedMatchingSet(
+            in: lastSessionExercise,
+            currentExercise: exercise
+        )
+        let applicableSuggestion = flatSet.shouldApplyProgressionSuggestion(in: exercise)
+            ? exercise.progressionSuggestion
+            : nil
 
         let lastWeight = lastSessionSet?.weight
         let lastReps = lastSessionSet?.reps
@@ -596,13 +630,13 @@ struct SetRowView: View {
             inputHoldTime = setData.holdTime ?? flatSet.targetHoldTime ?? 0
             inputDistance = setData.distance.map { formatDistanceValue($0) } ?? flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
         } else {
-            if flatSet.isAMRAP {
+            if flatSet.isAMRAP && applicableSuggestion == nil {
                 inputWeight = lastWeight.map { formatWeight($0) }
                     ?? flatSet.targetWeight.map { formatWeight($0) }
                     ?? ""
                 inputReps = lastReps.map { "\($0)" } ?? ""
             } else {
-                if let suggestion = exercise.progressionSuggestion {
+                if let suggestion = applicableSuggestion {
                     switch suggestion.metric {
                     case .weight:
                         let delta = max(suggestion.suggestedValue - suggestion.baseValue, 0)
@@ -719,7 +753,7 @@ struct SetRowView: View {
             }
         }
 
-        inputRPE = setData.rpe.map { "\($0)" } ?? ""
+        inputRPE = shouldTrackRPE ? (setData.rpe.map { "\($0)" } ?? "") : ""
         inputHeight = setData.height.map { formatHeightValue($0) }
             ?? lastHeight.map { formatHeightValue($0) }
             ?? ""

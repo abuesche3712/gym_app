@@ -473,6 +473,32 @@ struct UnilateralSideRow: View {
         "\(flatSet.targetWeight ?? 0)-\(flatSet.targetReps ?? 0)-\(flatSet.targetDuration ?? 0)-\(flatSet.targetHoldTime ?? 0)-\(flatSet.targetDistance ?? 0)-\(exercise.exerciseType.rawValue)-\(exercise.cardioMetric.rawValue)-\(exercise.mobilityTracking.rawValue)"
     }
 
+    private var shouldTrackRPE: Bool {
+        flatSet.trackRPE && (exercise.exerciseType == .strength || exercise.exerciseType == .explosive)
+    }
+
+    private var filteredExplosiveImplementMeasurables: [ImplementMeasurableTarget] {
+        flatSet.implementMeasurables
+    }
+
+    private var showLegacyExplosiveHeightInput: Bool {
+        guard exercise.exerciseType == .explosive else { return false }
+        let hasHeightMeasurable = flatSet.implementMeasurables.contains {
+            $0.measurableName.lowercased().contains("height")
+        }
+        return !hasHeightMeasurable && (exercise.usesBox || flatSet.setData.height != nil)
+    }
+
+    private var heightToSave: Double? {
+        if exercise.exerciseType == .strength {
+            return exercise.usesBox ? Double(inputHeight) : nil
+        }
+        if exercise.exerciseType == .explosive {
+            return showLegacyExplosiveHeightInput ? Double(inputHeight) : nil
+        }
+        return nil
+    }
+
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
             // Side indicator
@@ -569,10 +595,14 @@ struct UnilateralSideRow: View {
         let setData = flatSet.setData
         let hasLoggedValues = setData.weight != nil || setData.reps != nil || setData.duration != nil || setData.holdTime != nil || setData.distance != nil
 
-        // Extract last session data matching this side
-        let lastSessionSet = lastSessionExercise?.completedSetGroups
-            .flatMap { $0.sets }
-            .first { $0.completed && $0.side == side }
+        let lastSessionSet = flatSet.lastCompletedMatchingSet(
+            in: lastSessionExercise,
+            currentExercise: exercise,
+            side: side
+        )
+        let applicableSuggestion = flatSet.shouldApplyProgressionSuggestion(in: exercise)
+            ? exercise.progressionSuggestion
+            : nil
         let lastWeight = lastSessionSet?.weight
         let lastReps = lastSessionSet?.reps
         let lastDuration = lastSessionSet?.duration
@@ -603,7 +633,7 @@ struct UnilateralSideRow: View {
             inputHoldTime = setData.holdTime ?? flatSet.targetHoldTime ?? 0
             inputDistance = setData.distance.map { formatDistanceValue($0) } ?? flatSet.targetDistance.map { formatDistanceValue($0) } ?? ""
             inputBandColor = setData.bandColor ?? lastBandColor ?? ""
-        } else if let suggestion = exercise.progressionSuggestion {
+        } else if let suggestion = applicableSuggestion {
             switch suggestion.metric {
             case .weight:
                 let delta = max(suggestion.suggestedValue - suggestion.baseValue, 0)
@@ -704,7 +734,7 @@ struct UnilateralSideRow: View {
             inputBandColor = lastBandColor ?? ""
         }
 
-        if !hasLoggedValues && exercise.progressionSuggestion != nil {
+        if !hasLoggedValues && applicableSuggestion != nil {
             // Prefer template targets over last-session for remaining empty fields
             if inputReps.isEmpty {
                 inputReps = flatSet.targetReps.map { "\($0)" } ?? lastReps.map { "\($0)" } ?? ""
@@ -726,8 +756,8 @@ struct UnilateralSideRow: View {
             }
         }
 
-        if let rpe = setData.rpe { inputRPE = "\(rpe)" }
-        if let ht = setData.height { inputHeight = formatHeight(ht) }
+        if shouldTrackRPE, let rpe = setData.rpe { inputRPE = "\(rpe)" }
+        if let ht = setData.height { inputHeight = formatHeightValue(ht) }
         if let temp = setData.temperature { inputTemperature = "\(temp)" }
         if inputBandColor.isEmpty {
             inputBandColor = setData.bandColor ?? lastBandColor ?? ""
@@ -947,17 +977,38 @@ struct UnilateralSideRow: View {
                     .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
                 Text("reps")
                     .caption2(color: AppColors.textTertiary)
-                TextField("0", text: $inputHeight)
-                    .keyboardType(.decimalPad)
+
+                ForEach(filteredExplosiveImplementMeasurables, id: \.id) { measurable in
+                    let measurableKey = measurableStorageKey(for: measurable)
+                    TextField(measurable.isStringBased ? measurable.measurableName : "0", text: Binding(
+                        get: { inputMeasurableValues[measurableKey] ?? "" },
+                        set: { inputMeasurableValues[measurableKey] = $0 }
+                    ))
+                    .keyboardType(measurable.isStringBased ? .default : .decimalPad)
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
-                    .frame(width: 36)
+                    .frame(width: measurable.isStringBased ? 52 : 40)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 4)
                     .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
-                Text("in")
-                    .caption2(color: AppColors.textTertiary)
+                    Text(measurable.unit.isEmpty ? measurable.measurableName : measurable.unit)
+                        .caption2(color: AppColors.textTertiary)
+                }
+
+                if showLegacyExplosiveHeightInput {
+                    TextField("0", text: $inputHeight)
+                        .keyboardType(.decimalPad)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppColors.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .frame(width: 36)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 4)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    Text("in")
+                        .caption2(color: AppColors.textTertiary)
+                }
 
             case .mobility:
                 if exercise.mobilityTracking.tracksReps {
@@ -1048,7 +1099,7 @@ struct UnilateralSideRow: View {
                     .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
             }
 
-            if flatSet.trackRPE && (exercise.exerciseType == .strength || exercise.exerciseType == .explosive) {
+            if shouldTrackRPE {
                 TextField("-", text: $inputRPE)
                     .keyboardType(.numberPad)
                     .font(.system(size: 14, weight: .semibold))
@@ -1126,7 +1177,7 @@ struct UnilateralSideRow: View {
                 summary += " · " + measurableStrings.joined(separator: " · ")
             }
         }
-        if let rpe = set.rpe {
+        if shouldTrackRPE, let rpe = set.rpe {
             return summary + " @ RPE \(rpe)"
         }
         return summary
@@ -1135,8 +1186,13 @@ struct UnilateralSideRow: View {
     private func logSet() {
         let weight = Double(inputWeight)
         let reps = Int(inputReps)
-        let rpeValue = Int(inputRPE)
-        let validRPE = rpeValue.flatMap { $0 >= 1 && $0 <= 10 ? $0 : nil }
+        let validRPE: Int?
+        if shouldTrackRPE {
+            let rpeValue = Int(inputRPE)
+            validRPE = rpeValue.flatMap { $0 >= 1 && $0 <= 10 ? $0 : nil }
+        } else {
+            validRPE = nil
+        }
 
         // Stop timer if running for this set
         if timerRunning {
@@ -1164,7 +1220,7 @@ struct UnilateralSideRow: View {
             durationToSave,
             inputHoldTime > 0 ? inputHoldTime : nil,
             Double(inputDistance),
-            Double(inputHeight),
+            heightToSave,
             nil, // intensity
             Int(inputTemperature),
             inputBandColor.isEmpty ? nil : inputBandColor,
@@ -1224,6 +1280,8 @@ struct IntervalSetGroupRow: View {
 
                     Text("\(setGroup.rounds) rounds: \(formatDuration(setGroup.workDuration ?? 30)) on / \(formatDuration(setGroup.intervalRestDuration ?? 30)) off")
                         .caption(color: AppColors.textSecondary)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.85)
                 }
 
                 Spacer()
