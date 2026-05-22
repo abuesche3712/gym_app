@@ -141,6 +141,29 @@ struct SettingsView: View {
                                 .fill(AppColors.surfacePrimary)
                         )
                     }
+
+                    // Legal Section
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("LEGAL")
+                            .caption(color: AppColors.textTertiary)
+                            .fontWeight(.semibold)
+                            .padding(.leading, AppSpacing.xs)
+
+                        VStack(spacing: 0) {
+                            Link(destination: AppURLs.privacyPolicy) {
+                                SettingsRowLabel(icon: "hand.raised", title: "Privacy Policy")
+                            }
+
+                            Link(destination: AppURLs.termsOfService) {
+                                SettingsRowLabel(icon: "doc.text", title: "Terms of Service")
+                            }
+                        }
+                        .padding(.horizontal, AppSpacing.md)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppCorners.large)
+                                .fill(AppColors.surfacePrimary)
+                        )
+                    }
                 }
                 .padding(AppSpacing.screenPadding)
             }

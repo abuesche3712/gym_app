@@ -21,6 +21,7 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Save a conversation to Firestore
     func saveConversation(_ conversation: Conversation) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.conversations).document(conversation.id.uuidString)
         // Merge basic conversation fields without touching unread metadata.
         let data = encodeConversation(conversation)
@@ -60,6 +61,7 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Delete a conversation
     func deleteConversation(id: UUID) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.conversations).document(id.uuidString)
 
         try await deleteSubcollection(path: ref.collection(FirestoreCollections.messages))
@@ -71,6 +73,7 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Save a message to Firestore
     func saveMessage(_ message: Message) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.conversations)
             .document(message.conversationId.uuidString)
             .collection(FirestoreCollections.messages)
@@ -121,6 +124,7 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Soft-delete a message (marks as deleted, replaces content)
     func deleteMessage(conversationId: UUID, messageId: UUID) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.conversations)
             .document(conversationId.uuidString)
             .collection(FirestoreCollections.messages)
@@ -142,6 +146,7 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Mark a message as read
     func markMessageRead(conversationId: UUID, messageId: UUID, at date: Date = Date()) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.conversations)
             .document(conversationId.uuidString)
             .collection(FirestoreCollections.messages)
@@ -155,6 +160,7 @@ class FirestoreMessagingService: ObservableObject {
         recipientId: String,
         preview: String
     ) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.conversations).document(conversationId.uuidString)
         try await ref.updateData([
             "lastMessageAt": FieldValue.serverTimestamp(),
@@ -165,6 +171,7 @@ class FirestoreMessagingService: ObservableObject {
 
     /// Reset unread count for a user when they open a conversation
     func resetUnreadCount(conversationId: UUID, userId: String) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.conversations).document(conversationId.uuidString)
         try await ref.updateData([
             "unreadCounts.\(userId)": 0

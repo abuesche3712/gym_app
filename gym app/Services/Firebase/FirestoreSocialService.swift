@@ -159,6 +159,7 @@ class FirestoreSocialService: ObservableObject {
 
     /// Save a friendship to Firestore (global collection)
     func saveFriendship(_ friendship: Friendship) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.friendships).document(friendship.id.uuidString)
         let data = encodeFriendship(friendship)
         try await ref.setData(data, merge: true)
@@ -166,6 +167,7 @@ class FirestoreSocialService: ObservableObject {
 
     /// Delete a friendship from Firestore
     func deleteFriendship(id: UUID) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         try await core.db.collection(FirestoreCollections.friendships).document(id.uuidString).delete()
     }
 
@@ -174,6 +176,7 @@ class FirestoreSocialService: ObservableObject {
     /// Atomically add or remove a friendId from a user's profile friendIds array.
     /// Uses FieldValue.arrayUnion/arrayRemove for safe concurrent updates.
     func updateFriendIdsArray(userId: String, friendId: String, add: Bool) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.users).document(userId)
             .collection(FirestoreCollections.profile).document(FirestoreCollections.profileSettings)
         if add {
@@ -185,6 +188,7 @@ class FirestoreSocialService: ObservableObject {
 
     /// Set the full friendIds array on a user's profile (used for migration).
     func setFriendIdsArray(userId: String, friendIds: [String]) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.users).document(userId)
             .collection(FirestoreCollections.profile).document(FirestoreCollections.profileSettings)
         try await ref.updateData(["friendIds": friendIds])

@@ -77,6 +77,7 @@ class PresenceService: ObservableObject {
     // MARK: - Typing Indicators
 
     func setTypingStatus(conversationId: UUID, userId: String, isTyping: Bool) {
+        guard currentUserId != nil else { return }
         let ref = core.db.collection(FirestoreCollections.conversations)
             .document(conversationId.uuidString)
             .collection(FirestoreCollections.typing)

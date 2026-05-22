@@ -89,6 +89,13 @@ enum AppConfig {
     static let slowSaveThreshold: TimeInterval = 0.3
 }
 
+// MARK: - App URLs
+
+enum AppURLs {
+    static let privacyPolicy = URL(string: "https://YOURDOMAIN.com/privacy")!
+    static let termsOfService = URL(string: "https://YOURDOMAIN.com/terms")!
+}
+
 // MARK: - Startup Crash Detection
 
 /// Manages startup crash detection and recovery.

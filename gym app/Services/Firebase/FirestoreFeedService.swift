@@ -24,6 +24,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Save a post to the global posts collection
     func savePost(_ post: Post) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.posts).document(post.id.uuidString)
         let data = encodePost(post)
         try await ref.setData(data, merge: true)
@@ -188,6 +189,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Update an existing post
     func updatePost(_ post: Post) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.posts).document(post.id.uuidString)
         var data: [String: Any] = [
             "updatedAt": FieldValue.serverTimestamp()
@@ -210,6 +212,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Delete a post and associated likes/comments
     func deletePost(_ postId: UUID) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         try await core.db.collection(FirestoreCollections.posts).document(postId.uuidString).delete()
 
         let likesSnapshot = try await core.db.collection(FirestoreCollections.posts).document(postId.uuidString).collection(FirestoreCollections.likes).getDocuments()
@@ -229,6 +232,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Like a post with a reaction type
     func likePost(postId: UUID, userId: String, reactionType: ReactionType = .heart) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.posts).document(postId.uuidString).collection(FirestoreCollections.likes).document(userId)
 
         // Check if already liked
@@ -260,6 +264,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Unlike a post
     func unlikePost(postId: UUID, userId: String) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.posts).document(postId.uuidString).collection(FirestoreCollections.likes).document(userId)
 
         // Only decrement if the like actually exists
@@ -318,6 +323,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Add a comment to a post
     func addComment(_ comment: PostComment) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.posts).document(comment.postId.uuidString).collection(FirestoreCollections.comments).document(comment.id.uuidString)
         try await ref.setData(encodeComment(comment))
 
@@ -327,6 +333,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Update a comment's text
     func updateComment(_ comment: PostComment) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.posts).document(comment.postId.uuidString)
             .collection(FirestoreCollections.comments).document(comment.id.uuidString)
         try await ref.updateData([
@@ -337,6 +344,7 @@ class FirestoreFeedService: ObservableObject {
 
     /// Delete a comment
     func deleteComment(postId: UUID, commentId: UUID) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.posts).document(postId.uuidString).collection(FirestoreCollections.comments).document(commentId.uuidString)
         try await ref.delete()
 

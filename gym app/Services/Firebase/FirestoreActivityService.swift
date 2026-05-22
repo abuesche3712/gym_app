@@ -21,6 +21,7 @@ class FirestoreActivityService: ObservableObject {
 
     /// Create a new activity notification
     func createActivity(_ activity: Activity) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         // Don't create activity for self-actions
         guard activity.actorId != activity.recipientId else { return }
 
@@ -65,6 +66,7 @@ class FirestoreActivityService: ObservableObject {
 
     /// Mark a single activity as read
     func markAsRead(userId: String, activityId: UUID) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.users)
             .document(userId)
             .collection(FirestoreCollections.activities)
@@ -74,6 +76,7 @@ class FirestoreActivityService: ObservableObject {
 
     /// Mark all activities as read for a user
     func markAllAsRead(userId: String) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let snapshot = try await core.db.collection(FirestoreCollections.users)
             .document(userId)
             .collection(FirestoreCollections.activities)
@@ -102,6 +105,7 @@ class FirestoreActivityService: ObservableObject {
 
     /// Submit a report to the global reports collection
     func submitReport(_ report: Report) async throws {
+        guard core.isAuthenticated else { throw FirestoreError.notAuthenticated }
         let ref = core.db.collection(FirestoreCollections.reports).document(report.id.uuidString)
         let data: [String: Any] = [
             "id": report.id.uuidString,

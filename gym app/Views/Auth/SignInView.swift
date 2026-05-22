@@ -65,6 +65,13 @@ struct SignInView: View {
                     .subheadline(color: AppColors.textSecondary)
             }
 
+            // Legal links
+            Text(.init("By continuing, you agree to our [Terms of Service](\(AppURLs.termsOfService.absoluteString)) and [Privacy Policy](\(AppURLs.privacyPolicy.absoluteString))"))
+                .caption(color: AppColors.textTertiary)
+                .tint(AppColors.dominant)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+
             Spacer()
                 .frame(height: 40)
         }

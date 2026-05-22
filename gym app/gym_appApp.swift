@@ -70,13 +70,28 @@ struct gym_appApp: App {
                         Logger.debug("App launch: Not authenticated, skipping sync")
                     }
                 }
+                .onChange(of: authService.isAuthenticated) { wasAuthenticated, isAuthenticated in
+                    guard !wasAuthenticated, isAuthenticated, authService.isAuthStateReady else { return }
+                    // User just signed in during this session — sync local data to cloud
+                    Task {
+                        Logger.debug("Auth state changed: signed in, starting sync...")
+                        await dataRepository.syncFromCloud()
+                        await dataRepository.pushAllToCloud()
+                        PresenceService.shared.goOnline()
+                        await FirestoreService.shared.ensureUsernameClaimed()
+                        await PushNotificationService.shared.saveFCMToken()
+                        SyncManager.shared.startBackgroundSync()
+                    }
+                }
                 .onChange(of: scenePhase) { _, newPhase in
                     switch newPhase {
                     case .active:
+                        SyncManager.shared.appDidBecomeActive()
                         if authService.currentUser != nil {
                             PresenceService.shared.goOnline()
                         }
                     case .inactive, .background:
+                        SyncManager.shared.appWillResignActive()
                         if authService.currentUser != nil {
                             PresenceService.shared.goOffline()
                         }
