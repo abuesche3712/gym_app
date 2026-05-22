@@ -26,6 +26,7 @@
 		8D91368656994D20964FF8D1 /* gym app/Services/LibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F384AAD9014FF9A582680C /* gym app/Services/LibraryService.swift */; };
 		9245BCBAC81C4E3C9670553C /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C36DDB57BAA44FEF866BE090 /* AuthService.swift */; };
 		PRFCCH01BUILD01 /* ProfileCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRFCCH01FILE001 /* ProfileCacheService.swift */; };
+		PRVMAN02BUILD01 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = PRVMAN01FILE001 /* PrivacyInfo.xcprivacy */; };
 		A0B1C2D3E4F5067890123457 /* CustomExerciseLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0B1C2D3E4F5067890123456 /* CustomExerciseLibrary.swift */; };
 		REAUTH00000000000000000002 /* ReauthenticationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = REAUTH00000000000000000001 /* ReauthenticationView.swift */; };
 		AB8059E04FED4CAC94B1D5DB /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D9B5EAEA83B489586ACDC15 /* SignInView.swift */; };
@@ -386,6 +387,7 @@
 		BLDRSRR01FILE001 /* BuilderSearchResultRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuilderSearchResultRow.swift; sourceTree = "<group>"; };
 		C36DDB57BAA44FEF866BE090 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		PRFCCH01FILE001 /* ProfileCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileCacheService.swift; sourceTree = "<group>"; };
+		PRVMAN01FILE001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		C8C0101650AF44AEA8A6F8A1 /* EndSessionSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EndSessionSheet.swift; sourceTree = "<group>"; };
 		CAPTNINP01FILE001 /* CaptionInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionInputView.swift; sourceTree = "<group>"; };
 		CARDIN01FILE001 /* CardioInputsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CardioInputsView.swift; sourceTree = "<group>"; };
@@ -675,6 +677,7 @@
 				B610AC022F15B4DD008B2C15 /* gym_appApp.swift */,
 				B610AC042F15B4DD008B2C15 /* ContentView.swift */,
 				B610AC062F15B4DE008B2C15 /* Assets.xcassets */,
+				PRVMAN01FILE001 /* PrivacyInfo.xcprivacy */,
 				B610AC082F15B4DE008B2C15 /* Preview Content */,
 			);
 			path = "gym app";
@@ -1274,6 +1277,7 @@
 				B610AC0A2F15B4DE008B2C15 /* Preview Assets.xcassets in Resources */,
 				B610AC072F15B4DE008B2C15 /* Assets.xcassets in Resources */,
 				196485342F25516E00078F82 /* GoogleService-Info.plist in Resources */,
+				PRVMAN02BUILD01 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1743,6 +1747,8 @@
 				DEVELOPMENT_TEAM = 32458MUSUC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Gym uhh app";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take a photo for your profile picture";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Choose a photo for your profile picture";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -1775,6 +1781,8 @@
 				DEVELOPMENT_TEAM = 32458MUSUC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Gym uhh app";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take a photo for your profile picture";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Choose a photo for your profile picture";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

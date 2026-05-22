@@ -125,7 +125,7 @@ struct SettingsView: View {
 
                         VStack(spacing: 0) {
                             SettingsRow(icon: "info.circle", title: "Version") {
-                                Text("1.0.0")
+                                Text(appVersion)
                                     .subheadline(color: AppColors.textSecondary)
                             }
 
@@ -221,6 +221,10 @@ struct SettingsView: View {
                 Text("This will exit recovery mode and clear crash history. The app will start normally on next launch.")
             }
         }
+    }
+
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
     }
 
     // MARK: - Recovery Mode Section
