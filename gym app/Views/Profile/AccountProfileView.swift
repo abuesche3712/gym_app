@@ -66,6 +66,7 @@ struct AccountProfileView: View {
                 }
             }
             .padding(AppSpacing.screenPadding)
+            .padding(.bottom, 80)
         }
         .background(AppColors.background.ignoresSafeArea())
         .navigationTitle("Account")
