@@ -92,8 +92,8 @@ enum AppConfig {
 // MARK: - App URLs
 
 enum AppURLs {
-    static let privacyPolicy = URL(string: "https://YOURDOMAIN.com/privacy")!
-    static let termsOfService = URL(string: "https://YOURDOMAIN.com/terms")!
+    static let privacyPolicy = URL(string: "https://abuesche3712.github.io/gym_app/privacy.html")!
+    static let termsOfService = URL(string: "https://abuesche3712.github.io/gym_app/terms.html")!
 }
 
 // MARK: - Startup Crash Detection
