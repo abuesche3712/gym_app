@@ -29,6 +29,99 @@ enum ReportReason: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Content Moderation
+
+enum ContentModerationError: LocalizedError, Equatable {
+    case empty(field: String)
+    case tooLong(field: String, limit: Int)
+    case blocked(field: String)
+
+    var errorDescription: String? {
+        switch self {
+        case .empty(let field):
+            return "\(field) cannot be empty."
+        case .tooLong(let field, let limit):
+            return "\(field) must be \(limit) characters or fewer."
+        case .blocked:
+            return "This content cannot be posted. Edit it and try again."
+        }
+    }
+}
+
+enum ContentModerationService {
+    private static let blockedPhrases = [
+        "kill yourself",
+        "kys",
+        "nazi",
+        "white power",
+        "porn",
+        "onlyfans",
+        "buy followers",
+        "free crypto",
+        "cashapp",
+        "telegram me",
+        "whatsapp me"
+    ]
+
+    private static let blockedWords: Set<String> = [
+        "suicidebait",
+        "terrorist",
+        "scammer"
+    ]
+
+    static func validateUserText(
+        _ text: String,
+        fieldName: String,
+        maxLength: Int,
+        allowEmpty: Bool = false
+    ) throws -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if trimmed.isEmpty {
+            if allowEmpty { return "" }
+            throw ContentModerationError.empty(field: fieldName)
+        }
+
+        guard trimmed.count <= maxLength else {
+            throw ContentModerationError.tooLong(field: fieldName, limit: maxLength)
+        }
+
+        guard isAllowed(trimmed) else {
+            throw ContentModerationError.blocked(field: fieldName)
+        }
+
+        return trimmed
+    }
+
+    static func isAllowed(_ text: String) -> Bool {
+        let normalized = normalize(text)
+        guard !blockedPhrases.contains(where: { normalized.contains($0) }) else {
+            return false
+        }
+
+        let words = normalized.split(separator: " ").map(String.init)
+        return words.allSatisfy { !blockedWords.contains($0) }
+    }
+
+    private static func normalize(_ text: String) -> String {
+        let lowercased = text.lowercased()
+        var result = ""
+        var previousWasSpace = false
+
+        for scalar in lowercased.unicodeScalars {
+            if CharacterSet.alphanumerics.contains(scalar) {
+                result.unicodeScalars.append(scalar)
+                previousWasSpace = false
+            } else if !previousWasSpace {
+                result.append(" ")
+                previousWasSpace = true
+            }
+        }
+
+        return result.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
 // MARK: - Report Content Type
 
 enum ReportContentType: String, Codable {

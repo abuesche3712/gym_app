@@ -86,6 +86,16 @@ struct PostDetailView: View {
                     onImport: nil  // Posts are view-only from preview
                 )
             }
+            .alert("Unable to Post", isPresented: Binding(
+                get: { viewModel.error != nil },
+                set: { if !$0 { viewModel.error = nil } }
+            )) {
+                Button("OK") {
+                    viewModel.error = nil
+                }
+            } message: {
+                Text(viewModel.error?.localizedDescription ?? "Try again.")
+            }
         }
     }
 

@@ -180,7 +180,11 @@ class ChatViewModel: ObservableObject {
     // MARK: - Sending Messages
 
     func sendMessage(text: String) async throws {
-        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let sanitizedText = try ContentModerationService.validateUserText(
+            text,
+            fieldName: "Message",
+            maxLength: 2_000
+        )
         guard let senderId = currentUserId else {
             throw MessageError.notAuthenticated
         }
@@ -196,13 +200,13 @@ class ChatViewModel: ObservableObject {
         let message = messageRepo.sendMessage(
             conversationId: conversation.id,
             senderId: senderId,
-            content: .text(text.trimmingCharacters(in: .whitespacesAndNewlines))
+            content: .text(sanitizedText)
         )
 
         // Update conversation preview
         conversationRepo.updateLastMessage(
             conversation.id,
-            preview: text.trimmingCharacters(in: .whitespacesAndNewlines),
+            preview: sanitizedText,
             at: message.createdAt
         )
 
@@ -221,7 +225,7 @@ class ChatViewModel: ObservableObject {
             try await firestoreService.updateConversationOnNewMessage(
                 conversationId: conversation.id,
                 recipientId: otherParticipantFirebaseId,
-                preview: text.trimmingCharacters(in: .whitespacesAndNewlines)
+                preview: sanitizedText
             )
         } catch {
             Logger.error(error, context: "ChatViewModel.sendMessage")

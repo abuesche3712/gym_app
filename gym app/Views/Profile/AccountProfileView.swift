@@ -102,7 +102,7 @@ struct AccountProfileView: View {
                 }
             }
         } message: {
-            Text("This will permanently delete your account and all cloud data. Local data will remain on this device. This cannot be undone.")
+            Text("This will permanently delete your account, cloud data, and local data on this device. This cannot be undone.")
         }
         .alert("Deletion Failed", isPresented: $showingDeleteError) {
             Button("OK") { }

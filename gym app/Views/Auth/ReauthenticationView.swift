@@ -39,7 +39,7 @@ struct ReauthenticationView: View {
 
                 VStack(spacing: AppSpacing.md) {
                     SignInWithAppleButton(.signIn) { request in
-                        request.requestedScopes = [.fullName, .email]
+                        authService.prepareAppleSignInRequest(request)
                     } onCompletion: { result in
                         Task {
                             await handleReauthResult(result)

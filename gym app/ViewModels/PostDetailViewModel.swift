@@ -143,7 +143,19 @@ class PostDetailViewModel: ObservableObject {
     // MARK: - Actions
 
     func sendComment(text: String) async {
-        guard let userId = currentUserId, !text.isEmpty else { return }
+        guard let userId = currentUserId else { return }
+
+        let sanitizedText: String
+        do {
+            sanitizedText = try ContentModerationService.validateUserText(
+                text,
+                fieldName: "Comment",
+                maxLength: 500
+            )
+        } catch {
+            self.error = error
+            return
+        }
 
         isSendingComment = true
         defer { isSendingComment = false }
@@ -151,7 +163,7 @@ class PostDetailViewModel: ObservableObject {
         let comment = PostComment(
             postId: post.post.id,
             authorId: userId,
-            text: text
+            text: sanitizedText
         )
 
         do {
@@ -179,7 +191,7 @@ class PostDetailViewModel: ObservableObject {
                 actorId: userId,
                 type: .comment,
                 postId: post.post.id,
-                preview: String(text.prefix(50))
+                preview: String(sanitizedText.prefix(50))
             )
             try? await activityService.createActivity(activity)
 
@@ -190,7 +202,19 @@ class PostDetailViewModel: ObservableObject {
     }
 
     func sendReply(to parentComment: CommentWithAuthor, text: String) async {
-        guard let userId = currentUserId, !text.isEmpty else { return }
+        guard let userId = currentUserId else { return }
+
+        let sanitizedText: String
+        do {
+            sanitizedText = try ContentModerationService.validateUserText(
+                text,
+                fieldName: "Reply",
+                maxLength: 500
+            )
+        } catch {
+            self.error = error
+            return
+        }
 
         isSendingComment = true
         defer { isSendingComment = false }
@@ -198,7 +222,7 @@ class PostDetailViewModel: ObservableObject {
         let reply = PostComment(
             postId: post.post.id,
             authorId: userId,
-            text: text,
+            text: sanitizedText,
             parentCommentId: parentComment.comment.id
         )
 
@@ -227,7 +251,7 @@ class PostDetailViewModel: ObservableObject {
                 actorId: userId,
                 type: .comment,
                 postId: post.post.id,
-                preview: String(text.prefix(50))
+                preview: String(sanitizedText.prefix(50))
             )
             try? await activityService.createActivity(activity)
 
@@ -240,17 +264,29 @@ class PostDetailViewModel: ObservableObject {
     func updateComment(_ comment: CommentWithAuthor, newText: String) async {
         guard comment.comment.authorId == currentUserId else { return }
 
+        let sanitizedText: String
+        do {
+            sanitizedText = try ContentModerationService.validateUserText(
+                newText,
+                fieldName: "Comment",
+                maxLength: 500
+            )
+        } catch {
+            self.error = error
+            return
+        }
+
         // Optimistic update
         if let index = comments.firstIndex(where: { $0.id == comment.id }) {
             var updatedComment = comment.comment
-            updatedComment.text = newText
+            updatedComment.text = sanitizedText
             updatedComment.updatedAt = Date()
             comments[index] = CommentWithAuthor(comment: updatedComment, author: comment.author)
         }
 
         do {
             var updatedComment = comment.comment
-            updatedComment.text = newText
+            updatedComment.text = sanitizedText
             try await firestoreService.updateComment(updatedComment)
             HapticManager.shared.tap()
         } catch {

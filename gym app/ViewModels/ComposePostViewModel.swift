@@ -82,13 +82,26 @@ class ComposePostViewModel: ObservableObject {
             return false
         }
 
+        let sanitizedCaption: String
+        do {
+            sanitizedCaption = try ContentModerationService.validateUserText(
+                caption,
+                fieldName: "Post",
+                maxLength: 500,
+                allowEmpty: !isTextOnlyPost
+            )
+        } catch {
+            self.error = error
+            return false
+        }
+
         isPosting = true
         defer { isPosting = false }
 
         // For text-only posts, use the caption as content
         let finalContent: PostContent
-        if case .text = content, !caption.isEmpty {
-            finalContent = .text(caption)
+        if case .text = content, !sanitizedCaption.isEmpty {
+            finalContent = .text(sanitizedCaption)
         } else {
             finalContent = content
         }
@@ -96,7 +109,7 @@ class ComposePostViewModel: ObservableObject {
         let post = Post(
             authorId: userId,
             content: finalContent,
-            caption: caption.isEmpty ? nil : caption
+            caption: sanitizedCaption.isEmpty ? nil : sanitizedCaption
         )
 
         do {
@@ -156,6 +169,13 @@ class ComposePostViewModel: ObservableObject {
         content.icon
     }
 
+    private var isTextOnlyPost: Bool {
+        if case .text = content {
+            return true
+        }
+        return false
+    }
+
     // MARK: - Draft Management
 
     private static let draftCaptionKey = "compose_post_draft_caption"
@@ -193,11 +213,14 @@ class ComposePostViewModel: ObservableObject {
 
 enum PostError: LocalizedError {
     case notAuthenticated
+    case moderationFailed
 
     var errorDescription: String? {
         switch self {
         case .notAuthenticated:
             return "You must be signed in to post"
+        case .moderationFailed:
+            return "This post cannot be published. Edit it and try again."
         }
     }
 }

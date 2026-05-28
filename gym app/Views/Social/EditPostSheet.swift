@@ -279,10 +279,14 @@ struct EditPostSheet: View {
     }
 
     private func saveChanges() {
-        guard let updatedPost = viewModel.buildUpdatedPost() else { return }
-        HapticManager.shared.tap()
-        onSave(updatedPost)
-        dismiss()
+        do {
+            let updatedPost = try viewModel.buildUpdatedPost()
+            HapticManager.shared.tap()
+            onSave(updatedPost)
+            dismiss()
+        } catch {
+            viewModel.error = error
+        }
     }
 }
 

@@ -8,9 +8,11 @@
 import Foundation
 import CoreData
 import AuthenticationServices
+import CryptoKit
 import FirebaseAuth
 import FirebaseFirestore
 import FirebaseStorage
+import Security
 
 @preconcurrency @MainActor
 class AuthService: NSObject, ObservableObject {
@@ -25,6 +27,7 @@ class AuthService: NSObject, ObservableObject {
     private var authStateHandler: AuthStateDidChangeListenerHandle?
     private var authStateContinuation: CheckedContinuation<Bool, Never>?
     private var lastObservedUserId: String?
+    private var currentNonce: String?
 
     override init() {
         super.init()
@@ -109,10 +112,17 @@ class AuthService: NSObject, ObservableObject {
         defer { isLoading = false }
 
         let request = ASAuthorizationAppleIDProvider().createRequest()
-        request.requestedScopes = [.fullName, .email]
+        prepareAppleSignInRequest(request)
 
         let result = try await performAppleSignIn(request: request)
         try await processAppleCredential(from: result)
+    }
+
+    func prepareAppleSignInRequest(_ request: ASAuthorizationAppleIDRequest) {
+        let nonce = randomNonceString()
+        currentNonce = nonce
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = sha256(nonce)
     }
 
     private func performAppleSignIn(request: ASAuthorizationAppleIDRequest) async throws -> ASAuthorization {
@@ -135,9 +145,14 @@ class AuthService: NSObject, ObservableObject {
             throw AuthError.invalidCredential
         }
 
+        guard let nonce = currentNonce else {
+            throw AuthError.invalidCredential
+        }
+        defer { currentNonce = nil }
+
         let credential = OAuthProvider.appleCredential(
             withIDToken: tokenString,
-            rawNonce: nil,
+            rawNonce: nonce,
             fullName: appleIDCredential.fullName
         )
 
@@ -227,9 +242,14 @@ class AuthService: NSObject, ObservableObject {
             throw AuthError.invalidCredential
         }
 
+        guard let nonce = currentNonce else {
+            throw AuthError.invalidCredential
+        }
+        defer { currentNonce = nil }
+
         let credential = OAuthProvider.appleCredential(
             withIDToken: tokenString,
-            rawNonce: nil,
+            rawNonce: nonce,
             fullName: appleIDCredential.fullName
         )
 
@@ -356,6 +376,11 @@ class AuthService: NSObject, ObservableObject {
             }
         }
 
+        if !deletionErrors.isEmpty {
+            Logger.error("deleteAccount failed before account deletion: \(deletionErrors.joined(separator: ", "))")
+            throw AuthError.deletionFailed("Some account data could not be deleted. Please try again or contact support.")
+        }
+
         // 9. Delete the user document itself
         try await userRef.delete()
 
@@ -372,10 +397,6 @@ class AuthService: NSObject, ObservableObject {
 
         // 11. Clear local state
         clearLocalData()
-
-        if !deletionErrors.isEmpty {
-            Logger.error("deleteAccount completed with partial failures: \(deletionErrors.joined(separator: ", "))")
-        }
     }
 
     /// Batch-delete all documents in a subcollection
@@ -428,6 +449,36 @@ class AuthService: NSObject, ObservableObject {
         lastObservedUserId = nil
         currentUser = nil
         isAuthenticated = false
+    }
+
+    private func randomNonceString(length: Int = 32) -> String {
+        precondition(length > 0)
+        let charset = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        var result = ""
+        var remainingLength = length
+
+        while remainingLength > 0 {
+            var randoms = [UInt8](repeating: 0, count: 16)
+            let status = SecRandomCopyBytes(kSecRandomDefault, randoms.count, &randoms)
+            if status != errSecSuccess {
+                fatalError("Unable to generate nonce. SecRandomCopyBytes failed with OSStatus \(status)")
+            }
+
+            for random in randoms where remainingLength > 0 {
+                if random < charset.count {
+                    result.append(charset[Int(random)])
+                    remainingLength -= 1
+                }
+            }
+        }
+
+        return result
+    }
+
+    private func sha256(_ input: String) -> String {
+        let inputData = Data(input.utf8)
+        let hashedData = SHA256.hash(data: inputData)
+        return hashedData.map { String(format: "%02x", $0) }.joined()
     }
 }
 

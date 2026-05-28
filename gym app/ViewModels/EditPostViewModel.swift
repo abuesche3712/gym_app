@@ -108,9 +108,15 @@ class EditPostViewModel: ObservableObject {
     }
 
     /// Build the updated post with new caption and highlights
-    func buildUpdatedPost() -> Post? {
+    func buildUpdatedPost() throws -> Post {
         var updatedPost = originalPost
-        updatedPost.caption = caption.isEmpty ? nil : caption
+        let sanitizedCaption = try ContentModerationService.validateUserText(
+            caption,
+            fieldName: "Post",
+            maxLength: 500,
+            allowEmpty: true
+        )
+        updatedPost.caption = sanitizedCaption.isEmpty ? nil : sanitizedCaption
         updatedPost.updatedAt = Date()
         updatedPost.syncStatus = .pendingSync
 

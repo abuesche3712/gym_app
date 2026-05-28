@@ -763,3 +763,25 @@ final class QuickLogServiceFreestyleTests: XCTestCase {
         XCTAssertTrue(session.completedModules.isEmpty)
     }
 }
+
+final class ContentModerationServiceTests: XCTestCase {
+    func testValidateUserTextTrimsWhitespace() throws {
+        let result = try ContentModerationService.validateUserText("  Solid workout today  ", fieldName: "Post", maxLength: 500)
+
+        XCTAssertEqual(result, "Solid workout today")
+    }
+
+    func testValidateUserTextRejectsBlockedPhrases() {
+        XCTAssertThrowsError(try ContentModerationService.validateUserText("kys", fieldName: "Message", maxLength: 2_000)) { error in
+            XCTAssertEqual(error as? ContentModerationError, .blocked(field: "Message"))
+        }
+    }
+
+    func testValidateUserTextRejectsTooLongContent() {
+        let text = String(repeating: "a", count: 11)
+
+        XCTAssertThrowsError(try ContentModerationService.validateUserText(text, fieldName: "Comment", maxLength: 10)) { error in
+            XCTAssertEqual(error as? ContentModerationError, .tooLong(field: "Comment", limit: 10))
+        }
+    }
+}

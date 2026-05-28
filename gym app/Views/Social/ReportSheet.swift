@@ -134,12 +134,36 @@ struct ReportSheet: View {
             } message: {
                 Text("Thank you for your report. We'll review it shortly.")
             }
+            .alert("Report Failed", isPresented: Binding(
+                get: { error != nil },
+                set: { if !$0 { error = nil } }
+            )) {
+                Button("OK") {
+                    error = nil
+                }
+            } message: {
+                Text(error?.localizedDescription ?? "Try again.")
+            }
         }
     }
 
     private func submitReport() {
         guard let reason = selectedReason,
               let reporterId = authService.currentUser?.uid else { return }
+
+        let sanitizedInfo: String?
+        do {
+            let validated = try ContentModerationService.validateUserText(
+                additionalInfo,
+                fieldName: "Additional details",
+                maxLength: 1_000,
+                allowEmpty: true
+            )
+            sanitizedInfo = validated.isEmpty ? nil : validated
+        } catch {
+            self.error = error
+            return
+        }
 
         isSubmitting = true
 
@@ -149,7 +173,7 @@ struct ReportSheet: View {
             contentType: contentType,
             contentId: contentId,
             reason: reason,
-            additionalInfo: additionalInfo.isEmpty ? nil : additionalInfo
+            additionalInfo: sanitizedInfo
         )
 
         Task {
