@@ -6,9 +6,10 @@
 //
 
 import CoreData
+import Foundation
 
 struct PersistenceController {
-     static let shared = PersistenceController()
+    static let shared = PersistenceController()
 
     static var preview: PersistenceController = {
         let result = PersistenceController(inMemory: true)
@@ -46,17 +47,14 @@ struct PersistenceController {
                 // Log the error - always log CoreData errors even in release
                 Logger.error("CoreData store failed to load: \(error.localizedDescription)")
 
-                // Attempt recovery by deleting incompatible store
+                // Attempt recovery by backing up the failed store before recreating it.
                 if let storeURL = storeDescription.url {
-                    Logger.warning("Attempting to delete incompatible store and recreate...")
                     do {
+                        let backupURL = try Self.backupPersistentStoreFiles(at: storeURL)
+                        Logger.error("Backed up failed CoreData store to \(backupURL.path)")
+
                         try container.persistentStoreCoordinator.destroyPersistentStore(at: storeURL, ofType: NSSQLiteStoreType, options: nil)
-                        // Delete related files
-                        let fileManager = FileManager.default
-                        let storePath = storeURL.path
-                        for suffix in ["", "-shm", "-wal"] {
-                            try? fileManager.removeItem(atPath: storePath + suffix)
-                        }
+                        try Self.removePersistentStoreFiles(at: storeURL)
 
                         // Try loading again
                         try container.persistentStoreCoordinator.addPersistentStore(
@@ -70,7 +68,7 @@ struct PersistenceController {
                         )
                         Logger.info("Store recreated successfully")
                     } catch {
-                        Logger.error("Failed to recreate store: \(error.localizedDescription)")
+                        Logger.error("Failed to back up and recreate CoreData store: \(error.localizedDescription)")
                     }
                 }
             }
@@ -81,6 +79,40 @@ struct PersistenceController {
 
         // Seed default data on first launch
         seedDataIfNeeded()
+    }
+
+    private static func backupPersistentStoreFiles(at storeURL: URL) throws -> URL {
+        let fileManager = FileManager.default
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withDashSeparatorInDate, .withColonSeparatorInTime]
+        let timestamp = formatter.string(from: Date()).replacingOccurrences(of: ":", with: "-")
+        let backupDirectory = storeURL
+            .deletingLastPathComponent()
+            .appendingPathComponent("CoreDataStoreBackups", isDirectory: true)
+            .appendingPathComponent(timestamp, isDirectory: true)
+
+        try fileManager.createDirectory(at: backupDirectory, withIntermediateDirectories: true)
+
+        let baseName = storeURL.lastPathComponent
+        for suffix in ["", "-shm", "-wal"] {
+            let sourceURL = URL(fileURLWithPath: storeURL.path + suffix)
+            guard fileManager.fileExists(atPath: sourceURL.path) else { continue }
+
+            let destinationURL = backupDirectory.appendingPathComponent(baseName + suffix)
+            try fileManager.copyItem(at: sourceURL, to: destinationURL)
+        }
+
+        return backupDirectory
+    }
+
+    private static func removePersistentStoreFiles(at storeURL: URL) throws {
+        let fileManager = FileManager.default
+        for suffix in ["", "-shm", "-wal"] {
+            let fileURL = URL(fileURLWithPath: storeURL.path + suffix)
+            if fileManager.fileExists(atPath: fileURL.path) {
+                try fileManager.removeItem(at: fileURL)
+            }
+        }
     }
 
     // MARK: - Model Creation

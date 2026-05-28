@@ -1,0 +1,150 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isPostAuthor() {
+      return signedIn() && resource.data.authorId == request.auth.uid;
+    }
+
+    function isPostOwner(postId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/posts/$(postId)).data.authorId == request.auth.uid;
+    }
+
+    function isPostCounterUpdate() {
+      return signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'likeCount',
+          'commentCount',
+          'reactionCounts'
+        ]);
+    }
+
+    function conversationResource(conversationId) {
+      return get(/databases/$(database)/documents/conversations/$(conversationId));
+    }
+
+    function isConversationParticipant(conversationId) {
+      return signedIn()
+        && conversationResource(conversationId).data.participantIds.hasAny([request.auth.uid]);
+    }
+
+    match /users/{userId} {
+      allow read, create, update, delete: if isSelf(userId);
+
+      match /profile/{profileId} {
+        allow read: if signedIn();
+        allow create, update, delete: if isSelf(userId);
+      }
+
+      match /activities/{activityId} {
+        allow read, update, delete: if isSelf(userId);
+        allow create: if signedIn()
+          && request.resource.data.recipientId == userId
+          && request.resource.data.actorId == request.auth.uid;
+      }
+
+      match /{privateCollection}/{documentId} {
+        allow read, create, update, delete: if isSelf(userId);
+      }
+    }
+
+    match /usernames/{username} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if signedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    match /friendships/{friendshipId} {
+      allow read, update, delete: if signedIn()
+        && (
+          resource.data.requesterId == request.auth.uid
+          || resource.data.addresseeId == request.auth.uid
+        );
+      allow create: if signedIn()
+        && request.resource.data.requesterId == request.auth.uid
+        && request.resource.data.addresseeId is string;
+    }
+
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.authorId == request.auth.uid;
+      allow update: if (
+          isPostAuthor()
+          && request.resource.data.authorId == resource.data.authorId
+        ) || isPostCounterUpdate();
+      allow delete: if isPostAuthor();
+
+      match /likes/{userId} {
+        allow read: if signedIn();
+        allow create, update: if isSelf(userId);
+        allow delete: if isSelf(userId) || isPostOwner(postId);
+      }
+
+      match /comments/{commentId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.resource.data.authorId == request.auth.uid;
+        allow update: if signedIn()
+          && resource.data.authorId == request.auth.uid;
+        allow delete: if signedIn()
+          && (resource.data.authorId == request.auth.uid || isPostOwner(postId));
+      }
+    }
+
+    match /conversations/{conversationId} {
+      allow read, update, delete: if signedIn()
+        && resource.data.participantIds.hasAny([request.auth.uid]);
+      allow create: if signedIn()
+        && request.resource.data.participantIds.hasAny([request.auth.uid])
+        && request.resource.data.participantIds.size() == 2;
+
+      match /messages/{messageId} {
+        allow read: if isConversationParticipant(conversationId);
+        allow create: if isConversationParticipant(conversationId)
+          && request.resource.data.senderId == request.auth.uid;
+        allow update, delete: if isConversationParticipant(conversationId);
+      }
+
+      match /typing/{userId} {
+        allow read: if isConversationParticipant(conversationId);
+        allow create, update, delete: if isSelf(userId)
+          && isConversationParticipant(conversationId);
+      }
+    }
+
+    match /reports/{reportId} {
+      allow create: if signedIn()
+        && request.resource.data.reporterId == request.auth.uid;
+      allow read, update, delete: if false;
+    }
+
+    match /presence/{userId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isSelf(userId);
+    }
+
+    match /libraries/{libraryId}/{document=**} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1316,10 +1316,11 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Crashlytics-dSYMs-uploaded",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Upload dSYMs to Firebase Crashlytics - temporarily disabled\n# Uncomment to enable Crashlytics dSYM upload\n# if [[ \"${CONFIGURATION}\" == \"Release\" ]]; then\n#     \"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n# fi\nexit 0\n";
+			shellScript = "set -e\n\nif [ \"${CONFIGURATION}\" = \"Release\" ]; then\n    \"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\nfi\n\ntouch \"${DERIVED_FILE_DIR}/Crashlytics-dSYMs-uploaded\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1742,7 +1743,7 @@
 				DEVELOPMENT_TEAM = 32458MUSUC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "gym uhhh app";
+				INFOPLIST_KEY_CFBundleDisplayName = "Gym App";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take a photo for your profile picture";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Choose a photo for your profile picture";
@@ -1776,7 +1777,7 @@
 				DEVELOPMENT_TEAM = 32458MUSUC;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "gym uhhh app";
+				INFOPLIST_KEY_CFBundleDisplayName = "Gym App";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Take a photo for your profile picture";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Choose a photo for your profile picture";
