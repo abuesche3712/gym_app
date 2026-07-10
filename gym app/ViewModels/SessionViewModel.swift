@@ -38,10 +38,6 @@ class SessionViewModel: ObservableObject {
     @Published var currentSession: Session?
     @Published var isSessionActive = false
 
-    // User-visible error when ending a session fails to persist locally.
-    // The active session view alerts on this so a failed save is never silent.
-    @Published var sessionSaveErrorMessage: String?
-
     // Original module templates for structural change detection
     private var originalModules: [Module] = []
 
@@ -798,11 +794,17 @@ class SessionViewModel: ObservableObject {
         // CoreData write it triggers is synchronous, so the view context's dirty flag
         // right after the call reliably tells us whether the commit actually went
         // through. If it didn't, don't act as if the workout was saved: keep the
-        // in-progress session intact (so the user can retry) and surface the error
-        // instead of silently clearing their workout.
+        // in-progress session intact (so the user can retry via the mini session bar)
+        // and surface the error instead of silently clearing their workout.
+        // AppState.syncError is presented by MainTabView as a banner, which is visible
+        // right after the full-screen session cover dismisses; isRetryable is false
+        // because the cloud-sync retry button doesn't apply to a local save failure.
         if PersistenceController.shared.container.viewContext.hasChanges {
             Logger.error("Failed to persist session (id: \(session.id)) on endSession - keeping session active so the user can retry")
-            sessionSaveErrorMessage = "We couldn't save your workout. Please try again."
+            AppState.shared.syncError = SyncErrorInfo(
+                message: "Couldn't save your workout. Your session is still active - open it and try finishing again.",
+                isRetryable: false
+            )
             return
         }
 
