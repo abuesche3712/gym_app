@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseFirestore
+import Combine
 
 @MainActor
 class ChatViewModel: ObservableObject {
@@ -35,6 +36,13 @@ class ChatViewModel: ObservableObject {
     private var typingDebounceTask: Task<Void, Never>?
     private let userDefaults = UserDefaults.standard
     private let maxHiddenMessageIds = 500
+    private var signOutCancellable: AnyCancellable?
+
+    /// The user id that was signed in when `loadMessages()` started the current
+    /// `messageListener`. Cloud snapshots delivered after the signed-in user changes
+    /// (e.g. sign-out followed by a different account signing in while this view is
+    /// still mounted) are dropped instead of being written into shared CoreData.
+    private var listenerOwnerUserId: String?
 
     var currentUserId: String? {
         authService.currentUser?.uid
@@ -62,6 +70,7 @@ class ChatViewModel: ObservableObject {
         self.messageRepo = messageRepo ?? DataRepository.shared.messageRepo
         self.conversationRepo = conversationRepo ?? DataRepository.shared.conversationRepo
         self.friendshipRepo = friendshipRepo ?? DataRepository.shared.friendshipRepo
+        setupSignOutObserver()
     }
 
     deinit {
@@ -69,12 +78,39 @@ class ChatViewModel: ObservableObject {
         typingListener?.remove()
         presenceListener?.remove()
         typingDebounceTask?.cancel()
+        signOutCancellable?.cancel()
+    }
+
+    /// Tears down all listeners and clears published state when the user signs out
+    /// (or deletes their account). Without this, a still-mounted `ChatView` keeps its
+    /// Firestore listener streaming and writing into shared CoreData after a different
+    /// account signs in.
+    private func setupSignOutObserver() {
+        signOutCancellable = NotificationCenter.default.publisher(for: .userDidSignOut)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.handleSignOut()
+            }
+    }
+
+    private func handleSignOut() {
+        Logger.debug("ChatViewModel.handleSignOut: tearing down listeners for conversation \(conversation.id)")
+        stopListening()
+        listenerOwnerUserId = nil
+        messages = []
+        otherUserIsTyping = false
+        otherUserIsOnline = false
+        otherUserLastSeen = nil
     }
 
     // MARK: - Data Loading
 
     func loadMessages() {
         isLoading = true
+
+        // Capture the signed-in user at listener start time so late-arriving snapshots
+        // can be dropped if the signed-in user changes before they're delivered.
+        listenerOwnerUserId = currentUserId
 
         // Start real-time listener
         messageListener?.remove()
@@ -129,6 +165,16 @@ class ChatViewModel: ObservableObject {
     }
 
     private func handleMessagesUpdate(_ cloudMessages: [Message]) {
+        // Guard against a listener that started under a different signed-in user
+        // (e.g. sign-out followed by a different account signing in while this
+        // listener's async callback was already in flight). Without this, a stale
+        // snapshot could still land in shared CoreData after `handleSignOut()` has
+        // already run.
+        guard listenerOwnerUserId == currentUserId else {
+            Logger.debug("ChatViewModel.handleMessagesUpdate: dropping snapshot — listener owner \(Logger.redactUserID(listenerOwnerUserId ?? "nil")) no longer matches current user \(Logger.redactUserID(currentUserId ?? "nil"))")
+            return
+        }
+
         // Update local cache with cloud data
         for message in cloudMessages {
             messageRepo.updateFromCloud(message)
@@ -215,21 +261,12 @@ class ChatViewModel: ObservableObject {
 
         // Sync to cloud
         do {
-            // First ensure conversation exists in Firestore (critical for first message)
-            try await firestoreService.saveConversation(conversation)
-
-            // Then save message
-            try await firestoreService.saveMessage(message)
-
-            // Update conversation with last message preview and increment recipient's unread count
-            try await firestoreService.updateConversationOnNewMessage(
-                conversationId: conversation.id,
-                recipientId: otherParticipantFirebaseId,
-                preview: sanitizedText
-            )
+            try await syncMessageToCloud(message, preview: sanitizedText)
         } catch {
             Logger.error(error, context: "ChatViewModel.sendMessage")
-            // Message is saved locally, will sync when online
+            // Message is saved locally; mark it visibly failed so the user can retry
+            // instead of it silently staying "sent" forever with no way to recover.
+            markMessageSyncFailed(message.id)
         }
     }
 
@@ -266,21 +303,58 @@ class ChatViewModel: ObservableObject {
 
         // Sync to cloud
         do {
-            // First ensure conversation exists in Firestore
-            try await firestoreService.saveConversation(conversation)
-
-            // Then save message
-            try await firestoreService.saveMessage(message)
-
-            // Update conversation with last message preview and increment recipient's unread count
-            try await firestoreService.updateConversationOnNewMessage(
-                conversationId: conversation.id,
-                recipientId: otherParticipantFirebaseId,
-                preview: preview
-            )
+            try await syncMessageToCloud(message, preview: preview)
         } catch {
             Logger.error(error, context: "ChatViewModel.sendSharedContent")
+            markMessageSyncFailed(message.id)
         }
+    }
+
+    /// Retries the cloud sync for a message that previously failed (`syncStatus ==
+    /// .syncFailed`). The message and its local conversation-preview update already
+    /// happened at send time, so only the cloud portion needs to run again.
+    func retrySendMessage(_ message: Message) async {
+        guard let entity = messageRepo.findEntity(id: message.id) else {
+            Logger.debug("ChatViewModel.retrySendMessage: message \(message.id) no longer exists locally")
+            return
+        }
+
+        // Reflect "retrying" immediately so the failed indicator doesn't linger while
+        // the network call is in flight.
+        entity.syncStatus = .pendingSync
+        PersistenceController.shared.save()
+        loadFromLocalCache()
+
+        do {
+            try await syncMessageToCloud(message, preview: message.content.previewText)
+        } catch {
+            Logger.error(error, context: "ChatViewModel.retrySendMessage")
+            markMessageSyncFailed(message.id)
+        }
+    }
+
+    /// First ensures the conversation exists in Firestore (critical for the first
+    /// message), then saves the message and updates the conversation's last-message
+    /// preview / recipient unread count.
+    private func syncMessageToCloud(_ message: Message, preview: String) async throws {
+        try await firestoreService.saveConversation(conversation)
+        try await firestoreService.saveMessage(message)
+        try await firestoreService.updateConversationOnNewMessage(
+            conversationId: conversation.id,
+            recipientId: otherParticipantFirebaseId,
+            preview: preview
+        )
+    }
+
+    /// Marks a message as permanently failed to sync (as opposed to `.pendingSync`,
+    /// which implies it will still be retried automatically e.g. via listener echo).
+    /// `MessageRepository.save(_:)` always forces `.pendingSync`, so this updates the
+    /// underlying entity directly — there's no repository API to persist `.syncFailed`.
+    private func markMessageSyncFailed(_ messageId: UUID) {
+        guard let entity = messageRepo.findEntity(id: messageId) else { return }
+        entity.syncStatus = .syncFailed
+        PersistenceController.shared.save()
+        loadFromLocalCache()
     }
 
     // MARK: - Message Deletion

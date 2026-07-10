@@ -321,8 +321,14 @@ struct AccountProfileView: View {
     private var dangerZoneSection: some View {
         SettingsSection(title: "Account Actions") {
             Button(role: .destructive) {
-                try? authService.signOut()
-                dismiss()
+                do {
+                    try authService.signOut()
+                    dismiss()
+                } catch {
+                    Logger.error(error, context: "AccountProfileView.signOut")
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
             } label: {
                 HStack {
                     Image(systemName: "rectangle.portrait.and.arrow.right")

@@ -29,7 +29,26 @@ final class ActivityStore: ObservableObject {
     @Published var activities: [ActivityWithActor] = []
     @Published var unreadCount: Int = 0
 
-    private init() {}
+    private var signOutCancellable: AnyCancellable?
+
+    private init() {
+        setupSignOutObserver()
+    }
+
+    /// Clears the shared activity state on sign-out (or account deletion) so a
+    /// previous account's activities never bleed into a newly signed-in account's
+    /// view before that account's own listener has a chance to populate the store.
+    /// Per-instance Firestore listeners are torn down separately by each
+    /// `ActivityViewModel`, which owns its own `activityListener`.
+    private func setupSignOutObserver() {
+        signOutCancellable = NotificationCenter.default.publisher(for: .userDidSignOut)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Logger.debug("ActivityStore: received userDidSignOut, clearing shared state")
+                self?.activities = []
+                self?.unreadCount = 0
+            }
+    }
 }
 
 @MainActor
@@ -47,16 +66,31 @@ class ActivityViewModel: ObservableObject {
     private var activityListener: ListenerRegistration?
     private let profileCache = ProfileCacheService.shared
     private var storeCancellables: Set<AnyCancellable> = []
+    private var signOutCancellable: AnyCancellable?
 
     var currentUserId: String? { authService.currentUser?.uid }
 
     init(store: ActivityStore = .shared) {
         self.store = store
         setupStoreObserver()
+        setupSignOutObserver()
     }
 
     deinit {
         activityListener?.remove()
+        signOutCancellable?.cancel()
+    }
+
+    /// Stops this instance's Firestore listener when the user signs out (or deletes
+    /// their account) — the shared `ActivityStore` clears its own published state
+    /// independently (see `ActivityStore.setupSignOutObserver`).
+    private func setupSignOutObserver() {
+        signOutCancellable = NotificationCenter.default.publisher(for: .userDidSignOut)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Logger.debug("ActivityViewModel: received userDidSignOut, tearing down listener")
+                self?.stopListening(clearData: true)
+            }
     }
 
     /// Mirrors `ActivityStore.shared`'s published state into this instance's own

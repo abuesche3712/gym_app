@@ -30,7 +30,7 @@ class ComposePostViewModel: ObservableObject {
     var currentUserId: String? { authService.currentUser?.uid }
 
     /// Initialize with shareable content
-    init(content: any ShareableContent, postRepo: PostRepository = PostRepository()) {
+    init(content: any ShareableContent, postRepo: PostRepository? = nil) {
         do {
             self.content = try Self.postContent(from: content)
             self.contentCreationError = nil
@@ -39,19 +39,19 @@ class ComposePostViewModel: ObservableObject {
             self.content = .text("Error creating content: \(error.localizedDescription)")
             self.contentCreationError = error
         }
-        self.postRepo = postRepo
+        self.postRepo = postRepo ?? PostRepository()
     }
 
     /// Initialize with already-created PostContent
-    init(postContent: PostContent, postRepo: PostRepository = PostRepository()) {
+    init(postContent: PostContent, postRepo: PostRepository? = nil) {
         self.content = postContent
-        self.postRepo = postRepo
+        self.postRepo = postRepo ?? PostRepository()
     }
 
     /// Initialize for a text-only post
-    init(postRepo: PostRepository = PostRepository()) {
+    init(postRepo: PostRepository? = nil) {
         self.content = .text("")
-        self.postRepo = postRepo
+        self.postRepo = postRepo ?? PostRepository()
         loadDraft()
     }
 

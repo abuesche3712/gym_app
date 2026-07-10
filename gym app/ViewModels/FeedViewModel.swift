@@ -65,10 +65,10 @@ class FeedViewModel: ObservableObject {
     }
 
     init(
-        postRepo: PostRepository = PostRepository(),
+        postRepo: PostRepository? = nil,
         friendshipRepo: FriendshipRepository? = nil
     ) {
-        self.postRepo = postRepo
+        self.postRepo = postRepo ?? PostRepository()
         self.friendshipRepo = friendshipRepo ?? DataRepository.shared.friendshipRepo
         setupNotificationObserver()
         setupFriendshipObserver()

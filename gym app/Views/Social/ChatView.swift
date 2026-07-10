@@ -150,6 +150,11 @@ struct ChatView: View {
                             } : nil,
                             onDeleteForMe: !message.isDeleted ? {
                                 viewModel.deleteMessage(message)
+                            } : nil,
+                            onRetry: message.senderId == viewModel.currentUserId && message.syncStatus == .syncFailed ? {
+                                Task<Void, Never> { @MainActor in
+                                    await viewModel.retrySendMessage(message)
+                                }
                             } : nil
                         )
                         .id(message.id)
@@ -296,6 +301,7 @@ struct MessageBubble: View {
     var onView: (() -> Void)?
     var onUnsend: (() -> Void)?
     var onDeleteForMe: (() -> Void)?
+    var onRetry: (() -> Void)?
 
     var body: some View {
         HStack(alignment: .bottom, spacing: AppSpacing.xs) {
@@ -340,21 +346,36 @@ struct MessageBubble: View {
                         }
                 }
 
-                // Timestamp + read receipt
-                HStack(spacing: 4) {
-                    Text(formatMessageTime(message.createdAt))
-                        .font(.caption2)
-                        .foregroundColor(AppColors.textTertiary)
+                // Timestamp + read receipt / failed-send indicator
+                if isFromCurrentUser && !message.isDeleted && message.syncStatus == .syncFailed {
+                    Button {
+                        onRetry?()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .font(.caption2)
+                            Text("Not sent · Tap to retry")
+                                .font(.caption2)
+                        }
+                        .foregroundColor(AppColors.error)
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    HStack(spacing: 4) {
+                        Text(formatMessageTime(message.createdAt))
+                            .font(.caption2)
+                            .foregroundColor(AppColors.textTertiary)
 
-                    if isFromCurrentUser && !message.isDeleted {
-                        if message.isRead {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.caption2)
-                                .foregroundColor(AppColors.dominant)
-                        } else {
-                            Image(systemName: "checkmark.circle")
-                                .font(.caption2)
-                                .foregroundColor(AppColors.textTertiary)
+                        if isFromCurrentUser && !message.isDeleted {
+                            if message.isRead {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.caption2)
+                                    .foregroundColor(AppColors.dominant)
+                            } else {
+                                Image(systemName: "checkmark.circle")
+                                    .font(.caption2)
+                                    .foregroundColor(AppColors.textTertiary)
+                            }
                         }
                     }
                 }

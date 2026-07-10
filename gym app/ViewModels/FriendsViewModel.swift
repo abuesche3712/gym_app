@@ -40,6 +40,7 @@ class FriendsViewModel: ObservableObject {
 
     private var friendshipListener: ListenerRegistration?
     private var friendshipCancellable: AnyCancellable?
+    private var signOutCancellable: AnyCancellable?
     private var searchTask: Task<Void, Never>?
     private let minimumSearchQueryLength = 2
 
@@ -54,11 +55,26 @@ class FriendsViewModel: ObservableObject {
     init(friendshipRepo: FriendshipRepository? = nil) {
         self.friendshipRepo = friendshipRepo ?? DataRepository.shared.friendshipRepo
         setupFriendshipObserver()
+        setupSignOutObserver()
     }
 
     deinit {
         friendshipListener?.remove()
         friendshipCancellable?.cancel()
+        signOutCancellable?.cancel()
+    }
+
+    /// Stops the Firestore listener and clears all published state when the user signs
+    /// out (or deletes their account), so a still-mounted `FriendsListView`/`SocialView`
+    /// doesn't keep streaming a previous account's friendships into shared CoreData
+    /// after a different account signs in.
+    private func setupSignOutObserver() {
+        signOutCancellable = NotificationCenter.default.publisher(for: .userDidSignOut)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Logger.debug("FriendsViewModel: received userDidSignOut, tearing down listener")
+                self?.stopListening(clearData: true)
+            }
     }
 
     /// Mirrors the shared `FriendshipRepository`'s published state into this instance's

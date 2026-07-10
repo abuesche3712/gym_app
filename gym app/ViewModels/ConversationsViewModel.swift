@@ -40,6 +40,7 @@ class ConversationsViewModel: ObservableObject {
 
     private var conversationListener: ListenerRegistration?
     private var conversationCancellable: AnyCancellable?
+    private var signOutCancellable: AnyCancellable?
 
     var currentUserId: String? {
         authService.currentUser?.uid
@@ -56,11 +57,26 @@ class ConversationsViewModel: ObservableObject {
         self.messageRepo = messageRepo ?? DataRepository.shared.messageRepo
         self.friendshipRepo = friendshipRepo ?? DataRepository.shared.friendshipRepo
         setupConversationObserver()
+        setupSignOutObserver()
     }
 
     deinit {
         conversationListener?.remove()
         conversationCancellable?.cancel()
+        signOutCancellable?.cancel()
+    }
+
+    /// Stops the Firestore listener and clears all published state when the user signs
+    /// out (or deletes their account), so a still-mounted conversations list doesn't
+    /// keep streaming a previous account's conversations into shared CoreData after a
+    /// different account signs in.
+    private func setupSignOutObserver() {
+        signOutCancellable = NotificationCenter.default.publisher(for: .userDidSignOut)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Logger.debug("ConversationsViewModel: received userDidSignOut, tearing down listener")
+                self?.stopListening(clearData: true)
+            }
     }
 
     /// Mirrors the shared `ConversationRepository`'s published state into this

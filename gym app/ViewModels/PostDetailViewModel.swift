@@ -34,9 +34,9 @@ class PostDetailViewModel: ObservableObject {
     var currentUserId: String? { authService.currentUser?.uid }
     var hasMoreComments: Bool { loadedCommentCount < post.post.commentCount }
 
-    init(post: PostWithAuthor, postRepo: PostRepository = PostRepository()) {
+    init(post: PostWithAuthor, postRepo: PostRepository? = nil) {
         self.post = post
-        self.postRepo = postRepo
+        self.postRepo = postRepo ?? PostRepository()
     }
 
     deinit {

@@ -9,6 +9,7 @@
 import CoreData
 import Foundation
 
+@MainActor
 class PostRepository: ObservableObject {
     private let persistence: PersistenceController
 

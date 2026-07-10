@@ -230,6 +230,11 @@ class AuthService: NSObject, ObservableObject {
         lastObservedUserId = nil
         currentUser = nil
         isAuthenticated = false
+
+        // Tell any still-mounted ViewModels (chat, friends, conversations, activity)
+        // holding Firestore listeners to tear them down now, so they don't keep
+        // streaming cloud data into shared CoreData after a different account signs in.
+        NotificationCenter.default.post(name: .userDidSignOut, object: nil)
     }
 
     // MARK: - Re-authentication
@@ -420,13 +425,21 @@ class AuthService: NSObject, ObservableObject {
         let entityNames = PersistenceController.shared.container.managedObjectModel.entities.compactMap { $0.name }
         for entityName in entityNames {
             let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: entityName)
-            if let objects = try? context.fetch(fetchRequest) {
+            do {
+                let objects = try context.fetch(fetchRequest)
                 for object in objects {
                     context.delete(object)
                 }
+            } catch {
+                Logger.error(error, context: "AuthService.clearLocalData: failed to fetch \(entityName) for deletion")
             }
         }
-        try? context.save()
+
+        do {
+            try context.save()
+        } catch {
+            Logger.error(error, context: "AuthService.clearLocalData: failed to save context after deleting local entities")
+        }
 
         // Clear user-specific UserDefaults
         let userDefaultsKeys = [
@@ -449,6 +462,10 @@ class AuthService: NSObject, ObservableObject {
         lastObservedUserId = nil
         currentUser = nil
         isAuthenticated = false
+
+        // deleteAccount() doesn't route through signOut(), so post here too — any
+        // still-mounted ViewModel holding a Firestore listener needs to tear it down.
+        NotificationCenter.default.post(name: .userDidSignOut, object: nil)
     }
 
     private func randomNonceString(length: Int = 32) -> String {
@@ -508,6 +525,16 @@ struct User: Identifiable, Codable {
     let displayName: String?
 
     var id: String { uid }
+}
+
+// MARK: - Notification Names
+
+extension Notification.Name {
+    /// Posted from `signOut()` and `deleteAccount()` once the local auth state has been
+    /// cleared. ViewModels holding Firestore listeners (chat, friends, conversations,
+    /// activity) observe this to stop their listeners and clear published state before
+    /// a different account can sign in and start writing into shared CoreData.
+    static let userDidSignOut = Notification.Name("userDidSignOut")
 }
 
 // MARK: - Auth Errors

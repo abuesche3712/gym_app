@@ -52,10 +52,10 @@ class EditPostViewModel: ObservableObject {
         return false
     }
 
-    init(post: Post, postRepo: PostRepository = PostRepository()) {
+    init(post: Post, postRepo: PostRepository? = nil) {
         self.originalPost = post
         self.caption = post.caption ?? ""
-        self.postRepo = postRepo
+        self.postRepo = postRepo ?? PostRepository()
 
         // Decode session bundle if this is a session post
         if case .session(_, _, _, let snapshot) = post.content {
