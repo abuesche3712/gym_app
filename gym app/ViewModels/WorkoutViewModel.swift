@@ -173,6 +173,53 @@ class WorkoutViewModel: ObservableObject {
     func deleteWorkout(_ workout: Workout) {
         repository.deleteWorkout(workout)
         workouts = repository.workouts
+
+        // Remove any scheduled instances of this workout. Otherwise they linger as
+        // "ghost" entries on the Home calendar (rendered from the workoutName
+        // snapshot in ScheduledWorkout, which survives the source workout's deletion).
+        removeScheduledWorkouts(forDeletedWorkoutId: workout.id, workoutName: workout.name)
+    }
+
+    /// Removes all scheduled entries pointing at a workout that was just deleted,
+    /// tombstones their ids so the cloud merge doesn't resurrect them, and
+    /// deletes them from the cloud (falling back to the sync queue on failure).
+    private func removeScheduledWorkouts(forDeletedWorkoutId workoutId: UUID, workoutName: String) {
+        let toRemove = scheduledWorkouts.filter { $0.workoutId == workoutId }
+        guard !toRemove.isEmpty else { return }
+
+        scheduledWorkouts.removeAll { $0.workoutId == workoutId }
+        saveScheduledWorkouts()
+
+        // Track deletions to prevent re-sync from cloud
+        var deleted = deletedScheduledWorkoutIds
+        for scheduled in toRemove {
+            deleted.insert(scheduled.id)
+        }
+        deletedScheduledWorkoutIds = deleted
+        Logger.verbose("Tracked \(toRemove.count) scheduled workout deletions for deleted workout '\(workoutName)'")
+
+        // Delete from cloud immediately (not just queued) to prevent orphaned data
+        guard authService.isAuthenticated else { return }
+
+        Task {
+            var successCount = 0
+            var failedScheduled: [ScheduledWorkout] = []
+
+            for scheduled in toRemove {
+                do {
+                    try await firestoreService.deleteScheduledWorkout(scheduled.id)
+                    successCount += 1
+                } catch {
+                    failedScheduled.append(scheduled)
+                }
+            }
+
+            for scheduled in failedScheduled {
+                SyncManager.shared.queueScheduledWorkout(scheduled, action: .delete)
+            }
+
+            Logger.debug("Deleted \(successCount)/\(toRemove.count) scheduled workouts from cloud after workout deletion, \(failedScheduled.count) queued for retry")
+        }
     }
 
     func deleteWorkouts(at offsets: IndexSet) {

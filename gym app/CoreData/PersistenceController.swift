@@ -1421,14 +1421,21 @@ struct PersistenceController {
 
     // MARK: - Save Context
 
-    func save() {
+    /// Saves the view context if it has pending changes.
+    /// - Returns: `true` if the save succeeded (or there was nothing to save), `false` if the
+    ///   save failed. Callers that need to react to a failed write (e.g. surface an error to the
+    ///   user instead of silently proceeding as if the data persisted) can check the result;
+    ///   existing callers that don't care can continue to ignore it.
+    @discardableResult
+    func save() -> Bool {
         let context = container.viewContext
-        if context.hasChanges {
-            do {
-                try context.save()
-            } catch {
-                Logger.error(error, context: "CoreData save")
-            }
+        guard context.hasChanges else { return true }
+        do {
+            try context.save()
+            return true
+        } catch {
+            Logger.error(error, context: "CoreData save")
+            return false
         }
     }
 

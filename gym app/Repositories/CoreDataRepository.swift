@@ -58,10 +58,14 @@ extension CoreDataRepository {
         return toDomain(entity)
     }
 
-    func save(_ model: DomainModel) {
+    /// - Returns: whether the underlying CoreData save succeeded. Most call sites still
+    ///   ignore this (matching prior behavior); callers that need to know about a failed
+    ///   write (e.g. session save on `endSession`) can check it.
+    @discardableResult
+    func save(_ model: DomainModel) -> Bool {
         let entity = findOrCreateEntity(id: model.id)
         updateEntity(entity, from: model)
-        persistence.save()
+        return persistence.save()
     }
 
     func delete(_ model: DomainModel) {
