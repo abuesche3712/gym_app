@@ -225,7 +225,7 @@ struct ProgressionConfigurationView: View {
             if progressionPolicy == .legacy {
                 Text("Switch to Adaptive to use per-exercise enablement and overrides below.")
                     .font(.caption)
-                    .foregroundColor(.orange)
+                    .foregroundColor(AppColors.warning)
             }
         }
         .padding()
@@ -568,7 +568,7 @@ struct ProgressionConfigurationView: View {
                     exerciseProgressionStates.removeAll()
                 }
                 .buttonStyle(.bordered)
-                .tint(.orange)
+                .tint(AppColors.warning)
             }
         }
         .padding()
@@ -688,7 +688,7 @@ struct ProgressionConfigurationView: View {
         VStack(alignment: .leading, spacing: 8) {
             // Workout header
             Button {
-                withAnimation {
+                withAnimation(AppAnimation.standard) {
                     if expandedWorkouts.contains(workout.id) {
                         expandedWorkouts.remove(workout.id)
                     } else {
@@ -831,7 +831,9 @@ struct ProgressionConfigurationView: View {
             } label: {
                 Image(systemName: isEnabled ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
-                    .foregroundColor(isEnabled ? AppColors.success : .secondary)
+                    .foregroundColor(isEnabled ? AppColors.success : AppColors.textSecondary)
+                    .frame(minWidth: AppSpacing.minTouchTarget, minHeight: AppSpacing.minTouchTarget)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
@@ -839,12 +841,12 @@ struct ProgressionConfigurationView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(exercise.name)
                     .font(.subheadline)
-                    .foregroundColor(isEnabled ? .primary : .secondary)
+                    .foregroundColor(isEnabled ? AppColors.textPrimary : AppColors.textSecondary)
 
                 if !shouldDefaultEnabled {
                     Text("Not recommended")
                         .font(.caption2)
-                        .foregroundColor(.orange)
+                        .foregroundColor(AppColors.warning)
                 } else if isEnabled, let summary = stateSummary(for: exercise.id) {
                     Text(summary)
                         .font(.caption2)
@@ -875,7 +877,7 @@ struct ProgressionConfigurationView: View {
                 } label: {
                     Image(systemName: hasOverride ? "pencil.circle.fill" : "pencil.circle")
                         .font(.body)
-                        .foregroundColor(hasOverride ? AppColors.dominant : .secondary)
+                        .foregroundColor(hasOverride ? AppColors.dominant : AppColors.textSecondary)
                 }
                 .buttonStyle(.plain)
 
@@ -890,7 +892,7 @@ struct ProgressionConfigurationView: View {
                 } label: {
                     Image(systemName: hasProfileOverride ? "slider.horizontal.3.circle.fill" : "slider.horizontal.3.circle")
                         .font(.body)
-                        .foregroundColor(hasProfileOverride ? AppColors.dominant : .secondary)
+                        .foregroundColor(hasProfileOverride ? AppColors.dominant : AppColors.textSecondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -1178,6 +1180,7 @@ struct ProgressionConfigurationView: View {
     }
 
     private func saveChanges() {
+        HapticManager.shared.success()
         var updatedProgram = program
         updatedProgram.progressionEnabledExercises = progressionEnabledExercises
         updatedProgram.exerciseProgressionOverrides = exerciseProgressionOverrides
@@ -1292,7 +1295,7 @@ struct ProgressionRuleEditorSheet: View {
                             onSave(nil)
                             dismiss()
                         }
-                        .foregroundColor(.orange)
+                        .foregroundColor(AppColors.warning)
                     }
                 }
             }
@@ -1307,6 +1310,9 @@ struct ProgressionRuleEditorSheet: View {
                     strategy = .linear
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(AppColors.background.ignoresSafeArea())
+            .tint(AppColors.accent2)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

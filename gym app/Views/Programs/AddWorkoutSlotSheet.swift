@@ -100,6 +100,9 @@ struct AddWorkoutSlotSheet: View {
                     moduleSelectionSection
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(AppColors.background.ignoresSafeArea())
+            .tint(AppColors.accent2)
             .navigationTitle("Add to Schedule")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

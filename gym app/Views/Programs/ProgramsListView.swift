@@ -30,7 +30,7 @@ struct ProgramsListView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: AppSpacing.lg) {
                 if isSelectionMode {
                     // Simplified view for selection mode - just show program list
                     selectionModeContent
@@ -48,7 +48,7 @@ struct ProgramsListView: View {
                     programListSection
                 }
             }
-            .padding()
+            .padding(AppSpacing.screenPadding)
         }
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
@@ -437,7 +437,7 @@ struct MonthDayCell: View {
         if isToday {
             return AppColors.accent1
         }
-        return isCurrentMonth ? .primary : .secondary
+        return isCurrentMonth ? AppColors.textPrimary : AppColors.textSecondary
     }
 
     private func workoutIndicatorColor(for scheduled: ScheduledWorkout) -> Color {

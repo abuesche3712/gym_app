@@ -75,8 +75,8 @@ struct WorkoutBuilderView: View {
                             .fill(AppColors.dominant)
                             .frame(width: 6, height: 6)
                         Text("Program active")
-                            .font(.caption.weight(.medium))
-                            .foregroundColor(AppColors.dominant)
+                            .caption(color: AppColors.dominant)
+                            .fontWeight(.medium)
                     }
                 }
 
@@ -106,12 +106,10 @@ struct WorkoutBuilderView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Active Program")
-                        .font(.title3.bold())
-                        .foregroundColor(AppColors.textPrimary)
+                        .headline(color: AppColors.textPrimary)
 
                     Text(program.name)
-                        .font(.subheadline)
-                        .foregroundColor(AppColors.textSecondary)
+                        .subheadline(color: AppColors.textSecondary)
                 }
 
                 Spacer()
@@ -121,12 +119,11 @@ struct WorkoutBuilderView: View {
                     let currentWeek = getCurrentWeek(startDate: startDate, durationWeeks: program.durationWeeks)
                     VStack(alignment: .trailing, spacing: 2) {
                         Text("Week \(currentWeek)")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(AppColors.dominant)
+                            .monoSmall(color: AppColors.dominant)
+                            .fontWeight(.semibold)
 
                         Text("of \(program.durationWeeks)")
-                            .font(.caption)
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption(color: AppColors.textTertiary)
                     }
                 }
             }
@@ -147,8 +144,8 @@ struct WorkoutBuilderView: View {
             HStack(spacing: 4) {
                 ForEach(0..<7, id: \.self) { day in
                     Text(dayNames[day])
-                        .font(.caption2.weight(.semibold))
-                        .foregroundColor(day == today ? AppColors.dominant : AppColors.textTertiary)
+                        .caption2(color: day == today ? AppColors.dominant : AppColors.textTertiary)
+                        .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -168,8 +165,7 @@ struct WorkoutBuilderView: View {
             if slots.isEmpty {
                 // Rest day
                 Text("Rest")
-                    .font(.caption2)
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption2(color: AppColors.textTertiary)
                     .frame(maxHeight: .infinity)
             } else {
                 // Show slot indicators
@@ -178,8 +174,8 @@ struct WorkoutBuilderView: View {
                 }
                 if slots.count > 3 {
                     Text("+\(slots.count - 3)")
-                        .font(.caption2.weight(.medium))
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption2(color: AppColors.textTertiary)
+                        .fontWeight(.medium)
                 }
             }
         }
@@ -213,8 +209,8 @@ struct WorkoutBuilderView: View {
                 .frame(width: 4, height: 4)
 
             Text(abbreviatedSlotName(slot.displayName))
-                .font(.caption2.weight(.medium))
-                .foregroundColor(AppColors.textSecondary)
+                .caption2(color: AppColors.textSecondary)
+                .fontWeight(.medium)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -242,9 +238,7 @@ struct WorkoutBuilderView: View {
     private var quickActionsSection: some View {
         VStack(spacing: AppSpacing.sm) {
             Text("QUICK CREATE")
-                .font(.caption2.weight(.semibold))
-                .foregroundColor(AppColors.textTertiary)
-                .tracking(1.2)
+                .smallCapsLabel(color: AppColors.textTertiary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 0) {
@@ -298,8 +292,8 @@ struct WorkoutBuilderView: View {
                 }
 
                 Text(label)
-                    .font(.caption.weight(.medium))
-                    .foregroundColor(AppColors.textSecondary)
+                    .caption(color: AppColors.textSecondary)
+                    .fontWeight(.medium)
             }
         }
         .buttonStyle(.plain)
@@ -388,14 +382,12 @@ struct BuilderCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(title)
-                        .font(.headline)
-                        .foregroundColor(AppColors.textPrimary)
+                        .headline(color: AppColors.textPrimary)
 
                     if let active = activeIndicator {
                         Text(active)
-                            .font(.caption2)
+                            .caption2(color: .white)
                             .fontWeight(.semibold)
-                            .foregroundColor(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(iconColor)
@@ -404,19 +396,16 @@ struct BuilderCard: View {
                 }
 
                 Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textSecondary)
+                    .subheadline(color: AppColors.textSecondary)
 
                 Text("\(count) \(countLabel)")
-                    .font(.caption)
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption(color: AppColors.textTertiary)
             }
 
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.subheadline)
-                .foregroundColor(AppColors.textTertiary)
+                .subheadline(color: AppColors.textTertiary)
         }
         .padding(AppSpacing.cardPadding)
         .background(

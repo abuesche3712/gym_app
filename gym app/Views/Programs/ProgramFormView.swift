@@ -196,8 +196,8 @@ struct ProgramFormView: View {
                     .elegantLabel(color: AppColors.accent2)
 
                 Text(isEditing ? "Edit Program" : "Create Program")
-                    .font(.title)
-                    .foregroundColor(AppColors.textPrimary)
+                    .displaySmall(color: AppColors.textPrimary)
+                    .fontWeight(.bold)
             }
 
             Rectangle()
@@ -440,10 +440,14 @@ struct ProgramFormView: View {
                                 showingAddSlotSheet = true
                             },
                             onWorkoutSlotRemove: { slotId in
-                                workoutSlots.removeAll { $0.id == slotId }
+                                withAnimation(AppAnimation.standard) {
+                                    workoutSlots.removeAll { $0.id == slotId }
+                                }
                             },
                             onModuleSlotRemove: { slotId in
-                                moduleSlots.removeAll { $0.id == slotId }
+                                withAnimation(AppAnimation.standard) {
+                                    moduleSlots.removeAll { $0.id == slotId }
+                                }
                             }
                         )
                     }
@@ -684,6 +688,7 @@ struct ProgramFormView: View {
     }
 
     private func saveProgram() {
+        HapticManager.shared.success()
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -813,9 +818,10 @@ private struct InlineDayCell: View {
                 Image(systemName: "plus.circle.fill")
                     .font(.caption)
                     .foregroundColor(AppColors.accent2)
+                    .frame(minWidth: 44, minHeight: 32)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .padding(.bottom, 4)
         }
         .frame(maxWidth: .infinity, minHeight: 80)
         .background(AppColors.surfaceTertiary)

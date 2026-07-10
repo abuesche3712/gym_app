@@ -254,17 +254,21 @@ struct ProgramDetailView: View {
                     showingAddSlotSheet = true
                 },
                 onSlotRemove: { slotId in
-                    programViewModel.removeWorkoutSlot(slotId, from: currentProgram)
-                    // If program is active, update the schedule
-                    if currentProgram.isActive {
-                        programViewModel.updateActiveProgramSchedule(currentProgram)
+                    withAnimation(AppAnimation.standard) {
+                        programViewModel.removeWorkoutSlot(slotId, from: currentProgram)
+                        // If program is active, update the schedule
+                        if currentProgram.isActive {
+                            programViewModel.updateActiveProgramSchedule(currentProgram)
+                        }
                     }
                 },
                 onModuleSlotRemove: { slotId in
-                    programViewModel.removeModuleSlot(slotId, from: currentProgram)
-                    // If program is active, update the schedule
-                    if currentProgram.isActive {
-                        programViewModel.updateActiveProgramSchedule(currentProgram)
+                    withAnimation(AppAnimation.standard) {
+                        programViewModel.removeModuleSlot(slotId, from: currentProgram)
+                        // If program is active, update the schedule
+                        if currentProgram.isActive {
+                            programViewModel.updateActiveProgramSchedule(currentProgram)
+                        }
                     }
                 }
             )
@@ -388,6 +392,9 @@ struct EditProgramSheet: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(AppColors.background.ignoresSafeArea())
+            .tint(AppColors.accent2)
             .navigationTitle("Edit Program")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -432,6 +439,7 @@ struct EditProgramSheet: View {
     }
 
     private func saveChanges() {
+        HapticManager.shared.success()
         var updatedProgram = program
         updatedProgram.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         updatedProgram.programDescription = description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : description.trimmingCharacters(in: .whitespacesAndNewlines)

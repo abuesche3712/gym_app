@@ -70,15 +70,25 @@ struct ModulesListView: View {
 
                     // Modules list
                     if filteredModules.isEmpty {
-                        EmptyStateView(
-                            icon: "square.stack.3d.up",
-                            title: "No Modules",
-                            subtitle: "Create a module to organize your exercises",
-                            buttonTitle: "Create Module",
-                            onButtonTap: {
-                                showingAddModule = true
+                        Group {
+                            if moduleViewModel.modules.isEmpty {
+                                EmptyStateView(
+                                    icon: "square.stack.3d.up",
+                                    title: "No Modules",
+                                    subtitle: "Create a module to organize your exercises",
+                                    buttonTitle: "Create Module",
+                                    onButtonTap: {
+                                        showingAddModule = true
+                                    }
+                                )
+                            } else {
+                                EmptyStateView(
+                                    icon: "magnifyingglass",
+                                    title: "No Matches",
+                                    subtitle: "Try a different search or filter"
+                                )
                             }
-                        )
+                        }
                         .padding(.top, AppSpacing.xxl)
                     } else {
                         LazyVStack(spacing: AppSpacing.md) {

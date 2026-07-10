@@ -40,15 +40,25 @@ struct WorkoutsListView: View {
                     workoutsHeader
 
                     if filteredWorkouts.isEmpty {
-                        EmptyStateView(
-                            icon: "figure.strengthtraining.traditional",
-                            title: "No Workouts",
-                            subtitle: "Create a workout by combining modules into a routine",
-                            buttonTitle: "Create Workout",
-                            onButtonTap: {
-                                showingAddWorkout = true
+                        Group {
+                            if workoutViewModel.workouts.isEmpty {
+                                EmptyStateView(
+                                    icon: "figure.strengthtraining.traditional",
+                                    title: "No Workouts",
+                                    subtitle: "Create a workout by combining modules into a routine",
+                                    buttonTitle: "Create Workout",
+                                    onButtonTap: {
+                                        showingAddWorkout = true
+                                    }
+                                )
+                            } else {
+                                EmptyStateView(
+                                    icon: "magnifyingglass",
+                                    title: "No Matches",
+                                    subtitle: "Try a different search term"
+                                )
                             }
-                        )
+                        }
                         .padding(.top, AppSpacing.xl)
                     } else {
                         LazyVStack(spacing: AppSpacing.md) {
@@ -320,7 +330,7 @@ struct WorkoutListCard: View {
                     Image(systemName: "play.fill")
                         .subheadline(color: .white)
                         .fontWeight(.semibold)
-                        .frame(width: 40, height: 40)
+                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                         .background(
                             Circle()
                                 .fill(AppColors.dominant)

@@ -21,9 +21,8 @@ struct ProgramWeeklyGridView: View {
             HStack(spacing: 4) {
                 ForEach(0..<7, id: \.self) { day in
                     Text(dayNames[day])
-                        .font(.caption2)
+                        .caption2(color: AppColors.textSecondary)
                         .fontWeight(.medium)
-                        .foregroundColor(AppColors.textSecondary)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -82,8 +81,7 @@ struct UnifiedDayCell: View {
 
     private var emptyDayContent: some View {
         Text("Rest")
-            .font(.caption2)
-            .foregroundColor(AppColors.textSecondary)
+            .caption2(color: AppColors.textSecondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -108,9 +106,10 @@ struct UnifiedDayCell: View {
             Image(systemName: "plus.circle.fill")
                 .font(.caption)
                 .foregroundColor(AppColors.accent2)
+                .frame(minWidth: 44, minHeight: 32)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.bottom, 4)
     }
 }
 

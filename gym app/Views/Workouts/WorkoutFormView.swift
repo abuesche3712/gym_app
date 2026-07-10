@@ -684,6 +684,7 @@ struct WorkoutFormView: View {
     }
 
     private func saveWorkout() {
+        HapticManager.shared.success()
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         let trimmedNotes = notes.trimmingCharacters(in: .whitespaces)
 

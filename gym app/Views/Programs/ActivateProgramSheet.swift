@@ -116,6 +116,9 @@ struct ActivateProgramSheet: View {
                     Text("Program Summary")
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(AppColors.background.ignoresSafeArea())
+            .tint(AppColors.accent2)
             .navigationTitle("Activate Program")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -157,6 +160,7 @@ struct ActivateProgramSheet: View {
     }
 
     private func activateProgram() {
+        HapticManager.shared.success()
         programViewModel.activateProgram(program, startDate: startDate)
         dismiss()
     }

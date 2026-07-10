@@ -589,6 +589,7 @@ struct ModuleFormView: View {
     }
 
     private func saveModule() {
+        HapticManager.shared.success()
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         let trimmedNotes = notes.trimmingCharacters(in: .whitespaces)
 

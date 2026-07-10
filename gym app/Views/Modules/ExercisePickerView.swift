@@ -216,7 +216,7 @@ struct ExercisePickerView: View {
                     }
                 } else {
                     Image(systemName: "plus.circle.fill")
-                        .displaySmall(color: .gray.opacity(0.5))
+                        .displaySmall(color: AppColors.textTertiary.opacity(0.5))
                 }
             }
 

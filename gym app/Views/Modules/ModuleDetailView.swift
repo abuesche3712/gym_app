@@ -92,7 +92,7 @@ struct ModuleDetailView: View {
                                 } label: {
                                     HStack {
                                         Image(systemName: selectedExerciseIds.contains(resolved.id) ? "checkmark.circle.fill" : "circle")
-                                            .foregroundColor(selectedExerciseIds.contains(resolved.id) ? AppColors.dominant : .gray)
+                                            .foregroundColor(selectedExerciseIds.contains(resolved.id) ? AppColors.dominant : AppColors.textTertiary)
                                         ExerciseRow(exercise: resolved)
                                     }
                                 }
@@ -338,7 +338,7 @@ struct SupersetGroupRow: View {
                             } label: {
                                 HStack {
                                     Image(systemName: selectedIds.contains(resolved.id) ? "checkmark.circle.fill" : "circle")
-                                        .foregroundColor(selectedIds.contains(resolved.id) ? AppColors.dominant : .gray)
+                                        .foregroundColor(selectedIds.contains(resolved.id) ? AppColors.dominant : AppColors.textTertiary)
                                     CompactExerciseRow(exercise: resolved)
                                 }
                             }
