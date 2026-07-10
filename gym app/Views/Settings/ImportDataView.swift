@@ -103,11 +103,7 @@ struct ImportDataView: View {
                 instructionRow(number: "2", text: "Tap \"Export Data\" and save the CSV file")
                 instructionRow(number: "3", text: "Select the CSV file below to import")
             }
-            .padding(AppSpacing.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.surfacePrimary)
-            )
+            .unifiedCard(stroke: false)
 
             // Unit picker
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -121,11 +117,7 @@ struct ImportDataView: View {
                 }
                 .pickerStyle(.segmented)
             }
-            .padding(AppSpacing.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.surfacePrimary)
-            )
+            .unifiedCard(stroke: false)
 
             // Info note
             HStack(spacing: AppSpacing.sm) {
@@ -296,10 +288,7 @@ struct ImportDataView: View {
                         }
                     }
                     .frame(maxHeight: 300)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppCorners.large)
-                            .fill(AppColors.surfacePrimary)
-                    )
+                    .unifiedCard(padding: 0, stroke: false)
                 }
 
                 Spacer()

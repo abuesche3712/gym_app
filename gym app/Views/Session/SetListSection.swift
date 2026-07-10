@@ -207,14 +207,7 @@ struct AllSetsSection: View {
         }
         .padding(AppSpacing.cardPadding)
         .frame(width: width)  // Lock width to prevent layout shifts
-        .background(
-            RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.surfacePrimary)
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
-                )
-        )
+        .unifiedCard(padding: 0)
         .clipped()
     }
 

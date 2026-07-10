@@ -136,10 +136,7 @@ struct SettingsView: View {
                             }
                         }
                         .padding(.horizontal, AppSpacing.md)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppCorners.large)
-                                .fill(AppColors.surfacePrimary)
-                        )
+                        .unifiedCard(padding: 0, stroke: false)
                     }
 
                     // Legal Section
@@ -159,10 +156,7 @@ struct SettingsView: View {
                             }
                         }
                         .padding(.horizontal, AppSpacing.md)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppCorners.large)
-                                .fill(AppColors.surfacePrimary)
-                        )
+                        .unifiedCard(padding: 0, stroke: false)
                     }
                 }
                 .padding(AppSpacing.screenPadding)
@@ -482,10 +476,7 @@ struct SettingsSection<Content: View>: View {
                 content
             }
             .padding(.horizontal, AppSpacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.surfacePrimary)
-            )
+            .unifiedCard(padding: 0, stroke: false)
 
             if let footer = footer {
                 Text(footer)
@@ -628,11 +619,7 @@ struct StatsSection<Content: View>: View {
             VStack(spacing: 0) {
                 content
             }
-            .padding(AppSpacing.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.surfacePrimary)
-            )
+            .unifiedCard(stroke: false)
         }
     }
 }
@@ -734,11 +721,7 @@ struct AboutView: View {
                             FeatureRow(icon: "chart.line.uptrend.xyaxis", text: "Progress tracking")
                         }
                     }
-                    .padding(AppSpacing.cardPadding)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppCorners.large)
-                            .fill(AppColors.surfacePrimary)
-                    )
+                    .unifiedCard(stroke: false)
 
                     Spacer()
                 }

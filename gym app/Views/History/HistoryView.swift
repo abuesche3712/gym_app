@@ -312,10 +312,7 @@ struct HistoryView: View {
                             }
                         }
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: AppCorners.large)
-                            .fill(AppColors.surfacePrimary)
-                    )
+                    .unifiedCard(padding: 0, stroke: false)
                     .padding(.horizontal, AppSpacing.screenPadding)
                 }
                 .opacity(animateIn ? 1 : 0)

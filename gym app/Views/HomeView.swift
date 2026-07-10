@@ -676,14 +676,7 @@ struct HomeView: View {
                 }
             }
             .padding(.vertical, AppSpacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.surfacePrimary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
-            )
+            .unifiedCard(padding: 0)
         }
     }
 
@@ -781,14 +774,7 @@ struct HomeView: View {
                 .accessibilityLabel("\(cardioMinutesThisWeek) minutes of cardio this week")
             }
             .padding(.vertical, AppSpacing.lg)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.surfacePrimary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
-            )
+            .unifiedCard(padding: 0)
         }
     }
 

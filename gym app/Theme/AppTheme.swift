@@ -18,30 +18,6 @@ import SwiftUI
 
 // MARK: - Card View Modifiers
 
-struct CardStyle: ViewModifier {
-    var padding: CGFloat = AppSpacing.cardPadding
-
-    func body(content: Content) -> some View {
-        content
-            .padding(padding)
-            .background(
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .fill(AppGradients.cardGradientElevated)
-
-                    // Subtle shine overlay
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .fill(AppGradients.cardShine)
-
-                    // Border
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.surfaceTertiary.opacity(0.4), lineWidth: 0.5)
-                }
-            )
-            .shadow(color: .black.opacity(0.4), radius: 12, x: 0, y: 6)
-    }
-}
-
 struct GlassCardStyle: ViewModifier {
     var padding: CGFloat = AppSpacing.cardPadding
 
@@ -178,10 +154,6 @@ struct IconButtonStyle: ButtonStyle {
 // MARK: - View Extensions
 
 extension View {
-    func cardStyle(padding: CGFloat = AppSpacing.cardPadding) -> some View {
-        modifier(CardStyle(padding: padding))
-    }
-
     func glassCard(padding: CGFloat = AppSpacing.cardPadding) -> some View {
         modifier(GlassCardStyle(padding: padding))
     }

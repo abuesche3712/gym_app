@@ -90,11 +90,7 @@ struct EndSessionSheet: View {
                 }
             }
         }
-        .padding(AppSpacing.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.surfacePrimary)
-        )
+        .unifiedCard(stroke: false)
     }
 
     private func ratingButton(_ value: Int) -> some View {

@@ -266,23 +266,32 @@ struct StatCard: View {
 // MARK: - Unified Card Style
 
 struct UnifiedCardStyle: ViewModifier {
+    var padding: CGFloat = AppSpacing.cardPadding
+    var stroke: Bool = true
+
     func body(content: Content) -> some View {
         content
-            .padding(AppSpacing.cardPadding)
+            .padding(padding)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.large)
                     .fill(AppColors.surfacePrimary)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
-            )
+            .overlay {
+                if stroke {
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
+                }
+            }
     }
 }
 
 extension View {
-    func unifiedCard() -> some View {
-        self.modifier(UnifiedCardStyle())
+    /// The single canonical card treatment: large corner radius, `surfacePrimary` fill,
+    /// optional hairline `surfaceTertiary` stroke. `padding: 0` lets call sites that
+    /// already apply their own (differently-valued, or interleaved with other modifiers)
+    /// padding keep doing so while still sharing the fill/stroke.
+    func unifiedCard(padding: CGFloat = AppSpacing.cardPadding, stroke: Bool = true) -> some View {
+        self.modifier(UnifiedCardStyle(padding: padding, stroke: stroke))
     }
 }
 

@@ -709,10 +709,7 @@ private struct ExerciseEditSheet: View {
             }
         }
         .padding(AppSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.surfacePrimary)
-        )
+        .unifiedCard(padding: 0, stroke: false)
     }
 
     // MARK: - Type Section
@@ -767,10 +764,7 @@ private struct ExerciseEditSheet: View {
                     .tint(AppColors.accent3)
             }
             .padding(AppSpacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.surfacePrimary)
-            )
+            .unifiedCard(padding: 0, stroke: false)
 
             if isUnilateral {
                 Text("Single-leg/arm work - sets are logged separately for left and right sides")

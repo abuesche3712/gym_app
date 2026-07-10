@@ -135,14 +135,7 @@ struct WorkoutBuilderView: View {
             programWeekGrid(program: program)
         }
         .padding(AppSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.surfacePrimary)
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
-                )
-        )
+        .unifiedCard(padding: 0)
     }
 
     private func programWeekGrid(program: Program) -> some View {
