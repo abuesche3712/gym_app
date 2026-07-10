@@ -248,7 +248,8 @@ struct FeedPostRow: View {
                                 .foregroundColor(post.isLikedByCurrentUser ? AppColors.error : AppColors.textTertiary)
                         }
                     }
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: AppSpacing.minTouchTarget)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .onLongPressGesture(minimumDuration: 0.3) {
@@ -271,7 +272,8 @@ struct FeedPostRow: View {
                                 .foregroundColor(AppColors.textTertiary)
                         }
                     }
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: AppSpacing.minTouchTarget)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
 
@@ -282,7 +284,8 @@ struct FeedPostRow: View {
                     Image(systemName: "paperplane")
                         .font(.subheadline)
                         .foregroundColor(AppColors.textTertiary)
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: .infinity, minHeight: AppSpacing.minTouchTarget)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }

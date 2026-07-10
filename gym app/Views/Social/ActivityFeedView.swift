@@ -112,8 +112,7 @@ struct ActivityRow: View {
                 .foregroundColor(activity.activity.isRead ? AppColors.textSecondary : AppColors.textPrimary)
 
                 Text(relativeTime)
-                    .font(.caption2)
-                    .foregroundColor(AppColors.textTertiary)
+                    .caption(color: AppColors.textTertiary)
             }
 
             Spacer()

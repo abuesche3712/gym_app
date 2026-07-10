@@ -242,6 +242,8 @@ struct ChatView: View {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.title)
                         .foregroundColor(canSend ? AppColors.dominant : AppColors.textTertiary)
+                        .frame(minWidth: AppSpacing.minTouchTarget, minHeight: AppSpacing.minTouchTarget)
+                        .contentShape(Rectangle())
                 }
                 .disabled(!canSend || viewModel.isSending)
             }
@@ -261,6 +263,7 @@ struct ChatView: View {
     private func sendMessage() {
         let text = messageText
         messageText = ""
+        HapticManager.shared.tap()
 
         Task {
             do {
@@ -353,9 +356,9 @@ struct MessageBubble: View {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "exclamationmark.circle.fill")
-                                .font(.caption2)
+                                .font(.caption)
                             Text("Not sent · Tap to retry")
-                                .font(.caption2)
+                                .font(.caption)
                         }
                         .foregroundColor(AppColors.error)
                     }
@@ -363,17 +366,16 @@ struct MessageBubble: View {
                 } else {
                     HStack(spacing: 4) {
                         Text(formatMessageTime(message.createdAt))
-                            .font(.caption2)
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption(color: AppColors.textTertiary)
 
                         if isFromCurrentUser && !message.isDeleted {
                             if message.isRead {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.caption2)
+                                    .font(.caption)
                                     .foregroundColor(AppColors.dominant)
                             } else {
                                 Image(systemName: "checkmark.circle")
-                                    .font(.caption2)
+                                    .font(.caption)
                                     .foregroundColor(AppColors.textTertiary)
                             }
                         }

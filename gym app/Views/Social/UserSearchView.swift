@@ -126,6 +126,7 @@ struct UserSearchView: View {
                         onAcceptRequest: { friendship in
                             Task {
                                 try? await viewModel.acceptRequest(friendship)
+                                HapticManager.shared.success()
                             }
                         }
                     )

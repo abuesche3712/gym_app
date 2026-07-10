@@ -78,6 +78,7 @@ struct FriendRequestsView: View {
         Task {
             do {
                 try await viewModel.acceptRequest(friendship)
+                HapticManager.shared.success()
             } catch {
                 errorMessage = error.localizedDescription
                 showError = true
@@ -118,6 +119,7 @@ struct FriendRequestCard: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.body.weight(.medium))
+                        .frame(minWidth: AppSpacing.minTouchTarget, minHeight: AppSpacing.minTouchTarget)
                 }
                 .buttonStyle(.bordered)
                 .tint(AppColors.textSecondary)
@@ -127,6 +129,7 @@ struct FriendRequestCard: View {
                 } label: {
                     Image(systemName: "checkmark")
                         .font(.body.weight(.medium))
+                        .frame(minWidth: AppSpacing.minTouchTarget, minHeight: AppSpacing.minTouchTarget)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(AppColors.dominant)

@@ -194,6 +194,7 @@ struct OtherUserProfileView: View {
                 Task {
                     do {
                         try await viewModel.acceptFriendRequest(friendship)
+                        HapticManager.shared.success()
                     } catch {
                         errorMessage = error.localizedDescription
                         showError = true

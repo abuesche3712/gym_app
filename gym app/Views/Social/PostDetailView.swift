@@ -201,6 +201,8 @@ struct PostDetailView: View {
                             .font(.subheadline)
                             .foregroundColor(AppColors.textSecondary)
                     }
+                    .frame(minHeight: AppSpacing.minTouchTarget)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .onLongPressGesture(minimumDuration: 0.3) {
@@ -229,6 +231,8 @@ struct PostDetailView: View {
                     Image(systemName: "paperplane")
                         .font(.subheadline)
                         .foregroundColor(AppColors.textSecondary)
+                        .frame(minWidth: AppSpacing.minTouchTarget, minHeight: AppSpacing.minTouchTarget)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }

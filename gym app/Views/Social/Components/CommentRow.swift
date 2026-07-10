@@ -35,13 +35,11 @@ struct CommentRow: View {
                         .foregroundColor(AppColors.textPrimary)
 
                     Text(relativeTime)
-                        .font(.caption2)
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption(color: AppColors.textTertiary)
 
                     if comment.comment.updatedAt != nil {
                         Text("(edited)")
-                            .font(.caption2)
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption(color: AppColors.textTertiary)
                     }
 
                     Spacer()
