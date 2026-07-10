@@ -57,7 +57,7 @@ struct ModulesListView: View {
                                 FilterPill(
                                     title: type.displayName,
                                     isSelected: selectedType == type,
-                                    color: AppColors.moduleColor(type)
+                                    tint: AppColors.moduleColor(type)
                                 ) {
                                     withAnimation(AppAnimation.quick) {
                                         selectedType = type
@@ -248,32 +248,6 @@ struct ModulesListView: View {
 }
 
 // MARK: - Filter Pill
-
-struct FilterPill: View {
-    let title: String
-    let isSelected: Bool
-    var color: Color = AppColors.dominant
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .subheadline(color: isSelected ? color : AppColors.textSecondary)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.vertical, AppSpacing.sm)
-                .background(
-                    Capsule()
-                        .fill(isSelected ? color.opacity(0.2) : AppColors.surfacePrimary)
-                        .overlay(
-                            Capsule()
-                                .stroke(isSelected ? color.opacity(0.5) : AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
-                        )
-                )
-        }
-        .buttonStyle(.plain)
-    }
-}
 
 // MARK: - Module List Card
 

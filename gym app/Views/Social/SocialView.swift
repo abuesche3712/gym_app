@@ -291,7 +291,7 @@ struct SocialView: View {
         }
         .buttonStyle(.plain)
         .padding(.trailing, AppSpacing.screenPadding)
-        .padding(.bottom, 80) // Clear the custom tab bar
+        .tabBarBottomPadding(extra: 24) // Clear tab bar + breathing room above it
     }
 
     // MARK: - Loading View
@@ -471,7 +471,7 @@ struct SocialView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.bottom, 80) // Space for FAB
+        .tabBarBottomPadding(extra: 24) // Space for floating compose button above the tab bar
     }
 
     // MARK: - Content Filter Selector
@@ -647,7 +647,7 @@ struct SocialView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.top, AppSpacing.xl)
-        .padding(.bottom, 80)
+        .tabBarBottomPadding(extra: 24) // Space for floating compose button above the tab bar
     }
 
     // MARK: - Trending Feed List
@@ -702,7 +702,7 @@ struct SocialView: View {
                 .fill(AppColors.surfaceTertiary.opacity(0.5))
                 .frame(height: 0.5)
         }
-        .padding(.bottom, 80)
+        .tabBarBottomPadding(extra: 24) // Space for floating compose button above the tab bar
     }
 
     // MARK: - Sign In Prompt

@@ -224,6 +224,12 @@ struct MainTabView: View {
         )
     }
 
+    // MARK: - Custom Tab Bar Height
+
+    /// Height of `customTabBar`: 1pt top border + 10pt vertical padding on each
+    /// side of the ~28pt icon/dot content, rounded up for breathing room.
+    static let tabBarHeight: CGFloat = 56
+
     // MARK: - Pop to Root
 
     private func popToRoot(tab: Int) {
@@ -236,6 +242,18 @@ struct MainTabView: View {
         }
     }
 
+}
+
+// MARK: - Tab Bar Bottom Padding
+
+extension View {
+    /// Bottom padding sized to clear `MainTabView`'s custom tab bar, so a tab
+    /// screen's last scrollable item isn't flush against it. Pass `extra` for
+    /// screens that also need to clear something above the tab bar (e.g.
+    /// SocialView's floating compose button).
+    func tabBarBottomPadding(extra: CGFloat = 0) -> some View {
+        self.padding(.bottom, MainTabView.tabBarHeight + extra)
+    }
 }
 
 // MARK: - Mini Session Bar

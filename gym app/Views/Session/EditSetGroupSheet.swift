@@ -185,7 +185,7 @@ struct EditSetGroupSheet: View {
                         // Total duration preview
                         HStack {
                             Text("Total Duration")
-                                .foregroundColor(.secondary)
+                                .foregroundColor(AppColors.textSecondary)
                             Spacer()
                             Text(formatIntervalTotalDuration())
                                 .fontWeight(.medium)
@@ -339,7 +339,7 @@ struct EditSetGroupSheet: View {
                                         .frame(width: 60)
 
                                         Text(measurable.unit)
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(AppColors.textSecondary)
                                     }
                                 }
                             }
@@ -458,7 +458,7 @@ struct EditSetGroupSheet: View {
                     .frame(width: 80)
                     .multilineTextAlignment(.trailing)
                 Text("lbs")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
             }
             Stepper("Reps: \(targetReps)", value: $targetReps, in: 1...100)
 
@@ -469,7 +469,7 @@ struct EditSetGroupSheet: View {
                 } label: {
                     HStack {
                         Text("Duration")
-                            .foregroundColor(.primary)
+                            .foregroundColor(AppColors.textPrimary)
                         Spacer()
                         Text(targetDuration > 0 ? formatDuration(targetDuration) : "Not set")
                             .foregroundColor(targetDuration > 0 ? .primary : .secondary)
@@ -485,7 +485,7 @@ struct EditSetGroupSheet: View {
                         .frame(width: 80)
                         .multilineTextAlignment(.trailing)
                     Text(distanceUnit.abbreviation)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                 }
             }
 
@@ -502,7 +502,7 @@ struct EditSetGroupSheet: View {
                 } label: {
                     HStack {
                         Text("Duration")
-                            .foregroundColor(.primary)
+                            .foregroundColor(AppColors.textPrimary)
                         Spacer()
                         Text(targetDuration > 0 ? formatDuration(targetDuration) : "Not set")
                             .foregroundColor(targetDuration > 0 ? .primary : .secondary)
@@ -519,7 +519,7 @@ struct EditSetGroupSheet: View {
             } label: {
                 HStack {
                     Text("Duration")
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.textPrimary)
                     Spacer()
                     Text(targetDuration > 0 ? formatDuration(targetDuration) : "Not set")
                         .foregroundColor(targetDuration > 0 ? .primary : .secondary)

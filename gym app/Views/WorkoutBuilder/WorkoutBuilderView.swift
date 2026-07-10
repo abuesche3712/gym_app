@@ -40,7 +40,7 @@ struct WorkoutBuilderView: View {
                     quickActionsSection
                 }
                 .padding(AppSpacing.screenPadding)
-                .padding(.bottom, 56)  // Account for custom tab bar height
+                .tabBarBottomPadding()
             }
             .background(AppColors.background.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)

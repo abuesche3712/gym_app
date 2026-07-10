@@ -126,7 +126,7 @@ struct VolumeTrendSwiftChart: View {
                 y: .value("Volume", point.totalVolume)
             )
             .foregroundStyle(point.totalVolume > 0 ? AppColors.dominant : AppColors.surfaceTertiary)
-            .cornerRadius(4)
+            .cornerRadius(AppCorners.xs)
         }
         .chartXAxis {
             AxisMarks(values: .automatic(desiredCount: 2)) { value in
@@ -160,10 +160,10 @@ struct MuscleBalanceBar: View {
 
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: AppCorners.xs)
                         .fill(AppColors.surfaceTertiary)
 
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: AppCorners.xs)
                         .fill(item.percentageOfTotal < 10 ? AppColors.warning : AppColors.dominant)
                         .frame(width: geometry.size.width * CGFloat(item.percentageOfTotal / max(maxPercentage, 1)))
                 }
@@ -183,7 +183,7 @@ struct WeeklyCardioSwiftChart: View {
                 y: .value("Duration", Double(point.totalDuration) / 60.0)
             )
             .foregroundStyle(point.totalDuration > 0 ? AppColors.accent2 : AppColors.surfaceTertiary)
-            .cornerRadius(4)
+            .cornerRadius(AppCorners.xs)
         }
         .chartXAxis {
             AxisMarks(values: .automatic(desiredCount: 2)) { value in
@@ -219,10 +219,10 @@ struct ProgressionBreakdownRow: View {
 
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: AppCorners.xs)
                         .fill(AppColors.surfaceTertiary)
 
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: AppCorners.xs)
                         .fill(color)
                         .frame(width: geometry.size.width * (CGFloat(percentage) / 100.0))
                 }

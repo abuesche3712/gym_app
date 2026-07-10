@@ -65,7 +65,7 @@ struct EquipmentLibraryView: View {
 
                 // Stats - clickable source filters
                 HStack(spacing: AppSpacing.sm) {
-                    EquipmentSourceFilterPill(
+                    StatPill(
                         value: "\(providedEquipment.count)",
                         label: "Provided",
                         isSelected: selectedSource == .provided,
@@ -75,7 +75,7 @@ struct EquipmentLibraryView: View {
                             }
                         }
                     )
-                    EquipmentSourceFilterPill(
+                    StatPill(
                         value: "\(customEquipment.count)",
                         label: "Custom",
                         isSelected: selectedSource == .custom,
@@ -85,7 +85,7 @@ struct EquipmentLibraryView: View {
                             }
                         }
                     )
-                    EquipmentStatPill(
+                    StatPill(
                         value: "\(filteredEquipment.count)",
                         label: "Showing"
                     )
@@ -143,57 +143,6 @@ struct EquipmentLibraryView: View {
         context.delete(equipment)
         PersistenceController.shared.save()
         libraryService.loadData()
-    }
-}
-
-// MARK: - Equipment Stat Pill
-
-private struct EquipmentStatPill: View {
-    let value: String
-    let label: String
-
-    var body: some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .displaySmall(color: AppColors.textPrimary)
-                .fontWeight(.bold)
-            Text(label)
-                .caption(color: AppColors.textTertiary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(AppColors.surfacePrimary)
-        )
-    }
-}
-
-// MARK: - Equipment Source Filter Pill
-
-private struct EquipmentSourceFilterPill: View {
-    let value: String
-    let label: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 2) {
-                Text(value)
-                    .displaySmall(color: isSelected ? .white : AppColors.textPrimary)
-                    .fontWeight(.bold)
-                Text(label)
-                    .caption(color: isSelected ? .white.opacity(0.8) : AppColors.textTertiary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, AppSpacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(isSelected ? AppColors.dominant : AppColors.surfacePrimary)
-            )
-        }
-        .buttonStyle(.plain)
     }
 }
 
@@ -461,7 +410,7 @@ private struct EquipmentDetailSheet: View {
         case .cardio: return AppColors.warning
         case .mobility: return AppColors.accent1
         case .isometric: return AppColors.dominant
-        case .explosive: return Color(hex: "FF8C42")
+        case .explosive: return AppColors.accent2
         case .recovery: return AppColors.accent1
         }
     }

@@ -107,38 +107,17 @@ struct FriendRequestCard: View {
     private var profile: UserProfile { friendWithProfile.profile }
 
     var body: some View {
-        VStack(spacing: AppSpacing.md) {
-            HStack(spacing: AppSpacing.md) {
-                // Avatar
-                ProfilePhotoView(profile: profile, size: 56)
-
-                // Info
-                VStack(alignment: .leading, spacing: 4) {
-                    if let displayName = profile.displayName, !displayName.isEmpty {
-                        Text(displayName)
-                            .headline(color: AppColors.textPrimary)
-                    }
-
-                    Text("@\(profile.username)")
-                        .subheadline(color: AppColors.textSecondary)
-
-                    if let bio = profile.bio, !bio.isEmpty {
-                        Text(bio)
-                            .caption(color: AppColors.textTertiary)
-                            .lineLimit(2)
-                    }
-                }
-
-                Spacer()
-            }
-
-            // Actions
-            HStack(spacing: AppSpacing.md) {
+        UserRowView(
+            profile: profile,
+            avatarSize: 56,
+            bio: profile.bio
+        ) {
+            HStack(spacing: AppSpacing.sm) {
                 Button {
                     onDecline()
                 } label: {
-                    Text("Decline")
-                        .frame(maxWidth: .infinity)
+                    Image(systemName: "xmark")
+                        .font(.body.weight(.medium))
                 }
                 .buttonStyle(.bordered)
                 .tint(AppColors.textSecondary)
@@ -146,8 +125,8 @@ struct FriendRequestCard: View {
                 Button {
                     onAccept()
                 } label: {
-                    Text("Accept")
-                        .frame(maxWidth: .infinity)
+                    Image(systemName: "checkmark")
+                        .font(.body.weight(.medium))
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(AppColors.dominant)

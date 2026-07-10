@@ -56,7 +56,7 @@ struct AnalyticsView: View {
                     }
                 }
                 .padding(AppSpacing.screenPadding)
-                .padding(.bottom, 56)
+                .tabBarBottomPadding()
             }
             .background(AppColors.background.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)

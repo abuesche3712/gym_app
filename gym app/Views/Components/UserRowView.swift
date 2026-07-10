@@ -13,6 +13,8 @@ struct UserRowView<TrailingContent: View>: View {
     var avatarColor: Color = AppColors.dominant
     var subtitle: String? = nil
     var showUsername: Bool = true
+    /// Optional bio line shown below the name/username, truncated to 2 lines.
+    var bio: String? = nil
     @ViewBuilder let trailing: () -> TrailingContent
 
     var body: some View {
@@ -36,6 +38,12 @@ struct UserRowView<TrailingContent: View>: View {
                     Text("@\(profile.username)")
                         .caption(color: AppColors.textSecondary)
                 }
+
+                if let bio, !bio.isEmpty {
+                    Text(bio)
+                        .caption(color: AppColors.textTertiary)
+                        .lineLimit(2)
+                }
             }
 
             Spacer()
@@ -52,13 +60,15 @@ extension UserRowView where TrailingContent == EmptyView {
         avatarSize: CGFloat = 48,
         avatarColor: Color = AppColors.dominant,
         subtitle: String? = nil,
-        showUsername: Bool = true
+        showUsername: Bool = true,
+        bio: String? = nil
     ) {
         self.profile = profile
         self.avatarSize = avatarSize
         self.avatarColor = avatarColor
         self.subtitle = subtitle
         self.showUsername = showUsername
+        self.bio = bio
         self.trailing = { EmptyView() }
     }
 }

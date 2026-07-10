@@ -84,20 +84,22 @@ struct ExerciseLibraryView: View {
 
                 // Stats - clickable source filters
                 HStack(spacing: AppSpacing.sm) {
-                    SourceFilterPill(
+                    StatPill(
                         value: "\(resolver.builtInExercises.count)",
                         label: "Provided",
                         isSelected: selectedSource == .provided,
+                        showSelectionStroke: true,
                         action: {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedSource = selectedSource == .provided ? .all : .provided
                             }
                         }
                     )
-                    SourceFilterPill(
+                    StatPill(
                         value: "\(resolver.customExercises.count)",
                         label: "Custom",
                         isSelected: selectedSource == .custom,
+                        showSelectionStroke: true,
                         action: {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedSource = selectedSource == .custom ? .all : .custom
@@ -169,61 +171,6 @@ private struct TypeChip: View {
                     Capsule()
                         .fill(isSelected ? AppColors.dominant : AppColors.surfacePrimary)
                 )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Stat Pill
-
-private struct StatPill: View {
-    let value: String
-    let label: String
-
-    var body: some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .displaySmall(color: AppColors.textPrimary)
-                .fontWeight(.bold)
-            Text(label)
-                .caption(color: AppColors.textTertiary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(AppColors.surfacePrimary)
-        )
-    }
-}
-
-// MARK: - Source Filter Pill
-
-private struct SourceFilterPill: View {
-    let value: String
-    let label: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 2) {
-                Text(value)
-                    .displaySmall(color: isSelected ? .white : AppColors.textPrimary)
-                    .fontWeight(.bold)
-                Text(label)
-                    .caption(color: isSelected ? .white.opacity(0.8) : AppColors.textTertiary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, AppSpacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .fill(isSelected ? AppColors.dominant : AppColors.surfacePrimary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppCorners.medium)
-                    .stroke(isSelected ? AppColors.dominant : Color.clear, lineWidth: 2)
-            )
         }
         .buttonStyle(.plain)
     }
@@ -898,7 +845,7 @@ private struct ExerciseEditSheet: View {
         case .cardio: return AppColors.warning
         case .mobility: return AppColors.accent1
         case .isometric: return AppColors.dominant
-        case .explosive: return Color(hex: "FF8C42")
+        case .explosive: return AppColors.accent2
         case .recovery: return AppColors.accent1
         }
     }

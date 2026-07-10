@@ -73,23 +73,23 @@ struct AddExerciseToModuleSheet: View {
             } label: {
                 HStack {
                     Text("Exercise")
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.textPrimary)
                     Spacer()
                     Text(exerciseName.isEmpty ? "Select exercise..." : exerciseName)
                         .foregroundColor(exerciseName.isEmpty ? .secondary : .primary)
                     Image(systemName: "chevron.right")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                 }
             }
 
             if !exerciseName.isEmpty {
                 HStack {
                     Text("Type")
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.textPrimary)
                     Spacer()
                     Text(exerciseType.displayName)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                 }
             }
         }
@@ -218,7 +218,7 @@ struct EditIndividualSetSheet: View {
                     .frame(width: 80)
                     .multilineTextAlignment(.trailing)
                 Text("lbs")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
             }
             Stepper("Reps: \(reps)", value: $reps, in: 0...100)
 
@@ -229,7 +229,7 @@ struct EditIndividualSetSheet: View {
                 } label: {
                     HStack {
                         Text("Duration")
-                            .foregroundColor(.primary)
+                            .foregroundColor(AppColors.textPrimary)
                         Spacer()
                         Text(duration > 0 ? formatDuration(duration) : "Not set")
                             .foregroundColor(duration > 0 ? .primary : .secondary)
@@ -245,7 +245,7 @@ struct EditIndividualSetSheet: View {
                         .frame(width: 80)
                         .multilineTextAlignment(.trailing)
                     Text(distanceUnit.abbreviation)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                 }
             }
 
@@ -262,7 +262,7 @@ struct EditIndividualSetSheet: View {
                 } label: {
                     HStack {
                         Text("Duration")
-                            .foregroundColor(.primary)
+                            .foregroundColor(AppColors.textPrimary)
                         Spacer()
                         Text(duration > 0 ? formatDuration(duration) : "Not set")
                             .foregroundColor(duration > 0 ? .primary : .secondary)
@@ -279,7 +279,7 @@ struct EditIndividualSetSheet: View {
             } label: {
                 HStack {
                     Text("Duration")
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.textPrimary)
                     Spacer()
                     Text(duration > 0 ? formatDuration(duration) : "Not set")
                         .foregroundColor(duration > 0 ? .primary : .secondary)

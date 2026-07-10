@@ -205,10 +205,15 @@ struct HistoryView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: AppSpacing.sm) {
                 ForEach(HistoryFilter.allCases, id: \.self) { filter in
-                    HistoryFilterPill(
+                    FilterPill(
                         title: filter.rawValue,
                         icon: filter.icon,
-                        isSelected: selectedFilter == filter
+                        isSelected: selectedFilter == filter,
+                        selectedTextColor: AppColors.textPrimary,
+                        selectedFillOpacity: 0.15,
+                        selectedStrokeOpacity: 0.3,
+                        horizontalPadding: AppSpacing.md,
+                        fixedFontWeight: .medium
                     ) {
                         withAnimation(AppAnimation.quick) {
                             selectedFilter = filter
@@ -347,38 +352,6 @@ struct HistoryView: View {
 }
 
 // MARK: - History Filter Pill
-
-struct HistoryFilterPill: View {
-    let title: String
-    let icon: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: AppSpacing.xs) {
-                Image(systemName: icon)
-                    .font(.caption2)
-                    .fontWeight(.semibold)
-
-                Text(title)
-                    .subheadline(color: isSelected ? AppColors.textPrimary : AppColors.textSecondary)
-                    .fontWeight(.medium)
-            }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, AppSpacing.sm)
-            .background(
-                Capsule()
-                    .fill(isSelected ? AppColors.dominant.opacity(0.15) : AppColors.surfacePrimary)
-                    .overlay(
-                        Capsule()
-                            .stroke(isSelected ? AppColors.dominant.opacity(0.3) : AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
-                    )
-            )
-        }
-        .buttonStyle(.plain)
-    }
-}
 
 // MARK: - History Session Row
 

@@ -494,7 +494,7 @@ struct SetEditSheet: View {
                         TextField("Distance", text: $distance)
                             .keyboardType(.decimalPad)
                         Text(distanceUnit.abbreviation)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppColors.textSecondary)
                     }
 
                 case .explosive:

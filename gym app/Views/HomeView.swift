@@ -50,7 +50,7 @@ struct HomeView: View {
                     bestPerformancesSection
                 }
                 .padding(AppSpacing.screenPadding)
-                .padding(.bottom, 56)  // Account for custom tab bar height
+                .tabBarBottomPadding()
             }
             .background(AppColors.background.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
