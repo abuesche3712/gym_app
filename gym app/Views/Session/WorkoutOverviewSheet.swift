@@ -124,7 +124,7 @@ struct WorkoutOverviewSheet: View {
 
     private func moduleHeader(module: CompletedModule, moduleIndex: Int) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(AppMotion.stateChange) {
                 if expandedModules.contains(moduleIndex) {
                     expandedModules.remove(moduleIndex)
                 } else {
@@ -154,7 +154,7 @@ struct WorkoutOverviewSheet: View {
             }
             .padding(.vertical, 4)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     // MARK: - Exercises List
@@ -251,7 +251,7 @@ struct WorkoutOverviewSheet: View {
                 Spacer()
 
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    withAnimation(AppMotion.stateChange) {
                         if expandedExercises.contains(exerciseKey) {
                             expandedExercises.remove(exerciseKey)
                         } else {
@@ -264,12 +264,12 @@ struct WorkoutOverviewSheet: View {
                         .fontWeight(.medium)
                         .frame(width: 24, height: 24)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
             .padding(.vertical, 6)
             .padding(.leading, AppSpacing.lg)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .id("\(moduleIndex)-\(exerciseIndex)")
     }
 
@@ -339,7 +339,7 @@ struct WorkoutOverviewSheet: View {
                                 .fill(setData.completed ? AppColors.success.opacity(0.05) : AppColors.surfaceTertiary.opacity(0.5))
                         )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                     .padding(.leading, AppSpacing.lg + 28 + AppSpacing.md)
                 }
             }
@@ -364,7 +364,7 @@ struct WorkoutOverviewSheet: View {
             .padding(.vertical, AppSpacing.sm)
             .padding(.leading, AppSpacing.lg)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     // MARK: - Helpers

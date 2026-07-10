@@ -62,7 +62,7 @@ struct WorkoutsListView: View {
                         .padding(.top, AppSpacing.xl)
                     } else {
                         LazyVStack(spacing: AppSpacing.md) {
-                            ForEach(Array(filteredWorkouts.enumerated()), id: \.element.id) { index, workout in
+                            ForEach(filteredWorkouts) { workout in
                                 if isSelectionMode {
                                     WorkoutListCard(
                                         workout: workout,
@@ -77,10 +77,7 @@ struct WorkoutsListView: View {
                                         insertion: .opacity.combined(with: .move(edge: .trailing)),
                                         removal: .opacity
                                     ))
-                                    .animation(
-                                        .spring(response: 0.4, dampingFraction: 0.8).delay(Double(index) * 0.05),
-                                        value: filteredWorkouts.count
-                                    )
+                                    .animation(AppMotion.reveal, value: filteredWorkouts.count)
                                 } else {
                                     WorkoutListCard(
                                         workout: workout,
@@ -96,10 +93,7 @@ struct WorkoutsListView: View {
                                         insertion: .opacity.combined(with: .move(edge: .trailing)),
                                         removal: .opacity
                                     ))
-                                    .animation(
-                                        .spring(response: 0.4, dampingFraction: 0.8).delay(Double(index) * 0.05),
-                                        value: filteredWorkouts.count
-                                    )
+                                    .animation(AppMotion.reveal, value: filteredWorkouts.count)
                                     .contextMenu {
                                         Button {
                                             editingWorkout = workout
@@ -124,7 +118,7 @@ struct WorkoutsListView: View {
                                 }
                             }
                         }
-                        .animation(.easeInOut(duration: 0.3), value: filteredWorkouts.count)
+                        .animation(AppMotion.reveal, value: filteredWorkouts.count)
                     }
                 }
                 .padding(AppSpacing.screenPadding)
@@ -141,7 +135,7 @@ struct WorkoutsListView: View {
                         Image(systemName: "plus.circle.fill")
                             .displaySmall(color: AppColors.dominant)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
             }
             .sheet(isPresented: $showingAddWorkout) {
@@ -336,7 +330,7 @@ struct WorkoutListCard: View {
                                 .fill(AppColors.dominant)
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .padding(AppSpacing.cardPadding)

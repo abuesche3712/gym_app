@@ -145,7 +145,7 @@ struct HighlightSelectionCore: View {
                                 .fill(AppColors.surfaceTertiary.opacity(0.5))
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
                 // Selection checkbox for entire exercise
                 Button {
@@ -155,7 +155,7 @@ struct HighlightSelectionCore: View {
                         .font(.title3)
                         .foregroundColor(isExerciseSelected ? moduleColor : AppColors.textTertiary)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
                 .disabled(isDisabled && !isExerciseSelected)
                 .opacity(isDisabled && !isExerciseSelected ? 0.5 : 1)
             }
@@ -242,7 +242,7 @@ struct HighlightSelectionCore: View {
                     .font(.body)
                     .foregroundColor(isSetSelected || isExerciseSelected ? moduleColor : AppColors.textTertiary)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .disabled(isDisabled && !isSetSelected)
             .opacity(isDisabled && !isSetSelected ? 0.5 : 1)
         }

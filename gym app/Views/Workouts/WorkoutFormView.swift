@@ -107,7 +107,7 @@ struct WorkoutFormView: View {
                         Image(systemName: "square.and.arrow.up")
                             .foregroundColor(AppColors.dominant)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
             }
         }
@@ -802,7 +802,7 @@ struct ModulePickerSheet: View {
                                 }
                             }
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
                     }
                 }
             }
@@ -883,7 +883,7 @@ struct ExerciseDropDelegate: DropDelegate {
             return
         }
 
-        withAnimation(.easeInOut(duration: 0.2)) {
+        withAnimation(AppMotion.stateChange) {
             items.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
         }
     }
@@ -913,7 +913,7 @@ struct ModuleDropDelegate: DropDelegate {
             return
         }
 
-        withAnimation(.easeInOut(duration: 0.2)) {
+        withAnimation(AppMotion.stateChange) {
             items.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
         }
     }

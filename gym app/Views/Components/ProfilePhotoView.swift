@@ -19,7 +19,7 @@ struct ProfilePhotoView: View {
     var body: some View {
         Group {
             if let photoURL = profile.profilePhotoURL, let url = URL(string: photoURL) {
-                AsyncImage(url: url, transaction: Transaction(animation: .easeIn(duration: 0.2))) { phase in
+                AsyncImage(url: url, transaction: Transaction(animation: AppMotion.reveal)) { phase in
                     switch phase {
                     case .empty:
                         loadingView

@@ -96,7 +96,7 @@ struct ModuleDetailView: View {
                                         ExerciseRow(exercise: resolved)
                                     }
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.pressable)
                             } else {
                                 NavigationLink(destination: ExerciseFormView(instance: resolved.instance, moduleId: currentModule.id, sessionExercise: nil, sessionModuleIndex: nil, sessionExerciseIndex: nil, onSessionSave: nil)) {
                                     ExerciseRow(exercise: resolved)
@@ -182,7 +182,7 @@ struct ModuleDetailView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .sheet(isPresented: $showingEditModule) {
@@ -342,7 +342,7 @@ struct SupersetGroupRow: View {
                                     CompactExerciseRow(exercise: resolved)
                                 }
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
                         } else {
                             NavigationLink(destination: ExerciseFormView(instance: resolved.instance, moduleId: moduleId, sessionExercise: nil, sessionModuleIndex: nil, sessionExerciseIndex: nil, onSessionSave: nil)) {
                                 CompactExerciseRow(exercise: resolved)

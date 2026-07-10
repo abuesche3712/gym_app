@@ -269,7 +269,7 @@ struct EditSessionView: View {
                                 .fill(AppColors.surfaceTertiary.opacity(0.45))
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
                 .disabled(editHistory.isEmpty)
 
                 Button {
@@ -284,7 +284,7 @@ struct EditSessionView: View {
                                 .fill(AppColors.error.opacity(hasUnsavedChanges ? 0.12 : 0.05))
                         )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
                 .disabled(!hasUnsavedChanges)
             }
 
@@ -385,7 +385,7 @@ struct EditSessionView: View {
                 }
                 .padding(AppSpacing.md)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             if isExpanded {
                 Divider()
@@ -480,7 +480,7 @@ struct EditSessionView: View {
                         Image(systemName: "minus.circle.fill")
                             .subheadline(color: AppColors.textTertiary)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                     .disabled(!canRemoveSet(from: group))
 
                     Text("\(logicalSetCount(in: group))")
@@ -493,7 +493,7 @@ struct EditSessionView: View {
                         Image(systemName: "plus.circle.fill")
                             .subheadline(color: AppColors.dominant)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
             }
 

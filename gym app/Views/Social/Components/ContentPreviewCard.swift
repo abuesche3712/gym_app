@@ -55,7 +55,7 @@ struct ContentPreviewCard: View {
                         .font(.body)
                         .foregroundColor(AppColors.textTertiary)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .padding(AppSpacing.cardPadding)

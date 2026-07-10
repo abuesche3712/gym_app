@@ -39,7 +39,7 @@ struct BuilderSearchResultRow: View {
             .padding(.vertical, AppSpacing.sm)
             .background(AppColors.surfaceTertiary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -74,7 +74,7 @@ struct BuilderSearchResultRowWithDetail: View {
             .padding(.vertical, AppSpacing.sm)
             .background(AppColors.surfaceTertiary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 

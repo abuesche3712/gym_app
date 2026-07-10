@@ -291,7 +291,7 @@ struct ProgressionConfigurationView: View {
                         .background(AppColors.surfaceTertiary)
                         .cornerRadius(AppCorners.small)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
             }
         }
@@ -714,7 +714,7 @@ struct ProgressionConfigurationView: View {
                         .foregroundColor(AppColors.textSecondary)
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             // Module sections (expanded)
             if expandedWorkouts.contains(workout.id) {
@@ -835,7 +835,7 @@ struct ProgressionConfigurationView: View {
                     .frame(minWidth: AppSpacing.minTouchTarget, minHeight: AppSpacing.minTouchTarget)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             // Exercise name
             VStack(alignment: .leading, spacing: 2) {
@@ -879,7 +879,7 @@ struct ProgressionConfigurationView: View {
                         .font(.body)
                         .foregroundColor(hasOverride ? AppColors.dominant : AppColors.textSecondary)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
                 Button {
                     withAnimation {
@@ -894,7 +894,7 @@ struct ProgressionConfigurationView: View {
                         .font(.body)
                         .foregroundColor(hasProfileOverride ? AppColors.dominant : AppColors.textSecondary)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .padding(.horizontal, 12)

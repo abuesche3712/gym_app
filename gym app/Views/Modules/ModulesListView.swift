@@ -92,37 +92,31 @@ struct ModulesListView: View {
                         .padding(.top, AppSpacing.xxl)
                     } else {
                         LazyVStack(spacing: AppSpacing.md) {
-                            ForEach(Array(filteredModules.enumerated()), id: \.element.id) { index, module in
+                            ForEach(filteredModules) { module in
                                 if isSelectionMode {
                                     Button {
                                         onSelectForShare?(module)
                                     } label: {
                                         ModuleListCard(module: module, showExercises: selectedType != nil, showShareIcon: true)
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(.pressable)
                                     .transition(.asymmetric(
                                         insertion: .opacity.combined(with: .scale(scale: 0.95)),
                                         removal: .opacity
                                     ))
-                                    .animation(
-                                        .spring(response: 0.35, dampingFraction: 0.8).delay(Double(index) * 0.04),
-                                        value: filteredModules.count
-                                    )
+                                    .animation(AppMotion.reveal, value: filteredModules.count)
                                 } else {
                                     Button {
                                         editingModule = module
                                     } label: {
                                         ModuleListCard(module: module, showExercises: selectedType != nil)
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(.pressable)
                                     .transition(.asymmetric(
                                         insertion: .opacity.combined(with: .scale(scale: 0.95)),
                                         removal: .opacity
                                     ))
-                                    .animation(
-                                        .spring(response: 0.35, dampingFraction: 0.8).delay(Double(index) * 0.04),
-                                        value: filteredModules.count
-                                    )
+                                    .animation(AppMotion.reveal, value: filteredModules.count)
                                     .contextMenu {
                                         Button(role: .destructive) {
                                             moduleViewModel.deleteModule(module)
@@ -134,7 +128,7 @@ struct ModulesListView: View {
                             }
                         }
                         .padding(.horizontal, AppSpacing.screenPadding)
-                        .animation(.easeInOut(duration: 0.3), value: filteredModules.count)
+                        .animation(AppMotion.reveal, value: filteredModules.count)
                     }
                 }
                 .padding(.vertical, AppSpacing.md)
@@ -151,7 +145,7 @@ struct ModulesListView: View {
                         Image(systemName: "plus.circle.fill")
                             .displaySmall(color: AppColors.dominant)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
             }
             .sheet(isPresented: $showingAddModule) {

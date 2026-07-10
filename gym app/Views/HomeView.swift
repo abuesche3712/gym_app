@@ -172,34 +172,33 @@ struct HomeView: View {
     // MARK: - Home Header
 
     private var homeHeader: some View {
-        VStack(spacing: AppSpacing.sm) {
-            HStack {
-                Text(formattedDate.uppercased())
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text(formattedDate)
                     .elegantLabel(color: AppColors.dominant)
-
-                Spacer()
-
-                // History button
-                NavigationLink(destination: HistoryView()) {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(AppColors.textSecondary)
-                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
-                }
-
-                // Settings button
-                NavigationLink(destination: SettingsView()) {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(AppColors.textSecondary)
-                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
-                }
+                Text("Home")
+                    .displaySmall()
             }
 
-            // Bottom border
-            Rectangle()
-                .fill(AppColors.surfaceTertiary)
-                .frame(height: 1)
+            Spacer()
+
+            // History button
+            NavigationLink(destination: HistoryView()) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(AppColors.textSecondary)
+                    .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+            }
+            .buttonStyle(.pressable)
+
+            // Settings button
+            NavigationLink(destination: SettingsView()) {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(AppColors.textSecondary)
+                    .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+            }
+            .buttonStyle(.pressable)
         }
     }
 
@@ -338,7 +337,7 @@ struct HomeView: View {
                 }
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     private func feelingColor(_ rating: Int) -> Color {
@@ -428,7 +427,7 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
                 Spacer()
 
@@ -544,15 +543,15 @@ struct HomeView: View {
                     Text("Quick Log")
                         .font(.caption.weight(.medium))
                 }
-                .foregroundColor(AppColors.accent2)
+                .foregroundColor(AppColors.dominant)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(
                     Capsule()
-                        .fill(AppColors.accent2.opacity(0.12))
+                        .fill(AppColors.dominantMuted)
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             // Freestyle Button
             Button {
@@ -566,15 +565,15 @@ struct HomeView: View {
                     Text("Freestyle")
                         .font(.caption.weight(.medium))
                 }
-                .foregroundColor(AppColors.accent3)
+                .foregroundColor(AppColors.dominant)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(
                     Capsule()
-                        .fill(AppColors.accent3.opacity(0.12))
+                        .fill(AppColors.surfaceSecondary)
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             Spacer()
         }
@@ -618,7 +617,7 @@ struct HomeView: View {
                     )
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     // MARK: - Week Calendar Section

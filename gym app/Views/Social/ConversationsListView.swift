@@ -37,7 +37,7 @@ struct ConversationsListView: View {
                 } label: {
                     Image(systemName: "square.and.pencil")
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .sheet(isPresented: $showingNewConversation) {
@@ -238,7 +238,7 @@ struct ConversationRow: View {
             .padding(.vertical, AppSpacing.sm)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .task {
             let presence = await PresenceService.shared.fetchPresence(userId: conversationWithProfile.otherParticipantFirebaseId)
             isOnline = presence.isOnline

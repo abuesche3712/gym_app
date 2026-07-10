@@ -55,6 +55,7 @@ struct WorkoutCompleteOverlay: View {
     @State private var checkScale: CGFloat = 0
     @State private var ringScale: CGFloat = 0.8
     @State private var statsOpacity: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
@@ -119,14 +120,14 @@ struct WorkoutCompleteOverlay: View {
             .padding(.bottom, AppSpacing.xl)
         }
         .onAppear {
-            // Animate in sequence
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.6).delay(0.1)) {
+            // One short reward sequence; this is a rare completion moment.
+            withAnimation(reduceMotion ? nil : AppMotion.celebration.delay(0.05)) {
                 checkScale = 1.0
             }
-            withAnimation(.easeOut(duration: 0.6).delay(0.1)) {
+            withAnimation(reduceMotion ? nil : AppMotion.reveal.delay(0.05)) {
                 ringScale = 1.0
             }
-            withAnimation(.easeOut(duration: 0.4).delay(0.5)) {
+            withAnimation(reduceMotion ? nil : AppMotion.reveal.delay(0.18)) {
                 statsOpacity = 1.0
             }
         }

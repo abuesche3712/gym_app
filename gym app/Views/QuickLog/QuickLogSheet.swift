@@ -94,7 +94,7 @@ struct QuickLogSheet: View {
 
         return Button {
             HapticManager.shared.tap()
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(AppMotion.stateChange) {
                 viewModel.selectPreset(preset)
             }
         } label: {
@@ -116,7 +116,7 @@ struct QuickLogSheet: View {
             )
             .foregroundColor(isSelected ? .white : AppColors.textSecondary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     private var customButton: some View {
@@ -124,7 +124,7 @@ struct QuickLogSheet: View {
 
         return Button {
             HapticManager.shared.tap()
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(AppMotion.stateChange) {
                 viewModel.selectCustom()
             }
         } label: {
@@ -146,7 +146,7 @@ struct QuickLogSheet: View {
             )
             .foregroundColor(isSelected ? .white : AppColors.textSecondary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     // MARK: - Session Name Input
@@ -205,7 +205,7 @@ struct QuickLogSheet: View {
                 )
                 .foregroundColor(isSelected ? .white : AppColors.textSecondary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     // MARK: - Metric Inputs Section
@@ -389,7 +389,7 @@ struct QuickLogSheet: View {
                         .fill(isSelected ? AppColors.dominant : AppColors.dominant.opacity(0.12))
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     // MARK: - Inline Hold Time Row
@@ -443,7 +443,7 @@ struct QuickLogSheet: View {
                                     .fill(isSelected ? AppColors.accent2 : AppColors.accent2.opacity(0.12))
                             )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
             }
         }
@@ -504,7 +504,7 @@ struct QuickLogSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
             }
             .disabled(!viewModel.canSave)
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .padding(AppSpacing.screenPadding)
         }
         .background(AppColors.background)

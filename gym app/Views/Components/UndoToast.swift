@@ -30,7 +30,7 @@ struct UndoToast: View {
                     .subheadline(color: AppColors.accent2)
                     .fontWeight(.bold)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
         .padding(.horizontal, AppSpacing.md)
         .padding(.vertical, AppSpacing.sm)

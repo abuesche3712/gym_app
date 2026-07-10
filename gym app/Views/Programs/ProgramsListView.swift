@@ -99,7 +99,7 @@ struct ProgramsListView: View {
                     } label: {
                         ProgramSelectionRow(program: program)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
             }
         }
@@ -159,7 +159,7 @@ struct ProgramsListView: View {
                     }
                     .gradientCard(accent: AppColors.accent2)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             } else {
                 noActiveProgramCard
             }
@@ -296,7 +296,7 @@ struct ProgramsListView: View {
                     } label: {
                         ProgramCompactRow(program: program, isActive: program.isActive)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
             }
         }
@@ -430,7 +430,7 @@ struct MonthDayCell: View {
             .cornerRadius(AppCorners.small)
             .opacity(isCurrentMonth ? 1 : 0.3)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     private var dayTextColor: Color {

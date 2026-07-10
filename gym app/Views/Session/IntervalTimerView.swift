@@ -64,7 +64,7 @@ struct IntervalTimerView: View {
             // Background - changes based on phase
             phase.color.opacity(0.12)
                 .ignoresSafeArea()
-                .animation(.easeInOut(duration: 0.3), value: phase)
+                .animation(AppMotion.reveal, value: phase)
 
             VStack(spacing: 0) {
                 // Header
@@ -137,14 +137,14 @@ struct IntervalTimerView: View {
             // Phase indicator
             Text(phase.label)
                 .displayMedium(color: phase.color)
-                .animation(.easeInOut(duration: 0.2), value: phase)
+                .animation(AppMotion.stateChange, value: phase)
 
             // Big countdown
             Text(formatTime(secondsRemaining))
                 .displayLarge()
                 .monospacedDigit()
                 .contentTransition(.numericText())
-                .animation(.easeInOut(duration: 0.1), value: secondsRemaining)
+                .animation(AppMotion.press, value: secondsRemaining)
 
             if phase == .getReady {
                 // Show what's coming up
@@ -162,7 +162,7 @@ struct IntervalTimerView: View {
                         Circle()
                             .fill(roundColor(for: round))
                             .frame(width: 12, height: 12)
-                            .animation(.easeInOut(duration: 0.2), value: currentRound)
+                            .animation(AppMotion.stateChange, value: currentRound)
                     }
                 }
 

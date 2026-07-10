@@ -82,7 +82,7 @@ struct LibraryExerciseEditView: View {
                                     .foregroundColor(AppColors.textTertiary)
                             }
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
                     } else {
                         // Read-only display for built-in exercises
                         if !template.primaryMuscles.isEmpty || !template.secondaryMuscles.isEmpty {
@@ -127,7 +127,7 @@ struct LibraryExerciseEditView: View {
                                     .foregroundColor(AppColors.textTertiary)
                             }
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
                     } else {
                         // Read-only display for built-in exercises
                         if template.implementIds.isEmpty {

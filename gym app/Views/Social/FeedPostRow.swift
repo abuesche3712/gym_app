@@ -41,7 +41,7 @@ struct FeedPostRow: View {
                         borderWidth: 0
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
                 // Author line
                 authorLine
@@ -62,7 +62,7 @@ struct FeedPostRow: View {
                         .frame(maxWidth: .infinity)
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .disabled(onPostTap == nil)
 
             // Engagement bar (centered, spans full width)
@@ -77,7 +77,7 @@ struct FeedPostRow: View {
                 Color.clear
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                        withAnimation(AppMotion.press) {
                             showReactionPicker = false
                         }
                     }
@@ -106,7 +106,7 @@ struct FeedPostRow: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(AppColors.textPrimary)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             Text("@\(post.author.username)")
                 .font(.caption)
@@ -226,11 +226,11 @@ struct FeedPostRow: View {
                 // Like button (tap = heart, long-press = reaction picker)
                 Button {
                     HapticManager.shared.impact()
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    withAnimation(AppMotion.celebration) {
                         isLikeAnimating = true
                     }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                        withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                        withAnimation(AppMotion.press) {
                             isLikeAnimating = false
                         }
                     }
@@ -251,10 +251,10 @@ struct FeedPostRow: View {
                     .frame(maxWidth: .infinity, minHeight: AppSpacing.minTouchTarget)
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
                 .onLongPressGesture(minimumDuration: 0.3) {
                     HapticManager.shared.impact()
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    withAnimation(AppMotion.interactiveSpring) {
                         showReactionPicker = true
                     }
                 }
@@ -275,7 +275,7 @@ struct FeedPostRow: View {
                     .frame(maxWidth: .infinity, minHeight: AppSpacing.minTouchTarget)
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
                 // Share/DM button
                 Button {
@@ -287,7 +287,7 @@ struct FeedPostRow: View {
                         .frame(maxWidth: .infinity, minHeight: AppSpacing.minTouchTarget)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
             .frame(maxWidth: .infinity)
         }
@@ -304,7 +304,7 @@ struct FeedPostRow: View {
         HStack(spacing: AppSpacing.md) {
             ForEach(ReactionType.allCases, id: \.self) { reaction in
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    withAnimation(AppMotion.interactiveSpring) {
                         showReactionPicker = false
                     }
                     onReact?(reaction)
@@ -312,7 +312,7 @@ struct FeedPostRow: View {
                     Text(reaction.emoji)
                         .font(.title2)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .padding(.horizontal, AppSpacing.md)

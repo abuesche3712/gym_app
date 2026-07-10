@@ -1,4 +1,8 @@
-# Design System Unification — Phase 1: Foundation + Color + Tab Restructure
+# Design System Unification — Historical Phase 1 Brief
+
+> Completed baseline. The current source of truth is `swiftui-design-system.md`,
+> `COLOR_PALETTE.md`, and the Theme implementation. This document records the
+> problems the original unification work addressed.
 
 ## Context
 The app has been built iteratively across multiple phases. Each main tab (Home, Training Hub, Social) was developed at different times and they've drifted into different visual languages — different accent colors, different card treatments, different header patterns, different button styles. The goal of this task is to unify everything into one cohesive design system and restructure the tab bar.

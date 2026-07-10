@@ -194,7 +194,7 @@ struct ActiveSessionView: View {
                                             .shadow(color: AppColors.dominant.opacity(0.3), radius: 8, y: 4)
                                     )
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
                             .padding(AppSpacing.lg)
                             .padding(.bottom, AppSpacing.xxl) // Clear bottom toolbar
                         }
@@ -272,7 +272,7 @@ struct ActiveSessionView: View {
 
                 // Hide toolbar buttons after 30 seconds
                 DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                    withAnimation(AppMotion.reveal) {
                         hideToolbarButtons = true
                     }
                 }
@@ -1059,21 +1059,21 @@ struct ActiveSessionView: View {
     private func showModuleTransitionAnimation(from: String, to: String, completion: @escaping () -> Void) {
         completedModuleName = from
         nextModuleName = to
-        withAnimation(.easeOut(duration: 0.3)) {
+        withAnimation(AppMotion.reveal) {
             showModuleTransition = true
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            withAnimation(.easeIn(duration: 0.3)) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            withAnimation(AppMotion.reveal) {
                 showModuleTransition = false
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) {
                 completion()
             }
         }
     }
 
     private func showWorkoutCompleteAnimation() {
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+        withAnimation(AppMotion.celebration) {
             showWorkoutComplete = true
         }
     }

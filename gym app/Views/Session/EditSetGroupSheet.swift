@@ -258,7 +258,7 @@ struct EditSetGroupSheet: View {
                                                     .caption(color: AppColors.textTertiary)
                                             }
                                         }
-                                        .buttonStyle(.plain)
+                                        .buttonStyle(.pressable)
                                     }
                                 }
                                 .padding(.vertical, 4)
@@ -270,7 +270,7 @@ struct EditSetGroupSheet: View {
                                 } label: {
                                     individualSetRow(set, index: index)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.pressable)
                                 .swipeActions(edge: .trailing) {
                                     if editableSets.count > 1 && !set.completed {
                                         Button(role: .destructive) {

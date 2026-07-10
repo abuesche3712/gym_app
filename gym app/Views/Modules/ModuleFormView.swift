@@ -636,7 +636,7 @@ struct ExerciseReorderDropDelegate: DropDelegate {
               let fromIndex = exercises.firstIndex(where: { $0.id == draggedItem.id }),
               let toIndex = exercises.firstIndex(where: { $0.id == item.id }) else { return }
 
-        withAnimation(.default) {
+        withAnimation(AppMotion.interactiveSpring) {
             exercises.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
         }
     }
@@ -668,7 +668,7 @@ struct SetGroupReorderDropDelegate: DropDelegate {
               let fromIndex = setGroups.firstIndex(where: { $0.id == draggedItem.id }),
               let toIndex = setGroups.firstIndex(where: { $0.id == item.id }) else { return }
 
-        withAnimation(.default) {
+        withAnimation(AppMotion.interactiveSpring) {
             setGroups.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
         }
     }
@@ -827,7 +827,7 @@ struct InlineExerciseEditor: View {
                             .padding(.vertical, AppSpacing.md)
                             .background(AppColors.surfacePrimary)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
                     }
                 }
 
@@ -944,7 +944,7 @@ struct InlineExerciseEditor: View {
                         .fontWeight(.semibold)
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             // Delete button
             Button {
@@ -1044,7 +1044,7 @@ struct InlineExerciseEditor: View {
                 .padding(.vertical, AppSpacing.md)
                 .background(AppColors.surfacePrimary)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .sheet(isPresented: $showingMusclePicker) {
                 NavigationStack {
                     MuscleGroupEnumPickerView(
@@ -1098,7 +1098,7 @@ struct InlineExerciseEditor: View {
                 .padding(.vertical, AppSpacing.md)
                 .background(AppColors.surfacePrimary)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .sheet(isPresented: $showingEquipmentPicker) {
                 NavigationStack {
                     ScrollView {

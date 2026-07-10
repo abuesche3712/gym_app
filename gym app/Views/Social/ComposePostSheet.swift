@@ -147,7 +147,7 @@ struct ComposePostSheet: View {
                         .stroke(AppColors.surfaceTertiary.opacity(0.3), lineWidth: 1)
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
     }
 
@@ -368,7 +368,7 @@ struct ContentPickerSheet: View {
                     } label: {
                         contentTypeRow(type)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
             }
             .padding(AppSpacing.screenPadding)

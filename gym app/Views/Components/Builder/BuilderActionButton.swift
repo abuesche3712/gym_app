@@ -34,7 +34,7 @@ struct BuilderActionButton: View {
             .padding(.vertical, AppSpacing.md)
             .background(AppColors.surfacePrimary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 

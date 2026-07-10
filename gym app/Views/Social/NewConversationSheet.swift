@@ -115,7 +115,7 @@ struct NewConversationSheet: View {
             .padding(.vertical, AppSpacing.sm)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .disabled(isLoading)
     }
 

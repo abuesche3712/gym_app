@@ -264,12 +264,12 @@ struct HistoryView: View {
                                 } label: {
                                     HistorySessionRow(session: session, showShareIcon: true)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.pressable)
                             } else {
                                 NavigationLink(destination: SessionDetailView(session: session)) {
                                     HistorySessionRow(session: session)
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.pressable)
                                 .contextMenu {
                                     Button {
                                         sessionToPost = session

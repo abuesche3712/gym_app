@@ -108,7 +108,7 @@ struct SessionDetailView: View {
                                 )
                         )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
 
                 // Quick Stats
@@ -140,7 +140,7 @@ struct SessionDetailView: View {
                                     .font(.body.weight(.medium))
                                     .foregroundColor(AppColors.textSecondary)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
                         }
 
                         // Share menu
@@ -170,7 +170,7 @@ struct SessionDetailView: View {
                                 .font(.body.weight(.medium))
                                 .foregroundColor(AppColors.textSecondary)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
 
                         // Edit button (only shown if session is editable)
                         if currentSession.isEditable {
@@ -181,7 +181,7 @@ struct SessionDetailView: View {
                                     .font(.body.weight(.medium))
                                     .foregroundColor(AppColors.textSecondary)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
                         }
 
                         // Delete button
@@ -193,7 +193,7 @@ struct SessionDetailView: View {
                                 .font(.body.weight(.medium))
                                 .foregroundColor(AppColors.error)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
                     }
                 }
             }
@@ -721,7 +721,7 @@ struct SessionModuleCard: View {
                 }
                 .padding(AppSpacing.cardPadding)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             // Exercises (when expanded)
             if isExpanded && !module.skipped {
@@ -891,7 +891,7 @@ struct SessionExerciseCard: View {
                                     .fill(AppColors.surfaceTertiary.opacity(0.5))
                             )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
 
                     Text(setsLabel)
                         .caption()
@@ -901,7 +901,7 @@ struct SessionExerciseCard: View {
                         .foregroundColor(AppColors.textTertiary)
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             // Expanded set details
             if isExpanded {
@@ -1190,7 +1190,7 @@ struct SessionSetRow: View {
                             .font(.system(size: 9, weight: .semibold))
                             .foregroundColor(AppColors.textTertiary.opacity(0.8))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
 
                 Menu {

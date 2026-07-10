@@ -759,7 +759,7 @@ struct SetGroupFormView: View {
                                         )
                                 )
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
                     }
                 }
                 .padding(.horizontal, AppSpacing.cardPadding)

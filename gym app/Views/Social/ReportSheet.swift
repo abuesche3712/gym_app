@@ -66,7 +66,7 @@ struct ReportSheet: View {
                                 }
                                 .padding(AppSpacing.md)
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
 
                             if reason != ReportReason.allCases.last {
                                 Divider()

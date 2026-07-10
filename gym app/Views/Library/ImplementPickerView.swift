@@ -117,7 +117,7 @@ struct ImplementChip: View {
                     .stroke(isSelected ? AppColors.accent1 : AppColors.surfaceTertiary, lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 

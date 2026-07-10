@@ -51,7 +51,7 @@ struct FriendsListView: View {
                 } label: {
                     Image(systemName: "person.badge.plus")
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .sheet(isPresented: $showingSearch) {

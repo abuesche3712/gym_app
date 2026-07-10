@@ -166,7 +166,7 @@ struct ChatView: View {
             .onChange(of: viewModel.messages.count) { _, _ in
                 // Scroll to bottom when new messages arrive
                 if let lastMessage = viewModel.messages.last {
-                    withAnimation(.easeOut(duration: 0.2)) {
+                    withAnimation(AppMotion.stateChange) {
                         proxy.scrollTo(lastMessage.id, anchor: .bottom)
                     }
                 }
@@ -214,7 +214,7 @@ struct ChatView: View {
         .padding(.vertical, AppSpacing.xs)
         .frame(maxWidth: .infinity, alignment: .leading)
         .transition(.opacity.combined(with: .move(edge: .bottom)))
-        .animation(.easeInOut(duration: 0.2), value: viewModel.otherUserIsTyping)
+        .animation(AppMotion.stateChange, value: viewModel.otherUserIsTyping)
     }
 
     // MARK: - Chat Input Bar
@@ -362,7 +362,7 @@ struct MessageBubble: View {
                         }
                         .foregroundColor(AppColors.error)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 } else {
                     HStack(spacing: 4) {
                         Text(formatMessageTime(message.createdAt))
@@ -523,6 +523,7 @@ struct MessageBubble: View {
 
 struct TypingDotsView: View {
     @State private var animating = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: 3) {
@@ -533,14 +534,14 @@ struct TypingDotsView: View {
                     .scaleEffect(animating ? 1.0 : 0.5)
                     .opacity(animating ? 1.0 : 0.3)
                     .animation(
-                        .easeInOut(duration: 0.5)
+                        AppMotion.stateChange
                             .repeatForever(autoreverses: true)
                             .delay(Double(index) * 0.15),
                         value: animating
                     )
             }
         }
-        .onAppear { animating = true }
+        .onAppear { animating = !reduceMotion }
     }
 }
 

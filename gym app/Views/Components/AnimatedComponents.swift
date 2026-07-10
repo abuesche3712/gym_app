@@ -16,13 +16,14 @@ struct AnimatedNumber: View {
     let color: Color
 
     @State private var animatedValue: Int = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Text("\(animatedValue)")
             .font(font)
             .foregroundColor(color)
             .contentTransition(.numericText(value: Double(animatedValue)))
-            .animation(.snappy(duration: 0.3), value: animatedValue)
+            .animation(reduceMotion ? nil : AppMotion.stateChange, value: animatedValue)
             .onChange(of: value) { _, newValue in
                 animatedValue = newValue
             }
@@ -38,13 +39,14 @@ struct AnimatedDecimalNumber: View {
     let decimals: Int
     let font: Font
     let color: Color
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Text(String(format: "%.\(decimals)f", value))
             .font(font)
             .foregroundColor(color)
             .contentTransition(.numericText())
-            .animation(.snappy(duration: 0.3), value: value)
+            .animation(reduceMotion ? nil : AppMotion.stateChange, value: value)
     }
 }
 
@@ -58,6 +60,7 @@ struct AnimatedCheckmark: View {
     let lineWidth: CGFloat
 
     @State private var trimEnd: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(isChecked: Bool, size: CGFloat = 24, color: Color = AppColors.success, lineWidth: CGFloat = 3) {
         self.isChecked = isChecked
@@ -80,7 +83,7 @@ struct AnimatedCheckmark: View {
                 .frame(width: size * 0.5, height: size * 0.5)
         }
         .onChange(of: isChecked) { _, newValue in
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+            withAnimation(reduceMotion ? nil : AppMotion.celebration) {
                 trimEnd = newValue ? 1 : 0
             }
             if newValue {
@@ -116,6 +119,7 @@ struct CompletionGlow: ViewModifier {
     let color: Color
 
     @State private var glowOpacity: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
@@ -126,10 +130,10 @@ struct CompletionGlow: ViewModifier {
             .onChange(of: isActive) { wasActive, nowActive in
                 if !wasActive && nowActive {
                     // Trigger glow animation
-                    withAnimation(.easeIn(duration: 0.15)) {
+                    withAnimation(reduceMotion ? nil : AppMotion.press) {
                         glowOpacity = 0.3
                     }
-                    withAnimation(.easeOut(duration: 0.4).delay(0.15)) {
+                    withAnimation(reduceMotion ? nil : AppMotion.reveal.delay(0.08)) {
                         glowOpacity = 0
                     }
                 }
@@ -245,23 +249,23 @@ struct PulsingIndicator: View {
     let size: CGFloat
 
     @State private var isPulsing = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
             Circle()
                 .fill(color.opacity(0.3))
                 .frame(width: size * 2, height: size * 2)
-                .scaleEffect(isPulsing ? 1.2 : 0.8)
-                .opacity(isPulsing ? 0 : 0.5)
+                .scaleEffect(isPulsing && !reduceMotion ? 1.2 : 0.8)
+                .opacity(isPulsing && !reduceMotion ? 0 : 0.5)
 
             Circle()
                 .fill(color)
                 .frame(width: size, height: size)
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                isPulsing = true
-            }
+            guard !reduceMotion else { return }
+            withAnimation(AppMotion.stateChange.repeatForever(autoreverses: true)) { isPulsing = true }
         }
     }
 }
@@ -269,10 +273,12 @@ struct PulsingIndicator: View {
 // MARK: - Bouncy Button Style
 
 struct BouncyButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1.0)
+            .animation(reduceMotion ? nil : AppMotion.press, value: configuration.isPressed)
             .onChange(of: configuration.isPressed) { _, isPressed in
                 if isPressed {
                     Task { @MainActor in
@@ -287,6 +293,23 @@ extension ButtonStyle where Self == BouncyButtonStyle {
     static var bouncy: BouncyButtonStyle { BouncyButtonStyle() }
 }
 
+/// The default tactile response for custom buttons. Unlike `.plain`, this
+/// maintains a quiet press acknowledgement without competing with the content.
+struct PressableButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+            .opacity(configuration.isPressed ? 0.9 : 1)
+            .animation(reduceMotion ? nil : AppMotion.press, value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == PressableButtonStyle {
+    static var pressable: PressableButtonStyle { PressableButtonStyle() }
+}
+
 // MARK: - Scale Press Button Style
 
 struct ScalePressButtonStyle: ButtonStyle {
@@ -296,10 +319,12 @@ struct ScalePressButtonStyle: ButtonStyle {
         self.scale = scale
     }
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? scale : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? scale : 1.0)
+            .animation(reduceMotion ? nil : AppMotion.press, value: configuration.isPressed)
     }
 }
 

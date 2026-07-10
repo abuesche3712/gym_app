@@ -111,7 +111,7 @@ struct FreestyleAddExerciseSheet: View {
                         .fill(AppColors.surfacePrimary)
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
     }
 
@@ -148,7 +148,7 @@ struct FreestyleAddExerciseSheet: View {
                         .fill(AppColors.surfacePrimary)
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .disabled(!hasAddableModules)
             .opacity(hasAddableModules ? 1 : 0.7)
         }
@@ -196,7 +196,7 @@ struct FreestyleAddExerciseSheet: View {
                         .padding(.vertical, AppSpacing.sm)
                         .padding(.horizontal, AppSpacing.md)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
 
                     if index < min(recentExercises.count, 5) - 1 {
                         Divider()
@@ -268,7 +268,7 @@ struct FreestyleAddExerciseSheet: View {
                             )
                             .foregroundColor(selectedType == type ? AppColors.dominant : AppColors.textSecondary)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
                     }
                 }
 
@@ -286,7 +286,7 @@ struct FreestyleAddExerciseSheet: View {
                         )
                         .foregroundColor(customName.isEmpty ? AppColors.textTertiary : .white)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
                 .disabled(customName.isEmpty)
             }
         }

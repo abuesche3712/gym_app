@@ -156,12 +156,20 @@ struct SocialView: View {
 
     private var socialHeader: some View {
         VStack(spacing: AppSpacing.sm) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text("Social")
+                    .elegantLabel(color: AppColors.dominant)
+                Text("Community")
+                    .displaySmall()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
             HStack {
                 // Profile button (left side)
                 NavigationLink(destination: AccountProfileView()) {
                     profileAvatar
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
                 Spacer()
 
@@ -173,7 +181,7 @@ struct SocialView: View {
                             .foregroundColor(AppColors.textSecondary)
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
 
                     // Friends button
                     NavigationLink(destination: FriendsListView()) {
@@ -192,7 +200,7 @@ struct SocialView: View {
                             }
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
 
                     // Activity/notifications button
                     NavigationLink(destination: ActivityFeedView()) {
@@ -210,7 +218,7 @@ struct SocialView: View {
                             }
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
 
                     // Messages button
                     NavigationLink(destination: ConversationsListView()) {
@@ -229,7 +237,7 @@ struct SocialView: View {
                             }
                         }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
 
                     // Settings button
                     NavigationLink(destination: SettingsView()) {
@@ -238,14 +246,9 @@ struct SocialView: View {
                             .foregroundColor(AppColors.textSecondary)
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
             }
-
-            // Bottom border
-            Rectangle()
-                .fill(AppColors.surfaceTertiary)
-                .frame(height: 1)
         }
     }
 
@@ -257,16 +260,16 @@ struct SocialView: View {
                 ProfilePhotoView.gold(profile: profile, size: 32)
             } else {
                 Circle()
-                    .fill(AppColors.accent2.opacity(0.2))
+                    .fill(AppColors.dominantMuted)
                     .frame(width: 32, height: 32)
                     .overlay {
                         Text("?")
                             .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundColor(AppColors.accent2)
+                            .foregroundColor(AppColors.dominant)
                     }
                     .overlay {
                         Circle()
-                            .stroke(AppColors.accent2.opacity(0.3), lineWidth: 1.5)
+                            .stroke(AppColors.dominant.opacity(0.3), lineWidth: 1.5)
                     }
             }
         }
@@ -289,7 +292,7 @@ struct SocialView: View {
                         .shadow(color: AppColors.accent2.opacity(0.4), radius: 8, x: 0, y: 4)
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .padding(.trailing, AppSpacing.screenPadding)
         .tabBarBottomPadding(extra: 24) // Clear tab bar + breathing room above it
     }
@@ -468,7 +471,7 @@ struct SocialView: View {
                         .subheadline(color: AppColors.accent2)
                         .padding(.vertical, AppSpacing.md)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .tabBarBottomPadding(extra: 24) // Space for floating compose button above the tab bar
@@ -481,7 +484,7 @@ struct SocialView: View {
             HStack(spacing: AppSpacing.sm) {
                 ForEach(FeedContentFilter.allCases) { filter in
                     Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
+                        withAnimation(AppMotion.stateChange) {
                             feedViewModel.contentFilter = filter
                         }
                     } label: {
@@ -503,7 +506,7 @@ struct SocialView: View {
                                     )
                             )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
             }
         }
@@ -525,7 +528,7 @@ struct SocialView: View {
             }
             .font(.caption.weight(.semibold))
             .foregroundColor(AppColors.accent2)
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
         .padding(.horizontal, AppSpacing.sm)
         .padding(.vertical, AppSpacing.xs)
@@ -541,7 +544,7 @@ struct SocialView: View {
         HStack(spacing: 0) {
             ForEach(FeedMode.allCases) { mode in
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    withAnimation(AppMotion.stateChange) {
                         feedViewModel.feedMode = mode
                     }
                     if mode == .discover && feedViewModel.trendingPosts.isEmpty {
@@ -563,7 +566,7 @@ struct SocialView: View {
                             }
                         }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .overlay(alignment: .bottom) {
@@ -613,7 +616,7 @@ struct SocialView: View {
                             Text("Show all posts")
                                 .subheadline(color: AppColors.accent2)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -642,7 +645,7 @@ struct SocialView: View {
                 Text("Show all posts")
                     .subheadline(color: AppColors.accent2)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .padding(.top, AppSpacing.xs)
         }
         .frame(maxWidth: .infinity)

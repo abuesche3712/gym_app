@@ -138,7 +138,7 @@ private struct WrappingHStack: View {
                             .font(font)
                             .foregroundColor(AppColors.dominant)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 )))
             case .mention:
                 elements.append(Element(view: AnyView(
@@ -149,7 +149,7 @@ private struct WrappingHStack: View {
                             .font(font.weight(.semibold))
                             .foregroundColor(AppColors.accent2)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 )))
             }
         }

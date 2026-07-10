@@ -79,7 +79,7 @@ struct ProgramDetailView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .sheet(isPresented: $showingActivateSheet) {
@@ -178,7 +178,7 @@ struct ProgramDetailView: View {
             .background(AppColors.surfaceSecondary)
             .cornerRadius(AppCorners.medium)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     // MARK: - Progress Card

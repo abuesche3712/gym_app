@@ -68,12 +68,12 @@ struct AllSetsSection: View {
                                     }
                                 },
                                 onDelete: canDeleteSet(exercise: exercise) ? { flatSet in
-                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                    withAnimation(AppMotion.stateChange) {
                                         onDeleteSet(flatSet)
                                     }
                                 } : nil,
                                 onUncheck: { flatSet in
-                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                    withAnimation(AppMotion.stateChange) {
                                         onUncheckSet(flatSet)
                                     }
                                 },
@@ -83,7 +83,7 @@ struct AllSetsSection: View {
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 if canDeleteSet(exercise: exercise), let leftSet = group.leftSet {
                                     Button(role: .destructive) {
-                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                        withAnimation(AppMotion.stateChange) {
                                             onDeleteSet(leftSet)
                                         }
                                     } label: {
@@ -112,7 +112,7 @@ struct AllSetsSection: View {
                                     }
                                 },
                                 onDelete: canDeleteSet(exercise: exercise) ? {
-                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                    withAnimation(AppMotion.stateChange) {
                                         onDeleteSet(flatSet)
                                     }
                                 } : nil,
@@ -120,7 +120,7 @@ struct AllSetsSection: View {
                                     onDistanceUnitChange(newUnit)
                                 } : nil,
                                 onUncheck: {
-                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                    withAnimation(AppMotion.stateChange) {
                                         onUncheckSet(flatSet)
                                     }
                                 },
@@ -130,7 +130,7 @@ struct AllSetsSection: View {
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 if canDeleteSet(exercise: exercise) {
                                     Button(role: .destructive) {
-                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                        withAnimation(AppMotion.stateChange) {
                                             onDeleteSet(flatSet)
                                         }
                                     } label: {
@@ -141,7 +141,7 @@ struct AllSetsSection: View {
                             .contextMenu {
                                 if canDeleteSet(exercise: exercise) {
                                     Button(role: .destructive) {
-                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                        withAnimation(AppMotion.stateChange) {
                                             onDeleteSet(flatSet)
                                         }
                                     } label: {
@@ -173,7 +173,7 @@ struct AllSetsSection: View {
                         .stroke(AppColors.surfaceTertiary, style: StrokeStyle(lineWidth: 1, dash: [5]))
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             // Progression buttons (show when all sets completed)
             if allSetsCompleted(exercise) &&
@@ -203,7 +203,7 @@ struct AllSetsSection: View {
                         .fill(allSetsCompleted(exercise) ? AppGradients.dominantGradient : LinearGradient(colors: [AppColors.textTertiary], startPoint: .leading, endPoint: .trailing))
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
         .padding(AppSpacing.cardPadding)
         .frame(width: width)  // Lock width to prevent layout shifts
@@ -517,7 +517,7 @@ struct UnilateralSideRow: View {
                     }
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             } else {
                 // Input fields
                 inputFields
@@ -904,7 +904,7 @@ struct UnilateralSideRow: View {
                                 .padding(.horizontal, 6)
                                 .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
 
                         Button {
                             toggleTimer()
@@ -956,7 +956,7 @@ struct UnilateralSideRow: View {
                         .padding(.horizontal, 6)
                         .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
                 Text("hold")
                     .caption2(color: AppColors.textTertiary)
 
@@ -1034,7 +1034,7 @@ struct UnilateralSideRow: View {
                                 .padding(.horizontal, 6)
                                 .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
 
                         Button {
                             toggleTimer()
@@ -1067,7 +1067,7 @@ struct UnilateralSideRow: View {
                             .padding(.horizontal, 6)
                             .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
 
                     Button {
                         toggleTimer()
@@ -1342,7 +1342,7 @@ struct IntervalSetGroupRow: View {
                             ))
                     )
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .padding(AppSpacing.md)
@@ -1420,7 +1420,7 @@ struct ProgressionButtonsSection: View {
                     .fill(isSelected ? color : color.opacity(0.12))
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     private func suggestionSummaryText(for suggestion: ProgressionSuggestion) -> String {

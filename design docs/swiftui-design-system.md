@@ -42,11 +42,9 @@ AppColors.textSecondary     // Medium emphasis (#A1A1AA)
 AppColors.textTertiary      // Low emphasis (#5A5A62)
 
 // Accent Colors (Multiple for visual variety)
-AppColors.dominant          // Cyan (#00D4E8) - Primary actions, active states
-AppColors.accent1           // Purple (#A78BFA) - Modules, secondary UI
-AppColors.accent2           // Rose (#F472B6) - Social features
-AppColors.accent3           // Teal (#2DD4BF) - Tertiary accent
-AppColors.programAccent     // Amber (#F59E0B) - Programs, scheduling
+AppColors.dominant          // Soft cyan (#33C4E8) - UI chrome, primary actions, active states
+AppColors.accent1...accent5 // Module-type identity only; never general UI chrome
+AppColors.programAccent     // Same dominant cyan - programs stay within the shared hierarchy
 
 // Semantic
 AppColors.success           // Green (#22C55E) - Completion, PRs
@@ -62,7 +60,7 @@ AppColors.error             // Red (#EF4444) - Destructive actions
 | Completed sets | `success` checkmark or `textSecondary` |
 | Upcoming sets | `textTertiary` |
 | Interactive elements (buttons, toggles) | `dominant` |
-| Module-related UI | `accent1` or `moduleColor(type)` |
+| Module badges/icons | `moduleColor(type)` |
 | Program/schedule UI | `programAccent` |
 | Destructive actions | `error` (require confirmation) |
 | PR indicators | `success` + animation |
@@ -167,7 +165,7 @@ struct WorkoutCard: View {
         }
         .padding(.space16)
         .background(Color.surfacePrimary)
-        .cornerRadius(12)
+        .cornerRadius(AppCorners.large)
     }
 }
 ```
@@ -185,37 +183,31 @@ Animation should provide feedback and delight, not delay. If an animation makes 
 ### Timing Standards
 
 ```swift
-extension Animation {
-    // MARK: - Micro (Feedback)
-    static let micro = Animation.easeOut(duration: 0.15)
-    
-    // MARK: - Standard (State changes)
-    static let standard = Animation.easeInOut(duration: 0.25)
-    
-    // MARK: - Emphasis (Celebrations, attention)
-    static let emphasis = Animation.spring(response: 0.4, dampingFraction: 0.7)
-    
-    // MARK: - Smooth (Sheet presentations, large moves)
-    static let smooth = Animation.easeInOut(duration: 0.35)
-}
+// Use the purpose-named primitives in Theme/AppAnimations.swift.
+AppMotion.press              // 140ms button acknowledgement
+AppMotion.stateChange        // 200ms selection/disclosure change
+AppMotion.reveal             // 240ms content reveal
+AppMotion.interactiveSpring  // Interruptible gesture or drag
+AppMotion.celebration        // Rare PR or workout-completion reward
 ```
 
 ### When to Animate
 
 | Action | Animation | Why |
 |--------|-----------|-----|
-| Set completed | `.emphasis` + checkmark scale | Reward! Dopamine hit. |
+| Set completed | `AppMotion.celebration` + checkmark scale | Clear, restrained reward. |
 | Rest timer tick | None | Don't distract |
 | Rest timer < 10s | Pulse on `warning` | Attention without panic |
 | PR achieved | `.emphasis` + confetti/glow | CELEBRATE THIS |
 | Navigation push | Default SwiftUI | Don't reinvent |
 | Button press | `.micro` scale to 0.97 | Tactile feedback |
-| Delete swipe | `.standard` | Smooth but not slow |
+| Delete swipe | `AppMotion.stateChange` | Smooth but not slow |
 
 ### Anti-Patterns
 - ❌ Don't animate every state change — it becomes noise
 - ❌ Don't use `linear` timing — feels robotic
-- ❌ Don't exceed 0.4s for common interactions — feels sluggish
+- ❌ Don't exceed 0.25s for common interactions — feels sluggish
+- ❌ Don't animate a keyboard-initiated action or a timer tick
 - ❌ Don't animate during active set logging — get out of the way
 
 ### Haptics Pairing
@@ -259,8 +251,8 @@ struct PrimaryButton: View {
                 .foregroundColor(.background)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                .background(Color.accent)
-                .cornerRadius(12)
+                .background(AppColors.dominant)
+                .cornerRadius(AppCorners.large)
         }
         .buttonStyle(ScaleButtonStyle())
     }
@@ -270,7 +262,7 @@ struct ScaleButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(.micro, value: configuration.isPressed)
+            .animation(AppMotion.press, value: configuration.isPressed)
     }
 }
 ```

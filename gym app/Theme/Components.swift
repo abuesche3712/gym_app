@@ -72,7 +72,7 @@ struct ModuleCard: View {
                     )
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -211,7 +211,7 @@ struct FilterPill: View {
                     )
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -234,7 +234,7 @@ struct StatPill: View {
         Group {
             if let action {
                 Button(action: action) { content }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
             } else {
                 content
             }

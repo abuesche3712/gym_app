@@ -116,7 +116,7 @@ struct MuscleGroupChip: View {
                     .stroke(isSelected ? AppColors.dominant : AppColors.surfaceTertiary, lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 

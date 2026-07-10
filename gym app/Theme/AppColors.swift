@@ -26,7 +26,10 @@ struct AppColors {
     static let dominantMuted = dominant.opacity(0.20)  // Subtle backgrounds (increased visibility)
     static let dominantSubtle = dominant.opacity(0.12) // Very subtle highlights
 
-    // MARK: - Accent Colors (More vibrant for personality!)
+    // MARK: - Contextual accents
+    // These identify module types only. They are not UI chrome: screens, cards,
+    // navigation, and primary actions use `dominant` so the interface retains a
+    // calm, predictable hierarchy.
     static let accent1 = Color(hex: "00E5CC")          // Vibrant teal (recovery/prehab)
     static let accent2 = Color(hex: "FFB800")          // Bright gold (explosive)
     static let accent3 = Color(hex: "7B61FF")          // Vibrant purple (cardio)
@@ -42,7 +45,9 @@ struct AppColors {
     static let reward = Color(hex: "4DE8DC")           // Softer cyan (PR celebration)
 
     // MARK: - Program Color
-    static let programAccent = accent2                 // Gold for programs
+    // Programs are a navigation/content concept, not a separate visual system.
+    // Keep them in the same cyan hierarchy as the rest of the app.
+    static let programAccent = dominant
 
     // MARK: - Module Type Colors (More vibrant with personality!)
     static func moduleColor(_ type: ModuleType) -> Color {

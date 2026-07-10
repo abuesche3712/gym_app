@@ -147,9 +147,9 @@ struct SetRowView: View {
                 .stroke(isHighlighted ? AppColors.dominant.opacity(0.20) : .clear, lineWidth: 2)
         )
         .shadow(color: isHighlighted ? AppColors.dominant.opacity(0.06) : .clear, radius: isHighlighted ? 4 : 0)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHighlighted)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: timerRunning)
-        .animation(.spring(response: 0.35, dampingFraction: 0.7), value: flatSet.setData.completed)
+        .animation(AppMotion.interactiveSpring, value: isHighlighted)
+        .animation(AppMotion.interactiveSpring, value: timerRunning)
+        .animation(AppMotion.interactiveSpring, value: flatSet.setData.completed)
         .onAppear { loadDefaults() }
         .onChange(of: targetFingerprint) { _, _ in
             // Reload defaults when targets change (e.g., after editing exercise via EditExerciseSheet)
@@ -275,7 +275,7 @@ struct SetRowView: View {
             )
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .accessibilityLabel("Edit completed set: \(completedSummary)")
         .accessibilityHint("Tap to modify this set")
         .contextMenu {

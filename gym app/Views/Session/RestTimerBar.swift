@@ -127,7 +127,7 @@ struct RestTimerBar: View {
             y: 4
         )
         .transition(.opacity.combined(with: .move(edge: .top)))
-        .animation(.easeInOut(duration: 0.3), value: sessionViewModel.isRestTimerRunning)
+        .animation(AppMotion.reveal, value: sessionViewModel.isRestTimerRunning)
     }
 
     private func openTwitter() {

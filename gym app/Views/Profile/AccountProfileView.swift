@@ -165,7 +165,7 @@ struct AccountProfileView: View {
                     .padding(.vertical, AppSpacing.md)
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
     }
@@ -206,7 +206,7 @@ struct AccountProfileView: View {
                             .offset(x: 4, y: 4)
                     }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
                 Spacer()
             }
@@ -347,7 +347,7 @@ struct AccountProfileView: View {
                 .padding(.vertical, AppSpacing.md)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             Divider()
                 .background(AppColors.surfaceTertiary)
@@ -366,7 +366,7 @@ struct AccountProfileView: View {
                 .padding(.vertical, AppSpacing.md)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
     }
 

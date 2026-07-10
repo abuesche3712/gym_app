@@ -56,7 +56,7 @@ struct WorkoutDetailView: View {
                             .background(AppColors.success)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
                 .listRowBackground(Color.clear)
             }
@@ -146,7 +146,7 @@ struct WorkoutDetailView: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .sheet(isPresented: $showingEditWorkout) {

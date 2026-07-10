@@ -48,7 +48,7 @@
 
 | Name | Hex | RGB | Usage |
 |------|-----|-----|-------|
-| **dominant** | `#00D9FF` | rgb(0, 217, 255) | Primary actions, interactive elements, navigation highlights |
+| **dominant** | `#33C4E8` | rgb(51, 196, 232) | Primary actions, interactive elements, navigation highlights |
 
 **When to use:**
 - Primary action buttons (sparingly)
@@ -76,7 +76,7 @@ dominantSubtle = opacity(0.12)  // Very subtle highlights
 | accent1 | `#00E5CC` | rgb(0, 229, 204) | **Teal** — Scheduled workouts, prehab/recovery modules |
 | accent2 | `#FFB800` | rgb(255, 184, 0) | **Gold** — Explosive modules, warnings |
 | accent3 | `#7B61FF` | rgb(123, 97, 255) | **Purple** — Cardio modules, volume stats |
-| accent4 | `#FF6B9D` | rgb(255, 107, 157) | **Hot Pink** — Programs (ALL program UI) |
+| accent4 | `#FF6B9D` | rgb(255, 107, 157) | **Hot Pink** — Mobility module identity only |
 | accent5 | `#FF5757` | rgb(255, 87, 87) | **Red-Orange** — Warmup modules |
 
 **Color Consistency Patterns:**
@@ -86,13 +86,11 @@ dominantSubtle = opacity(0.12)  // Very subtle highlights
 - Scheduled workouts: `accent1` (teal)
 - Today's date: `accent1` (teal background/text)
 - Rest days: `textTertiary` (grey)
-- Program workouts: `programAccent` (hot pink) — ONLY in badges/labels, NOT dots
+- Program workouts: `programAccent` (dominant cyan) — only when a program context needs a label or progress fill
 
 **Programs:**
-- ALL program UI elements: `accent4` (hot pink)
-- Active badges, buttons, progress bars, borders
-- Quick create buttons, activation buttons
-- "From Program" labels
+- Program UI uses `programAccent` (the dominant cyan), matching navigation and primary controls.
+- Module type colors remain limited to module badges and symbols.
 
 **Module Colors:**
 - Symbol-first approach with subtle color differentiation
@@ -111,7 +109,7 @@ dominantSubtle = opacity(0.12)  // Very subtle highlights
 | warning | `#FFB800` | rgb(255, 184, 0) | Rest timer urgent, attention needed, yellow = caution |
 | error | `#FF5252` | rgb(255, 82, 82) | Delete actions, failed operations, red = danger |
 | **reward** | `#00FFF0` | rgb(0, 255, 240) | **ELECTRIC cyan** — PR celebration glow! |
-| programAccent | `#FF6B9D` | rgb(255, 107, 157) | Hot pink for ALL program elements |
+| programAccent | `#33C4E8` | rgb(51, 196, 232) | Program UI within the shared cyan hierarchy |
 
 **Usage Rules:**
 - **Success:** Checkmark on set completion, completed workout indicators, "Workout Complete"
@@ -178,19 +176,15 @@ LinearGradient(
 
 ---
 
-### Program Gradient (Hot Pink)
+### Program Gradient (Dominant Cyan)
 ```swift
 LinearGradient(
-    colors: [
-        programAccent,
-        programAccent.opacity(0.7),
-        Color(hex: "C44569")  // Darker pink
-    ],
+    colors: [programAccent.opacity(0.32), programAccent.opacity(0.10)],
     startPoint: .topLeading,
     endPoint: .bottomTrailing
 )
 ```
-**Usage:** Program progress bars, active program indicators
+**Usage:** Program progress bars and active-program context, when a fill is needed.
 
 ---
 
@@ -331,9 +325,9 @@ static func moduleColor(_ type: ModuleType) -> Color {
    - When in doubt, use `dominantMuted` or `dominantSubtle`
 
 4. **Program color consistency**
-   - Hot pink (#FF6B9D) for ALL program UI
-   - Replaced all green in program contexts
-   - Unified visual language
+   - Programs use the dominant cyan hierarchy
+   - Semantic green remains reserved for completion/success
+   - Module colors never become app-wide chrome
 
 5. **Calendar consistency**
    - Green = completed (success)
@@ -387,7 +381,7 @@ static func moduleColor(_ type: ModuleType) -> Color {
 - [x] All base neutrals with purple tints
 - [x] All deprecated colors removed from active use
 - [x] Module cards with subtle styling
-- [x] Program colors unified (hot pink)
+- [x] Program colors unified with the dominant cyan hierarchy
 - [x] Calendar colors consistent
 - [x] Builder cards with reduced opacity
 - [x] Gradient opacities reduced 60%
@@ -402,8 +396,8 @@ static func moduleColor(_ type: ModuleType) -> Color {
 ### Major Changes Applied
 
 1. **Base neutrals:** Added subtle purple tints to surfaces (not background)
-2. **Dominant color:** Electric cyan (#00D9FF) for all primary actions
-3. **Programs:** Hot pink (#FF6B9D) replaces ALL green in program contexts
+2. **Dominant color:** Soft cyan (#33C4E8) for all primary actions
+3. **Programs:** Use the same dominant cyan hierarchy as the rest of the app
 4. **Calendars:** Green for completed, teal for scheduled (consistent)
 5. **Subtlety:** Reduced all gradient/accent opacities by 60%
 6. **Module cards:** Symbol-first with 80% color opacity
@@ -429,11 +423,11 @@ static func moduleColor(_ type: ModuleType) -> Color {
 **Need to add color to something? Check here first:**
 
 - **Is it a primary action?** → `dominant` (sparingly!)
-- **Is it a program?** → `programAccent` (hot pink)
+- **Is it a program?** → `programAccent` (dominant cyan)
 - **Is it completed?** → `success` (green)
 - **Is it scheduled?** → `accent1` (teal)
 - **Is it a module?** → Use `moduleColor(type)` at 80% opacity
-- **Is it just a card?** → `surfacePrimary` with subtle accent gradient
+- **Is it just a card?** → `surfacePrimary` with a neutral hairline stroke
 - **Not sure?** → Use `textSecondary` or `surfaceTertiary`
 
 **When in doubt, go neutral.** Add color only when it adds meaning.

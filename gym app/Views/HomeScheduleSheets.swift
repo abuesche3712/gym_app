@@ -96,7 +96,7 @@ struct WeekDayCell: View {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -151,7 +151,7 @@ struct ScheduleWorkoutSheet: View {
                                     NavigationLink(destination: SessionDetailView(session: session)) {
                                         CompletedSessionRow(session: session)
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(.pressable)
 
                                     if onDeleteSession != nil {
                                         Button {
@@ -161,7 +161,7 @@ struct ScheduleWorkoutSheet: View {
                                                 .subheadline(color: AppColors.error)
                                                 .frame(width: 44, height: 44)
                                         }
-                                        .buttonStyle(.plain)
+                                        .buttonStyle(.pressable)
                                     }
                                 }
                             }
@@ -227,7 +227,7 @@ struct ScheduleWorkoutSheet: View {
                                                 .fill(AppColors.surfacePrimary)
                                         )
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(.pressable)
                                 }
                             }
 
@@ -256,7 +256,7 @@ struct ScheduleWorkoutSheet: View {
                                             .fill(AppColors.accent1.opacity(0.1))
                                     )
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.pressable)
                             }
                         }
                     }
@@ -445,7 +445,7 @@ struct ScheduledWorkoutDetailRow: View {
                         .fontWeight(.semibold)
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             // Action buttons
             HStack(spacing: AppSpacing.md) {
@@ -652,7 +652,7 @@ struct QuickScheduleTodaySheet: View {
                                             .fill(AppColors.surfacePrimary)
                                     )
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.pressable)
                             }
                         }
                     }
@@ -688,7 +688,7 @@ struct QuickScheduleTodaySheet: View {
                                     .fill(AppColors.accent1.opacity(0.1))
                             )
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
                     }
                 }
                 .padding(AppSpacing.screenPadding)

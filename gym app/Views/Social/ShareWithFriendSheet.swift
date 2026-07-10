@@ -632,7 +632,7 @@ struct FriendShareRow: View {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .disabled(isSharing)
     }
 }

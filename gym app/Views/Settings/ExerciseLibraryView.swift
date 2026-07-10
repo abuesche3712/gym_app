@@ -150,7 +150,7 @@ struct ExerciseLibraryView: View {
                     Image(systemName: "plus")
                         .foregroundColor(AppColors.dominant)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .sheet(isPresented: $showingAddExercise) {
@@ -181,7 +181,7 @@ private struct TypeChip: View {
                         .fill(isSelected ? AppColors.dominant : AppColors.surfacePrimary)
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -259,7 +259,7 @@ private struct ExerciseLibraryRow: View {
                     .fill(AppColors.surfacePrimary)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .contextMenu {
             if let onDelete = onDelete {
                 Button(role: .destructive, action: onDelete) {
@@ -372,7 +372,7 @@ struct AddExerciseSheet: View {
                                             .fill(exerciseType == type ? AppColors.dominant : AppColors.surfacePrimary)
                                     )
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.pressable)
                             }
                         }
                     }
@@ -701,7 +701,7 @@ private struct ExerciseEditSheet: View {
                                 .stroke(exerciseType == type ? exerciseTypeColor(for: type) : AppColors.surfaceTertiary, lineWidth: 1)
                         )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                 }
             }
         }
@@ -901,7 +901,7 @@ private struct MuscleChip: View {
                     .stroke(isSelected ? accentColor : AppColors.surfaceTertiary, lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -963,7 +963,7 @@ private struct EquipmentChip: View {
                     .stroke(isSelected ? AppColors.dominant : AppColors.surfaceTertiary, lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 

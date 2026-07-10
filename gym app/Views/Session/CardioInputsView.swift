@@ -55,7 +55,7 @@ struct CardioInputs: View {
                                     .padding(.horizontal, 6)
                                     .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
 
                             Button {
                                 toggleTimer()
@@ -83,7 +83,7 @@ struct CardioInputs: View {
                                     .padding(.horizontal, 6)
                                     .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
                             .accessibilityLabel("Time: \(formatDuration(inputDuration))")
 
                             Button {
@@ -134,7 +134,7 @@ struct CardioInputs: View {
                                 .padding(.vertical, 8)
                                 .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.dominant.opacity(0.1)))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
                     }
 
                     Text("distance")
@@ -216,7 +216,7 @@ struct IsometricInputs: View {
                             .padding(.horizontal, 6)
                             .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
 
                     // Timer button (always show for isometric)
                     Button {
@@ -319,7 +319,7 @@ struct MobilityInputs: View {
                                 .padding(.horizontal, 6)
                                 .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
 
                         // Timer/Stopwatch button
                         Button {
@@ -541,7 +541,7 @@ struct RecoveryInputs: View {
                             .padding(.horizontal, 6)
                             .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
 
                     // Stopwatch toggle button
                     Button {

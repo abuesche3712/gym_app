@@ -299,7 +299,7 @@ struct StrengthInputs: View {
             }
             .fixedSize(horizontal: true, vertical: false)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     private func toggleAMRAPTimer(timeLimit: Int) {

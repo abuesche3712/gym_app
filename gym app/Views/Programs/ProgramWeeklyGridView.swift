@@ -109,7 +109,7 @@ struct UnifiedDayCell: View {
                 .frame(minWidth: 44, minHeight: 32)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -138,7 +138,7 @@ struct UnifiedSlotChip: View {
                     .font(.caption2)
                     .foregroundColor(.white.opacity(0.8))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 2)

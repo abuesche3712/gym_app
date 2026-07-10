@@ -25,6 +25,7 @@ struct MainTabView: View {
     @State private var selectedTab = 0
     @State private var showingFullSession = false
     @State private var hideTabBar = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // Pop-to-root triggers - increment to signal navigation reset
     @State private var homePopToRoot = 0
@@ -34,11 +35,11 @@ struct MainTabView: View {
 
     private let tabCount = 4
 
-    private let tabs: [(icon: String, tag: Int)] = [
-        ("house.fill", 0),
-        ("dumbbell.fill", 1),
-        ("person.2.fill", 2),
-        ("chart.line.uptrend.xyaxis", 3)
+    private let tabs: [(title: String, icon: String, tag: Int)] = [
+        ("Home", "house.fill", 0),
+        ("Training", "dumbbell.fill", 1),
+        ("Social", "person.2.fill", 2),
+        ("Analytics", "chart.line.uptrend.xyaxis", 3)
     ]
 
     init() {
@@ -85,7 +86,7 @@ struct MainTabView: View {
 
                         if showMiniBar {
                             MiniSessionBar(sessionViewModel: sessionViewModel) {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                withAnimation(AppMotion.interactiveSpring) {
                                     showingFullSession = true
                                 }
                             }
@@ -103,7 +104,7 @@ struct MainTabView: View {
                 SyncErrorBanner(
                     errorInfo: syncError,
                     onDismiss: {
-                        withAnimation(.easeInOut(duration: 0.2)) {
+                        withAnimation(AppMotion.stateChange) {
                             appState.dismissSyncError()
                         }
                     },
@@ -123,6 +124,11 @@ struct MainTabView: View {
         .environmentObject(appState.sessionViewModel)
         .environmentObject(appState.programViewModel)
         .preferredColorScheme(.dark)
+        .transaction { transaction in
+            if reduceMotion {
+                transaction.disablesAnimations = true
+            }
+        }
         // Centralized full-screen session presentation
         .fullScreenCover(isPresented: $showingFullSession) {
             if sessionViewModel.isSessionActive {
@@ -161,74 +167,40 @@ struct MainTabView: View {
                             // Already on this tab - pop to root
                             popToRoot(tab: tab.tag)
                         } else {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            withAnimation(AppMotion.stateChange) {
                                 selectedTab = tab.tag
                             }
                         }
                     } label: {
-                        VStack(spacing: 4) {
+                        VStack(spacing: 3) {
                             Image(systemName: tab.icon)
-                                .font(.system(size: 24, weight: .medium))
+                                .font(.system(size: 18, weight: .semibold))
                                 .foregroundColor(selectedTab == tab.tag ? AppColors.dominant : AppColors.textTertiary)
 
-                            // Selection indicator dot
-                            Circle()
-                                .fill(selectedTab == tab.tag ? AppColors.dominant : Color.clear)
-                                .frame(width: 4, height: 4)
+                            Text(tab.title)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundColor(selectedTab == tab.tag ? AppColors.textPrimary : AppColors.textTertiary)
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                        .frame(minHeight: AppSpacing.minTouchTarget)
                     }
-                    .buttonStyle(.plain)
-
-                    // Vertical divider (except after last tab)
-                    if index < tabs.count - 1 {
-                        Rectangle()
-                            .fill(AppColors.surfaceTertiary)
-                            .frame(width: 1, height: 24)
-                    }
+                    .buttonStyle(.pressable)
+                    .accessibilityLabel(tab.title)
                 }
             }
-            .padding(.horizontal, AppSpacing.md)
+            .padding(.horizontal, AppSpacing.sm)
 
         }
         .background(
-            ZStack {
-                AppColors.background
-
-                // Subtle texture overlay
-                LinearGradient(
-                    colors: [
-                        Color.white.opacity(0.02),
-                        Color.clear,
-                        Color.white.opacity(0.01)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                // Subtle noise-like speckle effect
-                Canvas { context, size in
-                    for _ in 0..<80 {
-                        let x = CGFloat.random(in: 0...size.width)
-                        let y = CGFloat.random(in: 0...size.height)
-                        let opacity = Double.random(in: 0.02...0.05)
-                        context.fill(
-                            Path(ellipseIn: CGRect(x: x, y: y, width: 1, height: 1)),
-                            with: .color(.white.opacity(opacity))
-                        )
-                    }
-                }
-            }
+            AppColors.background
             .ignoresSafeArea(edges: .bottom)
         )
     }
 
     // MARK: - Custom Tab Bar Height
 
-    /// Height of `customTabBar`: 1pt top border + 10pt vertical padding on each
-    /// side of the ~28pt icon/dot content, rounded up for breathing room.
-    static let tabBarHeight: CGFloat = 56
+    /// Height of `customTabBar`, including the 44pt icon-and-label touch target.
+    static let tabBarHeight: CGFloat = 52
 
     // MARK: - Pop to Root
 
@@ -327,24 +299,25 @@ struct MiniSessionBar: View {
             .padding(.horizontal, AppSpacing.md)
             .padding(.bottom, AppSpacing.xs)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
 // Pulse animation modifier
 private struct PulseAnimation: ViewModifier {
     @State private var isPulsing = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
-            .scaleEffect(isPulsing ? 1.3 : 1.0)
-            .opacity(isPulsing ? 0.7 : 1.0)
+            .scaleEffect(isPulsing && !reduceMotion ? 1.2 : 1.0)
+            .opacity(isPulsing && !reduceMotion ? 0.75 : 1.0)
             .animation(
-                .easeInOut(duration: 1.0).repeatForever(autoreverses: true),
+                reduceMotion ? nil : AppMotion.stateChange.repeatForever(autoreverses: true),
                 value: isPulsing
             )
             .onAppear {
-                isPulsing = true
+                isPulsing = !reduceMotion
             }
     }
 }

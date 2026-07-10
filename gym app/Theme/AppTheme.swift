@@ -26,11 +26,11 @@ struct GlassCardStyle: ViewModifier {
             .padding(padding)
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppCorners.large)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
-                    )
+                    .fill(AppColors.surfacePrimary)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
             )
     }
 }
@@ -43,27 +43,13 @@ struct GradientCardStyle: ViewModifier {
         content
             .padding(padding)
             .background(
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .fill(AppGradients.accentCardGradient(accentColor))
-
-                    // Subtle shine overlay
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .fill(AppGradients.cardShine)
-
-                    // Border with accent tint
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(
-                            LinearGradient(
-                                colors: [accentColor.opacity(0.12), AppColors.surfaceTertiary.opacity(0.15)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 0.5
-                        )
-                }
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppColors.surfacePrimary)
             )
-            .shadow(color: accentColor.opacity(0.06), radius: 12, x: 0, y: 6)
+            .overlay(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .stroke(AppColors.surfaceTertiary.opacity(0.5), lineWidth: 1)
+            )
     }
 }
 
@@ -71,21 +57,7 @@ struct SheetBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(
-                ZStack {
-                    // Base blur
-                    Rectangle()
-                        .fill(.ultraThinMaterial)
-
-                    // Subtle gradient overlay
-                    LinearGradient(
-                        colors: [
-                            AppColors.surfacePrimary.opacity(0.8),
-                            AppColors.background.opacity(0.9)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
+                AppColors.surfaceSecondary
                 .ignoresSafeArea()
             )
     }
@@ -95,6 +67,7 @@ struct SheetBackgroundModifier: ViewModifier {
 
 struct AccentButtonStyle: ButtonStyle {
     var isDestructive: Bool = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -106,12 +79,13 @@ struct AccentButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: AppCorners.medium)
                     .fill(isDestructive ? AppColors.error : AppColors.dominant)
             )
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .animation(AppAnimation.quick, value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+            .animation(reduceMotion ? nil : AppMotion.press, value: configuration.isPressed)
     }
 }
 
 struct SecondaryButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline)
@@ -126,8 +100,8 @@ struct SecondaryButtonStyle: ButtonStyle {
                             .stroke(AppColors.surfaceTertiary, lineWidth: 1)
                     )
             )
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .animation(AppAnimation.quick, value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+            .animation(reduceMotion ? nil : AppMotion.press, value: configuration.isPressed)
     }
 }
 
@@ -136,6 +110,7 @@ struct IconButtonStyle: ButtonStyle {
     var iconSize: CGFloat = 16
     var foregroundColor: Color = AppColors.textPrimary
     var backgroundColor: Color = AppColors.surfaceTertiary
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -146,8 +121,8 @@ struct IconButtonStyle: ButtonStyle {
                 Circle()
                     .fill(backgroundColor)
             )
-            .scaleEffect(configuration.isPressed ? 0.92 : 1)
-            .animation(AppAnimation.quick, value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+            .animation(reduceMotion ? nil : AppMotion.press, value: configuration.isPressed)
     }
 }
 
@@ -372,7 +347,7 @@ struct FormButtonRow: View {
             .background(AppColors.surfacePrimary)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -396,7 +371,7 @@ struct AnimatedProgressBar: View {
     var showGlow: Bool = true
 
     @State private var animatedProgress: Double = 0
-    @State private var shimmerOffset: CGFloat = -1
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         GeometryReader { geometry in
@@ -405,45 +380,22 @@ struct AnimatedProgressBar: View {
                 RoundedRectangle(cornerRadius: height / 2)
                     .fill(AppColors.surfaceTertiary)
 
-                // Progress fill with gradient
+                // Progress fill. Motion communicates a changed value; it does
+                // not shimmer continuously while the user is reading it.
                 RoundedRectangle(cornerRadius: height / 2)
                     .fill(gradient)
                     .frame(width: max(0, geometry.size.width * animatedProgress))
-                    .overlay(
-                        // Shimmer effect
-                        RoundedRectangle(cornerRadius: height / 2)
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        Color.white.opacity(0),
-                                        Color.white.opacity(0.3),
-                                        Color.white.opacity(0)
-                                    ],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .offset(x: shimmerOffset * geometry.size.width * animatedProgress)
-                            .mask(
-                                RoundedRectangle(cornerRadius: height / 2)
-                                    .frame(width: max(0, geometry.size.width * animatedProgress))
-                            )
-                    )
-                    .shadow(color: showGlow ? AppColors.dominant.opacity(0.4) : .clear, radius: 4, x: 0, y: 0)
+                    .shadow(color: showGlow ? AppColors.dominant.opacity(0.2) : .clear, radius: 3, x: 0, y: 0)
             }
         }
         .frame(height: height)
         .onAppear {
-            withAnimation(.spring(response: 0.8, dampingFraction: 0.7)) {
+            withAnimation(reduceMotion ? nil : AppMotion.reveal) {
                 animatedProgress = min(max(progress, 0), 1)
-            }
-            // Start shimmer animation
-            withAnimation(.linear(duration: 2).repeatForever(autoreverses: false)) {
-                shimmerOffset = 2
             }
         }
         .onChange(of: progress) { _, newValue in
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            withAnimation(reduceMotion ? nil : AppMotion.stateChange) {
                 animatedProgress = min(max(newValue, 0), 1)
             }
         }
@@ -460,7 +412,7 @@ struct AnimatedCircularProgress: View {
     var showLabel: Bool = true
 
     @State private var animatedProgress: Double = 0
-    @State private var rotation: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
@@ -487,12 +439,12 @@ struct AnimatedCircularProgress: View {
         }
         .frame(width: size, height: size)
         .onAppear {
-            withAnimation(.spring(response: 1.0, dampingFraction: 0.7)) {
+            withAnimation(reduceMotion ? nil : AppMotion.reveal) {
                 animatedProgress = min(max(progress, 0), 1)
             }
         }
         .onChange(of: progress) { _, newValue in
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+            withAnimation(reduceMotion ? nil : AppMotion.stateChange) {
                 animatedProgress = min(max(newValue, 0), 1)
             }
         }
@@ -516,14 +468,14 @@ extension View {
 // MARK: - List Animation Modifier
 
 extension View {
-    /// Applies staggered entrance animation to list items - slower, more elegant
+    /// Applies a short, quiet reveal for newly loaded content. Repeated lists
+    /// should never make people wait through a staged entrance.
     func listItemAnimation(index: Int, total: Int) -> some View {
         self
             .opacity(1)
             .offset(y: 0)
             .animation(
-                .spring(response: 0.55, dampingFraction: 0.85)
-                .delay(Double(index) * 0.05),
+                AppMotion.reveal.delay(min(Double(index), 3) * 0.02),
                 value: total
             )
     }
@@ -536,6 +488,7 @@ struct SkeletonView: View {
     var cornerRadius: CGFloat = AppCorners.small
 
     @State private var shimmerOffset: CGFloat = -1
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius)
@@ -559,11 +512,7 @@ struct SkeletonView: View {
                 }
             )
             .clipped()
-            .onAppear {
-                withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
-                    shimmerOffset = 2
-                }
-            }
+            .onAppear { guard !reduceMotion else { return }; withAnimation(.linear(duration: 1.2).repeatForever(autoreverses: false)) { shimmerOffset = 2 } }
     }
 }
 
@@ -576,17 +525,14 @@ struct ScreenHeader: View {
     var trailingText: String? = nil
     var trailingIcon: String? = nil
     var accentColor: Color = AppColors.dominant
-    var showAccentLine: Bool = true
+    var showAccentLine: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             // Top row: Label + Trailing content
             HStack(alignment: .center) {
                 Text(label)
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(accentColor)
-                    .textCase(.uppercase)
-                    .tracking(1.5)
+                    .elegantLabel(color: accentColor)
 
                 Spacer()
 
@@ -606,15 +552,12 @@ struct ScreenHeader: View {
 
             // Main title
             Text(title)
-                .font(.system(size: 28, weight: .bold, design: .default))
-                .foregroundColor(AppColors.textPrimary)
-                .tracking(-0.5)
+                .displaySmall(color: AppColors.textPrimary)
 
             // Optional subtitle
             if let subtitle = subtitle {
                 Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textSecondary)
+                    .subheadline()
             }
 
             // Accent line

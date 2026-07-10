@@ -270,7 +270,7 @@ struct SettingsView: View {
                     }
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
     }
 
@@ -373,7 +373,7 @@ struct SettingsView: View {
                     .padding(.vertical, AppSpacing.md)
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
             case .notDetermined:
                 Button {
@@ -399,7 +399,7 @@ struct SettingsView: View {
                     .padding(.vertical, AppSpacing.md)
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
             @unknown default:
                 EmptyView()

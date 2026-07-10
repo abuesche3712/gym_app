@@ -73,13 +73,12 @@ struct AnalyticsView: View {
     }
 
     private var analyticsHeader: some View {
-        VStack(spacing: AppSpacing.sm) {
-            HStack {
+        HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("ANALYTICS")
                         .elegantLabel(color: AppColors.dominant)
-                    Text("Progress Dashboard")
-                        .displaySmall(color: AppColors.textPrimary)
+                    Text("Your progress")
+                        .displaySmall()
                 }
 
                 Spacer()
@@ -90,7 +89,7 @@ struct AnalyticsView: View {
                         .foregroundColor(AppColors.textSecondary)
                         .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
 
                 NavigationLink(destination: SettingsView()) {
                     Image(systemName: "gearshape.fill")
@@ -98,12 +97,7 @@ struct AnalyticsView: View {
                         .foregroundColor(AppColors.textSecondary)
                         .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                 }
-                .buttonStyle(.plain)
-            }
-
-            Rectangle()
-                .fill(AppColors.surfaceTertiary)
-                .frame(height: 1)
+                .buttonStyle(.pressable)
         }
     }
 
@@ -137,7 +131,7 @@ struct AnalyticsView: View {
             .frame(minHeight: AppSpacing.minTouchTarget)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     private var emptyState: some View {
@@ -185,7 +179,7 @@ struct AnalyticsView: View {
                     .headline(color: AppColors.textPrimary)
                 Spacer()
                 Text(formatVolume(current))
-                    .monoSmall(color: AppColors.accent3)
+                    .monoSmall(color: AppColors.dominant)
                     .fontWeight(.semibold)
                 Text("lbs")
                     .caption(color: AppColors.textTertiary)
@@ -410,13 +404,13 @@ struct AnalyticsView: View {
                     .caption(color: AppColors.textTertiary)
             } else {
                 HStack(spacing: AppSpacing.md) {
-                    analyticsStat(label: "Sessions", value: "\(viewModel.cardioSummary.sessionCount)", icon: "figure.run", color: AppColors.accent1)
-                    analyticsStat(label: "Total Time", value: formatCardioTotalDuration(viewModel.cardioSummary.totalDuration), icon: "clock.fill", color: AppColors.accent2)
+                    analyticsStat(label: "Sessions", value: "\(viewModel.cardioSummary.sessionCount)", icon: "figure.run", color: AppColors.dominant)
+                    analyticsStat(label: "Total Time", value: formatCardioTotalDuration(viewModel.cardioSummary.totalDuration), icon: "clock.fill", color: AppColors.dominant)
                 }
 
                 if let distance = viewModel.cardioSummary.totalDistance, distance > 0 {
                     HStack(spacing: AppSpacing.md) {
-                        analyticsStat(label: "Total Distance", value: "\(formatDistanceValue(distance)) mi", icon: "location.fill", color: AppColors.accent3)
+                        analyticsStat(label: "Total Distance", value: "\(formatDistanceValue(distance)) mi", icon: "location.fill", color: AppColors.dominant)
                         analyticsStat(label: "Avg / Session", value: formatDuration(viewModel.cardioSummary.avgDurationPerSession), icon: "timer", color: AppColors.dominant)
                     }
                 }
@@ -550,7 +544,7 @@ struct AnalyticsView: View {
                         .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
 
             if showDryRunInfo {

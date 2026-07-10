@@ -296,7 +296,7 @@ struct EditExerciseSheet: View {
                 } label: {
                     setGroupRow(setGroup, index: index)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
             .onDelete(perform: deleteSetGroup)
 
@@ -394,7 +394,7 @@ struct EditExerciseSheet: View {
                         .multilineTextAlignment(.trailing)
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             // Muscles row
             Button {
@@ -414,7 +414,7 @@ struct EditExerciseSheet: View {
                         .multilineTextAlignment(.trailing)
                 }
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
     }
 

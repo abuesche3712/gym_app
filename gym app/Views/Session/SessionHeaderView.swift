@@ -77,7 +77,7 @@ struct SessionProgressHeader: View {
                 .padding(.vertical, AppSpacing.sm)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
         .background(AppColors.surfacePrimary.opacity(0.5))
     }
@@ -203,7 +203,7 @@ struct ExerciseCard: View {
                         // Notes button
                         if onNotesChange != nil {
                             Button {
-                                withAnimation(.easeInOut(duration: 0.2)) {
+                                withAnimation(AppMotion.stateChange) {
                                     showNotes.toggle()
                                 }
                             } label: {
@@ -216,7 +216,7 @@ struct ExerciseCard: View {
                                     }
                                 }
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
                         }
                     }
                 }

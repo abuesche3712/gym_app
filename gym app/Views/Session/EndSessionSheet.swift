@@ -108,7 +108,7 @@ struct EndSessionSheet: View {
                         .fill(feeling == value ? ratingColor(value) : AppColors.surfaceTertiary)
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     private func ratingColor(_ value: Int) -> Color {
@@ -180,7 +180,7 @@ struct EndSessionSheet: View {
                 }
                 .padding(AppSpacing.md)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             // Expanded content
             if expandedExercises.contains(exercise.id) {
@@ -247,7 +247,7 @@ struct EndSessionSheet: View {
             }
             .padding(.vertical, 4)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     private func formatSetData(set: SetData, exercise: SessionExercise) -> String {

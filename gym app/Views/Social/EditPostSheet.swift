@@ -121,7 +121,7 @@ struct EditPostSheet: View {
                         .stroke(AppColors.dominant.opacity(0.3), lineWidth: 1)
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
         .sheet(isPresented: $showingHighlightPicker) {
             if let session = viewModel.session {

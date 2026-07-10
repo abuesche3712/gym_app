@@ -399,7 +399,7 @@ struct ExerciseFormView: View {
                 .padding(.vertical, AppSpacing.md)
                 .background(AppColors.surfacePrimary)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .sheet(isPresented: $showingMusclePicker) {
                 NavigationStack {
                     MuscleGroupEnumPickerView(
@@ -453,7 +453,7 @@ struct ExerciseFormView: View {
                 .padding(.vertical, AppSpacing.md)
                 .background(AppColors.surfacePrimary)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .sheet(isPresented: $showingEquipmentPicker) {
                 NavigationStack {
                     ScrollView {
@@ -500,7 +500,7 @@ struct ExerciseFormView: View {
                         } label: {
                             SetGroupEditRow(setGroup: binding(for: index), index: index + 1)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.pressable)
 
                         if index < setGroups.count - 1 {
                             FormDivider()
@@ -529,7 +529,7 @@ struct ExerciseFormView: View {
                     .padding(.vertical, AppSpacing.md)
                     .background(AppColors.surfacePrimary)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
     }
@@ -1106,7 +1106,7 @@ struct MuscleEnumChip: View {
                     .stroke(isSelected ? selectedColor : AppColors.surfaceTertiary, lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 

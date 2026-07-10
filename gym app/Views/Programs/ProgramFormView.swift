@@ -404,7 +404,7 @@ struct ProgramFormView: View {
                     .fill(isSelected ? AppColors.dominant : AppColors.surfaceTertiary)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     // MARK: - Weekly Schedule Section
@@ -766,7 +766,7 @@ private struct DurationChip: View {
                 )
                 .foregroundColor(isSelected ? AppColors.accent2 : AppColors.textSecondary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -821,7 +821,7 @@ private struct InlineDayCell: View {
                     .frame(minWidth: 44, minHeight: 32)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
         .frame(maxWidth: .infinity, minHeight: 80)
         .background(AppColors.surfaceTertiary)
@@ -859,7 +859,7 @@ private struct InlineSlotChip: View {
                     .font(.caption2)
                     .foregroundColor(.white.opacity(0.8))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 2)
@@ -1141,7 +1141,7 @@ private struct TypeButton: View {
                     )
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -1166,7 +1166,7 @@ private struct FrequencyButton: View {
                         )
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -1191,7 +1191,7 @@ private struct WeekChip: View {
                         )
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -1238,7 +1238,7 @@ private struct SelectionRow: View {
                     )
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
 

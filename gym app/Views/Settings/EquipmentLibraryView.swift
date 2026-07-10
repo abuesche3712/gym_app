@@ -127,7 +127,7 @@ struct EquipmentLibraryView: View {
                     Image(systemName: "plus")
                         .foregroundColor(AppColors.dominant)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
         .sheet(isPresented: $showingAddEquipment) {
@@ -198,7 +198,7 @@ private struct EquipmentLibraryRow: View {
                     .fill(AppColors.surfacePrimary)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
         .contextMenu {
             if let onDelete = onDelete {
                 Button(role: .destructive, action: onDelete) {
@@ -633,7 +633,7 @@ private struct NewEquipmentMeasurableSheet: View {
                                                 .fill(name == measurable.0 ? AppColors.dominant : AppColors.surfaceTertiary)
                                         )
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.pressable)
                             }
 
                             Button {
@@ -651,7 +651,7 @@ private struct NewEquipmentMeasurableSheet: View {
                                             .fill(name == "Color" && isStringBased ? AppColors.dominant : AppColors.surfaceTertiary)
                                     )
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.pressable)
                         }
                     }
                     .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
@@ -677,7 +677,7 @@ private struct NewEquipmentMeasurableSheet: View {
                                         Image(systemName: "minus.circle.fill")
                                             .foregroundColor(AppColors.error)
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(.pressable)
                                 }
                             }
                         }
@@ -761,7 +761,7 @@ private struct AddMeasurableToEquipmentSheet: View {
                                         Image(systemName: "minus.circle.fill")
                                             .foregroundColor(AppColors.error)
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(.pressable)
                                 }
                             }
                         }

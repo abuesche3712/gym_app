@@ -39,9 +39,12 @@ struct AppGradients {
         endPoint: .center
     )
 
-    // MARK: - Dominant Gradients (VIBRANT!)
+    // MARK: - Dominant gradients
+    // Gradients are reserved for focused actions and rewards, never ordinary
+    // containers. The second stop stays close to the dominant color so a CTA
+    // reads as a control rather than decoration.
     static let dominantGradient = LinearGradient(
-        colors: [AppColors.dominant, Color(hex: "00FFF0")], // Electric cyan → brighter
+        colors: [AppColors.dominant, AppColors.dominant.opacity(0.82)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
@@ -71,12 +74,11 @@ struct AppGradients {
         endPoint: .bottom
     )
 
-    // MARK: - Progress Bar Gradient (VIBRANT rainbow!)
+    // MARK: - Progress Bar Gradient
     static let progressGradient = LinearGradient(
         colors: [
             AppColors.dominant,
-            Color(hex: "00E5CC"),  // Teal
-            Color(hex: "7B61FF")   // Purple
+            AppColors.dominant.opacity(0.82)
         ],
         startPoint: .leading,
         endPoint: .trailing
@@ -92,16 +94,16 @@ struct AppGradients {
         )
     }
 
-    // MARK: - Social Gradient (Rose for social features)
+    // MARK: - Social Gradient
     static let socialGradient = LinearGradient(
-        colors: [AppColors.accent2, Color(hex: "E879B9")],  // Rose → lighter rose
+        colors: [AppColors.dominant, AppColors.dominant.opacity(0.78)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    // MARK: - Program Gradient (Gold-based)
+    // MARK: - Program Gradient
     static let programGradient = LinearGradient(
-        colors: [AppColors.accent2.opacity(0.4), AppColors.accent2.opacity(0.15)],
+        colors: [AppColors.programAccent.opacity(0.32), AppColors.programAccent.opacity(0.1)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )

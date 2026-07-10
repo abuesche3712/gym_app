@@ -125,7 +125,7 @@ struct ProfilePhotoPickerSheet: View {
                 .background(AppColors.surfaceSecondary)
                 .cornerRadius(AppCorners.medium)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .onChange(of: selectedItem) { _, newValue in
                 loadImage(from: newValue)
             }
@@ -144,7 +144,7 @@ struct ProfilePhotoPickerSheet: View {
                 .background(AppColors.surfaceSecondary)
                 .cornerRadius(AppCorners.medium)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
 
             // Remove Photo Button (if photo exists)
             if profileRepository.currentProfile?.profilePhotoURL != nil || selectedImage != nil {
@@ -162,7 +162,7 @@ struct ProfilePhotoPickerSheet: View {
                     .background(AppColors.error.opacity(0.1))
                     .cornerRadius(AppCorners.medium)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.pressable)
             }
         }
     }

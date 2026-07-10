@@ -66,9 +66,13 @@ struct WorkoutBuilderView: View {
     // MARK: - Header
 
     private var builderHeader: some View {
-        VStack(spacing: AppSpacing.sm) {
-            HStack(alignment: .center) {
-                // Show active program indicator if exists
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text("Training")
+                    .elegantLabel(color: AppColors.dominant)
+                Text("Build your plan")
+                    .displaySmall()
+
                 if programViewModel.activeProgram != nil {
                     HStack(spacing: 6) {
                         Circle()
@@ -79,22 +83,18 @@ struct WorkoutBuilderView: View {
                             .fontWeight(.medium)
                     }
                 }
-
-                Spacer()
-
-                // Settings button
-                NavigationLink(destination: SettingsView()) {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(AppColors.textSecondary)
-                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
-                }
             }
 
-            // Bottom border
-            Rectangle()
-                .fill(AppColors.surfaceTertiary)
-                .frame(height: 1)
+            Spacer()
+
+            // Settings button
+            NavigationLink(destination: SettingsView()) {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(AppColors.textSecondary)
+                    .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+            }
+            .buttonStyle(.pressable)
         }
     }
 
@@ -245,7 +245,7 @@ struct WorkoutBuilderView: View {
                 quickActionButton(
                     icon: "square.stack.3d.up.fill",
                     label: "Module",
-                    color: AppColors.accent3
+                    color: AppColors.dominant
                 ) {
                     showingNewModule = true
                 }
@@ -265,7 +265,7 @@ struct WorkoutBuilderView: View {
                 quickActionButton(
                     icon: "calendar.badge.plus",
                     label: "Program",
-                    color: AppColors.accent2
+                    color: AppColors.dominant
                 ) {
                     showingNewProgram = true
                 }
@@ -296,7 +296,7 @@ struct WorkoutBuilderView: View {
                     .fontWeight(.medium)
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     // MARK: - Builder Cards
@@ -307,7 +307,7 @@ struct WorkoutBuilderView: View {
         } label: {
             BuilderCard(
                 icon: "calendar.badge.plus",
-                iconColor: AppColors.accent2,
+                iconColor: AppColors.dominant,
                 title: "Programs",
                 subtitle: "Multi-week training blocks",
                 count: programViewModel.programs.count,
@@ -315,7 +315,7 @@ struct WorkoutBuilderView: View {
                 activeIndicator: programViewModel.activeProgram != nil ? "1 active" : nil
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     private var workoutsCard: some View {
@@ -332,7 +332,7 @@ struct WorkoutBuilderView: View {
                 activeIndicator: nil
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
     private var modulesCard: some View {
@@ -341,7 +341,7 @@ struct WorkoutBuilderView: View {
         } label: {
             BuilderCard(
                 icon: "square.stack.3d.up.fill",
-                iconColor: AppColors.accent3,
+                iconColor: AppColors.dominant,
                 title: "Modules",
                 subtitle: "Reusable exercise groups",
                 count: moduleViewModel.modules.count,
@@ -349,7 +349,7 @@ struct WorkoutBuilderView: View {
                 activeIndicator: nil
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 
 }
@@ -369,7 +369,7 @@ struct BuilderCard: View {
         HStack(spacing: 16) {
             // Icon
             ZStack {
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: AppCorners.medium)
                     .fill(iconColor.opacity(0.15))
                     .frame(width: 56, height: 56)
 
@@ -408,21 +408,7 @@ struct BuilderCard: View {
                 .subheadline(color: AppColors.textTertiary)
         }
         .padding(AppSpacing.cardPadding)
-        .background(
-            RoundedRectangle(cornerRadius: AppCorners.large)
-                .fill(AppColors.surfacePrimary)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppCorners.large)
-                .stroke(
-                    LinearGradient(
-                        colors: [iconColor.opacity(0.4), iconColor.opacity(0.1)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-        )
+        .unifiedCard(padding: 0)
     }
 }
 

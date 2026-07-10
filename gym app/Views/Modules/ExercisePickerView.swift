@@ -471,6 +471,6 @@ struct SelectableChip: View {
                         .fill(isSelected ? color : AppColors.surfaceTertiary)
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pressable)
     }
 }
