@@ -21,6 +21,8 @@ struct ActivityFeedView: View {
                         .padding(.top, AppSpacing.sm)
                 }
                 .frame(maxWidth: .infinity)
+            } else if viewModel.error != nil && viewModel.activities.isEmpty {
+                errorState
             } else if viewModel.activities.isEmpty {
                 emptyState
             } else {
@@ -65,6 +67,24 @@ struct ActivityFeedView: View {
             icon: "bell.slash",
             title: "No Notifications",
             subtitle: "When friends interact with your posts, you'll see it here"
+        )
+    }
+
+    /// Shown when the activity listener fails and there's nothing cached to show.
+    /// Previously a listener failure (ActivityViewModel.error, set in loadActivities'
+    /// onError) had no consumer here, so it silently rendered as "No Notifications"
+    /// instead of surfacing the error with a retry action.
+    private var errorState: some View {
+        EmptyStateView(
+            icon: "wifi.exclamationmark",
+            title: "Couldn't Load Notifications",
+            subtitle: viewModel.error?.localizedDescription ?? "Something went wrong. Please try again.",
+            buttonTitle: "Retry",
+            buttonIcon: "arrow.clockwise",
+            onButtonTap: {
+                viewModel.error = nil
+                viewModel.loadActivities()
+            }
         )
     }
 }

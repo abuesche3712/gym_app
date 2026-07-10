@@ -310,6 +310,12 @@ class FeedViewModel: ObservableObject {
     func toggleLike(for post: PostWithAuthor, reactionType: ReactionType = .heart) async {
         guard let userId = currentUserId else { return }
 
+        // Re-entrancy guard: a rapid double-tap fires two overlapping Tasks that would
+        // both read isLikedByCurrentUser at entry and race their likePost/unlikePost
+        // calls, letting the like count flip unpredictably. Ignore taps that land while
+        // this post's like operation is already in flight.
+        guard !pendingLikePostIds.contains(post.post.id) else { return }
+
         // Find index and get current state
         guard let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
         let wasLiked = posts[index].isLikedByCurrentUser
@@ -364,6 +370,8 @@ class FeedViewModel: ObservableObject {
 
     func react(to post: PostWithAuthor, with reactionType: ReactionType) async {
         guard let userId = currentUserId else { return }
+        // Same re-entrancy guard as toggleLike — avoid overlapping like network calls.
+        guard !pendingLikePostIds.contains(post.post.id) else { return }
         guard let index = posts.firstIndex(where: { $0.id == post.id }) else { return }
 
         // Optimistic update

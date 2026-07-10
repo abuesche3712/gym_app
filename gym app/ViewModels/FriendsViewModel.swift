@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseFirestore
+import Combine
 
 /// Pairs a friendship with the other user's profile
 struct FriendWithProfile: Identifiable {
@@ -38,6 +39,7 @@ class FriendsViewModel: ObservableObject {
     private let activityService = FirestoreActivityService.shared
 
     private var friendshipListener: ListenerRegistration?
+    private var friendshipCancellable: AnyCancellable?
     private var searchTask: Task<Void, Never>?
     private let minimumSearchQueryLength = 2
 
@@ -51,10 +53,31 @@ class FriendsViewModel: ObservableObject {
 
     init(friendshipRepo: FriendshipRepository? = nil) {
         self.friendshipRepo = friendshipRepo ?? DataRepository.shared.friendshipRepo
+        setupFriendshipObserver()
     }
 
     deinit {
         friendshipListener?.remove()
+        friendshipCancellable?.cancel()
+    }
+
+    /// Mirrors the shared `FriendshipRepository`'s published state into this instance's
+    /// categorized lists (friends/incoming/outgoing/blocked). Every screen constructs its
+    /// own `FriendsViewModel`, so without this, a mutation performed by one instance
+    /// (e.g. accepting a request from `FriendsListView`) would leave sibling instances
+    /// (e.g. `SocialView`'s header badge) stale until a cloud round-trip echoes back —
+    /// which never happens while offline. Since `friendshipRepo` is the single shared
+    /// `DataRepository.shared.friendshipRepo` instance, any local mutation from any
+    /// instance updates `friendships` synchronously, and every subscribed instance
+    /// re-derives its state here. Mirrors `FeedViewModel.setupFriendshipObserver()`.
+    private func setupFriendshipObserver() {
+        friendshipCancellable = friendshipRepo.$friendships
+            .dropFirst() // Skip the initial buffered value; loadFriendships() handles first load
+            .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, let userId = self.currentUserId else { return }
+                Task { await self.categorizeAndLoadProfiles(self.friendshipRepo.getAllFriendships(for: userId), userId: userId) }
+            }
     }
 
     // MARK: - Data Loading
@@ -111,6 +134,36 @@ class FriendsViewModel: ObservableObject {
     private func loadFromLocalCache(userId: String) async {
         let localFriendships = friendshipRepo.getAllFriendships(for: userId)
         await categorizeAndLoadProfiles(localFriendships, userId: userId)
+    }
+
+    /// Populates `friends`/requests/blocked from the shared repository's local cache
+    /// without starting a Firestore real-time listener. Intended for short-lived,
+    /// transient presentations (e.g. `ShareWithFriendSheet`) that only need a snapshot
+    /// of already-synced friends data and shouldn't spin up a duplicate persistent
+    /// listener alongside the one the main Social screens already maintain. Falls back
+    /// to a one-shot cloud fetch if the local cache is empty (e.g. the user opens the
+    /// share sheet before ever visiting the Social tab on this device).
+    func loadFriendsSnapshot() {
+        guard let userId = currentUserId else { return }
+        isLoading = true
+        Task {
+            defer { isLoading = false }
+            let cached = friendshipRepo.getAllFriendships(for: userId)
+            if !cached.isEmpty {
+                await categorizeAndLoadProfiles(cached, userId: userId)
+            } else {
+                do {
+                    let fetched = try await firestoreService.fetchFriendships(for: userId)
+                    for friendship in fetched {
+                        friendshipRepo.updateFromCloud(friendship)
+                    }
+                    await categorizeAndLoadProfiles(fetched, userId: userId)
+                } catch {
+                    Logger.error(error, context: "FriendsViewModel.loadFriendsSnapshot")
+                    self.error = error
+                }
+            }
+        }
     }
 
     private func handleFriendshipsUpdate(_ cloudFriendships: [Friendship], userId: String) {
@@ -279,8 +332,8 @@ class FriendsViewModel: ObservableObject {
 
                 // Update denormalized friendIds arrays for both users
                 if let myId = currentUserId, let friendId = friendship.otherUserId(from: myId) {
-                    try? await firestoreService.updateFriendIdsArray(userId: myId, friendId: friendId, add: true)
-                    try? await firestoreService.updateFriendIdsArray(userId: friendId, friendId: myId, add: true)
+                    await updateFriendIdsArraySafely(userId: myId, friendId: friendId, add: true)
+                    await updateFriendIdsArraySafely(userId: friendId, friendId: myId, add: true)
                 }
 
                 // Create activity for requester
@@ -335,8 +388,8 @@ class FriendsViewModel: ObservableObject {
 
             // Update denormalized friendIds arrays for both users
             if let myId = currentUserId, let friendId = friendship.otherUserId(from: myId) {
-                try? await firestoreService.updateFriendIdsArray(userId: myId, friendId: friendId, add: false)
-                try? await firestoreService.updateFriendIdsArray(userId: friendId, friendId: myId, add: false)
+                await updateFriendIdsArraySafely(userId: myId, friendId: friendId, add: false)
+                await updateFriendIdsArraySafely(userId: friendId, friendId: myId, add: false)
             }
         } catch {
             // On failure, the listener will restore it
@@ -362,8 +415,8 @@ class FriendsViewModel: ObservableObject {
             try await firestoreService.saveFriendship(friendship)
 
             // Remove from denormalized friendIds arrays (they were friends before blocking)
-            try? await firestoreService.updateFriendIdsArray(userId: blockerId, friendId: blockedId, add: false)
-            try? await firestoreService.updateFriendIdsArray(userId: blockedId, friendId: blockerId, add: false)
+            await updateFriendIdsArraySafely(userId: blockerId, friendId: blockedId, add: false)
+            await updateFriendIdsArraySafely(userId: blockedId, friendId: blockerId, add: false)
         } catch {
             // Revert
             friendshipRepo.delete(friendship)
@@ -372,6 +425,26 @@ class FriendsViewModel: ObservableObject {
 
         // Reload to update UI
         await loadFromLocalCache(userId: blockerId)
+    }
+
+    /// Updates the denormalized `friendIds` array on a user's profile document, logging
+    /// on failure and making a single lightweight retry before giving up. This array is
+    /// a best-effort optimization (used by `loadSuggestedFriends`'s batched
+    /// friends-of-friends lookup) — a permanent failure here shouldn't fail the calling
+    /// friendship action, but silently swallowing it via bare `try?` (as before) made
+    /// desync invisible. Logging + one retry catches transient failures without new
+    /// infrastructure.
+    private func updateFriendIdsArraySafely(userId: String, friendId: String, add: Bool) async {
+        do {
+            try await firestoreService.updateFriendIdsArray(userId: userId, friendId: friendId, add: add)
+        } catch {
+            Logger.error(error, context: "FriendsViewModel.updateFriendIdsArray(add: \(add)) — retrying once")
+            do {
+                try await firestoreService.updateFriendIdsArray(userId: userId, friendId: friendId, add: add)
+            } catch {
+                Logger.error(error, context: "FriendsViewModel.updateFriendIdsArray(add: \(add)) — retry failed, friendIds array may be desynced")
+            }
+        }
     }
 
     func unblockUser(_ friendship: Friendship) async throws {

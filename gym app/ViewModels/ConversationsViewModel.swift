@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseFirestore
+import Combine
 
 /// Pairs a conversation with the other participant's profile
 struct ConversationWithProfile: Identifiable, Hashable {
@@ -38,6 +39,7 @@ class ConversationsViewModel: ObservableObject {
     private let authService = AuthService.shared
 
     private var conversationListener: ListenerRegistration?
+    private var conversationCancellable: AnyCancellable?
 
     var currentUserId: String? {
         authService.currentUser?.uid
@@ -53,10 +55,32 @@ class ConversationsViewModel: ObservableObject {
         self.conversationRepo = conversationRepo ?? DataRepository.shared.conversationRepo
         self.messageRepo = messageRepo ?? DataRepository.shared.messageRepo
         self.friendshipRepo = friendshipRepo ?? DataRepository.shared.friendshipRepo
+        setupConversationObserver()
     }
 
     deinit {
         conversationListener?.remove()
+        conversationCancellable?.cancel()
+    }
+
+    /// Mirrors the shared `ConversationRepository`'s published state into this
+    /// instance's `conversations` list. Every screen constructs its own
+    /// `ConversationsViewModel` (`SocialView`, `ConversationsListView`,
+    /// `ShareWithFriendSheet`), so without this a mutation performed by one instance
+    /// (e.g. `markAsRead` from `ConversationsListView`) leaves sibling instances (e.g.
+    /// `SocialView`'s unread badge) stale until a cloud round-trip echoes back — which
+    /// never happens while offline. `conversationRepo` is the single shared
+    /// `DataRepository.shared.conversationRepo` instance, so any local mutation from any
+    /// instance updates `conversations` synchronously, and every subscribed instance
+    /// re-derives its state here. Mirrors `FeedViewModel.setupFriendshipObserver()`.
+    private func setupConversationObserver() {
+        conversationCancellable = conversationRepo.$conversations
+            .dropFirst() // Skip the initial buffered value; loadConversations() handles first load
+            .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, let userId = self.currentUserId else { return }
+                Task { await self.loadProfilesAndFilter(self.conversationRepo.getAllConversations(for: userId), userId: userId) }
+            }
     }
 
     // MARK: - Data Loading

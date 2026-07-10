@@ -53,9 +53,24 @@ struct ConversationsListView: View {
             )
         }
         .alert("Error", isPresented: $showError) {
-            Button("OK") { }
+            Button("Retry") {
+                viewModel.error = nil
+                viewModel.loadConversations()
+            }
+            Button("OK", role: .cancel) {
+                viewModel.error = nil
+            }
         } message: {
             Text(errorMessage)
+        }
+        .onChange(of: viewModel.error != nil) { _, hasError in
+            // viewModel.error is populated when the conversations listener fails
+            // (ConversationsViewModel.loadConversations onError). Previously this alert
+            // scaffolding existed but was never fed, so a listener failure silently
+            // rendered as "no messages yet" instead of surfacing the error.
+            guard hasError else { return }
+            errorMessage = viewModel.error?.localizedDescription ?? "Something went wrong. Please try again."
+            showError = true
         }
         .onAppear {
             viewModel.loadConversations()

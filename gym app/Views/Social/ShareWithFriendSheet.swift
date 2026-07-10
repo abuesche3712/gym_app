@@ -492,8 +492,16 @@ struct ShareWithFriendSheet: View {
                 }
             }
             .onAppear {
-                friendsViewModel.loadFriendships()
-                conversationsViewModel.loadConversations()
+                // This sheet is presented from 10+ call sites across the app, each
+                // constructing fresh view models. Calling loadFriendships()/
+                // loadConversations() here would start a brand-new persistent Firestore
+                // listener on every presentation, on top of whatever listener the main
+                // Social screens already maintain. `friends` is the only data this sheet
+                // actually renders (conversationsViewModel is only used for
+                // currentUserId/startConversation, neither of which needs a listener),
+                // so load it as a one-shot snapshot of the shared repository cache
+                // instead — see FriendsViewModel.loadFriendsSnapshot().
+                friendsViewModel.loadFriendsSnapshot()
             }
             .alert("Error", isPresented: $showingError) {
                 Button("OK") {}

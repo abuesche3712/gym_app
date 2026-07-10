@@ -126,6 +126,8 @@ struct SocialView: View {
                         discoverContent
                     } else if feedViewModel.isLoading && feedViewModel.posts.isEmpty {
                         loadingView
+                    } else if feedViewModel.error != nil && feedViewModel.posts.isEmpty {
+                        errorFeedState
                     } else if feedViewModel.posts.isEmpty {
                         emptyFeedState
                     } else if feedViewModel.filteredFeedPosts.isEmpty {
@@ -303,6 +305,28 @@ struct SocialView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 100)
+    }
+
+    // MARK: - Error Feed State
+
+    /// Shown when the feed listener fails and there's no cached data to fall back on.
+    /// Without this, a listener error silently rendered as the "nothing here yet" empty
+    /// state, which reads to the user as "you have no friends/posts" instead of "we
+    /// couldn't load your feed" — indistinguishable failure modes that need different
+    /// user actions (retry vs. add friends).
+    private var errorFeedState: some View {
+        EmptyStateView(
+            icon: "wifi.exclamationmark",
+            title: "Couldn't Load Feed",
+            subtitle: feedViewModel.error?.localizedDescription ?? "Something went wrong. Please try again.",
+            buttonTitle: "Retry",
+            buttonIcon: "arrow.clockwise",
+            onButtonTap: {
+                feedViewModel.error = nil
+                feedViewModel.loadFeed()
+            }
+        )
+        .padding(.top, 60)
     }
 
     // MARK: - Empty Feed State
