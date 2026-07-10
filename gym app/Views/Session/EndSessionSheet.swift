@@ -331,8 +331,7 @@ struct EndSessionSheet: View {
                 .caption2()
 
             TextField("Add notes for this exercise...", text: exerciseNotesBinding(exercise: exercise, moduleId: moduleId), axis: .vertical)
-                .font(.subheadline)
-                .foregroundColor(AppColors.textPrimary)
+                .subheadline(color: AppColors.textPrimary)
                 .padding(AppSpacing.sm)
                 .background(
                     RoundedRectangle(cornerRadius: AppCorners.small)

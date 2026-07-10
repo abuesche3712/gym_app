@@ -141,7 +141,7 @@ struct IntervalTimerView: View {
 
             // Big countdown
             Text(formatTime(secondsRemaining))
-                .font(.largeTitle.weight(.bold))
+                .displayLarge()
                 .monospacedDigit()
                 .contentTransition(.numericText())
                 .animation(.easeInOut(duration: 0.1), value: secondsRemaining)

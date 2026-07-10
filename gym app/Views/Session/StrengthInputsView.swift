@@ -75,7 +75,7 @@ struct StrengthInputs: View {
                 // String-based implement input (e.g., band color)
                 VStack(spacing: 4) {
                     TextField(stringMeasurable.measurableName, text: $inputBandColor)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 60)
@@ -94,7 +94,7 @@ struct StrengthInputs: View {
                 VStack(spacing: 4) {
                     TextField("0", text: $inputHeight)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 48)
@@ -124,7 +124,7 @@ struct StrengthInputs: View {
                         VStack(spacing: 4) {
                             TextField("0", text: $inputWeight)
                                 .keyboardType(.decimalPad)
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(size: 16, weight: .semibold, design: .monospaced))
                                 .foregroundColor(AppColors.textPrimary)
                                 .multilineTextAlignment(.center)
                                 .frame(width: 44)
@@ -162,7 +162,7 @@ struct StrengthInputs: View {
                 VStack(spacing: 4) {
                     TextField("0", text: $inputWeight)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 48)
@@ -186,7 +186,7 @@ struct StrengthInputs: View {
             VStack(spacing: 4) {
                 TextField("0", text: $inputReps)
                     .keyboardType(.numberPad)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold, design: .monospaced))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 44)
@@ -213,7 +213,7 @@ struct StrengthInputs: View {
                 VStack(spacing: 4) {
                     TextField("-", text: $inputRPE)
                         .keyboardType(.numberPad)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 36)
@@ -249,7 +249,7 @@ struct StrengthInputs: View {
                 set: { inputMeasurableValues[measurableKey] = $0 }
             ))
             .keyboardType(measurable.isStringBased ? .default : .decimalPad)
-            .font(.system(size: 16, weight: .semibold))
+            .font(.system(size: 16, weight: .semibold, design: .monospaced))
             .foregroundColor(AppColors.textPrimary)
             .multilineTextAlignment(.center)
             .frame(width: measurable.isStringBased ? 60 : 48)
@@ -283,7 +283,8 @@ struct StrengthInputs: View {
 
                     if timerRunning {
                         Text("\(timerSecondsRemaining)")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .monospacedDigit()
                             .foregroundColor(.white)
                     } else {
                         Image(systemName: "timer")

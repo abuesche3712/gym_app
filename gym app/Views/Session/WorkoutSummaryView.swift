@@ -176,8 +176,7 @@ struct WorkoutSummaryView: View {
 
             // Workout name
             Text(session.workoutName)
-                .font(.title.bold())
-                .foregroundColor(AppColors.textPrimary)
+                .displayMedium()
                 .multilineTextAlignment(.center)
 
             // Date and duration
@@ -339,13 +338,13 @@ struct WorkoutSummaryView: View {
             // Top set display
             HStack(spacing: AppSpacing.xs) {
                 Text(formatWeight(highlight.topWeight))
-                    .font(.title3.weight(.medium)).monospacedDigit()
+                    .monoMedium()
 
                 Text("×")
                     .foregroundColor(AppColors.textTertiary)
 
                 Text("\(highlight.topReps)")
-                    .font(.title3.weight(.medium)).monospacedDigit()
+                    .monoMedium()
             }
         }
         .padding(AppSpacing.cardPadding)

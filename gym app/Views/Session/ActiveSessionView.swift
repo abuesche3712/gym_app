@@ -514,23 +514,24 @@ struct ActiveSessionView: View {
     // MARK: - Freestyle Empty State
 
     private var freestyleEmptyState: some View {
-        VStack(spacing: AppSpacing.lg) {
+        VStack {
             Spacer()
 
-            Image(systemName: "plus.circle.dashed")
-                .font(.system(size: 48))
-                .foregroundColor(AppColors.textTertiary)
-
-            Text("Add your first exercise")
-                .headline(color: AppColors.textSecondary)
-
-            Text("Tap + to start building your workout")
-                .caption(color: AppColors.textTertiary)
+            EmptyStateView(
+                icon: "plus.circle.dashed",
+                title: "Add your first exercise",
+                subtitle: "Build this workout on the fly by adding exercises as you go.",
+                buttonTitle: "Add Exercise",
+                buttonIcon: "plus",
+                onButtonTap: {
+                    HapticManager.shared.tap()
+                    showFreestyleAddExercise = true
+                }
+            )
 
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
     }
 
     private var canGoBack: Bool {

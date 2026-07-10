@@ -293,7 +293,7 @@ struct MetricPill: View {
     var body: some View {
         HStack(spacing: 2) {
             Text(value)
-                .subheadline(color: color)
+                .monoSmall(color: color)
                 .fontWeight(.semibold)
             if let label = label {
                 Text(label)

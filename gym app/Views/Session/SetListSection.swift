@@ -525,7 +525,7 @@ struct UnilateralSideRow: View {
 
                 Spacer(minLength: 0)
 
-                // Log button
+                // Log button (visual chip stays compact; hit target meets 44pt minimum)
                 Button {
                     logSet()
                 } label: {
@@ -537,6 +537,8 @@ struct UnilateralSideRow: View {
                             Circle()
                                 .fill(AppGradients.dominantGradient)
                         )
+                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.bouncy)
             }
@@ -830,7 +832,7 @@ struct UnilateralSideRow: View {
                 if !exercise.isBodyweight {
                     TextField("0", text: $inputWeight)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold, design: .monospaced))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 44)
@@ -842,7 +844,7 @@ struct UnilateralSideRow: View {
                 }
                 TextField("0", text: $inputReps)
                     .keyboardType(.numberPad)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 40)
@@ -855,7 +857,7 @@ struct UnilateralSideRow: View {
                 // Band color / string-based implement input
                 if let stringMeasurable = exercise.implementStringMeasurable {
                     TextField(stringMeasurable.measurableName, text: $inputBandColor)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold, design: .monospaced))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 50)
@@ -874,7 +876,7 @@ struct UnilateralSideRow: View {
                         set: { inputMeasurableValues[measurableKey] = $0 }
                     ))
                     .keyboardType(.decimalPad)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 44)
@@ -895,7 +897,7 @@ struct UnilateralSideRow: View {
                             }
                         } label: {
                             Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.system(size: 14, weight: .semibold, design: .monospaced))
                                 .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
                                 .frame(minWidth: 48)
                                 .padding(.vertical, 6)
@@ -922,7 +924,7 @@ struct UnilateralSideRow: View {
                 if exercise.cardioMetric.tracksDistance {
                     TextField("0", text: $inputDistance)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold, design: .monospaced))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 40)
@@ -947,7 +949,7 @@ struct UnilateralSideRow: View {
                     }
                 } label: {
                     Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputHoldTime > 0 ? "\(inputHoldTime)s" : "0s"))
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold, design: .monospaced))
                         .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
                         .frame(minWidth: 48)
                         .padding(.vertical, 6)
@@ -961,7 +963,7 @@ struct UnilateralSideRow: View {
             case .explosive:
                 TextField("0", text: $inputReps)
                     .keyboardType(.numberPad)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 36)
@@ -978,7 +980,7 @@ struct UnilateralSideRow: View {
                         set: { inputMeasurableValues[measurableKey] = $0 }
                     ))
                     .keyboardType(measurable.isStringBased ? .default : .decimalPad)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: measurable.isStringBased ? 52 : 40)
@@ -992,7 +994,7 @@ struct UnilateralSideRow: View {
                 if showLegacyExplosiveHeightInput {
                     TextField("0", text: $inputHeight)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold, design: .monospaced))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 36)
@@ -1007,7 +1009,7 @@ struct UnilateralSideRow: View {
                 if exercise.mobilityTracking.tracksReps {
                     TextField("0", text: $inputReps)
                         .keyboardType(.numberPad)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold, design: .monospaced))
                         .foregroundColor(AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 36)
@@ -1025,7 +1027,7 @@ struct UnilateralSideRow: View {
                             }
                         } label: {
                             Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(.system(size: 14, weight: .semibold, design: .monospaced))
                                 .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
                                 .frame(minWidth: 48)
                                 .padding(.vertical, 6)
@@ -1058,7 +1060,7 @@ struct UnilateralSideRow: View {
                         }
                     } label: {
                         Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold, design: .monospaced))
                             .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
                             .frame(minWidth: 48)
                             .padding(.vertical, 6)
@@ -1083,7 +1085,7 @@ struct UnilateralSideRow: View {
                 // Temperature field
                 TextField("°F", text: $inputTemperature)
                     .keyboardType(.numberPad)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 36)
@@ -1095,7 +1097,7 @@ struct UnilateralSideRow: View {
             if shouldTrackRPE {
                 TextField("-", text: $inputRPE)
                     .keyboardType(.numberPad)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
                     .foregroundColor(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 36)
@@ -1234,7 +1236,7 @@ struct CompactTextField: View {
     var body: some View {
         TextField(placeholder, text: $text)
             .keyboardType(keyboardType)
-            .font(.system(size: 14, weight: .semibold))
+            .font(.system(size: 14, weight: .semibold, design: .monospaced))
             .foregroundColor(AppColors.textPrimary)
             .multilineTextAlignment(.center)
             .frame(width: width)

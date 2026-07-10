@@ -100,10 +100,12 @@ struct QuickLogSheet: View {
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: preset.icon)
-                    .font(.body.weight(.medium))
+                    .body()
+                    .fontWeight(.medium)
 
                 Text(preset.name)
-                    .font(.caption2.weight(.medium))
+                    .caption2()
+                    .fontWeight(.medium)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
@@ -128,10 +130,12 @@ struct QuickLogSheet: View {
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: "plus")
-                    .font(.body.weight(.medium))
+                    .body()
+                    .fontWeight(.medium)
 
                 Text("Custom")
-                    .font(.caption2.weight(.medium))
+                    .caption2()
+                    .fontWeight(.medium)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity)
@@ -150,11 +154,10 @@ struct QuickLogSheet: View {
     private var sessionNameInput: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Session Name")
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
+                .caption(color: AppColors.textTertiary)
 
             TextField("e.g., Morning Run, Leg Day", text: $viewModel.sessionName)
-                .font(.body)
+                .body()
                 .padding(AppSpacing.md)
                 .background(AppColors.surfacePrimary)
                 .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
@@ -167,7 +170,7 @@ struct QuickLogSheet: View {
     private var customNameInput: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             TextField("Activity name", text: $viewModel.customName)
-                .font(.body)
+                .body()
                 .padding(AppSpacing.md)
                 .background(AppColors.surfacePrimary)
                 .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
@@ -192,7 +195,8 @@ struct QuickLogSheet: View {
             viewModel.exerciseType = type
         } label: {
             Text(type.displayName)
-                .font(.caption2.weight(.medium))
+                .caption2()
+                .fontWeight(.medium)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
                 .background(
@@ -295,28 +299,26 @@ struct QuickLogSheet: View {
     ) -> some View {
         HStack(spacing: AppSpacing.md) {
             Image(systemName: icon)
-                .font(.body)
-                .foregroundColor(AppColors.textTertiary)
+                .body(color: AppColors.textTertiary)
                 .frame(width: 24)
 
             Text(label)
-                .font(.subheadline)
-                .foregroundColor(AppColors.textSecondary)
+                .subheadline()
 
             Spacer()
 
             HStack(spacing: 4) {
                 TextField("0", text: value)
                     .keyboardType(keyboardType)
-                    .font(.body.weight(.semibold))
+                    .monoMedium()
+                    .fontWeight(.semibold)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 60)
                     .focused($focusedField, equals: focusField)
 
                 if let unit = unit {
                     Text(unit)
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption(color: AppColors.textTertiary)
                         .frame(width: 30, alignment: .leading)
                 }
             }
@@ -332,13 +334,11 @@ struct QuickLogSheet: View {
         VStack(spacing: AppSpacing.sm) {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "clock")
-                    .font(.body)
-                    .foregroundColor(AppColors.textTertiary)
+                    .body(color: AppColors.textTertiary)
                     .frame(width: 24)
 
                 Text("Duration")
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textSecondary)
+                    .subheadline()
 
                 Spacer()
 
@@ -349,14 +349,14 @@ struct QuickLogSheet: View {
                         set: { viewModel.duration = (Int($0) ?? 0) * 60 }
                     ))
                     .keyboardType(.numberPad)
-                    .font(.body.weight(.semibold))
+                    .monoMedium()
+                    .fontWeight(.semibold)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 40)
                     .focused($focusedField, equals: .durationMinutes)
 
                     Text("min")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption(color: AppColors.textTertiary)
                 }
             }
             .padding(AppSpacing.md)
@@ -380,8 +380,8 @@ struct QuickLogSheet: View {
             viewModel.duration = minutes * 60
         } label: {
             Text(minutes < 60 ? "\(minutes)m" : "1h")
-                .font(.caption2.weight(.medium))
-                .foregroundColor(isSelected ? .white : AppColors.dominant)
+                .caption2(color: isSelected ? .white : AppColors.dominant)
+                .fontWeight(.medium)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
                 .background(
@@ -398,13 +398,11 @@ struct QuickLogSheet: View {
         VStack(spacing: AppSpacing.sm) {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: "timer")
-                    .font(.body)
-                    .foregroundColor(AppColors.textTertiary)
+                    .body(color: AppColors.textTertiary)
                     .frame(width: 24)
 
                 Text("Hold Time")
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textSecondary)
+                    .subheadline()
 
                 Spacer()
 
@@ -414,13 +412,13 @@ struct QuickLogSheet: View {
                         set: { viewModel.holdTime = (Int($0) ?? 0) * 60 }
                     ))
                     .keyboardType(.numberPad)
-                    .font(.body.weight(.semibold))
+                    .monoMedium()
+                    .fontWeight(.semibold)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 40)
 
                     Text("min")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
+                        .caption(color: AppColors.textTertiary)
                 }
             }
             .padding(AppSpacing.md)
@@ -436,8 +434,8 @@ struct QuickLogSheet: View {
                     } label: {
                         let isSelected = viewModel.holdTime == mins * 60
                         Text("\(mins)m")
-                            .font(.caption2.weight(.medium))
-                            .foregroundColor(isSelected ? .white : AppColors.accent2)
+                            .caption2(color: isSelected ? .white : AppColors.accent2)
+                            .fontWeight(.medium)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 6)
                             .background(
@@ -456,7 +454,7 @@ struct QuickLogSheet: View {
     private var notesSection: some View {
         TextField("Notes (optional)", text: $viewModel.notes, axis: .vertical)
             .lineLimit(2...4)
-            .font(.subheadline)
+            .subheadline(color: AppColors.textPrimary)
             .padding(AppSpacing.md)
             .background(AppColors.surfacePrimary)
             .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
@@ -468,8 +466,7 @@ struct QuickLogSheet: View {
     private var dateSection: some View {
         HStack {
             Image(systemName: "calendar")
-                .font(.body)
-                .foregroundColor(AppColors.textTertiary)
+                .body(color: AppColors.textTertiary)
 
             DatePicker(
                 "",
@@ -495,8 +492,8 @@ struct QuickLogSheet: View {
                 saveQuickLog()
             } label: {
                 Text("Save")
-                    .font(.headline.weight(.semibold))
-                    .foregroundColor(.white)
+                    .headline(color: .white)
+                    .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, AppSpacing.md)
                     .background(
