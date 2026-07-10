@@ -466,11 +466,3 @@ struct ContentPickerSheet: View {
 #Preview("Text Post") {
     ComposePostSheet()
 }
-
-//#Preview("Content Picker") {
-//    ContentPickerSheet { _ in }
-//        .environmentObject(ModuleViewModel())
-//        .environmentObject(WorkoutViewModel())
-//        .environmentObject(ProgramViewModel())
-//        .environmentObject(SessionViewModel())
-//}

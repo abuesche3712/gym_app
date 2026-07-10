@@ -61,6 +61,9 @@ AppCorners.small / .medium / .large
 - Hide tab bar in detail views via `@Environment(\.hideTabBar)`
 - Each tab has its own NavigationStack
 
+#### Tab Bar Visibility
+The custom tab bar can be hidden for full-bleed or bottom-input views (e.g., `ChatView`, keyboards). To hide it, set the `\.hideTabBar` environment key to `true` in `.onAppear` and reset it to `false` in `.onDisappear`. This is defined in `MainTabView.swift` and ensures the view content is not obscured by the tab bar.
+
 ### Data Flow
 - `DataRepository.shared` → entity-specific repositories
 - ViewModels observe repositories via `@Published`

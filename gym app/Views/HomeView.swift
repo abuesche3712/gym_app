@@ -46,7 +46,7 @@ struct HomeView: View {
                     // Week in Review
                     weekInReviewSection
 
-                    // Best Performances (TODO)
+                    // Best Performances
                     bestPerformancesSection
                 }
                 .padding(AppSpacing.screenPadding)

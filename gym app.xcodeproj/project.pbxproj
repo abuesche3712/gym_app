@@ -19,7 +19,6 @@
 		29CC57FCAE2F50F9AA03FE2F /* ActivityFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E97682113C5D43548C7F565 /* ActivityFeedView.swift */; };
 		3065561983B445E59E349151 /* gym app/Views/Library/MuscleGroupPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD6911EEDEB4BB9B215AFBD /* gym app/Views/Library/MuscleGroupPickerView.swift */; };
 		34A15C16E7C4C417F54DC7C1 /* SyncHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B47EA18754D362A6C72724 /* SyncHandlers.swift */; };
-		35C7751756E7434DA4FF3882 /* CompletedProgram.swift in Sources */ = {isa = PBXBuildFile; fileRef = 387043A6FC4F49ABB2403548 /* CompletedProgram.swift */; };
 		39DB3468001A45CEA0E01B1F /* EndSessionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C0101650AF44AEA8A6F8A1 /* EndSessionSheet.swift */; };
 		5752B2C149CBD12B3690CBBB /* FirestoreLibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBA7D111F1233C5EFE90EDA6 /* FirestoreLibraryService.swift */; };
 		5BB70F59AE96249D975470D6 /* OtherUserProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C1B430A886BE30C7C6285A9 /* OtherUserProfileViewModel.swift */; };
@@ -305,7 +304,6 @@
 		261588C9A91F154B9EB4D4AC /* FirestoreSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreSyncService.swift; sourceTree = "<group>"; };
 		2C1B430A886BE30C7C6285A9 /* OtherUserProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherUserProfileViewModel.swift; sourceTree = "<group>"; };
 		2FE98423A878984E481AF73F /* PresenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresenceService.swift; sourceTree = "<group>"; };
-		387043A6FC4F49ABB2403548 /* CompletedProgram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletedProgram.swift; sourceTree = "<group>"; };
 		3B6F8FF624F3F58D7C2AEC9B /* FirestoreActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreActivityService.swift; sourceTree = "<group>"; };
 		4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreDeletionService.swift; sourceTree = "<group>"; };
 		67FA42E2E5A4400DBB4D6761 /* gym app/Views/Library/ImplementPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Views/Library/ImplementPickerView.swift"; sourceTree = SOURCE_ROOT; };
@@ -747,7 +745,6 @@
 				SESSEXR01FILE001 /* SessionExercise.swift */,
 				COMPMOD01FILE001 /* CompletedModule.swift */,
 				STRCHG01FILE001 /* StructuralChange.swift */,
-				387043A6FC4F49ABB2403548 /* CompletedProgram.swift */,
 				B6SCHED00DE514440E0A348 /* ScheduledWorkout.swift */,
 				B63EBEEF2F15E73700D8C22D /* SetGroup.swift */,
 				SYNCQU001FILE001 /* SyncQueue.swift */,
@@ -1366,7 +1363,6 @@
 				STRCHG02BUILD002 /* StructuralChange.swift in Sources */,
 				WKDIFF02BUILD002 /* WorkoutDiffService.swift in Sources */,
 				RVWCHG02BUILD002 /* ReviewChangesView.swift in Sources */,
-				35C7751756E7434DA4FF3882 /* CompletedProgram.swift in Sources */,
 				B6SCHED010A526CF876534C /* ScheduledWorkout.swift in Sources */,
 				B63EBF232F15E73700D8C22D /* WorkoutFormView.swift in Sources */,
 				B63EBF262F15E73700D8C22D /* MainTabView.swift in Sources */,
