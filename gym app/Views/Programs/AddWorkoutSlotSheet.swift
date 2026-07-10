@@ -128,7 +128,7 @@ struct AddWorkoutSlotSheet: View {
         Section {
             if availableWorkouts.isEmpty {
                 Text("No workouts available")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
             } else {
                 ForEach(availableWorkouts) { workout in
                     WorkoutSelectionRow(
@@ -149,7 +149,7 @@ struct AddWorkoutSlotSheet: View {
         Section {
             if availableModules.isEmpty {
                 Text("No modules available")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
             } else {
                 ForEach(availableModules) { module in
                     ModuleSelectionRow(
@@ -217,11 +217,11 @@ struct WorkoutSelectionRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(workout.name)
                         .font(.body)
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.textPrimary)
 
                     Text("\(workout.moduleReferences.count) modules")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                 }
 
                 Spacer()
@@ -257,16 +257,16 @@ struct ModuleSelectionRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(module.name)
                         .font(.body)
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.textPrimary)
 
                     HStack(spacing: 8) {
                         Text(module.type.displayName)
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppColors.textSecondary)
 
                         Text("\(module.exerciseCount) exercises")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppColors.textSecondary)
                     }
                 }
 

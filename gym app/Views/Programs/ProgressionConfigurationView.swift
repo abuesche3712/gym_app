@@ -220,7 +220,7 @@ struct ProgressionConfigurationView: View {
 
             Text(progressionPolicy.shortDescription)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(AppColors.textSecondary)
 
             if progressionPolicy == .legacy {
                 Text("Switch to Adaptive to use per-exercise enablement and overrides below.")
@@ -229,8 +229,8 @@ struct ProgressionConfigurationView: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .background(AppColors.surfaceSecondary)
+        .cornerRadius(AppCorners.medium)
     }
 
     private var defaultRuleCard: some View {
@@ -256,17 +256,17 @@ struct ProgressionConfigurationView: View {
 
                     Text(rule.displayDescription)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                 }
             } else {
                 Text("No default rule set")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .background(AppColors.surfaceSecondary)
+        .cornerRadius(AppCorners.medium)
     }
 
     private var quickPresetsCard: some View {
@@ -288,16 +288,16 @@ struct ProgressionConfigurationView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
-                        .background(Color(.tertiarySystemGroupedBackground))
-                        .cornerRadius(8)
+                        .background(AppColors.surfaceTertiary)
+                        .cornerRadius(AppCorners.small)
                     }
                     .buttonStyle(.plain)
                 }
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .background(AppColors.surfaceSecondary)
+        .cornerRadius(AppCorners.medium)
     }
 
     private var quickTuningCard: some View {
@@ -396,8 +396,8 @@ struct ProgressionConfigurationView: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .background(AppColors.surfaceSecondary)
+        .cornerRadius(AppCorners.medium)
     }
 
     private var profileControlsCard: some View {
@@ -478,8 +478,8 @@ struct ProgressionConfigurationView: View {
             .font(.caption)
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .background(AppColors.surfaceSecondary)
+        .cornerRadius(AppCorners.medium)
         .opacity(progressionPolicy == .adaptive ? 1.0 : 0.5)
         .disabled(progressionPolicy != .adaptive)
     }
@@ -495,17 +495,17 @@ struct ProgressionConfigurationView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(AppColors.textSecondary)
             Text(value)
                 .font(.caption)
                 .fontWeight(.semibold)
-                .foregroundColor(.primary)
+                .foregroundColor(AppColors.textPrimary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(Color(.tertiarySystemGroupedBackground))
-        .cornerRadius(8)
+        .background(AppColors.surfaceTertiary)
+        .cornerRadius(AppCorners.small)
     }
 
     private var selectionToolsCard: some View {
@@ -532,8 +532,8 @@ struct ProgressionConfigurationView: View {
             .font(.caption)
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .background(AppColors.surfaceSecondary)
+        .cornerRadius(AppCorners.medium)
         .opacity(progressionPolicy == .adaptive ? 1.0 : 0.5)
         .disabled(progressionPolicy != .adaptive)
     }
@@ -552,16 +552,16 @@ struct ProgressionConfigurationView: View {
             if learnedCount == 0 {
                 Text("No exercises have learned progression history yet.")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
             } else {
                 Text("\(learnedCount) exercise\(learnedCount == 1 ? "" : "s") have learned progression history.")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
 
                 if let averageAcceptance {
                     Text("Average acceptance \(Int((averageAcceptance * 100).rounded()))%")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                 }
 
                 Button("Reset Learned State") {
@@ -572,8 +572,8 @@ struct ProgressionConfigurationView: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .background(AppColors.surfaceSecondary)
+        .cornerRadius(AppCorners.medium)
     }
 
     private var subtleSignalsCard: some View {
@@ -589,7 +589,7 @@ struct ProgressionConfigurationView: View {
             if !hasSignals {
                 Text("No notable progression signals yet.")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
             } else {
                 if !lowAcceptanceIds.isEmpty {
                     subtleSignalRow(
@@ -632,8 +632,8 @@ struct ProgressionConfigurationView: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .background(AppColors.surfaceSecondary)
+        .cornerRadius(AppCorners.medium)
         .opacity(progressionPolicy == .adaptive ? 1.0 : 0.5)
         .disabled(progressionPolicy != .adaptive)
     }
@@ -647,10 +647,10 @@ struct ProgressionConfigurationView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.caption)
-                .foregroundColor(.primary)
+                .foregroundColor(AppColors.textPrimary)
             Text(detail)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundColor(AppColors.textSecondary)
             actions()
         }
         .padding(.vertical, 2)
@@ -667,7 +667,7 @@ struct ProgressionConfigurationView: View {
             if workoutsInProgram.isEmpty {
                 Text("No workouts in this program")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 40)
             }
@@ -699,19 +699,19 @@ struct ProgressionConfigurationView: View {
                 HStack {
                     Image(systemName: expandedWorkouts.contains(workout.id) ? "chevron.down" : "chevron.right")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                         .frame(width: 20)
 
                     Text(workout.name)
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.textPrimary)
 
                     Spacer()
 
                     let stats = exerciseStats(for: workout)
                     Text("\(stats.enabled)/\(stats.total)")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                 }
             }
             .buttonStyle(.plain)
@@ -760,7 +760,7 @@ struct ProgressionConfigurationView: View {
 
                 Text("(\(module.type.displayName))")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
 
                 Spacer()
 
@@ -786,8 +786,8 @@ struct ProgressionConfigurationView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(Color(.tertiarySystemGroupedBackground))
-            .cornerRadius(8)
+            .background(AppColors.surfaceTertiary)
+            .cornerRadius(AppCorners.small)
 
             // Exercises
             ForEach(module.exercises) { exercise in
@@ -848,11 +848,11 @@ struct ProgressionConfigurationView: View {
                 } else if isEnabled, let summary = stateSummary(for: exercise.id) {
                     Text(summary)
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                 } else if isEnabled, hasProfileOverride {
                     Text("Profile override")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                 }
             }
 
@@ -867,7 +867,7 @@ struct ProgressionConfigurationView: View {
                 } else if let defaultRule = defaultProgressionRule {
                     Text("+\(formatPercent(defaultRule.percentageIncrease))%")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                 }
 
                 Button {
@@ -1281,7 +1281,7 @@ struct ProgressionRuleEditorSheet: View {
                 Section {
                     Text(exampleText)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                 } header: {
                     Text("Preview")
                 }

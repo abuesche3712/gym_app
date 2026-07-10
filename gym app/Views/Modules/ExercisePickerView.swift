@@ -178,7 +178,7 @@ struct ExercisePickerView: View {
             .padding(.horizontal)
             .padding(.vertical, 12)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(AppColors.background)
     }
 
     // MARK: - Exercise List
@@ -238,7 +238,7 @@ struct ExercisePickerView: View {
             if !customName.isEmpty {
                 if isNameInLibrary {
                     Text("Exercise already exists in library")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                 } else {
                     Text("Tap + to add \"\(customName)\"")
                         .foregroundColor(AppColors.dominant)

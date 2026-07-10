@@ -202,8 +202,8 @@ struct ProgramsListView: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .background(AppColors.surfaceSecondary)
+        .cornerRadius(AppCorners.medium)
     }
 
     // MARK: - Monthly Calendar
@@ -262,8 +262,8 @@ struct ProgramsListView: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .background(AppColors.surfaceSecondary)
+        .cornerRadius(AppCorners.medium)
     }
 
     // MARK: - Program List Section
@@ -301,8 +301,8 @@ struct ProgramsListView: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .background(AppColors.surfaceSecondary)
+        .cornerRadius(AppCorners.medium)
     }
 
     // MARK: - Header
@@ -427,7 +427,7 @@ struct MonthDayCell: View {
             .frame(height: 44)
             .frame(maxWidth: .infinity)
             .background(isToday ? AppColors.accent1.opacity(0.2) : Color.clear)
-            .cornerRadius(8)
+            .cornerRadius(AppCorners.small)
             .opacity(isCurrentMonth ? 1 : 0.3)
         }
         .buttonStyle(.plain)
@@ -596,7 +596,7 @@ struct ProgramRow: View {
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(AppColors.accent2)
-                        .cornerRadius(4)
+                        .cornerRadius(AppCorners.xs)
                 }
             }
 

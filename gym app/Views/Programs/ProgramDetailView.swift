@@ -136,7 +136,7 @@ struct ProgramDetailView: View {
                         Text(currentProgram.name)
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundColor(.primary)
+                            .foregroundColor(AppColors.textPrimary)
 
                         if currentProgram.isActive {
                             Text("ACTIVE")
@@ -146,24 +146,24 @@ struct ProgramDetailView: View {
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(AppColors.accent2)
-                                .cornerRadius(4)
+                                .cornerRadius(AppCorners.xs)
                         }
                     }
 
                     HStack(spacing: 16) {
                         Label("\(currentProgram.durationWeeks) weeks", systemImage: "calendar")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppColors.textSecondary)
 
                         Label("\(currentProgram.workoutSlots.filter { $0.scheduleType == .weekly }.count) workouts/week", systemImage: "figure.run")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppColors.textSecondary)
                     }
 
                     if let description = currentProgram.programDescription, !description.isEmpty {
                         Text(description)
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppColors.textSecondary)
                             .lineLimit(2)
                     }
                 }
@@ -175,8 +175,8 @@ struct ProgramDetailView: View {
                     .foregroundColor(AppColors.accent2)
             }
             .padding()
-            .background(Color(.secondarySystemGroupedBackground))
-            .cornerRadius(12)
+            .background(AppColors.surfaceSecondary)
+            .cornerRadius(AppCorners.medium)
         }
         .buttonStyle(.plain)
     }
@@ -204,7 +204,7 @@ struct ProgramDetailView: View {
 
                 Text("\(max(weeksRemaining, 0)) weeks remaining")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
             }
 
             AnimatedProgressBar(
@@ -216,14 +216,14 @@ struct ProgramDetailView: View {
             HStack {
                 Text("Started \(startDate.formatted(date: .abbreviated, time: .omitted))")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
 
                 Spacer()
 
                 if let endDate = currentProgram.endDate {
                     Text("Ends \(endDate.formatted(date: .abbreviated, time: .omitted))")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                 }
             }
         }
@@ -245,7 +245,7 @@ struct ProgramDetailView: View {
 
             Text("Tap + to add a workout or module, tap X to remove")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(AppColors.textSecondary)
 
             ProgramWeeklyGridView(
                 program: currentProgram,
@@ -289,11 +289,11 @@ struct ProgramDetailView: View {
                         let count = currentProgram.progressionEnabledExercises.count
                         Text("\(count) exercise\(count == 1 ? "" : "s")")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppColors.textSecondary)
 
                         Image(systemName: "chevron.right")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(AppColors.textSecondary)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -322,7 +322,7 @@ struct ProgramDetailView: View {
                 if currentProgram.workoutSlots.isEmpty && currentProgram.moduleSlots.isEmpty {
                     Text("Add workouts or modules to the weekly schedule before activating")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
                 }
             }
@@ -383,7 +383,7 @@ struct EditProgramSheet: View {
 
                             Text("Changes to duration will update the program end date. The scheduled workouts will be adjusted accordingly.")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(AppColors.textSecondary)
                         }
                     }
                 }

@@ -23,7 +23,7 @@ struct ProgramWeeklyGridView: View {
                     Text(dayNames[day])
                         .font(.caption2)
                         .fontWeight(.medium)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(AppColors.textSecondary)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -51,8 +51,8 @@ struct ProgramWeeklyGridView: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .background(AppColors.surfaceSecondary)
+        .cornerRadius(AppCorners.medium)
     }
 }
 
@@ -76,14 +76,14 @@ struct UnifiedDayCell: View {
             addButton
         }
         .frame(maxWidth: .infinity, minHeight: 80)
-        .background(Color(.tertiarySystemGroupedBackground))
-        .cornerRadius(8)
+        .background(AppColors.surfaceTertiary)
+        .cornerRadius(AppCorners.small)
     }
 
     private var emptyDayContent: some View {
         Text("Rest")
             .font(.caption2)
-            .foregroundColor(.secondary)
+            .foregroundColor(AppColors.textSecondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -145,7 +145,7 @@ struct UnifiedSlotChip: View {
         .padding(.vertical, 2)
         .background(slotColor)
         .foregroundColor(.white)
-        .cornerRadius(4)
+        .cornerRadius(AppCorners.xs)
     }
 
     private var slotColor: Color {
@@ -155,8 +155,8 @@ struct UnifiedSlotChip: View {
         }
         // Generate a consistent color based on name
         let hash = slot.displayName.hashValue
-        let hue = Double(abs(hash) % 360) / 360.0
-        return Color(hue: hue, saturation: 0.6, brightness: 0.7)
+        let accentColors = [AppColors.accent1, AppColors.accent2, AppColors.accent3, AppColors.accent4, AppColors.accent5]
+        return accentColors[abs(hash) % accentColors.count]
     }
 
     private func abbreviatedName(_ name: String) -> String {

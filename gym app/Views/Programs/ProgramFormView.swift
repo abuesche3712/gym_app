@@ -859,7 +859,7 @@ private struct InlineSlotChip: View {
         .padding(.vertical, 2)
         .background(color)
         .foregroundColor(.white)
-        .cornerRadius(4)
+        .cornerRadius(AppCorners.xs)
     }
 
     private func abbreviatedName(_ name: String) -> String {

@@ -58,7 +58,7 @@ struct ActivateProgramSheet: View {
                                     .font(.subheadline)
                                 Text(dayOfWeekString(scheduled.scheduledDate))
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(AppColors.textSecondary)
                             }
 
                             Spacer()
@@ -66,7 +66,7 @@ struct ActivateProgramSheet: View {
                             if scheduled.isRestDay {
                                 Text("Rest")
                                     .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(AppColors.textSecondary)
                             } else {
                                 Text(scheduled.workoutName)
                                     .font(.subheadline)
@@ -79,7 +79,7 @@ struct ActivateProgramSheet: View {
                             Spacer()
                             Text("+ more workouts...")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(AppColors.textSecondary)
                             Spacer()
                         }
                     }
@@ -100,7 +100,7 @@ struct ActivateProgramSheet: View {
 
                                 Text("Activating this program will deactivate \"\(programViewModel.activeProgram?.name ?? "the current program")\".")
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(AppColors.textSecondary)
                             }
                         }
                     }
@@ -137,11 +137,11 @@ struct ActivateProgramSheet: View {
     private func summaryRow(icon: String, title: String, value: String) -> some View {
         HStack {
             Image(systemName: icon)
-                .foregroundColor(.secondary)
+                .foregroundColor(AppColors.textSecondary)
                 .frame(width: 24)
 
             Text(title)
-                .foregroundColor(.secondary)
+                .foregroundColor(AppColors.textSecondary)
 
             Spacer()
 
