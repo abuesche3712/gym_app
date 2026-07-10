@@ -628,7 +628,7 @@ struct HomeView: View {
             // Header with week navigation
             HStack {
                 Button {
-                    withAnimation {
+                    withAnimation(AppAnimation.standard) {
                         selectedCalendarDate = Calendar.current.date(byAdding: .weekOfYear, value: -1, to: selectedCalendarDate) ?? selectedCalendarDate
                     }
                 } label: {
@@ -649,7 +649,7 @@ struct HomeView: View {
                 Spacer()
 
                 Button {
-                    withAnimation {
+                    withAnimation(AppAnimation.standard) {
                         selectedCalendarDate = Calendar.current.date(byAdding: .weekOfYear, value: 1, to: selectedCalendarDate) ?? selectedCalendarDate
                     }
                 } label: {

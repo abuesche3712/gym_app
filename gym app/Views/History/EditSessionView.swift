@@ -263,7 +263,7 @@ struct EditSessionView: View {
                     Label("Undo", systemImage: "arrow.uturn.backward")
                         .caption(color: editHistory.isEmpty ? AppColors.textTertiary : AppColors.textPrimary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.sm)
+                        .padding(.vertical, AppSpacing.md)
                         .background(
                             RoundedRectangle(cornerRadius: AppCorners.medium)
                                 .fill(AppColors.surfaceTertiary.opacity(0.45))
@@ -278,7 +278,7 @@ struct EditSessionView: View {
                     Label("Revert All", systemImage: "arrow.counterclockwise")
                         .caption(color: hasUnsavedChanges ? AppColors.error : AppColors.textTertiary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.sm)
+                        .padding(.vertical, AppSpacing.md)
                         .background(
                             RoundedRectangle(cornerRadius: AppCorners.medium)
                                 .fill(AppColors.error.opacity(hasUnsavedChanges ? 0.12 : 0.05))
@@ -484,7 +484,7 @@ struct EditSessionView: View {
                     .disabled(!canRemoveSet(from: group))
 
                     Text("\(logicalSetCount(in: group))")
-                        .caption(color: AppColors.textSecondary)
+                        .monoCaption(color: AppColors.textSecondary)
                         .frame(minWidth: 18)
 
                     Button {

@@ -1038,11 +1038,14 @@ struct SessionExerciseCard: View {
 
             let diff = currentWeight - previousWeight
             if abs(diff) >= 2.5 {
+                let trendColor: Color = diff > 0 ? AppColors.success : AppColors.warning
                 HStack(spacing: 2) {
                     Image(systemName: diff > 0 ? "arrow.up.right" : "arrow.down.right")
                         .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(trendColor)
                     Text(formatWeight(abs(diff)))
-                        .font(.caption2.weight(.semibold))
+                        .monoCaption(color: trendColor)
+                        .fontWeight(.semibold)
                 }
             }
         }

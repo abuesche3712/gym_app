@@ -91,9 +91,10 @@ struct WeekDayCell: View {
             .overlay {
                 if isToday {
                     RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .stroke(AppColors.accent2, lineWidth: 1.5)
+                        .stroke(AppColors.accent1, lineWidth: 1.5)
                 }
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

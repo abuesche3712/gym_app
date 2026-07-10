@@ -231,27 +231,12 @@ struct HistoryView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: AppSpacing.lg) {
-            ZStack {
-                Circle()
-                    .fill(AppColors.surfacePrimary)
-                    .frame(width: 80, height: 80)
-
-                Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 32, weight: .medium))
-                    .foregroundColor(AppColors.textTertiary)
-            }
-
-            VStack(spacing: AppSpacing.xs) {
-                Text("No Sessions")
-                    .headline()
-
-                Text(searchText.isEmpty ? "Complete a workout to see it here" : "No workouts match your search")
-                    .caption()
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .padding(.top, AppSpacing.xxl)
+        EmptyStateView(
+            icon: "clock.arrow.circlepath",
+            title: "No Sessions",
+            subtitle: searchText.isEmpty ? "Complete a workout to see it here" : "No workouts match your search"
+        )
+        .padding(.top, AppSpacing.xl)
         .opacity(animateIn ? 1 : 0)
         .animation(AppAnimation.entrance.delay(0.2), value: animateIn)
     }

@@ -125,7 +125,7 @@ struct VolumeTrendSwiftChart: View {
                 x: .value("Week", point.weekStart, unit: .weekOfYear),
                 y: .value("Volume", point.totalVolume)
             )
-            .foregroundStyle(point.totalVolume > 0 ? AppColors.dominant : AppColors.surfaceTertiary)
+            .foregroundStyle(point.totalVolume > 0 ? AppColors.accent3 : AppColors.surfaceTertiary)
             .cornerRadius(AppCorners.xs)
         }
         .chartXAxis {

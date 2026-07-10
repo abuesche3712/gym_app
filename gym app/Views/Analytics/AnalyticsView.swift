@@ -121,7 +121,7 @@ struct AnalyticsView: View {
 
     private func sectionHeader(_ title: String, isExpanded: Binding<Bool>) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.25)) {
+            withAnimation(AppAnimation.standard) {
                 isExpanded.wrappedValue.toggle()
             }
         } label: {
@@ -134,33 +134,19 @@ struct AnalyticsView: View {
                     .foregroundColor(AppColors.textTertiary)
                     .rotationEffect(.degrees(isExpanded.wrappedValue ? 90 : 0))
             }
+            .frame(minHeight: AppSpacing.minTouchTarget)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
     private var emptyState: some View {
-        VStack(spacing: AppSpacing.lg) {
-            ZStack {
-                Circle()
-                    .fill(AppColors.dominant.opacity(0.12))
-                    .frame(width: 100, height: 100)
-
-                Image(systemName: "chart.xyaxis.line")
-                    .font(.system(size: 36, weight: .semibold))
-                    .foregroundColor(AppColors.dominant)
-            }
-
-            VStack(spacing: AppSpacing.xs) {
-                Text("No Analytics Yet")
-                    .headline(color: AppColors.textPrimary)
-
-                Text("Complete your first workout to unlock progression insights.")
-                    .subheadline(color: AppColors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, AppSpacing.xxl)
+        EmptyStateView(
+            icon: "chart.xyaxis.line",
+            title: "No Analytics Yet",
+            subtitle: "Complete your first workout to unlock progression insights."
+        )
+        .padding(.top, AppSpacing.xl)
     }
 
     private var consistencyCard: some View {
@@ -199,7 +185,7 @@ struct AnalyticsView: View {
                     .headline(color: AppColors.textPrimary)
                 Spacer()
                 Text(formatVolume(current))
-                    .monoSmall(color: AppColors.dominant)
+                    .monoSmall(color: AppColors.accent3)
                     .fontWeight(.semibold)
                 Text("lbs")
                     .caption(color: AppColors.textTertiary)
@@ -557,10 +543,12 @@ struct AnalyticsView: View {
                 Text("Dry-Run Simulator")
                     .headline(color: AppColors.textPrimary)
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { showDryRunInfo.toggle() }
+                    withAnimation(AppAnimation.quick) { showDryRunInfo.toggle() }
                 } label: {
                     Image(systemName: "info.circle")
                         .foregroundColor(AppColors.textTertiary)
+                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -613,7 +601,7 @@ struct AnalyticsView: View {
                     .caption(color: AppColors.textSecondary)
             }
             Text(value)
-                .subheadline(color: AppColors.textPrimary)
+                .monoSmall(color: AppColors.textPrimary)
                 .fontWeight(.semibold)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
