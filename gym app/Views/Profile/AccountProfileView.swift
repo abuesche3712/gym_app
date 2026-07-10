@@ -153,15 +153,19 @@ struct AccountProfileView: View {
                 } label: {
                     HStack {
                         Image(systemName: "apple.logo")
+                            .foregroundColor(AppColors.dominant)
                             .frame(width: 28)
                         Text("Sign in with Apple")
+                            .body()
                         Spacer()
                         Image(systemName: "chevron.right")
                             .caption(color: AppColors.textTertiary)
                             .fontWeight(.semibold)
                     }
+                    .padding(.vertical, AppSpacing.md)
+                    .contentShape(Rectangle())
                 }
-                .padding(.vertical, AppSpacing.sm)
+                .buttonStyle(.plain)
             }
         }
     }
@@ -235,7 +239,7 @@ struct AccountProfileView: View {
                             .scaleEffect(0.8)
                     } else if let available = isUsernameAvailable {
                         Image(systemName: available ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundStyle(available ? .green : .red)
+                            .foregroundStyle(available ? AppColors.success : AppColors.error)
                     }
                 }
 
@@ -247,6 +251,7 @@ struct AccountProfileView: View {
             .padding(.vertical, AppSpacing.sm)
 
             Divider()
+                .background(AppColors.surfaceTertiary)
 
             // Display Name field
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
@@ -258,6 +263,7 @@ struct AccountProfileView: View {
             .padding(.vertical, AppSpacing.sm)
 
             Divider()
+                .background(AppColors.surfaceTertiary)
 
             // Bio field
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
@@ -338,10 +344,13 @@ struct AccountProfileView: View {
                         .foregroundColor(AppColors.error)
                     Spacer()
                 }
+                .padding(.vertical, AppSpacing.md)
+                .contentShape(Rectangle())
             }
-            .padding(.vertical, AppSpacing.sm)
+            .buttonStyle(.plain)
 
             Divider()
+                .background(AppColors.surfaceTertiary)
 
             Button(role: .destructive) {
                 showingDeleteConfirmation = true
@@ -354,8 +363,10 @@ struct AccountProfileView: View {
                         .foregroundColor(AppColors.error)
                     Spacer()
                 }
+                .padding(.vertical, AppSpacing.md)
+                .contentShape(Rectangle())
             }
-            .padding(.vertical, AppSpacing.sm)
+            .buttonStyle(.plain)
         }
     }
 

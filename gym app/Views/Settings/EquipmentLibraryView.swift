@@ -70,7 +70,7 @@ struct EquipmentLibraryView: View {
                         label: "Provided",
                         isSelected: selectedSource == .provided,
                         action: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
+                            withAnimation(AppAnimation.standard) {
                                 selectedSource = selectedSource == .provided ? .all : .provided
                             }
                         }
@@ -80,7 +80,7 @@ struct EquipmentLibraryView: View {
                         label: "Custom",
                         isSelected: selectedSource == .custom,
                         action: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
+                            withAnimation(AppAnimation.standard) {
                                 selectedSource = selectedSource == .custom ? .all : .custom
                             }
                         }
@@ -107,10 +107,10 @@ struct EquipmentLibraryView: View {
                 }
 
                 if filteredEquipment.isEmpty {
-                    ContentUnavailableView(
-                        "No Equipment",
-                        systemImage: "dumbbell",
-                        description: Text(searchText.isEmpty ? "Add custom equipment to get started" : "No equipment matches your search")
+                    EmptyStateView(
+                        icon: "dumbbell",
+                        title: "No Equipment",
+                        subtitle: searchText.isEmpty ? "Add custom equipment to get started" : "No equipment matches your search"
                     )
                     .padding(.top, AppSpacing.xl)
                 }

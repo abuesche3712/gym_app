@@ -13,7 +13,7 @@ struct SignInView: View {
     @StateObject private var authService = AuthService.shared
 
     var body: some View {
-        VStack(spacing: 40) {
+        VStack(spacing: AppSpacing.xxl) {
             Spacer()
 
             // App logo/title
@@ -32,7 +32,7 @@ struct SignInView: View {
             Spacer()
 
             // Sign in section
-            VStack(spacing: 20) {
+            VStack(spacing: AppSpacing.lg) {
                 SignInWithAppleButton(.signIn) { request in
                     authService.prepareAppleSignInRequest(request)
                 } onCompletion: { result in
@@ -42,7 +42,7 @@ struct SignInView: View {
                 }
                 .signInWithAppleButtonStyle(.black)
                 .frame(height: 50)
-                .cornerRadius(10)
+                .cornerRadius(AppCorners.medium)
 
                 if authService.isLoading {
                     ProgressView()
@@ -55,7 +55,7 @@ struct SignInView: View {
                         .multilineTextAlignment(.center)
                 }
             }
-            .padding(.horizontal, 40)
+            .padding(.horizontal, AppSpacing.xxl)
 
             // Skip button
             Button {
@@ -70,10 +70,10 @@ struct SignInView: View {
                 .caption(color: AppColors.textTertiary)
                 .tint(AppColors.dominant)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+                .padding(.horizontal, AppSpacing.xxl)
 
             Spacer()
-                .frame(height: 40)
+                .frame(height: AppSpacing.xxl)
         }
         .padding()
         .onChange(of: authService.isAuthenticated) { _, isAuthenticated in

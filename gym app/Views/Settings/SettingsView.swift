@@ -13,11 +13,6 @@ struct SettingsView: View {
     @ObservedObject private var dataRepository = DataRepository.shared
     @ObservedObject private var pushService = PushNotificationService.shared
     @State private var showingAbout = false
-    @State private var showingSignIn = false
-    @State private var showingDeleteConfirmation = false
-    @State private var showingReauthSheet = false
-    @State private var showingDeleteError = false
-    @State private var deleteErrorMessage = ""
     @State private var showingSyncLogs = false
     @State private var debugTapCount = 0
     @State private var showingRecoveryReset = false
@@ -167,43 +162,6 @@ struct SettingsView: View {
             .sheet(isPresented: $showingAbout) {
                 AboutView()
             }
-            .sheet(isPresented: $showingSignIn) {
-                SignInView()
-            }
-            .alert("Delete Account", isPresented: $showingDeleteConfirmation) {
-                Button("Cancel", role: .cancel) { }
-                Button("Delete", role: .destructive) {
-                    Task {
-                        do {
-                            try await authService.deleteAccount()
-                        } catch AuthError.requiresReauthentication {
-                            showingReauthSheet = true
-                        } catch {
-                            deleteErrorMessage = error.localizedDescription
-                            showingDeleteError = true
-                        }
-                    }
-                }
-            } message: {
-                Text("This will permanently delete your account, cloud data, and local data on this device. This cannot be undone.")
-            }
-            .alert("Deletion Failed", isPresented: $showingDeleteError) {
-                Button("OK") { }
-            } message: {
-                Text(deleteErrorMessage)
-            }
-            .sheet(isPresented: $showingReauthSheet) {
-                ReauthenticationView {
-                    Task {
-                        do {
-                            try await authService.deleteAccount()
-                        } catch {
-                            deleteErrorMessage = error.localizedDescription
-                            showingDeleteError = true
-                        }
-                    }
-                }
-            }
             .navigationDestination(isPresented: $showingSyncLogs) {
                 DebugSyncLogsView()
             }
@@ -254,8 +212,9 @@ struct SettingsView: View {
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
                 }
+                .padding(.vertical, AppSpacing.md)
+                .contentShape(Rectangle())
             }
-            .padding(.vertical, AppSpacing.sm)
 
             Button {
                 StartupGuard.exitRecoveryMode()
@@ -268,8 +227,9 @@ struct SettingsView: View {
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
                 }
+                .padding(.vertical, AppSpacing.md)
+                .contentShape(Rectangle())
             }
-            .padding(.vertical, AppSpacing.sm)
             .opacity(StartupGuard.isInRecoveryMode ? 1 : 0.5)
             .disabled(!StartupGuard.isInRecoveryMode)
         }
@@ -347,9 +307,10 @@ struct SettingsView: View {
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
                 }
+                .padding(.vertical, AppSpacing.md)
+                .contentShape(Rectangle())
             }
             .disabled(dataRepository.isSyncing)
-            .padding(.vertical, AppSpacing.sm)
 
             Button {
                 Task {
@@ -364,9 +325,10 @@ struct SettingsView: View {
                         .foregroundColor(AppColors.textPrimary)
                     Spacer()
                 }
+                .padding(.vertical, AppSpacing.md)
+                .contentShape(Rectangle())
             }
             .disabled(dataRepository.isSyncing)
-            .padding(.vertical, AppSpacing.sm)
         }
     }
 
@@ -409,6 +371,7 @@ struct SettingsView: View {
                             .caption(color: AppColors.dominant)
                     }
                     .padding(.vertical, AppSpacing.md)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
 
@@ -434,6 +397,7 @@ struct SettingsView: View {
                             .fontWeight(.semibold)
                     }
                     .padding(.vertical, AppSpacing.md)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
 
@@ -509,6 +473,7 @@ struct SettingsRow<Content: View>: View {
             trailing
         }
         .padding(.vertical, AppSpacing.md)
+        .contentShape(Rectangle())
     }
 }
 
@@ -533,6 +498,7 @@ struct SettingsRowLabel: View {
                 .fontWeight(.semibold)
         }
         .padding(.vertical, AppSpacing.md)
+        .contentShape(Rectangle())
     }
 }
 

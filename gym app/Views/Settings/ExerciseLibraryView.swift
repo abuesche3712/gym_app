@@ -90,7 +90,7 @@ struct ExerciseLibraryView: View {
                         isSelected: selectedSource == .provided,
                         showSelectionStroke: true,
                         action: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
+                            withAnimation(AppAnimation.standard) {
                                 selectedSource = selectedSource == .provided ? .all : .provided
                             }
                         }
@@ -101,7 +101,7 @@ struct ExerciseLibraryView: View {
                         isSelected: selectedSource == .custom,
                         showSelectionStroke: true,
                         action: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
+                            withAnimation(AppAnimation.standard) {
                                 selectedSource = selectedSource == .custom ? .all : .custom
                             }
                         }
@@ -113,19 +113,28 @@ struct ExerciseLibraryView: View {
                 }
 
                 // Exercise list
-                LazyVStack(spacing: AppSpacing.sm) {
-                    ForEach(filteredExercises) { exercise in
-                        ExerciseLibraryRow(
-                            exercise: exercise,
-                            isCustom: exercise.isCustom,
-                            onTap: {
-                                exerciseToEdit = exercise
-                            },
-                            onDelete: exercise.isCustom ? {
-                                customLibrary.deleteExercise(exercise)
-                                resolver.refreshCache()
-                            } : nil
-                        )
+                if filteredExercises.isEmpty {
+                    EmptyStateView(
+                        icon: "dumbbell",
+                        title: "No Exercises",
+                        subtitle: searchText.isEmpty ? "Add a custom exercise to get started" : "No exercises match your search"
+                    )
+                    .padding(.top, AppSpacing.xl)
+                } else {
+                    LazyVStack(spacing: AppSpacing.sm) {
+                        ForEach(filteredExercises) { exercise in
+                            ExerciseLibraryRow(
+                                exercise: exercise,
+                                isCustom: exercise.isCustom,
+                                onTap: {
+                                    exerciseToEdit = exercise
+                                },
+                                onDelete: exercise.isCustom ? {
+                                    customLibrary.deleteExercise(exercise)
+                                    resolver.refreshCache()
+                                } : nil
+                            )
+                        }
                     }
                 }
             }
