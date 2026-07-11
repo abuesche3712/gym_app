@@ -26,6 +26,11 @@ struct WorkoutBuilderView: View {
                         workoutsCard
                         modulesCard
                     }
+                    .padding(AppSpacing.xs)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppCorners.large)
+                            .fill(AppColors.surfacePrimary.opacity(0.55))
+                    )
 
                 }
                 .padding(AppSpacing.screenPadding)
@@ -80,7 +85,7 @@ struct WorkoutBuilderView: View {
         } label: {
             BuilderCard(
                 icon: "calendar.badge.plus",
-                iconColor: AppColors.dominant,
+                iconColor: AppColors.accent4,
                 title: "Programs",
                 subtitle: "Multi-week training blocks",
                 count: programViewModel.programs.count,
@@ -114,7 +119,7 @@ struct WorkoutBuilderView: View {
         } label: {
             BuilderCard(
                 icon: "square.stack.3d.up.fill",
-                iconColor: AppColors.dominant,
+                iconColor: AppColors.accent3,
                 title: "Modules",
                 subtitle: "Reusable exercise groups",
                 count: moduleViewModel.modules.count,
@@ -181,6 +186,10 @@ struct BuilderCard: View {
                 .subheadline(color: AppColors.textTertiary)
         }
         .padding(AppSpacing.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .fill(iconColor.opacity(0.035))
+        )
         .unifiedCard(padding: 0)
     }
 }

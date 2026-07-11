@@ -13,6 +13,8 @@ struct HomeView: View {
     @EnvironmentObject var sessionViewModel: SessionViewModel
     @EnvironmentObject var moduleViewModel: ModuleViewModel
 
+    @State private var selectedCalendarDate = Date()
+    @State private var dayToSchedule: IdentifiableDate?
     @State private var showingTodayWorkoutDetail = false
     @State private var showingQuickSchedule = false
     @State private var showingQuickLog = false
@@ -32,6 +34,9 @@ struct HomeView: View {
                     // Today's Workout Bar
                     todayWorkoutBar
 
+                    // Scheduled and completed workouts for the current week.
+                    weekCalendarSection
+
                     adHocLogButton
                 }
                 .padding(AppSpacing.screenPadding)
@@ -40,6 +45,34 @@ struct HomeView: View {
             .background(AppColors.background.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
+            .sheet(item: $dayToSchedule) { identifiableDate in
+                let date = identifiableDate.date
+                ScheduleWorkoutSheet(
+                    date: date,
+                    workouts: workoutViewModel.workouts,
+                    modules: moduleViewModel.modules,
+                    scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date),
+                    sessions: sessionsForDate(date),
+                    onSchedule: { workout in
+                        workoutViewModel.scheduleWorkout(workout, for: date)
+                    },
+                    onScheduleRest: {
+                        workoutViewModel.scheduleRestDay(for: date)
+                    },
+                    onUnschedule: { scheduled in
+                        workoutViewModel.unscheduleWorkout(scheduled)
+                    },
+                    onStartWorkout: { workout in
+                        dayToSchedule = nil
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            startWorkout(workout, scheduledDate: date)
+                        }
+                    },
+                    onDeleteSession: { session in
+                        sessionViewModel.deleteSession(session)
+                    }
+                )
+            }
             .sheet(isPresented: $showingTodayWorkoutDetail) {
                 if let scheduled = workoutViewModel.getTodaySchedule(),
                    let workoutId = scheduled.workoutId,
@@ -508,6 +541,81 @@ struct HomeView: View {
             )
         }
         .buttonStyle(.pressable)
+    }
+
+    // MARK: - Week Calendar
+
+    private var weekCalendarSection: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack {
+                Text("Schedule")
+                    .elegantLabel(color: AppColors.textSecondary)
+
+                Spacer()
+
+                Button {
+                    withAnimation(AppAnimation.standard) {
+                        selectedCalendarDate = Calendar.current.date(
+                            byAdding: .weekOfYear,
+                            value: -1,
+                            to: selectedCalendarDate
+                        ) ?? selectedCalendarDate
+                    }
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .caption(color: AppColors.textSecondary)
+                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+                }
+                .buttonStyle(.pressable)
+                .accessibilityLabel("Previous week")
+
+                Text(weekRangeText)
+                    .caption(color: AppColors.textSecondary)
+                    .frame(minWidth: 98)
+
+                Button {
+                    withAnimation(AppAnimation.standard) {
+                        selectedCalendarDate = Calendar.current.date(
+                            byAdding: .weekOfYear,
+                            value: 1,
+                            to: selectedCalendarDate
+                        ) ?? selectedCalendarDate
+                    }
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .caption(color: AppColors.textSecondary)
+                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+                }
+                .buttonStyle(.pressable)
+                .accessibilityLabel("Next week")
+            }
+
+            HStack(spacing: 0) {
+                ForEach(weekDates, id: \.self) { date in
+                    WeekDayCell(
+                        date: date,
+                        isToday: Calendar.current.isDateInToday(date),
+                        scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date),
+                        completedSessions: sessionsForDate(date)
+                    ) {
+                        dayToSchedule = IdentifiableDate(date: date)
+                    }
+                }
+            }
+            .padding(.vertical, AppSpacing.sm)
+            .unifiedCard(padding: 0)
+        }
+    }
+
+    private var weekDates: [Date] {
+        workoutViewModel.getWeekDates(for: selectedCalendarDate)
+    }
+
+    private var weekRangeText: String {
+        guard let firstDate = weekDates.first, let lastDate = weekDates.last else { return "" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+        return "\(formatter.string(from: firstDate)) – \(formatter.string(from: lastDate))"
     }
 
     private func sessionsForDate(_ date: Date) -> [Session] {

@@ -13,7 +13,6 @@ struct AnalyticsView: View {
 
     @AppStorage("analytics_trainingExpanded") private var trainingExpanded = true
     @AppStorage("analytics_strengthExpanded") private var strengthExpanded = true
-    @AppStorage("analytics_engineExpanded") private var engineExpanded = true
 
     @State private var showingShareSummary = false
 
@@ -32,8 +31,6 @@ struct AnalyticsView: View {
                         if trainingExpanded {
                             consistencyCard
                             volumeTrendCard
-                            muscleBalanceCard
-                            cardioSummaryCard
                             liftTrendsCard
                             recentPRsCard
                         }
@@ -44,13 +41,6 @@ struct AnalyticsView: View {
                             strengthProgressCard
                         }
 
-                        // Progression Engine
-                        sectionHeader("PROGRESSION ENGINE", isExpanded: $engineExpanded)
-                        if engineExpanded {
-                            progressionBreakdownCard
-                            engineHealthCard
-                            progressionAlertsCard
-                        }
                     }
                 }
                 .padding(AppSpacing.screenPadding)
@@ -136,7 +126,7 @@ struct AnalyticsView: View {
         EmptyStateView(
             icon: "chart.xyaxis.line",
             title: "No Analytics Yet",
-            subtitle: "Complete your first workout to unlock progression insights."
+            subtitle: "Complete your first workout to see your training trends."
         )
         .padding(.top, AppSpacing.xl)
     }
@@ -300,40 +290,6 @@ struct AnalyticsView: View {
         .analyticsCard()
     }
 
-    private var progressionBreakdownCard: some View {
-        let breakdown = viewModel.progressionBreakdown
-
-        return VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("Progression Decisions (\(viewModel.selectedTimeRange.rawValue))")
-                .headline(color: AppColors.textPrimary)
-
-            if breakdown.total == 0 {
-                Text("No progression data in this time range.")
-                    .caption(color: AppColors.textTertiary)
-            } else {
-                ProgressionBreakdownRow(
-                    label: "Progress",
-                    count: breakdown.progressCount,
-                    percentage: breakdown.percentage(for: .progress),
-                    color: AppColors.success
-                )
-                ProgressionBreakdownRow(
-                    label: "Stay",
-                    count: breakdown.stayCount,
-                    percentage: breakdown.percentage(for: .stay),
-                    color: AppColors.dominant
-                )
-                ProgressionBreakdownRow(
-                    label: "Regress",
-                    count: breakdown.regressCount,
-                    percentage: breakdown.percentage(for: .regress),
-                    color: AppColors.warning
-                )
-            }
-        }
-        .analyticsCard()
-    }
-
     private var recentPRsCard: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             Text("Recent PRs")
@@ -365,159 +321,6 @@ struct AnalyticsView: View {
                             Text("+\(formatWeight(pr.improvement)) e1RM")
                                 .caption(color: AppColors.success)
                                 .fontWeight(.semibold)
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
-            }
-        }
-        .analyticsCard()
-    }
-
-    private var muscleBalanceCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("Muscle Balance")
-                .headline(color: AppColors.textPrimary)
-
-            if viewModel.muscleGroupVolume.isEmpty {
-                Text("No strength data in this time range.")
-                    .caption(color: AppColors.textTertiary)
-            } else {
-                let maxPct = viewModel.muscleGroupVolume.first?.percentageOfTotal ?? 100
-                ForEach(viewModel.muscleGroupVolume) { item in
-                    MuscleBalanceBar(item: item, maxPercentage: maxPct)
-                }
-            }
-        }
-        .analyticsCard()
-    }
-
-    private var cardioSummaryCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("Cardio Summary")
-                .headline(color: AppColors.textPrimary)
-
-            if viewModel.cardioSummary.sessionCount == 0 {
-                Text("No cardio data in this time range.")
-                    .caption(color: AppColors.textTertiary)
-            } else {
-                HStack(spacing: AppSpacing.md) {
-                    analyticsStat(label: "Sessions", value: "\(viewModel.cardioSummary.sessionCount)", icon: "figure.run", color: AppColors.dominant)
-                    analyticsStat(label: "Total Time", value: formatCardioTotalDuration(viewModel.cardioSummary.totalDuration), icon: "clock.fill", color: AppColors.dominant)
-                }
-
-                if let distance = viewModel.cardioSummary.totalDistance, distance > 0 {
-                    HStack(spacing: AppSpacing.md) {
-                        analyticsStat(label: "Total Distance", value: "\(formatDistanceValue(distance)) mi", icon: "location.fill", color: AppColors.dominant)
-                        analyticsStat(label: "Avg / Session", value: formatDuration(viewModel.cardioSummary.avgDurationPerSession), icon: "timer", color: AppColors.dominant)
-                    }
-                }
-
-                if !viewModel.weeklyCardioTrend.allSatisfy({ $0.totalDuration == 0 }) {
-                    WeeklyCardioSwiftChart(points: viewModel.weeklyCardioTrend)
-                        .frame(height: 96)
-                }
-            }
-        }
-        .analyticsCard()
-    }
-
-    private func formatCardioTotalDuration(_ seconds: Int) -> String {
-        let hours = seconds / 3600
-        let minutes = (seconds % 3600) / 60
-        if hours > 0 {
-            return "\(hours)h \(minutes)m"
-        }
-        return "\(minutes)m"
-    }
-
-    private var engineHealthCard: some View {
-        let health = viewModel.engineHealth
-
-        return VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("Engine Health")
-                .headline(color: AppColors.textPrimary)
-
-            if health.totalDecisions == 0 {
-                Text("No engine data in this time range.")
-                    .caption(color: AppColors.textTertiary)
-            } else {
-                HStack(spacing: AppSpacing.md) {
-                    analyticsStat(
-                        label: "Acceptance",
-                        value: "\(health.acceptanceRate)% (\(health.acceptedCount)/\(health.totalDecisions))",
-                        icon: "checkmark.circle.fill",
-                        color: AppColors.success
-                    )
-
-                    analyticsStat(
-                        label: "Overrides",
-                        value: "\(health.overrideRate)% (\(health.overriddenCount))",
-                        icon: "hand.point.up.left.fill",
-                        color: AppColors.warning
-                    )
-                }
-
-                HStack(spacing: AppSpacing.md) {
-                    analyticsStat(
-                        label: "Regress Rate",
-                        value: "\(health.regressRate)% (\(health.regressCount))",
-                        icon: "arrow.down.circle.fill",
-                        color: AppColors.warning
-                    )
-
-                    analyticsStat(
-                        label: "Profiles Tracked",
-                        value: "\(viewModel.decisionProfileHealth.count)",
-                        icon: "slider.horizontal.3",
-                        color: AppColors.dominant
-                    )
-                }
-
-                if !viewModel.decisionProfileHealth.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Decision Paths")
-                            .caption(color: AppColors.textSecondary)
-                        ForEach(viewModel.decisionProfileHealth.prefix(3)) { profile in
-                            HStack {
-                                Text(profile.name)
-                                    .caption(color: AppColors.textPrimary)
-                                Spacer()
-                                Text("\(profile.acceptanceRate)% accept")
-                                    .caption(color: AppColors.textSecondary)
-                            }
-                        }
-                    }
-                    .padding(.top, 4)
-                }
-            }
-        }
-        .analyticsCard()
-    }
-
-    private var progressionAlertsCard: some View {
-        let alerts = viewModel.progressionAlerts
-
-        return VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Text("Safety Alerts")
-                .headline(color: AppColors.textPrimary)
-
-            if alerts.isEmpty {
-                Text("No high-risk progression patterns detected.")
-                    .caption(color: AppColors.textTertiary)
-            } else {
-                ForEach(alerts.prefix(4)) { alert in
-                    HStack(alignment: .top, spacing: AppSpacing.sm) {
-                        Image(systemName: alert.icon)
-                            .foregroundColor(alert.color)
-                            .frame(width: 18)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(alert.title)
-                                .subheadline(color: AppColors.textPrimary)
-                                .fontWeight(.semibold)
-                            Text(alert.message)
-                                .caption(color: AppColors.textSecondary)
                         }
                     }
                     .padding(.vertical, 2)
