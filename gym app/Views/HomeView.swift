@@ -13,14 +13,9 @@ struct HomeView: View {
     @EnvironmentObject var sessionViewModel: SessionViewModel
     @EnvironmentObject var moduleViewModel: ModuleViewModel
 
-    @State private var selectedCalendarDate: Date = Date()
-    @State private var dayToSchedule: IdentifiableDate?
     @State private var showingTodayWorkoutDetail = false
     @State private var showingQuickSchedule = false
     @State private var showingQuickLog = false
-    @State private var showingFreestyleNameSheet = false
-    @State private var freestyleSessionName = ""
-    private let analyticsService = AnalyticsService()
 
     // Session recovery state
     @State private var showingRecoveryAlert = false
@@ -37,17 +32,7 @@ struct HomeView: View {
                     // Today's Workout Bar
                     todayWorkoutBar
 
-                    // Quick Actions (Quick Log + Freestyle)
-                    quickActionsRow
-
-                    // Week Calendar
-                    weekCalendarSection
-
-                    // Week in Review
-                    weekInReviewSection
-
-                    // Best Performances
-                    bestPerformancesSection
+                    adHocLogButton
                 }
                 .padding(AppSpacing.screenPadding)
                 .tabBarBottomPadding()
@@ -55,34 +40,6 @@ struct HomeView: View {
             .background(AppColors.background.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .navigationBar)
-            .sheet(item: $dayToSchedule) { identifiableDate in
-                let date = identifiableDate.date
-                ScheduleWorkoutSheet(
-                    date: date,
-                    workouts: workoutViewModel.workouts,
-                    modules: moduleViewModel.modules,
-                    scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date),
-                    sessions: sessionsForDate(date),
-                    onSchedule: { workout in
-                        workoutViewModel.scheduleWorkout(workout, for: date)
-                    },
-                    onScheduleRest: {
-                        workoutViewModel.scheduleRestDay(for: date)
-                    },
-                    onUnschedule: { scheduled in
-                        workoutViewModel.unscheduleWorkout(scheduled)
-                    },
-                    onStartWorkout: { workout in
-                        dayToSchedule = nil
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            startWorkout(workout, scheduledDate: date)
-                        }
-                    },
-                    onDeleteSession: { session in
-                        sessionViewModel.deleteSession(session)
-                    }
-                )
-            }
             .sheet(isPresented: $showingTodayWorkoutDetail) {
                 if let scheduled = workoutViewModel.getTodaySchedule(),
                    let workoutId = scheduled.workoutId,
@@ -114,16 +71,6 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showingQuickLog) {
                 QuickLogSheet()
-            }
-            .sheet(isPresented: $showingFreestyleNameSheet) {
-                FreestyleNameSheet(
-                    sessionName: $freestyleSessionName,
-                    onStart: {
-                        showingFreestyleNameSheet = false
-                        sessionViewModel.startFreestyleSession(name: freestyleSessionName.isEmpty ? nil : freestyleSessionName)
-                    }
-                )
-                .presentationDetents([.height(200)])
             }
             .alert("Resume Workout?", isPresented: $showingRecoveryAlert) {
                 Button("Resume") {
@@ -199,30 +146,6 @@ struct HomeView: View {
                     .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
             }
             .buttonStyle(.pressable)
-        }
-    }
-
-    private var streakBadge: some View {
-        Group {
-            if currentStreak >= 2 {
-                HStack(spacing: 4) {
-                    Text("🔥")
-                        .caption()
-                    Text("\(currentStreak) day streak")
-                        .font(.caption.weight(.bold))
-                        .foregroundColor(AppColors.warning)
-                }
-                .padding(.horizontal, AppSpacing.sm)
-                .padding(.vertical, 4)
-                .background(
-                    Capsule()
-                        .fill(AppColors.warning.opacity(0.15))
-                        .overlay(
-                            Capsule()
-                                .stroke(AppColors.warning.opacity(0.3), lineWidth: 0.5)
-                        )
-                )
-            }
         }
     }
 
@@ -528,55 +451,22 @@ struct HomeView: View {
         )
     }
 
-    // MARK: - Quick Actions Row (Quick Log + Freestyle)
+    // MARK: - Ad-hoc Logging
 
-    private var quickActionsRow: some View {
-        HStack(spacing: AppSpacing.sm) {
-            // Quick Log Button
-            Button {
-                HapticManager.shared.tap()
-                showingQuickLog = true
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "bolt.fill")
-                        .font(.caption.weight(.semibold))
-                    Text("Quick Log")
-                        .font(.caption.weight(.medium))
-                }
-                .foregroundColor(AppColors.dominant)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    Capsule()
-                        .fill(AppColors.dominantMuted)
-                )
-            }
-            .buttonStyle(.pressable)
-
-            // Freestyle Button
-            Button {
-                HapticManager.shared.tap()
-                freestyleSessionName = ""
-                showingFreestyleNameSheet = true
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "figure.mixed.cardio")
-                        .font(.caption.weight(.semibold))
-                    Text("Freestyle")
-                        .font(.caption.weight(.medium))
-                }
-                .foregroundColor(AppColors.dominant)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    Capsule()
-                        .fill(AppColors.surfaceSecondary)
-                )
-            }
-            .buttonStyle(.pressable)
-
-            Spacer()
+    private var adHocLogButton: some View {
+        Button {
+            HapticManager.shared.tap()
+            showingQuickLog = true
+        } label: {
+            Label("Log activity", systemImage: "plus.circle.fill")
+                .headline(color: AppColors.dominant)
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: AppSpacing.minTouchTarget)
+                .background(AppColors.dominantMuted)
+                .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
         }
+        .buttonStyle(.pressable)
+        .accessibilityHint("Log an activity without using a workout template")
     }
 
     private var noScheduleBar: some View {
@@ -620,322 +510,8 @@ struct HomeView: View {
         .buttonStyle(.pressable)
     }
 
-    // MARK: - Week Calendar Section
-
-    private var weekCalendarSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            // Header with week navigation
-            HStack {
-                Button {
-                    withAnimation(AppAnimation.standard) {
-                        selectedCalendarDate = Calendar.current.date(byAdding: .weekOfYear, value: -1, to: selectedCalendarDate) ?? selectedCalendarDate
-                    }
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .body(color: AppColors.dominant)
-                        .fontWeight(.semibold)
-                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
-                }
-                .buttonStyle(.bouncy)
-                .accessibilityLabel("Previous week")
-
-                Spacer()
-
-                Text(weekRangeText)
-                    .subheadline()
-                    .fontWeight(.medium)
-
-                Spacer()
-
-                Button {
-                    withAnimation(AppAnimation.standard) {
-                        selectedCalendarDate = Calendar.current.date(byAdding: .weekOfYear, value: 1, to: selectedCalendarDate) ?? selectedCalendarDate
-                    }
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .body(color: AppColors.dominant)
-                        .fontWeight(.semibold)
-                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
-                }
-                .buttonStyle(.bouncy)
-                .accessibilityLabel("Next week")
-            }
-
-            // Week days
-            HStack(spacing: 0) {
-                ForEach(weekDates, id: \.self) { date in
-                    WeekDayCell(
-                        date: date,
-                        isToday: Calendar.current.isDateInToday(date),
-                        scheduledWorkouts: workoutViewModel.getScheduledWorkouts(for: date),
-                        completedSessions: sessionsForDate(date)
-                    ) {
-                        dayToSchedule = IdentifiableDate(date: date)
-                    }
-                }
-            }
-            .padding(.vertical, AppSpacing.sm)
-            .unifiedCard(padding: 0)
-        }
-    }
-
-    private var weekDates: [Date] {
-        workoutViewModel.getWeekDates(for: selectedCalendarDate)
-    }
-
-    private var weekRangeText: String {
-        guard let firstDate = weekDates.first, let lastDate = weekDates.last else {
-            return ""
-        }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
-        let startStr = formatter.string(from: firstDate)
-        let endStr = formatter.string(from: lastDate)
-        return "\(startStr) - \(endStr)"
-    }
-
     private func sessionsForDate(_ date: Date) -> [Session] {
         sessionViewModel.sessions.filter { Calendar.current.isDate($0.date, inSameDayAs: date) }
-    }
-
-    // MARK: - Week in Review Section
-
-    private var weekInReviewSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            SectionHeader(title: "Week in Review")
-
-            HStack(spacing: 0) {
-                // Completed stat
-                VStack(spacing: AppSpacing.xs) {
-                    Text("\(sessionsThisWeek)")
-                        .displayMedium(color: AppColors.success)
-                        .minimumScaleFactor(0.7)
-
-                    Text("completed")
-                        .statLabel()
-                }
-                .frame(maxWidth: .infinity)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(sessionsThisWeek) workouts completed this week")
-
-                // Divider
-                Rectangle()
-                    .fill(AppColors.surfaceTertiary)
-                    .frame(width: 1, height: 44)
-
-                // Scheduled stat
-                VStack(spacing: AppSpacing.xs) {
-                    Text("\(scheduledThisWeek)")
-                        .displayMedium(color: AppColors.accent1)
-                        .minimumScaleFactor(0.7)
-
-                    Text("scheduled")
-                        .statLabel()
-                }
-                .frame(maxWidth: .infinity)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(scheduledThisWeek) workouts scheduled this week")
-
-                // Divider
-                Rectangle()
-                    .fill(AppColors.surfaceTertiary)
-                    .frame(width: 1, height: 44)
-
-                // Volume stat
-                VStack(spacing: AppSpacing.xs) {
-                    Text(formatVolume(volumeThisWeek))
-                        .displayMedium(color: AppColors.accent3)
-                        .minimumScaleFactor(0.7)
-
-                    Text("volume")
-                        .statLabel()
-                }
-                .frame(maxWidth: .infinity)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(formatVolume(volumeThisWeek)) pounds total volume this week")
-
-                // Divider
-                Rectangle()
-                    .fill(AppColors.surfaceTertiary)
-                    .frame(width: 1, height: 44)
-
-                // Cardio stat
-                VStack(spacing: AppSpacing.xs) {
-                    Text("\(cardioMinutesThisWeek)")
-                        .displayMedium(color: AppColors.warning)
-                        .minimumScaleFactor(0.7)
-
-                    Text("cardio min")
-                        .statLabel()
-                }
-                .frame(maxWidth: .infinity)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("\(cardioMinutesThisWeek) minutes of cardio this week")
-            }
-            .padding(.vertical, AppSpacing.lg)
-            .unifiedCard(padding: 0)
-        }
-    }
-
-    // MARK: - Best Performances Section
-
-    private var bestPerformancesSection: some View {
-        let recentPRs = analyticsService.recentPRs(sessions: sessionViewModel.sessions, limit: 3)
-
-        return VStack(alignment: .leading, spacing: AppSpacing.md) {
-            HStack {
-                SectionHeader(title: "Best Performances")
-                Spacer()
-                NavigationLink(destination: AnalyticsView()) {
-                    Text("View All")
-                        .caption(color: AppColors.dominant)
-                        .fontWeight(.semibold)
-                }
-            }
-
-            if recentPRs.isEmpty {
-                HStack(spacing: AppSpacing.md) {
-                    Image(systemName: "trophy.fill")
-                        .displaySmall(color: AppColors.warning.opacity(0.5))
-
-                    Text("No PRs yet. Keep logging sets and your records will show up here.")
-                        .subheadline(color: AppColors.textTertiary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(AppSpacing.cardPadding)
-                .background(
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .fill(AppColors.surfacePrimary)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppCorners.large)
-                                .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [8]))
-                                .foregroundColor(AppColors.surfaceTertiary.opacity(0.5))
-                        )
-                )
-            } else {
-                VStack(spacing: AppSpacing.sm) {
-                    ForEach(recentPRs) { pr in
-                        HStack(spacing: AppSpacing.sm) {
-                            Image(systemName: "trophy.fill")
-                                .foregroundColor(AppColors.warning)
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(pr.summary)
-                                    .subheadline(color: AppColors.textPrimary)
-                                    .fontWeight(.semibold)
-                                Text("Estimated 1RM: \(formatWeight(pr.newBest)) lbs")
-                                    .caption(color: AppColors.textSecondary)
-                            }
-
-                            Spacer()
-
-                            Text(formatMonthDay(pr.date))
-                                .caption(color: AppColors.textTertiary)
-                        }
-                        .padding(.horizontal, AppSpacing.md)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(
-                            RoundedRectangle(cornerRadius: AppCorners.medium)
-                                .fill(AppColors.surfacePrimary)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                                        .stroke(AppColors.surfaceTertiary.opacity(0.4), lineWidth: 1)
-                                )
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Computed Properties
-
-    /// Sessions in the selected week (based on selectedCalendarDate)
-    private var sessionsInSelectedWeek: [Session] {
-        let dates = weekDates
-        guard let startOfWeek = dates.first, let endOfWeek = dates.last else { return [] }
-        let calendar = Calendar.current
-        return sessionViewModel.sessions.filter { session in
-            let sessionDay = calendar.startOfDay(for: session.date)
-            return sessionDay >= calendar.startOfDay(for: startOfWeek) &&
-                   sessionDay <= calendar.startOfDay(for: endOfWeek)
-        }
-    }
-
-    private var sessionsThisWeek: Int {
-        sessionsInSelectedWeek.count
-    }
-
-    private var setsThisWeek: Int {
-        sessionsInSelectedWeek.reduce(0) { $0 + $1.totalSetsCompleted }
-    }
-
-    private var volumeThisWeek: Double {
-        sessionsInSelectedWeek
-            .flatMap { $0.completedModules }
-            .flatMap { $0.completedExercises }
-            .reduce(0) { $0 + $1.totalVolume }
-    }
-
-    private var cardioMinutesThisWeek: Int {
-        var totalSeconds = 0
-        for session in sessionsInSelectedWeek {
-            for module in session.completedModules where !module.skipped {
-                for exercise in module.completedExercises where exercise.exerciseType == .cardio {
-                    for setGroup in exercise.completedSetGroups {
-                        for set in setGroup.sets where set.completed {
-                            totalSeconds += set.duration ?? 0
-                        }
-                    }
-                }
-            }
-        }
-        return totalSeconds / 60
-    }
-
-    private var scheduledThisWeek: Int {
-        let dates = weekDates
-        guard let startOfWeek = dates.first, let endOfWeek = dates.last else { return 0 }
-        let calendar = Calendar.current
-        return workoutViewModel.scheduledWorkouts.filter { scheduled in
-            !scheduled.isRestDay &&
-            scheduled.completedSessionId == nil &&
-            calendar.startOfDay(for: scheduled.scheduledDate) >= calendar.startOfDay(for: startOfWeek) &&
-            calendar.startOfDay(for: scheduled.scheduledDate) <= calendar.startOfDay(for: endOfWeek)
-        }.count
-    }
-
-    /// Calculate current workout streak (consecutive days with workouts)
-    private var currentStreak: Int {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-
-        // Get all unique workout dates, sorted descending
-        let workoutDates = Set(sessionViewModel.sessions.map { calendar.startOfDay(for: $0.date) })
-            .sorted(by: >)
-
-        guard !workoutDates.isEmpty else { return 0 }
-
-        var streak = 0
-        var checkDate = today
-
-        // If no workout today, check if there was one yesterday (streak still counts)
-        if !workoutDates.contains(today) {
-            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else { return 0 }
-            if !workoutDates.contains(yesterday) {
-                return 0  // No workout today or yesterday = no active streak
-            }
-            checkDate = yesterday
-        }
-
-        // Count consecutive days backwards
-        while workoutDates.contains(checkDate) {
-            streak += 1
-            guard let previousDay = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
-            checkDate = previousDay
-        }
-
-        return streak
     }
 
     // MARK: - Helper Functions
@@ -954,72 +530,6 @@ struct HomeView: View {
 
         sessionViewModel.startSession(workout: workout, modules: modules, scheduledWorkout: scheduledContext)
         // MainTabView will auto-show full session when isSessionActive becomes true
-    }
-}
-
-// MARK: - Freestyle Name Sheet
-
-struct FreestyleNameSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @Binding var sessionName: String
-    let onStart: () -> Void
-    @FocusState private var isFocused: Bool
-
-    private func startSession() {
-        // Dismiss keyboard first to prevent tap interference
-        isFocused = false
-        HapticManager.shared.impact()
-        // Small delay to ensure keyboard dismisses before sheet closes
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            onStart()
-        }
-    }
-
-    var body: some View {
-        VStack(spacing: AppSpacing.lg) {
-            Text("Name Your Session")
-                .font(.headline)
-                .foregroundColor(AppColors.textPrimary)
-
-            TextField("e.g., Morning Workout, Leg Day", text: $sessionName)
-                .font(.body)
-                .padding(AppSpacing.md)
-                .background(AppColors.surfacePrimary)
-                .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
-                .focused($isFocused)
-                .submitLabel(.go)
-                .onSubmit {
-                    startSession()
-                }
-
-            HStack(spacing: AppSpacing.md) {
-                Button("Skip") {
-                    sessionName = ""
-                    startSession()
-                }
-                .font(.subheadline.weight(.medium))
-                .foregroundColor(AppColors.textSecondary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, AppSpacing.md)
-                .background(AppColors.surfaceSecondary)
-                .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
-
-                Button("Start") {
-                    startSession()
-                }
-                .font(.subheadline.weight(.semibold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, AppSpacing.md)
-                .background(AppColors.accent3)
-                .clipShape(RoundedRectangle(cornerRadius: AppCorners.medium))
-            }
-        }
-        .padding(AppSpacing.lg)
-        .background(AppColors.background)
-        .onAppear {
-            isFocused = true
-        }
     }
 }
 

@@ -300,8 +300,6 @@ struct ContentPickerSheet: View {
     let onSelect: (any ShareableContent) -> Void
 
     @State private var selectedType: ContentPickerType?
-    @State private var selectedSession: Session?
-    @State private var showingHighlightPicker = false
 
     var body: some View {
         NavigationStack {
@@ -335,20 +333,6 @@ struct ContentPickerSheet: View {
                                 Text("Back")
                             }
                         }
-                    }
-                }
-            }
-            .sheet(isPresented: $showingHighlightPicker) {
-                if let session = selectedSession {
-                    HighlightPickerView(session: session) { highlights in
-                        if let content = ShareableHighlightBundle.aggregate(
-                            from: highlights,
-                            workoutName: session.workoutName,
-                            date: session.date
-                        ) {
-                            onSelect(content)
-                        }
-                        dismiss()
                     }
                 }
             }
@@ -418,13 +402,11 @@ struct ContentPickerSheet: View {
     private func contentListView(for type: ContentPickerType) -> some View {
         switch type {
         case .workoutHistory:
-            // Use existing HistoryView in selection mode
             HistoryView(
                 selectionMode: .forSharing,
                 onSelectForShare: { session in
-                    // Show highlight picker for this session
-                    selectedSession = session
-                    showingHighlightPicker = true
+                    onSelect(session)
+                    dismiss()
                 }
             )
 

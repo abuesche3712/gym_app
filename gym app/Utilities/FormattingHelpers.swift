@@ -98,14 +98,6 @@ func formatHeightValue(_ height: Double) -> String {
 
 // MARK: - Pace Formatting
 
-/// Formats pace in seconds per unit as "M:SS"
-/// e.g., 480 -> "8:00", 510 -> "8:30"
-func formatPace(_ pace: Double) -> String {
-    let minutes = Int(pace) / 60
-    let seconds = Int(pace) % 60
-    return String(format: "%d:%02d", minutes, seconds)
-}
-
 // MARK: - Volume Formatting
 
 /// Formats volume with "k" suffix for thousands
@@ -129,33 +121,11 @@ enum DateFormatters {
         return formatter
     }()
 
-    /// Short date style (e.g., "1/19/26")
-    static let shortDate: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .none
-        return formatter
-    }()
-
     /// Time only (e.g., "3:45 PM")
     static let time: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .none
         formatter.timeStyle = .short
-        return formatter
-    }()
-
-    /// Relative date formatter (e.g., "Today", "Yesterday", "2 days ago")
-    static let relative: RelativeDateTimeFormatter = {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .full
-        return formatter
-    }()
-
-    /// Day of week (e.g., "Monday")
-    static let dayOfWeek: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE"
         return formatter
     }()
 
@@ -194,24 +164,9 @@ func formatDate(_ date: Date) -> String {
     DateFormatters.mediumDate.string(from: date)
 }
 
-/// Formats a date in short style (e.g., "1/19/26")
-func formatDateShort(_ date: Date) -> String {
-    DateFormatters.shortDate.string(from: date)
-}
-
 /// Formats a time (e.g., "3:45 PM")
 func formatTime(_ date: Date) -> String {
     DateFormatters.time.string(from: date)
-}
-
-/// Formats a date relative to now (e.g., "Today", "Yesterday", "2 days ago")
-func formatRelativeDate(_ date: Date) -> String {
-    DateFormatters.relative.localizedString(for: date, relativeTo: Date())
-}
-
-/// Formats day of week (e.g., "Monday")
-func formatDayOfWeek(_ date: Date) -> String {
-    DateFormatters.dayOfWeek.string(from: date)
 }
 
 /// Formats month and day (e.g., "Jan 19")

@@ -24,7 +24,6 @@ struct AppColors {
     // MARK: - Dominant Color (THE hero color - use sparingly!)
     static let dominant = Color(hex: "33C4E8")         // Softer cyan (less electric)
     static let dominantMuted = dominant.opacity(0.20)  // Subtle backgrounds (increased visibility)
-    static let dominantSubtle = dominant.opacity(0.12) // Very subtle highlights
 
     // MARK: - Contextual accents
     // These identify module types only. They are not UI chrome: screens, cards,
@@ -41,14 +40,6 @@ struct AppColors {
     static let warning = Color(hex: "FFB800")          // Bright amber (urgent, attention)
     static let error = Color(hex: "FF5252")            // Bright red (delete, errors)
 
-    // MARK: - Special (Reward moments!)
-    static let reward = Color(hex: "4DE8DC")           // Softer cyan (PR celebration)
-
-    // MARK: - Program Color
-    // Programs are a navigation/content concept, not a separate visual system.
-    // Keep them in the same cyan hierarchy as the rest of the app.
-    static let programAccent = dominant
-
     // MARK: - Module Type Colors (More vibrant with personality!)
     static func moduleColor(_ type: ModuleType) -> Color {
         // Vibrant module colors - symbol-first but with more color personality
@@ -64,10 +55,6 @@ struct AppColors {
         }
     }
 
-    // Module symbol color (for icon/symbol itself)
-    static func moduleSymbolColor(_ type: ModuleType) -> Color {
-        return moduleColor(type) // Use the module's color for consistency
-    }
 }
 
 // MARK: - Color Extension

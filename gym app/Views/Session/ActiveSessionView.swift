@@ -46,11 +46,9 @@ struct ActiveSessionView: View {
     @State private var pendingShareAction: PendingShareAction?
 
     // Share sheets triggered after structural review
-    @State private var showPostFeedAfterReview = false
     @State private var showShareFriendAfterReview = false
     @State private var showShareViaAfterReview = false
     @State private var showComposePostAfterReview = false
-    @State private var shareHighlightContent: (any ShareableContent)?
     @State private var savedSessionForSharing: Session?
 
     // Freestyle mode state
@@ -436,36 +434,11 @@ struct ActiveSessionView: View {
                 )
             }
             // Post-review share sheets (shown after structural review completes)
-            .sheet(isPresented: $showPostFeedAfterReview, onDismiss: {
-                // If user cancelled highlight picker without composing, clean up
-                if !showComposePostAfterReview {
-                    savedSessionForSharing = nil
-                    shareHighlightContent = nil
-                    dismiss()
-                }
-            }) {
-                if let session = savedSessionForSharing {
-                    HighlightPickerView(session: session) { highlights in
-                        shareHighlightContent = ShareableHighlightBundle.aggregate(
-                            from: highlights,
-                            workoutName: session.workoutName,
-                            date: session.date
-                        ) ?? session
-                        showPostFeedAfterReview = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            showComposePostAfterReview = true
-                        }
-                    }
-                }
-            }
             .sheet(isPresented: $showComposePostAfterReview, onDismiss: {
                 savedSessionForSharing = nil
-                shareHighlightContent = nil
                 dismiss()
             }) {
-                if let content = shareHighlightContent {
-                    ComposePostSheet(content: content)
-                } else if let session = savedSessionForSharing {
+                if let session = savedSessionForSharing {
                     ComposePostSheet(content: session)
                 }
             }
@@ -805,7 +778,7 @@ struct ActiveSessionView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                 switch shareAction {
                 case .postToFeed:
-                    showPostFeedAfterReview = true
+                    showComposePostAfterReview = true
                 case .shareWithFriend:
                     showShareFriendAfterReview = true
                 case .shareVia:

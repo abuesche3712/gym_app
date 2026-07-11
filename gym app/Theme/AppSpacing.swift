@@ -20,7 +20,6 @@ struct AppSpacing {
 
     static let cardPadding: CGFloat = 20      // More breathing room
     static let screenPadding: CGFloat = 20    // Generous edge margins
-    static let stackSpacing: CGFloat = 14
 
     // Minimum touch target size per Apple HIG (44x44 points)
     static let minTouchTarget: CGFloat = 44

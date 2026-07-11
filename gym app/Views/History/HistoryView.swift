@@ -11,10 +11,8 @@ import SwiftUI
 struct HistoryView: View {
     @EnvironmentObject var sessionViewModel: SessionViewModel
     @State private var searchText = ""
-    @State private var selectedFilter: HistoryFilter = .all
     @State private var sessionToShare: Session?
     @State private var sessionToPost: Session?
-    @State private var animateIn = false
 
     // Selection mode support for share flow
     var selectionMode: ViewSelectionMode? = nil
@@ -22,36 +20,8 @@ struct HistoryView: View {
 
     private var isSelectionMode: Bool { selectionMode != nil }
 
-    enum HistoryFilter: String, CaseIterable {
-        case all = "All"
-        case thisWeek = "This Week"
-        case thisMonth = "This Month"
-
-        var icon: String {
-            switch self {
-            case .all: return "infinity"
-            case .thisWeek: return "calendar.badge.clock"
-            case .thisMonth: return "calendar"
-            }
-        }
-    }
-
     var filteredSessions: [Session] {
         var sessions = sessionViewModel.visibleSessions
-
-        let now = Date()
-        let calendar = Calendar.current
-
-        switch selectedFilter {
-        case .all:
-            break
-        case .thisWeek:
-            let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now))!
-            sessions = sessions.filter { $0.date >= startOfWeek }
-        case .thisMonth:
-            let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: now))!
-            sessions = sessions.filter { $0.date >= startOfMonth }
-        }
 
         if !searchText.isEmpty {
             sessions = sessions.filter {
@@ -86,31 +56,10 @@ struct HistoryView: View {
         }
     }
 
-    // Aggregate stats for the selected period
-    private var periodStats: (sessions: Int, sets: Int, volume: Double, duration: Int) {
-        let sessions = filteredSessions
-        let sets = sessions.reduce(0) { $0 + $1.totalSetsCompleted }
-        let volume = sessions.reduce(0.0) { total, session in
-            total + session.completedModules.filter { !$0.skipped }.reduce(0.0) { moduleTotal, module in
-                moduleTotal + module.completedExercises.reduce(0.0) { $0 + $1.totalVolume }
-            }
-        }
-        let duration = sessions.reduce(0) { $0 + ($1.duration ?? 0) }
-        return (sessions.count, sets, volume, duration)
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: AppSpacing.xl) {
-                    // Stats Summary Card
-                    if !filteredSessions.isEmpty {
-                        statsSummaryCard
-                    }
-
-                    // Filter Pills
-                    filterPills
-
                     // Sessions List
                     if filteredSessions.isEmpty {
                         emptyState
@@ -127,11 +76,6 @@ struct HistoryView: View {
                 sessionViewModel.loadAllSessions()
                 HapticManager.shared.success()
             }
-            .onAppear {
-                withAnimation(AppAnimation.entrance) {
-                    animateIn = true
-                }
-            }
             .sheet(item: $sessionToShare) { session in
                 ShareWithFriendSheet(content: session)
             }
@@ -139,93 +83,6 @@ struct HistoryView: View {
                 ComposePostSheet(content: session)
             }
         }
-    }
-
-    // MARK: - Stats Summary Card
-
-    private var statsSummaryCard: some View {
-        HStack(spacing: AppSpacing.md) {
-            miniStatCard(
-                value: "\(periodStats.sessions)",
-                label: "WORKOUTS",
-                color: AppColors.dominant
-            )
-
-            miniStatCard(
-                value: "\(periodStats.sets)",
-                label: "SETS",
-                color: AppColors.accent1
-            )
-
-            miniStatCard(
-                value: formatVolume(periodStats.volume),
-                label: "VOLUME",
-                color: AppColors.accent3
-            )
-
-            miniStatCard(
-                value: formatTotalDuration(periodStats.duration),
-                label: "TIME",
-                color: AppColors.accent2
-            )
-        }
-        .padding(.horizontal, AppSpacing.screenPadding)
-        .opacity(animateIn ? 1 : 0)
-        .offset(y: animateIn ? 0 : 20)
-    }
-
-    private func miniStatCard(value: String, label: String, color: Color) -> some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .displaySmall(color: color)
-                .fontWeight(.bold)
-                .minimumScaleFactor(0.7)
-                .lineLimit(1)
-
-            Text(label)
-                .caption2(color: AppColors.textTertiary)
-                .fontWeight(.semibold)
-                .tracking(0.8)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, AppSpacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: AppCorners.medium)
-                .fill(AppColors.surfacePrimary)
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .stroke(color.opacity(0.1), lineWidth: 1)
-                )
-        )
-    }
-
-    // MARK: - Filter Pills
-
-    private var filterPills: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.sm) {
-                ForEach(HistoryFilter.allCases, id: \.self) { filter in
-                    FilterPill(
-                        title: filter.rawValue,
-                        icon: filter.icon,
-                        isSelected: selectedFilter == filter,
-                        selectedTextColor: AppColors.textPrimary,
-                        selectedFillOpacity: 0.15,
-                        selectedStrokeOpacity: 0.3,
-                        horizontalPadding: AppSpacing.md,
-                        fixedFontWeight: .medium
-                    ) {
-                        withAnimation(AppAnimation.quick) {
-                            selectedFilter = filter
-                        }
-                        HapticManager.shared.tap()
-                    }
-                }
-            }
-            .padding(.horizontal, AppSpacing.screenPadding)
-        }
-        .opacity(animateIn ? 1 : 0)
-        .animation(AppAnimation.entrance.delay(0.1), value: animateIn)
     }
 
     // MARK: - Empty State
@@ -237,15 +94,13 @@ struct HistoryView: View {
             subtitle: searchText.isEmpty ? "Complete a workout to see it here" : "No workouts match your search"
         )
         .padding(.top, AppSpacing.xl)
-        .opacity(animateIn ? 1 : 0)
-        .animation(AppAnimation.entrance.delay(0.2), value: animateIn)
     }
 
     // MARK: - Sessions List
 
     private var sessionsList: some View {
         LazyVStack(spacing: AppSpacing.xl) {
-            ForEach(Array(groupedSessions.enumerated()), id: \.element.0) { groupIndex, group in
+            ForEach(groupedSessions, id: \.0) { group in
                 let (month, sessions) = group
 
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -305,34 +160,8 @@ struct HistoryView: View {
                     .unifiedCard(padding: 0, stroke: false)
                     .padding(.horizontal, AppSpacing.screenPadding)
                 }
-                .opacity(animateIn ? 1 : 0)
-                .offset(y: animateIn ? 0 : 20)
-                .animation(AppAnimation.entrance.delay(0.15 + Double(groupIndex) * 0.05), value: animateIn)
             }
         }
-    }
-
-    // MARK: - Helpers
-
-    private func formatVolume(_ volume: Double) -> String {
-        if volume >= 1_000_000 {
-            return String(format: "%.1fM", volume / 1_000_000)
-        } else if volume >= 10000 {
-            return String(format: "%.0fk", volume / 1000)
-        } else if volume >= 1000 {
-            return String(format: "%.1fk", volume / 1000)
-        } else {
-            return String(format: "%.0f", volume)
-        }
-    }
-
-    private func formatTotalDuration(_ minutes: Int) -> String {
-        let hours = minutes / 60
-        let mins = minutes % 60
-        if hours > 0 {
-            return "\(hours)h\(mins > 0 ? " \(mins)m" : "")"
-        }
-        return "\(mins)m"
     }
 }
 

@@ -141,8 +141,17 @@ struct ExerciseLibraryView: View {
             .padding(AppSpacing.screenPadding)
         }
         .background(AppColors.background.ignoresSafeArea())
-        .navigationTitle("Exercise Library")
+        .navigationTitle("Library")
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                NavigationLink {
+                    EquipmentLibraryView()
+                } label: {
+                    Label("Equipment", systemImage: "wrench.and.screwdriver.fill")
+                }
+                .buttonStyle(.pressable)
+            }
+
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     showingAddExercise = true

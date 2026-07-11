@@ -1,26 +1,2 @@
-//
-//  ProfileEditView.swift
-//  gym app
-//
-//  Legacy compatibility wrapper.
-//  Profile editing is centralized in AccountProfileView.
-//
-
-import SwiftUI
-
-struct ProfileEditView: View {
-    init(profileRepository: ProfileRepository, isNewProfile: Bool = false) {
-        _ = profileRepository
-        _ = isNewProfile
-    }
-
-    var body: some View {
-        AccountProfileView()
-    }
-}
-
-#Preview {
-    NavigationStack {
-        ProfileEditView(profileRepository: ProfileRepository(persistence: .preview))
-    }
-}
+// Profile editing is provided by AccountProfileView. This source file remains
+// because it is referenced by the existing Xcode project configuration.

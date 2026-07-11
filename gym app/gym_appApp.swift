@@ -47,7 +47,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct gym_appApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @StateObject private var authService = AuthService.shared
-    @StateObject private var dataRepository = DataRepository.shared
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
@@ -62,7 +61,7 @@ struct gym_appApp: App {
                     let isAuthenticated = await authService.waitForAuthState()
                     if isAuthenticated {
                         Logger.debug("App launch: Auth restored, starting sync...")
-                        await dataRepository.syncFromCloud()
+                        await SyncManager.shared.syncNow()
                         PresenceService.shared.goOnline()
                         await FirestoreService.shared.ensureUsernameClaimed()
                         await PushNotificationService.shared.saveFCMToken()
@@ -75,12 +74,10 @@ struct gym_appApp: App {
                     // User just signed in during this session — sync local data to cloud
                     Task {
                         Logger.debug("Auth state changed: signed in, starting sync...")
-                        await dataRepository.syncFromCloud()
-                        await dataRepository.pushAllToCloud()
+                        await SyncManager.shared.syncNow()
                         PresenceService.shared.goOnline()
                         await FirestoreService.shared.ensureUsernameClaimed()
                         await PushNotificationService.shared.saveFCMToken()
-                        SyncManager.shared.startBackgroundSync()
                     }
                 }
                 .onChange(of: scenePhase) { _, newPhase in
@@ -103,4 +100,3 @@ struct gym_appApp: App {
         }
     }
 }
-

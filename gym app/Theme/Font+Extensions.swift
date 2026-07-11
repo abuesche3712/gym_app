@@ -198,39 +198,12 @@ extension View {
     }
 }
 
-// MARK: - Card Style Modifier
-
-/// Reusable flat card styling: padding + rounded background + border stroke
-/// Used by feed attachment cards, content cards, form sections, etc.
-struct FlatCardStyle: ViewModifier {
-    var fill: Color = AppColors.surfacePrimary
-    var cornerRadius: CGFloat = AppCorners.large
-    var strokeColor: Color = AppColors.surfaceTertiary.opacity(0.5)
-    var strokeWidth: CGFloat = 1
-
-    func body(content: Content) -> some View {
-        content
-            .padding(AppSpacing.cardPadding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(fill)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(strokeColor, lineWidth: strokeWidth)
-            )
-    }
-}
-
 extension View {
-    func flatCardStyle(
-        fill: Color = AppColors.surfacePrimary,
-        cornerRadius: CGFloat = AppCorners.large,
-        strokeColor: Color = AppColors.surfaceTertiary.opacity(0.5),
-        strokeWidth: CGFloat = 1
-    ) -> some View {
-        modifier(FlatCardStyle(fill: fill, cornerRadius: cornerRadius, strokeColor: strokeColor, strokeWidth: strokeWidth))
+    /// Compatibility name for existing content cards. It preserves the former width
+    /// behavior while delegating all surface styling to the canonical card primitive.
+    func flatCardStyle() -> some View {
+        frame(maxWidth: .infinity, alignment: .leading)
+            .unifiedCard()
     }
 }
 

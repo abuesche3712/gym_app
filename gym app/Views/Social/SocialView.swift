@@ -13,7 +13,6 @@ struct SocialView: View {
     @StateObject private var feedViewModel = FeedViewModel()
     @StateObject private var friendsViewModel = FriendsViewModel()
     @StateObject private var conversationsViewModel = ConversationsViewModel()
-    @StateObject private var activityViewModel = ActivityViewModel()
 
     @EnvironmentObject var sessionViewModel: SessionViewModel
 
@@ -22,7 +21,6 @@ struct SocialView: View {
     @State private var selectedPost: PostWithAuthor?
     @State private var postToEdit: PostWithAuthor?
     @State private var postToShare: PostWithAuthor?
-    @State private var postToReport: PostWithAuthor?
     @State private var profileToView: PostWithAuthor?
     @State private var showRestoreSuccess = false
 
@@ -65,13 +63,6 @@ struct SocialView: View {
                 }
             }
         }
-        .sheet(item: $postToReport) { postWithAuthor in
-            ReportSheet(
-                reportedUserId: postWithAuthor.post.authorId,
-                contentType: .post,
-                contentId: postWithAuthor.post.id.uuidString
-            )
-        }
         .onAppear {
             if authService.isAuthenticated {
                 startSocialListeners()
@@ -106,32 +97,12 @@ struct SocialView: View {
                         .padding(.top, AppSpacing.screenPadding)
                         .padding(.bottom, AppSpacing.md)
 
-                    // Feed / Discover segmented control
-                    feedModeSelector
-                        .padding(.horizontal, AppSpacing.screenPadding)
-                        .padding(.bottom, AppSpacing.xs)
-
-                    contentFilterSelector
-                        .padding(.horizontal, AppSpacing.screenPadding)
-                        .padding(.bottom, AppSpacing.xs)
-
-                    if feedViewModel.hiddenAuthorCount > 0 {
-                        hiddenAuthorsBanner
-                            .padding(.horizontal, AppSpacing.screenPadding)
-                            .padding(.bottom, AppSpacing.xs)
-                    }
-
-                    // Feed content (no wrapping LazyVStack - each branch handles its own lazy loading)
-                    if feedViewModel.feedMode == .discover {
-                        discoverContent
-                    } else if feedViewModel.isLoading && feedViewModel.posts.isEmpty {
+                    if feedViewModel.isLoading && feedViewModel.posts.isEmpty {
                         loadingView
                     } else if feedViewModel.error != nil && feedViewModel.posts.isEmpty {
                         errorFeedState
                     } else if feedViewModel.posts.isEmpty {
                         emptyFeedState
-                    } else if feedViewModel.filteredFeedPosts.isEmpty {
-                        emptyFilteredFeedState
                     } else {
                         feedList
                     }
@@ -180,43 +151,6 @@ struct SocialView: View {
                             .font(.system(size: 18, weight: .medium))
                             .foregroundColor(AppColors.textSecondary)
                             .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
-                    }
-                    .buttonStyle(.pressable)
-
-                    // Friends button
-                    NavigationLink(destination: FriendsListView()) {
-                        ZStack(alignment: .topTrailing) {
-                            Image(systemName: "person.2")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(AppColors.textSecondary)
-                                .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
-
-                            // Pending request badge
-                            if friendsViewModel.pendingRequestCount > 0 {
-                                Circle()
-                                    .fill(AppColors.warning)
-                                    .frame(width: 8, height: 8)
-                                    .offset(x: 2, y: -2)
-                            }
-                        }
-                    }
-                    .buttonStyle(.pressable)
-
-                    // Activity/notifications button
-                    NavigationLink(destination: ActivityFeedView()) {
-                        ZStack(alignment: .topTrailing) {
-                            Image(systemName: "bell")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundColor(AppColors.textSecondary)
-                                .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
-
-                            if activityViewModel.unreadCount > 0 {
-                                Circle()
-                                    .fill(AppColors.error)
-                                    .frame(width: 8, height: 8)
-                                    .offset(x: 2, y: -2)
-                            }
-                        }
                     }
                     .buttonStyle(.pressable)
 
@@ -428,12 +362,6 @@ struct SocialView: View {
                                 await feedViewModel.react(to: post, with: reaction)
                             }
                         },
-                        onReport: post.post.authorId != feedViewModel.currentUserId ? {
-                            postToReport = post
-                        } : nil,
-                        onHideAuthor: post.post.authorId != feedViewModel.currentUserId ? {
-                            feedViewModel.hideAuthor(post.post.authorId)
-                        } : nil,
                         onRestoreSession: post.post.authorId == feedViewModel.currentUserId && isSessionPost(post.post.content) ? {
                             if sessionViewModel.restoreSessionFromPost(post.post) {
                                 showRestoreSuccess = true
@@ -443,8 +371,7 @@ struct SocialView: View {
                 }
                 .onAppear {
                     // Load more when reaching the end
-                    if feedViewModel.contentFilter == .all,
-                       post.id == feedViewModel.posts.last?.id {
+                    if post.id == feedViewModel.posts.last?.id {
                         Task<Void, Never> { @MainActor in
                             await feedViewModel.loadMorePosts()
                         }
@@ -461,249 +388,7 @@ struct SocialView: View {
                 ProgressView()
                     .tint(AppColors.accent2)
                     .padding(AppSpacing.lg)
-            } else if feedViewModel.contentFilter != .all {
-                Button {
-                    Task<Void, Never> { @MainActor in
-                        await feedViewModel.loadMorePosts()
-                    }
-                } label: {
-                    Text("Load more posts")
-                        .subheadline(color: AppColors.accent2)
-                        .padding(.vertical, AppSpacing.md)
-                }
-                .buttonStyle(.pressable)
             }
-        }
-        .tabBarBottomPadding(extra: 24) // Space for floating compose button above the tab bar
-    }
-
-    // MARK: - Content Filter Selector
-
-    private var contentFilterSelector: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppSpacing.sm) {
-                ForEach(FeedContentFilter.allCases) { filter in
-                    Button {
-                        withAnimation(AppMotion.stateChange) {
-                            feedViewModel.contentFilter = filter
-                        }
-                    } label: {
-                        Text(filter.rawValue)
-                            .font(.caption.weight(.semibold))
-                            .foregroundColor(
-                                feedViewModel.contentFilter == filter
-                                ? AppColors.background
-                                : AppColors.textSecondary
-                            )
-                            .padding(.horizontal, AppSpacing.md)
-                            .padding(.vertical, AppSpacing.xs)
-                            .background(
-                                Capsule()
-                                    .fill(
-                                        feedViewModel.contentFilter == filter
-                                        ? AppColors.accent2
-                                        : AppColors.surfaceSecondary
-                                    )
-                            )
-                    }
-                    .buttonStyle(.pressable)
-                }
-            }
-        }
-    }
-
-    private var hiddenAuthorsBanner: some View {
-        HStack(spacing: AppSpacing.sm) {
-            Image(systemName: "eye.slash")
-                .font(.caption)
-                .foregroundColor(AppColors.textTertiary)
-
-            Text("\(feedViewModel.hiddenAuthorCount) hidden")
-                .caption(color: AppColors.textSecondary)
-
-            Spacer()
-
-            Button("Show all") {
-                feedViewModel.clearHiddenAuthors()
-            }
-            .font(.caption.weight(.semibold))
-            .foregroundColor(AppColors.accent2)
-            .buttonStyle(.pressable)
-        }
-        .padding(.horizontal, AppSpacing.sm)
-        .padding(.vertical, AppSpacing.xs)
-        .background(
-            Capsule()
-                .fill(AppColors.surfaceSecondary)
-        )
-    }
-
-    // MARK: - Feed Mode Selector
-
-    private var feedModeSelector: some View {
-        HStack(spacing: 0) {
-            ForEach(FeedMode.allCases) { mode in
-                Button {
-                    withAnimation(AppMotion.stateChange) {
-                        feedViewModel.feedMode = mode
-                    }
-                    if mode == .discover && feedViewModel.trendingPosts.isEmpty {
-                        Task {
-                            await feedViewModel.loadTrendingPosts()
-                        }
-                    }
-                } label: {
-                    Text(mode.rawValue)
-                        .font(.subheadline.weight(feedViewModel.feedMode == mode ? .bold : .medium))
-                        .foregroundColor(feedViewModel.feedMode == mode ? AppColors.textPrimary : AppColors.textTertiary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.sm)
-                        .overlay(alignment: .bottom) {
-                            if feedViewModel.feedMode == mode {
-                                Rectangle()
-                                    .fill(AppColors.accent2)
-                                    .frame(height: 2)
-                            }
-                        }
-                }
-                .buttonStyle(.pressable)
-            }
-        }
-        .overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(AppColors.surfaceTertiary.opacity(0.5))
-                .frame(height: 0.5)
-        }
-    }
-
-    // MARK: - Discover Content
-
-    private var discoverContent: some View {
-        Group {
-            if feedViewModel.isLoadingTrending && feedViewModel.trendingPosts.isEmpty {
-                VStack(spacing: AppSpacing.lg) {
-                    ProgressView()
-                        .tint(AppColors.accent2)
-                    Text("Finding trending posts...")
-                        .subheadline(color: AppColors.textSecondary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, 100)
-            } else if feedViewModel.filteredTrendingPosts.isEmpty {
-                VStack(spacing: AppSpacing.md) {
-                    Spacer()
-                        .frame(height: 60)
-
-                    Image(systemName: "flame")
-                        .font(.system(size: 40))
-                        .foregroundColor(AppColors.textTertiary)
-
-                    if feedViewModel.trendingPosts.isEmpty {
-                        Text("No trending posts yet")
-                            .subheadline(color: AppColors.textSecondary)
-
-                        Text("Check back later for popular posts from the community")
-                            .caption(color: AppColors.textTertiary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, AppSpacing.xl)
-                    } else {
-                        Text("No discover posts match this filter")
-                            .subheadline(color: AppColors.textSecondary)
-
-                        Button {
-                            feedViewModel.contentFilter = .all
-                        } label: {
-                            Text("Show all posts")
-                                .subheadline(color: AppColors.accent2)
-                        }
-                        .buttonStyle(.pressable)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, AppSpacing.xl)
-            } else {
-                trendingFeedList
-            }
-        }
-    }
-
-    private var emptyFilteredFeedState: some View {
-        VStack(spacing: AppSpacing.md) {
-            Spacer()
-                .frame(height: 60)
-
-            Image(systemName: "line.3.horizontal.decrease.circle")
-                .font(.system(size: 40))
-                .foregroundColor(AppColors.textTertiary)
-
-            Text("No posts in \(feedViewModel.contentFilter.rawValue)")
-                .headline(color: AppColors.textPrimary)
-
-            Button {
-                feedViewModel.contentFilter = .all
-            } label: {
-                Text("Show all posts")
-                    .subheadline(color: AppColors.accent2)
-            }
-            .buttonStyle(.pressable)
-            .padding(.top, AppSpacing.xs)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, AppSpacing.xl)
-        .tabBarBottomPadding(extra: 24) // Space for floating compose button above the tab bar
-    }
-
-    // MARK: - Trending Feed List
-
-    private var trendingFeedList: some View {
-        LazyVStack(spacing: 0) {
-            ForEach(feedViewModel.filteredTrendingPosts) { post in
-                VStack(spacing: 0) {
-                    Rectangle()
-                        .fill(AppColors.surfaceTertiary.opacity(0.5))
-                        .frame(height: 0.5)
-
-                    FeedPostRow(
-                        post: post,
-                        onLike: {
-                            Task<Void, Never> { @MainActor in
-                                await feedViewModel.toggleLike(for: post)
-                            }
-                        },
-                        onComment: {
-                            selectedPost = post
-                        },
-                        onEdit: nil,
-                        onDelete: nil,
-                        onProfileTap: {
-                            if post.post.authorId != feedViewModel.currentUserId {
-                                profileToView = post
-                            }
-                        },
-                        onShare: {
-                            postToShare = post
-                        },
-                        onPostTap: {
-                            selectedPost = post
-                        },
-                        onReact: { reaction in
-                            Task<Void, Never> { @MainActor in
-                                await feedViewModel.react(to: post, with: reaction)
-                            }
-                        },
-                        onReport: post.post.authorId != feedViewModel.currentUserId ? {
-                            postToReport = post
-                        } : nil,
-                        onHideAuthor: post.post.authorId != feedViewModel.currentUserId ? {
-                            feedViewModel.hideAuthor(post.post.authorId)
-                        } : nil
-                    )
-                }
-            }
-
-            Rectangle()
-                .fill(AppColors.surfaceTertiary.opacity(0.5))
-                .frame(height: 0.5)
         }
         .tabBarBottomPadding(extra: 24) // Space for floating compose button above the tab bar
     }
@@ -821,14 +506,12 @@ struct SocialView: View {
         friendsViewModel.loadFriendships()
         conversationsViewModel.loadConversations()
         feedViewModel.loadFeed()
-        activityViewModel.loadActivities()
     }
 
     private func stopSocialListeners() {
         feedViewModel.stopListening(clearData: true)
         friendsViewModel.stopListening(clearData: true)
         conversationsViewModel.stopListening(clearData: true)
-        activityViewModel.stopListening(clearData: true)
     }
 
     private func isSessionPost(_ content: PostContent) -> Bool {

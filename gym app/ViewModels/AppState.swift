@@ -190,23 +190,8 @@ class AppState: ObservableObject {
         isSyncing = true
         syncError = nil  // Clear previous error
 
-        do {
-            // Sync from cloud first (gets latest data)
-            try await repository.syncFromCloudThrowing()
-
-            // Then push any local changes
-            try await repository.pushAllToCloudThrowing()
-
-            lastSyncDate = Date()
-            UserDefaults.standard.set(lastSyncDate, forKey: "lastSyncDate")
-        } catch {
-            syncError = SyncErrorInfo(
-                message: "Sync failed: \(error.localizedDescription)",
-                timestamp: Date(),
-                isRetryable: true
-            )
-            Logger.error(error, context: "AppState.triggerSync")
-        }
+        await SyncManager.shared.syncNow()
+        lastSyncDate = SyncManager.shared.lastSyncDate
 
         isSyncing = false
 

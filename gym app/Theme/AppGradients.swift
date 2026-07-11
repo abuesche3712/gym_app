@@ -10,14 +10,9 @@ import SwiftUI
 // MARK: - Gradients
 
 struct AppGradients {
-    // MARK: - Card Gradients (Subtle depth)
-    static let cardGradient = LinearGradient(
-        colors: [AppColors.surfacePrimary, AppColors.surfacePrimary.opacity(0.85)],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    // MARK: - Card Gradients
 
-    // Enhanced card gradient with subtle depth
+    // Elevated card treatment for the active-session header.
     static let cardGradientElevated = LinearGradient(
         colors: [
             Color(hex: "1A1A1C"),  // Slightly lighter slate
@@ -49,31 +44,6 @@ struct AppGradients {
         endPoint: .bottomTrailing
     )
 
-    // MARK: - Success Gradient (PR celebration!)
-    static let successGradient = LinearGradient(
-        colors: [AppColors.success, AppColors.success.opacity(0.7)],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
-
-    // MARK: - Reward Gradient (THE ELECTRIC celebration moment!)
-    static let rewardGradient = LinearGradient(
-        colors: [
-            AppColors.reward,
-            Color(hex: "00D9FF"),
-            Color(hex: "7B61FF")  // Add purple for rainbow effect
-        ],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
-
-    // MARK: - Subtle Gradient
-    static let subtleGradient = LinearGradient(
-        colors: [AppColors.surfaceSecondary, AppColors.surfacePrimary],
-        startPoint: .top,
-        endPoint: .bottom
-    )
-
     // MARK: - Progress Bar Gradient
     static let progressGradient = LinearGradient(
         colors: [
@@ -84,40 +54,10 @@ struct AppGradients {
         endPoint: .trailing
     )
 
-    // MARK: - Module Gradient (VIBRANT personality!)
-    static func moduleGradient(_ type: ModuleType) -> LinearGradient {
-        let color = AppColors.moduleColor(type)
-        return LinearGradient(
-            colors: [color.opacity(0.4), color.opacity(0.15)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    // MARK: - Social Gradient
-    static let socialGradient = LinearGradient(
-        colors: [AppColors.dominant, AppColors.dominant.opacity(0.78)],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
-
     // MARK: - Program Gradient
     static let programGradient = LinearGradient(
-        colors: [AppColors.programAccent.opacity(0.32), AppColors.programAccent.opacity(0.1)],
+        colors: [AppColors.dominant.opacity(0.32), AppColors.dominant.opacity(0.1)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
-
-    // Accent-tinted card background
-    static func accentCardGradient(_ color: Color) -> LinearGradient {
-        LinearGradient(
-            colors: [
-                color.opacity(0.06),
-                color.opacity(0.02),
-                AppColors.surfacePrimary
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
 }

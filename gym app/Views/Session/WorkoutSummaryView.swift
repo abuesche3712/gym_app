@@ -29,8 +29,6 @@ struct WorkoutSummaryView: View {
     @State private var showShareSheet = false
     @State private var showPostToFeed = false
     @State private var showShareWithFriend = false
-    @State private var showHighlightPicker = false
-    @State private var selectedShareContent: (any ShareableContent)?
 
     // Computed stats
     private var totalVolume: Double {
@@ -87,9 +85,8 @@ struct WorkoutSummaryView: View {
                             if let onShareAction {
                                 onShareAction(.postToFeed)
                             } else {
-                                // Fallback: legacy path
                                 onQuickSave(nil, nil)
-                                showHighlightPicker = true
+                                showPostToFeed = true
                             }
                         } label: {
                             Label("Post to Feed", systemImage: "rectangle.stack")
@@ -126,22 +123,8 @@ struct WorkoutSummaryView: View {
             .sheet(isPresented: $showShareSheet) {
                 WorkoutShareSheet(items: [generateShareText()])
             }
-            .sheet(isPresented: $showHighlightPicker) {
-                HighlightPickerView(session: session) { highlights in
-                    selectedShareContent = ShareableHighlightBundle.aggregate(
-                        from: highlights,
-                        workoutName: session.workoutName,
-                        date: session.date
-                    ) ?? session
-                    showPostToFeed = true
-                }
-            }
             .sheet(isPresented: $showPostToFeed) {
-                if let content = selectedShareContent {
-                    ComposePostSheet(content: content)
-                } else {
-                    ComposePostSheet(content: session)
-                }
+                ComposePostSheet(content: session)
             }
             .sheet(isPresented: $showShareWithFriend) {
                 ShareWithFriendSheet(content: session)

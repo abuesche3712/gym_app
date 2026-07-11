@@ -40,11 +40,4 @@ final class Debouncer {
         workItem = nil
     }
 
-    /// Execute immediately if there's a pending action
-    func flush() {
-        if let workItem = workItem, !workItem.isCancelled {
-            workItem.perform()
-            self.workItem = nil
-        }
-    }
 }

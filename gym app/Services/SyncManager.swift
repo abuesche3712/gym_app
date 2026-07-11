@@ -17,7 +17,6 @@ import Combine
 actor SyncQueueProcessor {
     private let persistence: PersistenceController
     private let firestoreService: FirestoreService
-    private var handlers: [SyncEntityType: AnySyncHandler] = [:]
 
     private lazy var backgroundContext: NSManagedObjectContext = {
         let context = persistence.container.newBackgroundContext()
@@ -28,24 +27,6 @@ actor SyncQueueProcessor {
     init(persistence: PersistenceController, firestoreService: FirestoreService) {
         self.persistence = persistence
         self.firestoreService = firestoreService
-        self.handlers = Self.makeHandlers(firestoreService: firestoreService)
-    }
-
-    private static func makeHandlers(firestoreService: FirestoreService) -> [SyncEntityType: AnySyncHandler] {
-        var handlers: [SyncEntityType: AnySyncHandler] = [:]
-
-        func register<H: SyncHandler>(_ handler: H) {
-            handlers[handler.entityType] = AnySyncHandler(handler)
-        }
-
-        register(ModuleSyncHandler(firestoreService: firestoreService))
-        register(WorkoutSyncHandler(firestoreService: firestoreService))
-        register(SessionSyncHandler(firestoreService: firestoreService))
-        register(ProgramSyncHandler(firestoreService: firestoreService))
-        register(ScheduledWorkoutSyncHandler(firestoreService: firestoreService))
-        register(CustomExerciseSyncHandler(firestoreService: firestoreService))
-
-        return handlers
     }
 
     // Non-blocking log helpers to avoid MainActor deadlock
@@ -123,12 +104,7 @@ actor SyncQueueProcessor {
             case .userProfile:
                 try await syncUserProfileFromQueue(item)
             default:
-                // Use registered handler
-                guard let handler = handlers[item.entityType] else {
-                    logWarning("No handler registered for \(entityTypeStr)", context: "SyncQueueProcessor")
-                    return
-                }
-                try await handler.process(payload: item.payload, action: item.action)
+                try await syncStandardItem(item)
             }
 
             // Success - remove from queue
@@ -173,6 +149,41 @@ actor SyncQueueProcessor {
             throw SyncError.decodingFailed
         }
         try await firestoreService.saveUserProfile(profile)
+    }
+
+    private func syncStandardItem(_ item: SyncQueueEntity) async throws {
+        switch item.entityType {
+        case .module:
+            try await process(item, as: Module.self, save: firestoreService.saveModule, delete: firestoreService.deleteModule)
+        case .workout:
+            try await process(item, as: Workout.self, save: firestoreService.saveWorkout, delete: firestoreService.deleteWorkout)
+        case .session:
+            try await process(item, as: Session.self, save: firestoreService.saveSession, delete: firestoreService.deleteSession)
+        case .program:
+            try await process(item, as: Program.self, save: firestoreService.saveProgram, delete: firestoreService.deleteProgram)
+        case .scheduledWorkout:
+            try await process(item, as: ScheduledWorkout.self, save: firestoreService.saveScheduledWorkout, delete: firestoreService.deleteScheduledWorkout)
+        case .customExercise:
+            try await process(item, as: ExerciseTemplate.self, save: firestoreService.saveCustomExercise, delete: firestoreService.deleteCustomExercise)
+        case .setData, .userProfile:
+            throw SyncError.decodingFailed
+        }
+    }
+
+    private func process<T: Codable & Identifiable>(
+        _ item: SyncQueueEntity,
+        as _: T.Type,
+        save: @escaping (T) async throws -> Void,
+        delete: @escaping (UUID) async throws -> Void
+    ) async throws where T.ID == UUID {
+        let entity = try JSONDecoder().decode(T.self, from: item.payload)
+
+        switch item.action {
+        case .create, .update:
+            try await save(entity)
+        case .delete:
+            try await delete(entity.id)
+        }
     }
 
     // MARK: - Queue Counts
@@ -258,28 +269,19 @@ class SyncManager: ObservableObject {
     private let backgroundSyncInterval: TimeInterval = 300  // 5 minutes
     private let minSyncInterval: TimeInterval = 60          // 1 minute minimum between syncs
     private var backgroundSyncTimer: Timer?
+    private var fullSyncTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
-
-    // MARK: - Library Sync Metadata
-
-    private var librarySyncMetadata: LibrarySyncMetadata {
-        get {
-            guard let data = UserDefaults.standard.data(forKey: "librarySyncMetadata"),
-                  let metadata = try? JSONDecoder().decode(LibrarySyncMetadata.self, from: data) else {
-                return LibrarySyncMetadata()
-            }
-            return metadata
-        }
-        set {
-            if let data = try? JSONEncoder().encode(newValue) {
-                UserDefaults.standard.set(data, forKey: "librarySyncMetadata")
-            }
-        }
-    }
 
     /// Sync is enabled when user is authenticated
     var syncEnabled: Bool {
         authService.isAuthenticated
+    }
+
+    var isSyncing: Bool {
+        if case .syncing = syncState {
+            return true
+        }
+        return false
     }
 
     // MARK: - Initialization
@@ -334,13 +336,33 @@ class SyncManager: ObservableObject {
     private func backgroundSyncTick() async {
         guard syncEnabled, isOnline else { return }
         await retryFailedSyncs()
-        await checkLibraryUpdates()
     }
 
     // MARK: - Main Sync Operations
 
-    /// Full sync on login/app launch
-    func syncOnLogin() async {
+    /// The single entry point for full pull/push synchronization.
+    ///
+    /// Launch, sign-in, manual refresh, scene activation, and network recovery can
+    /// all request a sync at nearly the same time. Coalescing them avoids concurrent
+    /// Core Data merges and duplicate cloud writes while preserving the caller's
+    /// ability to await completion.
+    func syncNow() async {
+        if let fullSyncTask {
+            await fullSyncTask.value
+            return
+        }
+
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            await self.performFullSync()
+        }
+        fullSyncTask = task
+        await task.value
+        fullSyncTask = nil
+    }
+
+    /// Full sync implementation. Call through `syncNow()` to avoid overlap.
+    private func performFullSync() async {
         guard syncEnabled else {
             logger.info("Not authenticated, skipping login sync", context: "SyncManager")
             return
@@ -376,75 +398,6 @@ class SyncManager: ObservableObject {
         await updatePendingCounts()
     }
 
-    /// Manual full sync
-    func syncAll() async {
-        await syncOnLogin()
-    }
-
-    /// Lightweight sync for individual set during workout
-    func syncSet(_ set: SetData, sessionId: UUID, exerciseId: UUID) {
-        guard syncEnabled else { return }
-
-        let setPayload = SetSyncPayload(
-            sessionId: sessionId,
-            exerciseId: exerciseId,
-            set: set
-        )
-
-        guard let payload = try? JSONEncoder().encode(setPayload) else {
-            logger.error("Failed to encode set for sync", context: "SyncManager.syncSet")
-            return
-        }
-
-        Task {
-            let queued = await queueProcessor.queueItem(
-                entityType: .setData,
-                entityId: set.id,
-                action: .update,
-                payload: payload
-            )
-
-            if queued && isOnline {
-                await queueProcessor.processQueue()
-                await updatePendingCounts()
-            }
-        }
-    }
-
-    /// Sync completed workout immediately
-    func syncCompletedWorkout(_ session: Session) async {
-        guard syncEnabled else { return }
-
-        guard let payload = try? JSONEncoder().encode(session) else {
-            logger.error("Failed to encode session for sync", context: "SyncManager.syncCompletedWorkout")
-            return
-        }
-
-        if isOnline {
-            do {
-                try await firestoreService.saveSession(session)
-                logger.info("Session synced immediately", context: "SyncManager.syncCompletedWorkout")
-            } catch {
-                logger.logError(error, context: "SyncManager.syncCompletedWorkout", additionalInfo: "Immediate sync failed, queuing")
-                _ = await queueProcessor.queueItem(
-                    entityType: .session,
-                    entityId: session.id,
-                    action: .create,
-                    payload: payload
-                )
-            }
-        } else {
-            _ = await queueProcessor.queueItem(
-                entityType: .session,
-                entityId: session.id,
-                action: .create,
-                payload: payload
-            )
-        }
-
-        await updatePendingCounts()
-    }
-
     /// Retry all failed syncs in queue
     func retryFailedSyncs() async {
         guard syncEnabled, isOnline else { return }
@@ -459,43 +412,6 @@ class SyncManager: ObservableObject {
 
     private func pullFromCloud() async {
         await dataRepository.syncFromCloud()
-        await checkLibraryUpdates()
-    }
-
-    private func checkLibraryUpdates() async {
-        var metadata = librarySyncMetadata
-
-        if metadata.needsRefresh(\.exerciseLibraryLastSync) {
-            do {
-                _ = try await firestoreService.fetchExerciseLibrary()
-                metadata.exerciseLibraryLastSync = Date()
-                logger.info("Exercise library updated", context: "SyncManager.checkLibraryUpdates")
-            } catch {
-                logger.logError(error, context: "SyncManager.checkLibraryUpdates", additionalInfo: "Failed to fetch exercise library")
-            }
-        }
-
-        if metadata.needsRefresh(\.equipmentLibraryLastSync) {
-            do {
-                _ = try await firestoreService.fetchEquipmentLibrary()
-                metadata.equipmentLibraryLastSync = Date()
-                logger.info("Equipment library updated", context: "SyncManager.checkLibraryUpdates")
-            } catch {
-                logger.logError(error, context: "SyncManager.checkLibraryUpdates", additionalInfo: "Failed to fetch equipment library")
-            }
-        }
-
-        if metadata.needsRefresh(\.progressionSchemesLastSync) {
-            do {
-                _ = try await firestoreService.fetchProgressionSchemes()
-                metadata.progressionSchemesLastSync = Date()
-                logger.info("Progression schemes updated", context: "SyncManager.checkLibraryUpdates")
-            } catch {
-                logger.logError(error, context: "SyncManager.checkLibraryUpdates", additionalInfo: "Failed to fetch progression schemes")
-            }
-        }
-
-        librarySyncMetadata = metadata
     }
 
     // MARK: - Push Operations
@@ -557,15 +473,6 @@ class SyncManager: ObservableObject {
         queue(exercise, entityType: .customExercise, action: action)
     }
 
-    /// UserProfile has special handling (no ID from entity, no delete action)
-    func queueUserProfile(_ profile: UserProfile) {
-        guard let payload = try? JSONEncoder().encode(profile) else { return }
-        Task {
-            _ = await queueProcessor.queueItem(entityType: .userProfile, entityId: UUID(), action: .update, payload: payload)
-            await updatePendingCounts()
-        }
-    }
-
     // MARK: - Pending Count Management
 
     private func updatePendingCounts() async {
@@ -610,7 +517,7 @@ extension SyncManager {
 
         if shouldSyncOnResume() {
             Task {
-                await syncOnLogin()
+                await syncNow()
             }
         }
     }
@@ -632,7 +539,8 @@ extension SyncManager {
 
 // MARK: - Supporting Types
 
-/// Lightweight payload for syncing individual sets during workout
+/// Legacy payload retained so queued per-set updates from earlier app versions can
+/// still be replayed and removed safely.
 struct SetSyncPayload: Codable {
     let sessionId: UUID
     let exerciseId: UUID

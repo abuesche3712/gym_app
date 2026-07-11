@@ -15,7 +15,6 @@ struct AnalyticsView: View {
     @AppStorage("analytics_strengthExpanded") private var strengthExpanded = true
     @AppStorage("analytics_engineExpanded") private var engineExpanded = true
 
-    @State private var showDryRunInfo = false
     @State private var showingShareSummary = false
 
     var body: some View {
@@ -51,7 +50,6 @@ struct AnalyticsView: View {
                             progressionBreakdownCard
                             engineHealthCard
                             progressionAlertsCard
-                            dryRunSimulatorCard
                         }
                     }
                 }
@@ -529,62 +527,6 @@ struct AnalyticsView: View {
         .analyticsCard()
     }
 
-    private var dryRunSimulatorCard: some View {
-        let runs = viewModel.dryRunProfiles
-
-        return VStack(alignment: .leading, spacing: AppSpacing.md) {
-            HStack {
-                Text("Dry-Run Simulator")
-                    .headline(color: AppColors.textPrimary)
-                Button {
-                    withAnimation(AppAnimation.quick) { showDryRunInfo.toggle() }
-                } label: {
-                    Image(systemName: "info.circle")
-                        .foregroundColor(AppColors.textTertiary)
-                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.pressable)
-            }
-
-            if showDryRunInfo {
-                Text("Shows how your recent suggestions would have been routed under different confidence thresholds. \"Match\" indicates agreement with your actual decisions.")
-                    .caption(color: AppColors.textSecondary)
-                    .padding(.bottom, 4)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-
-            if runs.isEmpty {
-                Text("Not enough suggestion data to simulate profiles.")
-                    .caption(color: AppColors.textTertiary)
-            } else {
-                Text("How the last \(viewModel.dryRunInputCount) suggestions would route:")
-                    .caption(color: AppColors.textSecondary)
-
-                ForEach(runs) { run in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(run.name)
-                                .subheadline(color: AppColors.textPrimary)
-                                .fontWeight(.semibold)
-                            Spacer()
-                            Text("Match \(run.agreementRate)%")
-                                .caption(color: AppColors.textSecondary)
-                        }
-
-                        HStack(spacing: 10) {
-                            dryRunPill(label: "P", value: run.progressCount, color: AppColors.success)
-                            dryRunPill(label: "S", value: run.stayCount, color: AppColors.dominant)
-                            dryRunPill(label: "R", value: run.regressCount, color: AppColors.warning)
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
-            }
-        }
-        .analyticsCard()
-    }
-
     @ViewBuilder
     private func analyticsStat(label: String, value: String, icon: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -605,24 +547,6 @@ struct AnalyticsView: View {
         .background(
             RoundedRectangle(cornerRadius: AppCorners.medium)
                 .fill(AppColors.surfaceSecondary)
-        )
-    }
-
-    @ViewBuilder
-    private func dryRunPill(label: String, value: Int, color: Color) -> some View {
-        HStack(spacing: 4) {
-            Text(label)
-                .caption(color: color)
-                .fontWeight(.bold)
-            Text("\(value)")
-                .caption(color: AppColors.textPrimary)
-                .fontWeight(.semibold)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(
-            Capsule()
-                .fill(color.opacity(0.14))
         )
     }
 

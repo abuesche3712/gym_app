@@ -61,11 +61,6 @@ enum SupersetHelper {
         return items.filter { $0.supersetGroupId == supersetId }
     }
 
-    /// Returns the count of items in a superset
-    static func supersetCount<T: SupersetGroupable>(for supersetId: UUID, in items: [T]) -> Int {
-        items.filter { $0.supersetGroupId == supersetId }.count
-    }
-
     // MARK: - Grouping
 
     /// Groups items by superset, maintaining original order.

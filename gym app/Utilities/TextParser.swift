@@ -112,20 +112,6 @@ struct TextParser {
         return tokens
     }
 
-    /// Extract all hashtags from text
-    static func extractHashtags(from text: String) -> [String] {
-        parse(text)
-            .filter { $0.type == .hashtag }
-            .map { $0.value }
-    }
-
-    /// Extract all mentions from text
-    static func extractMentions(from text: String) -> [String] {
-        parse(text)
-            .filter { $0.type == .mention }
-            .map { $0.value }
-    }
-
     /// Check if text contains any hashtags or mentions
     static func containsRichContent(_ text: String) -> Bool {
         let nsString = text as NSString

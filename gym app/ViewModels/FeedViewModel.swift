@@ -9,35 +9,12 @@ import Foundation
 import FirebaseFirestore
 import Combine
 
-// MARK: - Feed Mode
-
-enum FeedMode: String, CaseIterable, Identifiable {
-    case feed = "Feed"
-    case discover = "Discover"
-
-    var id: String { rawValue }
-}
-
-enum FeedContentFilter: String, CaseIterable, Identifiable {
-    case all = "All"
-    case workouts = "Workouts"
-    case plans = "Plans"
-    case updates = "Updates"
-
-    var id: String { rawValue }
-}
-
 @MainActor
 class FeedViewModel: ObservableObject {
     @Published var posts: [PostWithAuthor] = []
-    @Published var trendingPosts: [PostWithAuthor] = []
     @Published var isLoading = false
     @Published var isLoadingMore = false
-    @Published var isLoadingTrending = false
     @Published var error: Error?
-    @Published var feedMode: FeedMode = .feed
-    @Published var contentFilter: FeedContentFilter = .all
-    @Published private(set) var hiddenAuthorIds: Set<String> = []
 
     private let postRepo: PostRepository
     private let friendshipRepo: FriendshipRepository
@@ -52,17 +29,9 @@ class FeedViewModel: ObservableObject {
     private var commentCountObserver: Any?
     private var friendshipCancellable: AnyCancellable?
     private let activityService = FirestoreActivityService.shared
-    private let userDefaults = UserDefaults.standard
-    private var hiddenAuthorsLoadedKey: String?
 
     var currentUserId: String? { authService.currentUser?.uid }
-    var hiddenAuthorCount: Int { hiddenAuthorIds.count }
-    var filteredFeedPosts: [PostWithAuthor] {
-        filter(posts)
-    }
-    var filteredTrendingPosts: [PostWithAuthor] {
-        filter(trendingPosts)
-    }
+    var filteredFeedPosts: [PostWithAuthor] { posts }
 
     init(
         postRepo: PostRepository? = nil,
@@ -189,17 +158,13 @@ class FeedViewModel: ObservableObject {
         feedListener = nil
         if clearData {
             posts = []
-            trendingPosts = []
             isLoading = false
             isLoadingMore = false
-            isLoadingTrending = false
         }
     }
 
     func loadFeed() {
         guard currentUserId != nil else { return }
-        ensureHiddenAuthorsLoaded()
-
         isLoading = true
         restartFeedListener()
         isLoading = false
@@ -207,8 +172,6 @@ class FeedViewModel: ObservableObject {
 
     func refreshFeed() async {
         guard let userId = currentUserId else { return }
-        ensureHiddenAuthorsLoaded()
-
         let friends = friendshipRepo.getAcceptedFriends(for: userId)
         var friendIds = friends.compactMap { $0.otherUserId(from: userId) }
         friendIds.append(userId)
@@ -225,8 +188,6 @@ class FeedViewModel: ObservableObject {
         guard let userId = currentUserId,
               let oldestPost = posts.last,
               !isLoadingMore else { return }
-        ensureHiddenAuthorsLoaded()
-
         isLoadingMore = true
         defer { isLoadingMore = false }
 
@@ -465,88 +426,4 @@ class FeedViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Trending Posts
-
-    func loadTrendingPosts() async {
-        guard let userId = currentUserId else { return }
-        guard !isLoadingTrending else { return }
-        ensureHiddenAuthorsLoaded()
-
-        isLoadingTrending = true
-        defer { isLoadingTrending = false }
-
-        do {
-            let since = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-            let posts = try await firestoreService.fetchTrendingPosts(since: since, limit: 20)
-            trendingPosts = await loadAuthorsForPosts(posts, userId: userId)
-        } catch {
-            self.error = error
-        }
-    }
-
-    func hideAuthor(_ authorId: String) {
-        ensureHiddenAuthorsLoaded()
-        guard hiddenAuthorIds.insert(authorId).inserted else { return }
-        persistHiddenAuthors()
-        posts.removeAll { hiddenAuthorIds.contains($0.post.authorId) }
-        trendingPosts.removeAll { hiddenAuthorIds.contains($0.post.authorId) }
-    }
-
-    func clearHiddenAuthors() {
-        ensureHiddenAuthorsLoaded()
-        guard !hiddenAuthorIds.isEmpty else { return }
-        hiddenAuthorIds.removeAll()
-        persistHiddenAuthors()
-        restartFeedListener()
-        Task {
-            await loadTrendingPosts()
-        }
-    }
-
-    private var hiddenAuthorsStorageKey: String {
-        "social.hiddenAuthors.\(currentUserId ?? "anonymous")"
-    }
-
-    private func ensureHiddenAuthorsLoaded() {
-        let key = hiddenAuthorsStorageKey
-        guard hiddenAuthorsLoadedKey != key else { return }
-        hiddenAuthorsLoadedKey = key
-        hiddenAuthorIds = Set(userDefaults.stringArray(forKey: key) ?? [])
-    }
-
-    private func persistHiddenAuthors() {
-        userDefaults.set(Array(hiddenAuthorIds).sorted(), forKey: hiddenAuthorsStorageKey)
-    }
-
-    private func filter(_ source: [PostWithAuthor]) -> [PostWithAuthor] {
-        source.filter { post in
-            if hiddenAuthorIds.contains(post.post.authorId) {
-                return false
-            }
-
-            switch contentFilter {
-            case .all:
-                return true
-            case .workouts:
-                switch post.post.content {
-                case .session, .exercise, .set, .highlights, .completedModule:
-                    return true
-                default:
-                    return false
-                }
-            case .plans:
-                switch post.post.content {
-                case .program, .workout, .module:
-                    return true
-                default:
-                    return false
-                }
-            case .updates:
-                if case .text = post.post.content {
-                    return true
-                }
-                return false
-            }
-        }
-    }
 }

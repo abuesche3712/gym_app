@@ -11,6 +11,7 @@ struct SettingsView: View {
     @EnvironmentObject var appState: AppState
     @ObservedObject private var authService = AuthService.shared
     @ObservedObject private var dataRepository = DataRepository.shared
+    @ObservedObject private var syncManager = SyncManager.shared
     @ObservedObject private var pushService = PushNotificationService.shared
     @State private var showingAbout = false
     @State private var showingSyncLogs = false
@@ -74,13 +75,7 @@ struct SettingsView: View {
                         NavigationLink {
                             ExerciseLibraryView()
                         } label: {
-                            SettingsRowLabel(icon: "dumbbell.fill", title: "Exercise Library")
-                        }
-
-                        NavigationLink {
-                            EquipmentLibraryView()
-                        } label: {
-                            SettingsRowLabel(icon: "wrench.and.screwdriver.fill", title: "Equipment Library")
+                            SettingsRowLabel(icon: "books.vertical.fill", title: "Library")
                         }
 
                         NavigationLink {
@@ -280,7 +275,7 @@ struct SettingsView: View {
         SettingsSection(title: "Cloud Sync", footer: "Data syncs automatically when connected to the internet.") {
             SettingsRow(icon: "icloud.fill", title: "Sync Status") {
                 HStack(spacing: AppSpacing.sm) {
-                    if dataRepository.isSyncing {
+                    if syncManager.isSyncing {
                         ProgressView()
                             .scaleEffect(0.8)
                         Text("Syncing...")
@@ -296,7 +291,7 @@ struct SettingsView: View {
 
             Button {
                 Task {
-                    await dataRepository.syncFromCloud()
+                    await syncManager.syncNow()
                 }
             } label: {
                 HStack {
@@ -310,25 +305,7 @@ struct SettingsView: View {
                 .padding(.vertical, AppSpacing.md)
                 .contentShape(Rectangle())
             }
-            .disabled(dataRepository.isSyncing)
-
-            Button {
-                Task {
-                    await dataRepository.pushAllToCloud()
-                }
-            } label: {
-                HStack {
-                    Image(systemName: "icloud.and.arrow.up")
-                        .foregroundColor(AppColors.dominant)
-                        .frame(width: 28)
-                    Text("Push All to Cloud")
-                        .foregroundColor(AppColors.textPrimary)
-                    Spacer()
-                }
-                .padding(.vertical, AppSpacing.md)
-                .contentShape(Rectangle())
-            }
-            .disabled(dataRepository.isSyncing)
+            .disabled(syncManager.isSyncing)
         }
     }
 
