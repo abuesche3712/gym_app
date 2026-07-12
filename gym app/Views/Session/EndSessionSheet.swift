@@ -12,10 +12,19 @@ struct EndSessionSheet: View {
     @Binding var session: Session?
     let onSave: (Int?, String?) -> Void
 
-    @State private var feeling: Int = 5
+    @State private var feeling: Int?
     @State private var notes: String = ""
     @State private var expandedExercises: Set<UUID> = []
     @State private var editingSet: EditingSetInfo?
+
+    /// - Parameter initialFeeling: Pre-populates the rating (e.g. carried over from
+    ///   a selection made on `WorkoutSummaryView` before entering the review flow).
+    ///   Defaults to a neutral 5 when no prior selection exists, matching legacy behavior.
+    init(session: Binding<Session?>, initialFeeling: Int? = nil, onSave: @escaping (Int?, String?) -> Void) {
+        self._session = session
+        self.onSave = onSave
+        self._feeling = State(initialValue: initialFeeling ?? 5)
+    }
 
     var body: some View {
         NavigationStack {
@@ -72,53 +81,8 @@ struct EndSessionSheet: View {
     // MARK: - Rating Section
 
     private var ratingSection: some View {
-        VStack(spacing: AppSpacing.md) {
-            Text("How did you feel?")
-                .headline()
-
-            // 1-10 rating buttons in two rows
-            VStack(spacing: AppSpacing.sm) {
-                HStack(spacing: AppSpacing.sm) {
-                    ForEach(1...5, id: \.self) { value in
-                        ratingButton(value)
-                    }
-                }
-                HStack(spacing: AppSpacing.sm) {
-                    ForEach(6...10, id: \.self) { value in
-                        ratingButton(value)
-                    }
-                }
-            }
-        }
-        .unifiedCard(stroke: false)
-    }
-
-    private func ratingButton(_ value: Int) -> some View {
-        Button {
-            withAnimation(AppAnimation.quick) {
-                feeling = value
-            }
-        } label: {
-            Text("\(value)")
-                .headline(color: feeling == value ? .white : AppColors.textPrimary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, AppSpacing.md)
-                .background(
-                    RoundedRectangle(cornerRadius: AppCorners.medium)
-                        .fill(feeling == value ? ratingColor(value) : AppColors.surfaceTertiary)
-                )
-        }
-        .buttonStyle(.pressable)
-    }
-
-    private func ratingColor(_ value: Int) -> Color {
-        switch value {
-        case 1...3: return AppColors.error
-        case 4...5: return AppColors.warning
-        case 6...7: return AppColors.dominant
-        case 8...10: return AppColors.success
-        default: return AppColors.dominant
-        }
+        FeelingRatingSelector(feeling: $feeling)
+            .unifiedCard(stroke: false)
     }
 
     // MARK: - Exercises Section
@@ -429,6 +393,65 @@ struct EndSessionSheet: View {
                 }
             }
         )
+    }
+}
+
+// MARK: - Feeling Rating Selector
+
+/// Compact 1-10 "how did you feel?" rating grid.
+/// Shared between `EndSessionSheet` and `WorkoutSummaryView` so both the quick-save
+/// and review-and-edit paths present the same one-tap rating control.
+struct FeelingRatingSelector: View {
+    @Binding var feeling: Int?
+    var title: String = "How did you feel?"
+
+    var body: some View {
+        VStack(spacing: AppSpacing.md) {
+            Text(title)
+                .headline()
+
+            // 1-10 rating buttons in two rows
+            VStack(spacing: AppSpacing.sm) {
+                HStack(spacing: AppSpacing.sm) {
+                    ForEach(1...5, id: \.self) { value in
+                        ratingButton(value)
+                    }
+                }
+                HStack(spacing: AppSpacing.sm) {
+                    ForEach(6...10, id: \.self) { value in
+                        ratingButton(value)
+                    }
+                }
+            }
+        }
+    }
+
+    private func ratingButton(_ value: Int) -> some View {
+        Button {
+            withAnimation(AppAnimation.quick) {
+                feeling = value
+            }
+        } label: {
+            Text("\(value)")
+                .headline(color: feeling == value ? .white : AppColors.textPrimary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, AppSpacing.md)
+                .background(
+                    RoundedRectangle(cornerRadius: AppCorners.medium)
+                        .fill(feeling == value ? ratingColor(value) : AppColors.surfaceTertiary)
+                )
+        }
+        .buttonStyle(.pressable)
+    }
+
+    private func ratingColor(_ value: Int) -> Color {
+        switch value {
+        case 1...3: return AppColors.error
+        case 4...5: return AppColors.warning
+        case 6...7: return AppColors.dominant
+        case 8...10: return AppColors.success
+        default: return AppColors.dominant
+        }
     }
 }
 

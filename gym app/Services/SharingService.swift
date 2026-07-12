@@ -137,62 +137,6 @@ class SharingService: ObservableObject {
         )
     }
 
-    /// Creates a share bundle for an exercise instance (importable)
-    func createExerciseInstanceBundle(_ instance: ExerciseInstance) throws -> ExerciseInstanceShareBundle {
-        // Collect custom template if using one
-        var customTemplates: [ExerciseTemplate] = []
-        if let templateId = instance.templateId,
-           let customTemplate = customExerciseLibrary.exercises.first(where: { $0.id == templateId }) {
-            customTemplates.append(customTemplate)
-        }
-
-        // Collect custom implements
-        var customImplementSnapshots: [ImplementSnapshot] = []
-        for implementId in instance.implementIds {
-            if let implementEntity = libraryService.getImplement(id: implementId), implementEntity.isCustom {
-                let measurables = implementEntity.measurableArray.map { measurable in
-                    MeasurableSnapshot(
-                        id: measurable.id,
-                        name: measurable.name,
-                        unit: measurable.unit,
-                        isStringBased: measurable.isStringBased
-                    )
-                }
-                customImplementSnapshots.append(ImplementSnapshot(
-                    id: implementEntity.id,
-                    name: implementEntity.name,
-                    isCustom: implementEntity.isCustom,
-                    measurables: measurables
-                ))
-            }
-        }
-
-        return ExerciseInstanceShareBundle(
-            exerciseInstance: instance,
-            customTemplates: customTemplates,
-            customImplements: customImplementSnapshots
-        )
-    }
-
-    /// Creates a share bundle for a set group (view-only prescription)
-    func createSetGroupBundle(_ setGroup: SetGroup, exerciseName: String, moduleName: String? = nil) throws -> SetGroupShareBundle {
-        return SetGroupShareBundle(
-            setGroup: setGroup,
-            exerciseName: exerciseName,
-            moduleName: moduleName
-        )
-    }
-
-    /// Creates a share bundle for a completed set group
-    func createCompletedSetGroupBundle(_ completedSetGroup: CompletedSetGroup, exerciseName: String, workoutName: String, date: Date) throws -> CompletedSetGroupShareBundle {
-        return CompletedSetGroupShareBundle(
-            completedSetGroup: completedSetGroup,
-            exerciseName: exerciseName,
-            workoutName: workoutName,
-            date: date
-        )
-    }
-
     // MARK: - Detect Conflicts
 
     /// Detects conflicts between imported content and existing library
@@ -251,32 +195,6 @@ class SharingService: ObservableObject {
     }
 
     func detectConflicts(from bundle: ModuleShareBundle) -> [ImportConflict] {
-        var conflicts: [ImportConflict] = []
-
-        for template in bundle.customTemplates {
-            if let existing = findExistingTemplate(matching: template) {
-                conflicts.append(.template(TemplateConflict(
-                    existingId: existing.id,
-                    existingName: existing.name,
-                    importedTemplate: template
-                )))
-            }
-        }
-
-        for implement in bundle.customImplements where implement.isCustom {
-            if let existing = findExistingImplement(matching: implement) {
-                conflicts.append(.implement(ImplementConflict(
-                    existingId: existing.id,
-                    existingName: existing.name,
-                    importedImplement: implement
-                )))
-            }
-        }
-
-        return conflicts
-    }
-
-    func detectConflicts(from bundle: ExerciseInstanceShareBundle) -> [ImportConflict] {
         var conflicts: [ImportConflict] = []
 
         for template in bundle.customTemplates {
@@ -405,59 +323,6 @@ class SharingService: ObservableObject {
 
         // Import module
         let (newModule, _) = remapModule(bundle.module, idMapping: idMapping)
-        dataRepository.saveModule(newModule)
-
-        return .success(id: newModule.id, name: newModule.name)
-    }
-
-    /// Imports an exercise instance bundle - creates a module containing the exercise
-    func importExerciseInstance(from bundle: ExerciseInstanceShareBundle, options: ImportOptions = ImportOptions()) -> ImportResult {
-        var idMapping: [UUID: UUID] = [:]
-
-        // Import custom templates
-        for template in bundle.customTemplates {
-            let newId = importTemplate(template, options: options)
-            if newId != template.id {
-                idMapping[template.id] = newId
-            }
-        }
-
-        // Import custom implements
-        for implement in bundle.customImplements where implement.isCustom {
-            let newId = importImplement(implement, options: options)
-            if newId != implement.id {
-                idMapping[implement.id] = newId
-            }
-        }
-
-        // Create a new exercise instance with remapped IDs
-        var newInstance = bundle.exerciseInstance
-        newInstance.id = UUID()
-
-        if let templateId = newInstance.templateId,
-           let newTemplateId = idMapping[templateId] {
-            newInstance.templateId = newTemplateId
-        }
-
-        var newImplementIds = Set<UUID>()
-        for implementId in newInstance.implementIds {
-            if let newImplementId = idMapping[implementId] {
-                newImplementIds.insert(newImplementId)
-            } else {
-                newImplementIds.insert(implementId)
-            }
-        }
-        newInstance.implementIds = newImplementIds
-
-        // Wrap the exercise instance in a new module
-        let newModule = Module(
-            id: UUID(),
-            name: "\(newInstance.name) (Imported)",
-            type: .strength,  // Default type for imported exercises
-            exercises: [newInstance],
-            syncStatus: .pendingSync
-        )
-
         dataRepository.saveModule(newModule)
 
         return .success(id: newModule.id, name: newModule.name)
@@ -666,10 +531,9 @@ extension MessageContent {
     /// Whether this message content can be imported (contains importable templates)
     var isImportable: Bool {
         switch self {
-        case .sharedProgram, .sharedWorkout, .sharedModule, .sharedExerciseInstance:
+        case .sharedProgram, .sharedWorkout, .sharedModule:
             return true
-        case .text, .sharedSession, .sharedExercise, .sharedSet, .sharedCompletedModule, .sharedHighlights,
-             .sharedSetGroup, .sharedCompletedSetGroup, .decodeFailed:
+        case .text, .sharedSession, .sharedExercise, .sharedSet, .sharedCompletedModule, .decodeFailed:
             return false
         }
     }

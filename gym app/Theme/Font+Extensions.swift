@@ -50,6 +50,16 @@ extension Font {
     static var monoCaption: Font {
         .system(.caption, design: .monospaced, weight: .semibold)
     }
+
+    /// Callout-sized monospaced, semibold (e.g., compact weight/rep/timer inputs in the active session)
+    static var monoCallout: Font {
+        .system(.callout, design: .monospaced, weight: .semibold)
+    }
+
+    /// Footnote-sized monospaced, semibold (e.g., dense inline set-row inputs)
+    static var monoFootnote: Font {
+        .system(.footnote, design: .monospaced, weight: .semibold)
+    }
 }
 
 // MARK: - Text Style Modifiers
@@ -116,6 +126,24 @@ extension View {
     func monoCaption(color: Color = AppColors.textPrimary) -> some View {
         self
             .font(.monoCaption)
+            .foregroundColor(color)
+            .monospacedDigit()
+    }
+
+    /// Callout-sized monospaced, semibold
+    /// Use for: Compact weight/rep/timer input fields (active session set rows)
+    func monoCallout(color: Color = AppColors.textPrimary) -> some View {
+        self
+            .font(.monoCallout)
+            .foregroundColor(color)
+            .monospacedDigit()
+    }
+
+    /// Footnote-sized monospaced, semibold
+    /// Use for: Dense inline set-row inputs where space is tight
+    func monoFootnote(color: Color = AppColors.textPrimary) -> some View {
+        self
+            .font(.monoFootnote)
             .foregroundColor(color)
             .monospacedDigit()
     }

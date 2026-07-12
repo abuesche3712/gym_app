@@ -31,10 +31,6 @@ struct RestTimerBar: View {
         isLongTimer ? 44 : 36
     }
 
-    private var fontSize: CGFloat {
-        isLongTimer ? 11 : 12
-    }
-
     var body: some View {
         VStack(spacing: AppSpacing.sm) {
             HStack(spacing: AppSpacing.md) {
@@ -52,9 +48,8 @@ struct RestTimerBar: View {
                         .animation(.linear(duration: 0.3), value: sessionViewModel.restTimerSeconds)
 
                     Text(timeDisplay)
-                        .font(.system(size: fontSize, weight: .bold))
-                        .monospacedDigit()
-                        .foregroundColor(AppColors.textPrimary)
+                        .monoCaption(color: AppColors.textPrimary)
+                        .fontWeight(.bold)
                         .minimumScaleFactor(0.7)
                 }
 

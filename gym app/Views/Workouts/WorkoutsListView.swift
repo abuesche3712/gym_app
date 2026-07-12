@@ -11,11 +11,11 @@ struct WorkoutsListView: View {
     @EnvironmentObject var workoutViewModel: WorkoutViewModel
     @EnvironmentObject var moduleViewModel: ModuleViewModel
     @EnvironmentObject var sessionViewModel: SessionViewModel
-    @Environment(\.dismiss) private var dismiss
 
     @State private var showingAddWorkout = false
     @State private var searchText = ""
     @State private var editingWorkout: Workout?
+    @State private var workoutPendingDelete: Workout?
 
     // Selection mode support for share flow
     var selectionMode: ViewSelectionMode? = nil
@@ -33,101 +33,100 @@ struct WorkoutsListView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                    // Custom header
-                    workoutsHeader
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                // Custom header
+                workoutsHeader
 
-                    if filteredWorkouts.isEmpty {
-                        Group {
-                            if workoutViewModel.workouts.isEmpty {
-                                EmptyStateView(
-                                    icon: "figure.strengthtraining.traditional",
-                                    title: "No Workouts",
-                                    subtitle: "Create a workout by combining modules into a routine",
-                                    buttonTitle: "Create Workout",
-                                    onButtonTap: {
-                                        showingAddWorkout = true
+                if filteredWorkouts.isEmpty {
+                    Group {
+                        if workoutViewModel.workouts.isEmpty {
+                            EmptyStateView(
+                                icon: "figure.strengthtraining.traditional",
+                                title: "No Workouts",
+                                subtitle: "Create a workout by combining modules into a routine",
+                                buttonTitle: "Create Workout",
+                                onButtonTap: {
+                                    showingAddWorkout = true
+                                }
+                            )
+                        } else {
+                            EmptyStateView(
+                                icon: "magnifyingglass",
+                                title: "No Matches",
+                                subtitle: "Try a different search term"
+                            )
+                        }
+                    }
+                    .padding(.top, AppSpacing.xl)
+                } else {
+                    LazyVStack(spacing: AppSpacing.md) {
+                        ForEach(filteredWorkouts) { workout in
+                            if isSelectionMode {
+                                WorkoutListCard(
+                                    workout: workout,
+                                    modules: workoutViewModel.getModulesForWorkout(workout, allModules: moduleViewModel.modules),
+                                    showShareIcon: true,
+                                    onTap: {
+                                        onSelectForShare?(workout)
+                                    },
+                                    onStart: nil
+                                )
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .move(edge: .trailing)),
+                                    removal: .opacity
+                                ))
+                                .animation(AppMotion.reveal, value: filteredWorkouts.count)
+                            } else {
+                                WorkoutListCard(
+                                    workout: workout,
+                                    modules: workoutViewModel.getModulesForWorkout(workout, allModules: moduleViewModel.modules),
+                                    onTap: {
+                                        editingWorkout = workout
+                                    },
+                                    onStart: {
+                                        startWorkout(workout)
                                     }
                                 )
-                            } else {
-                                EmptyStateView(
-                                    icon: "magnifyingglass",
-                                    title: "No Matches",
-                                    subtitle: "Try a different search term"
-                                )
-                            }
-                        }
-                        .padding(.top, AppSpacing.xl)
-                    } else {
-                        LazyVStack(spacing: AppSpacing.md) {
-                            ForEach(filteredWorkouts) { workout in
-                                if isSelectionMode {
-                                    WorkoutListCard(
-                                        workout: workout,
-                                        modules: workoutViewModel.getModulesForWorkout(workout, allModules: moduleViewModel.modules),
-                                        showShareIcon: true,
-                                        onTap: {
-                                            onSelectForShare?(workout)
-                                        },
-                                        onStart: nil
-                                    )
-                                    .transition(.asymmetric(
-                                        insertion: .opacity.combined(with: .move(edge: .trailing)),
-                                        removal: .opacity
-                                    ))
-                                    .animation(AppMotion.reveal, value: filteredWorkouts.count)
-                                } else {
-                                    WorkoutListCard(
-                                        workout: workout,
-                                        modules: workoutViewModel.getModulesForWorkout(workout, allModules: moduleViewModel.modules),
-                                        onTap: {
-                                            editingWorkout = workout
-                                        },
-                                        onStart: {
-                                            startWorkout(workout)
-                                        }
-                                    )
-                                    .transition(.asymmetric(
-                                        insertion: .opacity.combined(with: .move(edge: .trailing)),
-                                        removal: .opacity
-                                    ))
-                                    .animation(AppMotion.reveal, value: filteredWorkouts.count)
-                                    .contextMenu {
-                                        Button {
-                                            editingWorkout = workout
-                                        } label: {
-                                            Label("Edit", systemImage: "pencil")
-                                        }
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .move(edge: .trailing)),
+                                    removal: .opacity
+                                ))
+                                .animation(AppMotion.reveal, value: filteredWorkouts.count)
+                                .contextMenu {
+                                    Button {
+                                        editingWorkout = workout
+                                    } label: {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
 
-                                        Button {
-                                            startWorkout(workout)
-                                        } label: {
-                                            Label("Start Workout", systemImage: "play.fill")
-                                        }
+                                    Button {
+                                        startWorkout(workout)
+                                    } label: {
+                                        Label("Start Workout", systemImage: "play.fill")
+                                    }
 
-                                        Divider()
+                                    Divider()
 
-                                        Button(role: .destructive) {
-                                            workoutViewModel.deleteWorkout(workout)
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                        }
+                                    Button(role: .destructive) {
+                                        workoutPendingDelete = workout
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
                                     }
                                 }
                             }
                         }
-                        .animation(AppMotion.reveal, value: filteredWorkouts.count)
                     }
+                    .animation(AppMotion.reveal, value: filteredWorkouts.count)
                 }
-                .padding(AppSpacing.screenPadding)
             }
-            .background(AppColors.background.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar(.hidden, for: .navigationBar)
-            .searchable(text: $searchText, prompt: "Search workouts")
-            .toolbar {
+            .padding(AppSpacing.screenPadding)
+        }
+        .background(AppColors.background.ignoresSafeArea())
+        .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchText, prompt: "Search workouts")
+        .toolbar {
+            if !isSelectionMode {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showingAddWorkout = true
@@ -138,19 +137,36 @@ struct WorkoutsListView: View {
                     .buttonStyle(.pressable)
                 }
             }
-            .sheet(isPresented: $showingAddWorkout) {
-                NavigationStack {
-                    WorkoutFormView(workout: nil)
-                }
+        }
+        .sheet(isPresented: $showingAddWorkout) {
+            NavigationStack {
+                WorkoutFormView(workout: nil)
             }
-            .sheet(item: $editingWorkout) { workout in
-                NavigationStack {
-                    WorkoutFormView(workout: workout)
-                }
+        }
+        .sheet(item: $editingWorkout) { workout in
+            NavigationStack {
+                WorkoutFormView(workout: workout)
             }
-            .refreshable {
-                workoutViewModel.loadWorkouts()
+        }
+        .confirmationDialog(
+            "Delete Workout",
+            isPresented: Binding(
+                get: { workoutPendingDelete != nil },
+                set: { if !$0 { workoutPendingDelete = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: workoutPendingDelete
+        ) { workout in
+            Button("Delete \"\(workout.name)\"", role: .destructive) {
+                HapticManager.shared.warning()
+                workoutViewModel.deleteWorkout(workout)
+                workoutPendingDelete = nil
             }
+        } message: { workout in
+            Text("This will permanently delete \"\(workout.name)\". This action cannot be undone.")
+        }
+        .refreshable {
+            workoutViewModel.loadWorkouts()
         }
     }
 
@@ -158,47 +174,6 @@ struct WorkoutsListView: View {
 
     private var workoutsHeader: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            // Navigation row with circular back and plus buttons
-            HStack {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .body(color: AppColors.dominant)
-                        .fontWeight(.semibold)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            Circle()
-                                .fill(AppColors.dominant.opacity(0.1))
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(AppColors.dominant.opacity(0.2), lineWidth: 1)
-                        )
-                }
-
-                Spacer()
-
-                if !isSelectionMode {
-                    Button {
-                        showingAddWorkout = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .body(color: AppColors.dominant)
-                            .fontWeight(.semibold)
-                            .frame(width: 36, height: 36)
-                            .background(
-                                Circle()
-                                    .fill(AppColors.dominant.opacity(0.1))
-                            )
-                            .overlay(
-                                Circle()
-                                    .stroke(AppColors.dominant.opacity(0.2), lineWidth: 1)
-                            )
-                    }
-                }
-            }
-
             // Title section
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -355,8 +330,10 @@ struct WorkoutListCard: View {
 }
 
 #Preview {
-    WorkoutsListView()
-        .environmentObject(WorkoutViewModel())
-        .environmentObject(ModuleViewModel())
-        .environmentObject(SessionViewModel())
+    NavigationStack {
+        WorkoutsListView()
+    }
+    .environmentObject(WorkoutViewModel())
+    .environmentObject(ModuleViewModel())
+    .environmentObject(SessionViewModel())
 }

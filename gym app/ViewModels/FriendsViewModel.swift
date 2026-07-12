@@ -36,7 +36,6 @@ class FriendsViewModel: ObservableObject {
     private let friendshipRepo: FriendshipRepository
     private let firestoreService = FirestoreService.shared
     private let authService = AuthService.shared
-    private let activityService = FirestoreActivityService.shared
 
     private var friendshipListener: ListenerRegistration?
     private var friendshipCancellable: AnyCancellable?
@@ -322,14 +321,6 @@ class FriendsViewModel: ObservableObject {
         // Sync to cloud
         do {
             try await firestoreService.saveFriendship(friendship)
-
-            // Create activity for addressee
-            let activity = Activity(
-                recipientId: addresseeId,
-                actorId: requesterId,
-                type: .friendRequest
-            )
-            try? await activityService.createActivity(activity)
         } catch {
             // Revert on failure
             friendshipRepo.delete(friendship)
@@ -350,16 +341,6 @@ class FriendsViewModel: ObservableObject {
                 if let myId = currentUserId, let friendId = friendship.otherUserId(from: myId) {
                     await updateFriendIdsArraySafely(userId: myId, friendId: friendId, add: true)
                     await updateFriendIdsArraySafely(userId: friendId, friendId: myId, add: true)
-                }
-
-                // Create activity for requester
-                if let myId = currentUserId {
-                    let activity = Activity(
-                        recipientId: friendship.requesterId,
-                        actorId: myId,
-                        type: .friendAccepted
-                    )
-                    try? await activityService.createActivity(activity)
                 }
             } catch {
                 // Revert - restore pending status

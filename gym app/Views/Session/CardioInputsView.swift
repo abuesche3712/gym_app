@@ -53,7 +53,7 @@ struct CardioInputs: View {
                                     .frame(width: 56, alignment: .center)
                                     .padding(.vertical, 8)
                                     .padding(.horizontal, 6)
-                                    .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                             }
                             .buttonStyle(.pressable)
 
@@ -74,14 +74,13 @@ struct CardioInputs: View {
                                 showTimePicker = true
                             } label: {
                                 Text(timerRunning ? formatDuration(stopwatchSeconds) : formatDuration(inputDuration))
-                                    .font(.system(size: 16, weight: timerRunning ? .bold : .semibold, design: .monospaced))
-                                    .foregroundColor(timerRunning ? AppColors.dominant : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
-                                    .monospacedDigit()
+                                    .monoCallout(color: timerRunning ? AppColors.dominant : (inputDuration > 0 ? AppColors.textPrimary : AppColors.textTertiary))
+                                    .fontWeight(timerRunning ? .bold : .semibold)
                                     .multilineTextAlignment(.center)
                                     .frame(width: 56, alignment: .center)
                                     .padding(.vertical, 8)
                                     .padding(.horizontal, 6)
-                                    .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                             }
                             .buttonStyle(.pressable)
                             .accessibilityLabel("Time: \(formatDuration(inputDuration))")
@@ -113,13 +112,12 @@ struct CardioInputs: View {
                     HStack(spacing: 4) {
                         TextField("0", text: $inputDistance)
                             .keyboardType(.decimalPad)
-                            .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                            .foregroundColor(AppColors.textPrimary)
+                            .monoCallout(color: AppColors.textPrimary)
                             .multilineTextAlignment(.center)
                             .frame(width: 56)
                             .padding(.vertical, 8)
                             .padding(.horizontal, 6)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                             .focused(focusedField, equals: .distance)
 
                         // Tappable unit selector
@@ -132,7 +130,7 @@ struct CardioInputs: View {
                                 .frame(minWidth: 24)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 8)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.dominant.opacity(0.1)))
+                                .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.dominant.opacity(0.1)))
                         }
                         .buttonStyle(.pressable)
                     }
@@ -214,7 +212,7 @@ struct IsometricInputs: View {
                             .frame(width: 56, alignment: .center)
                             .padding(.vertical, 8)
                             .padding(.horizontal, 6)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     }
                     .buttonStyle(.pressable)
 
@@ -287,13 +285,12 @@ struct MobilityInputs: View {
                 VStack(spacing: 4) {
                     TextField("0", text: $inputReps)
                         .keyboardType(.numberPad)
-                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                        .foregroundColor(AppColors.textPrimary)
+                        .monoCallout(color: AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 44)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 6)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                         .focused(focusedField, equals: .reps)
 
                     Text("reps")
@@ -317,7 +314,7 @@ struct MobilityInputs: View {
                                 .frame(width: 56, alignment: .center)
                                 .padding(.vertical, 8)
                                 .padding(.horizontal, 6)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                                .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                         }
                         .buttonStyle(.pressable)
 
@@ -393,13 +390,12 @@ struct ExplosiveInputs: View {
             VStack(spacing: 4) {
                 TextField("0", text: $inputReps)
                     .keyboardType(.numberPad)
-                    .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                    .foregroundColor(AppColors.textPrimary)
+                    .monoCallout(color: AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 44)
                     .padding(.vertical, 8)
                     .padding(.horizontal, 6)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     .focused(focusedField, equals: .reps)
 
                 Text("reps")
@@ -416,13 +412,12 @@ struct ExplosiveInputs: View {
                 VStack(spacing: 4) {
                     TextField("0", text: $inputHeight)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                        .foregroundColor(AppColors.textPrimary)
+                        .monoCallout(color: AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 44)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 6)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                         .focused(focusedField, equals: .height)
 
                     Text("in")
@@ -436,13 +431,12 @@ struct ExplosiveInputs: View {
                 VStack(spacing: 4) {
                     TextField("-", text: $inputRPE)
                         .keyboardType(.numberPad)
-                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                        .foregroundColor(AppColors.textPrimary)
+                        .monoCallout(color: AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 36)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 6)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                         .focused(focusedField, equals: .rpe)
                         .onChange(of: inputRPE) { _, newValue in
                             if let rpe = Int(newValue), rpe > 10 {
@@ -468,13 +462,12 @@ struct ExplosiveInputs: View {
                 set: { inputMeasurableValues[measurableKey] = $0 }
             ))
             .keyboardType(measurable.isStringBased ? .default : .decimalPad)
-            .font(.system(size: 16, weight: .semibold, design: .monospaced))
-            .foregroundColor(AppColors.textPrimary)
+            .monoCallout(color: AppColors.textPrimary)
             .multilineTextAlignment(.center)
             .frame(width: measurable.isStringBased ? 64 : 48)
             .padding(.vertical, 8)
             .padding(.horizontal, 6)
-            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
 
             Text(measurable.unit.isEmpty ? measurable.measurableName : measurable.unit)
                 .caption2(color: AppColors.textTertiary)
@@ -539,7 +532,7 @@ struct RecoveryInputs: View {
                             .frame(width: 56, alignment: .center)
                             .padding(.vertical, 8)
                             .padding(.horizontal, 6)
-                            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     }
                     .buttonStyle(.pressable)
 
@@ -568,13 +561,12 @@ struct RecoveryInputs: View {
                 VStack(spacing: 4) {
                     TextField(activityType == .sauna ? "180" : "50", text: $inputTemperature)
                         .keyboardType(.numberPad)
-                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                        .foregroundColor(AppColors.textPrimary)
+                        .monoCallout(color: AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 44)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 6)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                         .focused(focusedField, equals: .temperature)
 
                     Text("°F")

@@ -25,21 +25,12 @@ struct AnalyticsService {
         referenceDate: Date = Date(),
         weeklyVolumeWeeks: Int = AnalyticsConfig.defaultWeeklyVolumeWeeks,
         liftTrendLimit: Int = 3,
-        decisionWindowDays: Int = AnalyticsConfig.defaultBreakdownWindowDays,
-        recentSessionLimit: Int = AnalyticsConfig.defaultRecentSessionLimit,
         recentPRLimit: Int = AnalyticsConfig.defaultRecentPRLimit
     ) -> AnalyticsDashboardData {
         let orderedSessionsDesc = sessions.sorted { $0.date > $1.date }
         let orderedSessionsAsc = orderedSessionsDesc.reversed()
 
         let currentWeek = calendar.dateInterval(of: .weekOfYear, for: referenceDate)
-
-        let decisionCutoffDate: Date?
-        if decisionWindowDays > 0 {
-            decisionCutoffDate = calendar.date(byAdding: .day, value: -decisionWindowDays, to: referenceDate)
-        } else {
-            decisionCutoffDate = nil
-        }
 
         var weekStarts: [Date] = []
         if weeklyVolumeWeeks > 0,
@@ -62,14 +53,6 @@ struct AnalyticsService {
         var pointsByExerciseAndDay: [String: [Date: E1RMProgressPoint]] = [:]
         var topBrzyckiBySessionExercise: [UUID: [UUID: StrengthTopSet]] = [:]
 
-        var progressCount = 0
-        var stayCount = 0
-        var regressCount = 0
-        var decisionRecords: [ProgressionDecisionRecord] = []
-        var dryRunDecisionRecords: [ProgressionDecisionRecord] = []
-
-        let recentSessionIds = Set(orderedSessionsDesc.prefix(max(1, recentSessionLimit)).map(\.id))
-
         for session in orderedSessionsDesc {
             let sessionDay = calendar.startOfDay(for: session.date)
             workoutDays.insert(sessionDay)
@@ -77,9 +60,6 @@ struct AnalyticsService {
             if let currentWeek, currentWeek.contains(session.date) {
                 workoutsThisWeek += 1
             }
-
-            let isInDecisionWindow = decisionCutoffDate == nil || session.date >= decisionCutoffDate!
-            let isInDryRunSlice = recentSessionIds.contains(session.id)
 
             var sessionStrengthVolume = 0.0
 
@@ -107,35 +87,6 @@ struct AnalyticsService {
                                 pointsByExerciseAndDay[exercise.exerciseName, default: [:]][sessionDay] = candidate
                             }
                         }
-                    }
-
-                    if isInDecisionWindow, let recommendation = exercise.progressionRecommendation {
-                        switch recommendation {
-                        case .progress: progressCount += 1
-                        case .stay: stayCount += 1
-                        case .regress: regressCount += 1
-                        }
-                    }
-
-                    guard let suggestion = exercise.progressionSuggestion,
-                          let expected = expectedRecommendation(from: suggestion) else {
-                        continue
-                    }
-
-                    let record = ProgressionDecisionRecord(
-                        date: session.date,
-                        exerciseName: exercise.exerciseName,
-                        decisionPath: decisionPath(from: suggestion),
-                        expected: expected,
-                        actual: exercise.progressionRecommendation,
-                        confidence: suggestion.confidence ?? 0.56
-                    )
-
-                    if isInDecisionWindow {
-                        decisionRecords.append(record)
-                    }
-                    if isInDryRunSlice {
-                        dryRunDecisionRecords.append(record)
                     }
                 }
             }
@@ -187,83 +138,6 @@ struct AnalyticsService {
                 return lhs.exerciseName < rhs.exerciseName
             }
 
-        let progressionBreakdown = ProgressionBreakdown(
-            progressCount: progressCount,
-            stayCount: stayCount,
-            regressCount: regressCount
-        )
-
-        let comparableDecisionRecords = decisionRecords.filter { $0.actual != nil }
-        let engineHealth: ProgressionEngineHealth
-        if comparableDecisionRecords.isEmpty {
-            engineHealth = .empty
-        } else {
-            let accepted = comparableDecisionRecords.filter { $0.actual == $0.expected }.count
-            let overrides = comparableDecisionRecords.count - accepted
-            let regress = comparableDecisionRecords.filter { $0.actual == .regress }.count
-            engineHealth = ProgressionEngineHealth(
-                totalDecisions: comparableDecisionRecords.count,
-                acceptedCount: accepted,
-                overriddenCount: overrides,
-                regressCount: regress
-            )
-        }
-
-        let decisionProfileHealth = Dictionary(grouping: comparableDecisionRecords, by: \.decisionPath)
-            .map { name, entries in
-                let accepted = entries.filter { $0.actual == $0.expected }.count
-                let regress = entries.filter { $0.actual == .regress }.count
-                return DecisionProfileHealth(
-                    name: name,
-                    totalDecisions: entries.count,
-                    acceptedCount: accepted,
-                    regressCount: regress
-                )
-            }
-            .sorted { lhs, rhs in
-                if lhs.totalDecisions != rhs.totalDecisions {
-                    return lhs.totalDecisions > rhs.totalDecisions
-                }
-                return lhs.name < rhs.name
-            }
-
-        let progressionAlerts = progressionAlertsFromDecisionRecords(comparableDecisionRecords)
-
-        let dryRunProfiles = AnalyticsConfig.dryRunProfiles.map { config in
-            var progress = 0
-            var stay = 0
-            var regress = 0
-            var agreement = 0
-            var comparable = 0
-
-            for record in dryRunDecisionRecords {
-                let predicted = predictedOutcome(
-                    for: record,
-                    confidenceThreshold: config.confidenceThreshold
-                )
-
-                switch predicted {
-                case .progress: progress += 1
-                case .stay: stay += 1
-                case .regress: regress += 1
-                }
-
-                if let actual = record.actual {
-                    comparable += 1
-                    if actual == predicted { agreement += 1 }
-                }
-            }
-
-            return DryRunProfileResult(
-                name: config.name,
-                progressCount: progress,
-                stayCount: stay,
-                regressCount: regress,
-                agreementCount: agreement,
-                comparableCount: comparable
-            )
-        }
-
         var bestEstimatedOneRepMaxByExercise: [String: Double] = [:]
         var prEvents: [PersonalRecordEvent] = []
         for session in orderedSessionsAsc {
@@ -297,9 +171,6 @@ struct AnalyticsService {
 
         let recentPRs = Array(prEvents.sorted { $0.date > $1.date }.prefix(max(0, recentPRLimit)))
 
-        let muscleGroupVolumeData = muscleGroupVolume(from: sessions, days: decisionWindowDays, referenceDate: referenceDate)
-        let cardioResult = cardioSummary(from: sessions, weeks: weeklyVolumeWeeks, referenceDate: referenceDate)
-
         return AnalyticsDashboardData(
             analyzedSessionCount: sessions.count,
             currentStreak: currentStreak(fromWorkoutDays: workoutDays, referenceDate: referenceDate),
@@ -307,142 +178,8 @@ struct AnalyticsService {
             weeklyVolumeTrend: weeklyVolumeTrend,
             liftTrends: Array(liftTrends),
             exerciseProgress: exerciseProgress,
-            progressionBreakdown: progressionBreakdown,
-            engineHealth: engineHealth,
-            decisionProfileHealth: decisionProfileHealth,
-            progressionAlerts: progressionAlerts,
-            dryRunProfiles: dryRunProfiles,
-            dryRunInputCount: dryRunDecisionRecords.count,
-            recentPRs: recentPRs,
-            muscleGroupVolume: muscleGroupVolumeData,
-            cardioSummary: cardioResult.summary,
-            weeklyCardioTrend: cardioResult.weeklyPoints
+            recentPRs: recentPRs
         )
-    }
-
-    func muscleGroupVolume(
-        from sessions: [Session],
-        days: Int = AnalyticsConfig.defaultBreakdownWindowDays,
-        referenceDate: Date = Date()
-    ) -> [MuscleGroupVolume] {
-        let cutoffDate: Date?
-        if days > 0 {
-            cutoffDate = calendar.date(byAdding: .day, value: -days, to: referenceDate)
-        } else {
-            cutoffDate = nil
-        }
-
-        var volumeByMuscle: [String: Double] = [:]
-        var sessionsByMuscle: [String: Set<UUID>] = [:]
-
-        for session in sessions {
-            if let cutoffDate, session.date < cutoffDate { continue }
-
-            for module in session.completedModules where !module.skipped {
-                for exercise in module.completedExercises where exercise.exerciseType == .strength {
-                    let volume = exercise.totalVolume
-                    guard volume > 0 else { continue }
-
-                    for muscle in exercise.primaryMuscles {
-                        volumeByMuscle[muscle.rawValue, default: 0] += volume
-                        sessionsByMuscle[muscle.rawValue, default: []].insert(session.id)
-                    }
-                }
-            }
-        }
-
-        let grandTotal = volumeByMuscle.values.reduce(0, +)
-        guard grandTotal > 0 else { return [] }
-
-        return volumeByMuscle
-            .map { muscleGroup, totalVolume in
-                MuscleGroupVolume(
-                    muscleGroup: muscleGroup,
-                    totalVolume: totalVolume,
-                    sessionCount: sessionsByMuscle[muscleGroup]?.count ?? 0,
-                    percentageOfTotal: (totalVolume / grandTotal) * 100
-                )
-            }
-            .sorted { $0.totalVolume > $1.totalVolume }
-    }
-
-    func cardioSummary(
-        from sessions: [Session],
-        weeks: Int = AnalyticsConfig.defaultWeeklyVolumeWeeks,
-        referenceDate: Date = Date()
-    ) -> (summary: CardioSummary, weeklyPoints: [WeeklyCardioPoint]) {
-        guard weeks > 0,
-              let currentWeekStart = calendar.dateInterval(of: .weekOfYear, for: referenceDate)?.start else {
-            return (summary: .empty, weeklyPoints: [])
-        }
-
-        var weekStarts: [Date] = []
-        for offset in stride(from: weeks - 1, through: 0, by: -1) {
-            guard let weekStart = calendar.date(byAdding: .weekOfYear, value: -offset, to: currentWeekStart) else {
-                continue
-            }
-            weekStarts.append(weekStart)
-        }
-        let validWeekStarts = Set(weekStarts)
-
-        var totalDuration = 0
-        var totalDistance: Double = 0
-        var hasDistance = false
-        var cardioSessionIds: Set<UUID> = []
-        var durationByWeek: [Date: Int] = [:]
-
-        let cutoffDate = calendar.date(byAdding: .weekOfYear, value: -(weeks), to: currentWeekStart)
-
-        for session in sessions {
-            if let cutoffDate, session.date < cutoffDate { continue }
-
-            var sessionHasCardio = false
-
-            for module in session.completedModules where !module.skipped {
-                for exercise in module.completedExercises where exercise.exerciseType == .cardio {
-                    for setGroup in exercise.completedSetGroups {
-                        for set in setGroup.sets where set.completed {
-                            if let dur = set.duration, dur > 0 {
-                                totalDuration += dur
-                                sessionHasCardio = true
-
-                                if let weekStart = calendar.dateInterval(of: .weekOfYear, for: session.date)?.start,
-                                   validWeekStarts.contains(weekStart) {
-                                    durationByWeek[weekStart, default: 0] += dur
-                                }
-                            }
-                            if let dist = set.distance, dist > 0 {
-                                totalDistance += dist
-                                hasDistance = true
-                            }
-                        }
-                    }
-                }
-            }
-
-            if sessionHasCardio {
-                cardioSessionIds.insert(session.id)
-            }
-        }
-
-        let sessionCount = cardioSessionIds.count
-        let avgDuration = sessionCount > 0 ? totalDuration / sessionCount : 0
-
-        let summary = CardioSummary(
-            totalDuration: totalDuration,
-            totalDistance: hasDistance ? totalDistance : nil,
-            sessionCount: sessionCount,
-            avgDurationPerSession: avgDuration
-        )
-
-        let weeklyPoints = weekStarts.map { weekStart in
-            WeeklyCardioPoint(
-                weekStart: weekStart,
-                totalDuration: durationByWeek[weekStart] ?? 0
-            )
-        }
-
-        return (summary: summary, weeklyPoints: weeklyPoints)
     }
 
     func currentStreak(from sessions: [Session], referenceDate: Date = Date()) -> Int {
@@ -836,6 +573,37 @@ struct AnalyticsService {
         strengthE1RMProgressByExercise(from: sessions)
             .first(where: { $0.exerciseName == exerciseName })?
             .points ?? []
+    }
+
+    /// Per-session history for a single exercise (most recent first), including whether
+    /// that session's top set was an estimated-1RM personal record at the time.
+    /// Powers the analytics drill-down detail view.
+    func exerciseSessionHistory(for exerciseName: String, sessions: [Session]) -> [ExerciseSessionSummary] {
+        let ascendingSessions = sessions.sorted { $0.date < $1.date }
+        var bestEstimatedOneRepMax = -Double.greatestFiniteMagnitude
+        var results: [ExerciseSessionSummary] = []
+
+        for session in ascendingSessions {
+            for exercise in strengthExercises(in: session) where exercise.exerciseName == exerciseName {
+                let metrics = analyzeStrengthSetMetrics(for: exercise)
+                guard let topSet = metrics.topStrengthSet else { continue }
+
+                let estimatedOneRepMax = metrics.topBrzyckiSet?.estimatedOneRepMax ?? topSet.estimatedOneRepMax
+                let isPR = estimatedOneRepMax > bestEstimatedOneRepMax + AnalyticsConfig.oneRepMaxPRTolerance
+                bestEstimatedOneRepMax = max(bestEstimatedOneRepMax, estimatedOneRepMax)
+
+                results.append(
+                    ExerciseSessionSummary(
+                        date: session.date,
+                        topSet: topSet,
+                        volume: metrics.volume,
+                        isPR: isPR
+                    )
+                )
+            }
+        }
+
+        return results.sorted { $0.date > $1.date }
     }
 
     private func currentStreak(fromWorkoutDays workoutDays: Set<Date>, referenceDate: Date) -> Int {

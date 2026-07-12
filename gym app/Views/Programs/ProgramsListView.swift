@@ -15,7 +15,6 @@ private struct CalendarSelectionDate: Identifiable {
 struct ProgramsListView: View {
     @EnvironmentObject private var programViewModel: ProgramViewModel
     @EnvironmentObject private var workoutViewModel: WorkoutViewModel
-    @Environment(\.dismiss) private var dismiss
     @State private var showingCreateSheet = false
     @State private var showingProgramsSheet = false
     @State private var selectedMonth: Date = Date()
@@ -52,7 +51,19 @@ struct ProgramsListView: View {
         }
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
+        .toolbar {
+            if !isSelectionMode {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showingCreateSheet = true
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .displaySmall(color: AppColors.accent2)
+                    }
+                    .buttonStyle(.pressable)
+                }
+            }
+        }
         .sheet(isPresented: $showingCreateSheet) {
             NavigationStack {
                 ProgramFormView(program: nil)
@@ -309,29 +320,6 @@ struct ProgramsListView: View {
 
     private var programsHeader: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            // Navigation row
-            HStack {
-                Button { dismiss() } label: {
-                    Image(systemName: "chevron.left")
-                        .body(color: AppColors.accent2)
-                        .fontWeight(.semibold)
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(AppColors.accent2.opacity(0.1)))
-                        .overlay(Circle().stroke(AppColors.accent2.opacity(0.2), lineWidth: 1))
-                }
-                Spacer()
-                if !isSelectionMode {
-                    Button { showingCreateSheet = true } label: {
-                        Image(systemName: "plus")
-                            .body(color: AppColors.accent2)
-                            .fontWeight(.semibold)
-                            .frame(width: 36, height: 36)
-                            .background(Circle().fill(AppColors.accent2.opacity(0.1)))
-                            .overlay(Circle().stroke(AppColors.accent2.opacity(0.2), lineWidth: 1))
-                    }
-                }
-            }
-
             // Title section
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -542,6 +530,7 @@ struct ProgramsManagementSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var programViewModel: ProgramViewModel
     @State private var selectedProgram: Program?
+    @State private var programPendingDelete: Program?
 
     var body: some View {
         NavigationStack {
@@ -553,7 +542,7 @@ struct ProgramsManagementSheet: View {
                         ProgramRow(program: program, isActive: program.isActive)
                     }
                 }
-                .onDelete(perform: deletePrograms)
+                .onDelete(perform: requestDelete)
             }
             .navigationTitle("Manage Programs")
             .navigationBarTitleDisplayMode(.inline)
@@ -567,13 +556,29 @@ struct ProgramsManagementSheet: View {
             .navigationDestination(item: $selectedProgram) { program in
                 ProgramDetailView(program: program)
             }
+            .confirmationDialog(
+                "Delete Program",
+                isPresented: Binding(
+                    get: { programPendingDelete != nil },
+                    set: { if !$0 { programPendingDelete = nil } }
+                ),
+                titleVisibility: .visible,
+                presenting: programPendingDelete
+            ) { program in
+                Button("Delete \"\(program.name)\"", role: .destructive) {
+                    HapticManager.shared.warning()
+                    programViewModel.deleteProgram(program)
+                    programPendingDelete = nil
+                }
+            } message: { program in
+                Text("This will permanently delete \"\(program.name)\". This action cannot be undone.")
+            }
         }
     }
 
-    private func deletePrograms(at offsets: IndexSet) {
-        for index in offsets {
-            programViewModel.deleteProgram(programViewModel.programs[index])
-        }
+    private func requestDelete(at offsets: IndexSet) {
+        guard let index = offsets.first else { return }
+        programPendingDelete = programViewModel.programs[index]
     }
 }
 

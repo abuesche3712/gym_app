@@ -21,7 +21,7 @@ struct WorkoutSummaryView: View {
 
     let session: Session
     let elapsedSeconds: Int
-    let onReviewAndSave: () -> Void
+    let onReviewAndSave: (Int?) -> Void
     let onQuickSave: (Int?, String?) -> Void
     var onShareAction: ((PendingShareAction) -> Void)?
 
@@ -29,6 +29,7 @@ struct WorkoutSummaryView: View {
     @State private var showShareSheet = false
     @State private var showPostToFeed = false
     @State private var showShareWithFriend = false
+    @State private var selectedFeeling: Int?
 
     // Computed stats
     private var totalVolume: Double {
@@ -70,6 +71,9 @@ struct WorkoutSummaryView: View {
                     // Module Breakdown
                     moduleBreakdown
 
+                    // Feeling rating (compact, one-tap; carried into Review & Edit if chosen)
+                    feelingSection
+
                     // Action Buttons
                     actionButtons
                 }
@@ -85,7 +89,7 @@ struct WorkoutSummaryView: View {
                             if let onShareAction {
                                 onShareAction(.postToFeed)
                             } else {
-                                onQuickSave(nil, nil)
+                                onQuickSave(selectedFeeling, nil)
                                 showPostToFeed = true
                             }
                         } label: {
@@ -395,6 +399,20 @@ struct WorkoutSummaryView: View {
         )
     }
 
+    // MARK: - Feeling Section
+
+    private var feelingSection: some View {
+        FeelingRatingSelector(feeling: $selectedFeeling)
+            .padding(AppSpacing.cardPadding)
+            .background(
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(AppColors.surfacePrimary)
+            )
+            .opacity(animateIn ? 1 : 0)
+            .offset(y: animateIn ? 0 : 20)
+            .animation(AppAnimation.entrance.delay(0.35), value: animateIn)
+    }
+
     // MARK: - Action Buttons
 
     private var actionButtons: some View {
@@ -402,7 +420,7 @@ struct WorkoutSummaryView: View {
             // Primary: Save
             Button {
                 HapticManager.shared.impact()
-                onQuickSave(nil, nil)
+                onQuickSave(selectedFeeling, nil)
             } label: {
                 Text("Save Workout")
                     .headline(color: .white)
@@ -417,7 +435,7 @@ struct WorkoutSummaryView: View {
             // Secondary: Review & Edit
             Button {
                 HapticManager.shared.tap()
-                onReviewAndSave()
+                onReviewAndSave(selectedFeeling)
             } label: {
                 Text("Review & Edit")
                     .headline()
@@ -519,7 +537,7 @@ private struct WorkoutShareSheet: UIViewControllerRepresentable {
             ]
         ),
         elapsedSeconds: 3600,
-        onReviewAndSave: {},
+        onReviewAndSave: { _ in },
         onQuickSave: { _, _ in }
     )
     .environmentObject(SessionViewModel())

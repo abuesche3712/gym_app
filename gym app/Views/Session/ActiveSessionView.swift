@@ -26,7 +26,6 @@ struct ActiveSessionView: View {
     @State private var showingWorkoutSummary = false
     @State private var showingEndConfirmation = false
     @State private var showingCancelConfirmation = false
-    @State private var hideToolbarButtons = false
     @State private var showModuleTransition = false
     @State private var completedModuleName = ""
     @State private var nextModuleName = ""
@@ -44,6 +43,9 @@ struct ActiveSessionView: View {
     @State private var pendingFeeling: Int?
     @State private var pendingNotes: String?
     @State private var pendingShareAction: PendingShareAction?
+    /// Feeling rating carried from the summary screen into the Review & Edit sheet,
+    /// so a selection made on WorkoutSummaryView isn't lost when reviewing.
+    @State private var reviewPrefillFeeling: Int?
 
     // Share sheets triggered after structural review
     @State private var showShareFriendAfterReview = false
@@ -215,65 +217,23 @@ struct ActiveSessionView: View {
                     }
                 }
 
-                // Show Cancel/Finish buttons for first 30 seconds, then collapse to menu
-                if !hideToolbarButtons {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
-                            showingCancelConfirmation = true
-                        }
-                        .foregroundColor(AppColors.error)
+                // Cancel/Finish stay persistently visible for the whole session.
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        showingCancelConfirmation = true
                     }
+                    .foregroundColor(AppColors.error)
+                }
 
-                    ToolbarItem(placement: .primaryAction) {
-                        Button("Finish") {
-                            showingWorkoutSummary = true
-                        }
-                        .foregroundColor(AppColors.dominant)
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Finish") {
+                        showingWorkoutSummary = true
                     }
-                } else {
-                    ToolbarItem(placement: .primaryAction) {
-                        Menu {
-                            if onMinimize != nil {
-                                Button {
-                                    onMinimize?()
-                                } label: {
-                                    Label("Minimize", systemImage: "chevron.down")
-                                }
-                            }
-
-                            Button {
-                                showWorkoutOverview = true
-                            } label: {
-                                Label("Overview", systemImage: "list.bullet")
-                            }
-
-                            Button {
-                                showingWorkoutSummary = true
-                            } label: {
-                                Label("Finish Workout", systemImage: "checkmark.circle")
-                            }
-
-                            Button(role: .destructive) {
-                                showingCancelConfirmation = true
-                            } label: {
-                                Label("Cancel Workout", systemImage: "xmark.circle")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                                .displaySmall(color: AppColors.textSecondary)
-                        }
-                    }
+                    .foregroundColor(AppColors.dominant)
                 }
             }
             .onAppear {
                 queueLaunchOverviewIfNeeded()
-
-                // Hide toolbar buttons after 30 seconds
-                DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
-                    withAnimation(AppMotion.reveal) {
-                        hideToolbarButtons = true
-                    }
-                }
             }
             .onChange(of: sessionViewModel.currentSession?.id) { _, _ in
                 queueLaunchOverviewIfNeeded()
@@ -297,7 +257,8 @@ struct ActiveSessionView: View {
                     WorkoutSummaryView(
                         session: session,
                         elapsedSeconds: sessionViewModel.sessionElapsedSeconds,
-                        onReviewAndSave: {
+                        onReviewAndSave: { feeling in
+                            reviewPrefillFeeling = feeling
                             showingWorkoutSummary = false
                             // Small delay to allow sheet dismiss animation
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -320,7 +281,7 @@ struct ActiveSessionView: View {
                 }
             }
             .sheet(isPresented: $showingEndConfirmation) {
-                EndSessionSheet(session: $sessionViewModel.currentSession) { feeling, notes in
+                EndSessionSheet(session: $sessionViewModel.currentSession, initialFeeling: reviewPrefillFeeling) { feeling, notes in
                     showingEndConfirmation = false
                     // Check for structural changes before finalizing
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {

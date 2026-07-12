@@ -121,14 +121,6 @@ struct SharedContentCard: View {
             return AppColors.accent2
         case .sharedCompletedModule:
             return AppColors.success
-        case .sharedHighlights:
-            return AppColors.warning
-        case .sharedExerciseInstance:
-            return AppColors.accent3
-        case .sharedSetGroup:
-            return AppColors.accent2
-        case .sharedCompletedSetGroup:
-            return AppColors.success
         case .decodeFailed:
             return AppColors.error
         case .text:
@@ -157,14 +149,6 @@ struct SharedContentCard: View {
             return "flame.fill"
         case .sharedCompletedModule:
             return "checkmark.circle.fill"
-        case .sharedHighlights:
-            return "star.fill"
-        case .sharedExerciseInstance:
-            return "dumbbell.fill"
-        case .sharedSetGroup:
-            return "list.bullet.rectangle"
-        case .sharedCompletedSetGroup:
-            return "checkmark.rectangle.stack.fill"
         case .decodeFailed:
             return "exclamationmark.triangle.fill"
         case .text:
@@ -193,18 +177,6 @@ struct SharedContentCard: View {
             return "SET"
         case .sharedCompletedModule:
             return "MODULE"
-        case .sharedHighlights(let snapshot):
-            if let bundle = try? HighlightsShareBundle.decode(from: snapshot) {
-                let count = bundle.exercises.count + bundle.sets.count
-                return "\(count) HIGHLIGHT\(count == 1 ? "" : "S")"
-            }
-            return "HIGHLIGHTS"
-        case .sharedExerciseInstance:
-            return "EXERCISE"
-        case .sharedSetGroup:
-            return "SET PRESCRIPTION"
-        case .sharedCompletedSetGroup:
-            return "COMPLETED SETS"
         case .decodeFailed:
             return "ERROR"
         case .text:
@@ -239,26 +211,6 @@ struct SharedContentCard: View {
                 return bundle.module.moduleName
             }
             return "Module"
-        case .sharedHighlights(let snapshot):
-            if let bundle = try? HighlightsShareBundle.decode(from: snapshot) {
-                return bundle.workoutName
-            }
-            return "Highlights"
-        case .sharedExerciseInstance(let snapshot):
-            if let bundle = try? ExerciseInstanceShareBundle.decode(from: snapshot) {
-                return bundle.exerciseInstance.name
-            }
-            return "Exercise"
-        case .sharedSetGroup(let snapshot):
-            if let bundle = try? SetGroupShareBundle.decode(from: snapshot) {
-                return bundle.exerciseName
-            }
-            return "Set Prescription"
-        case .sharedCompletedSetGroup(let snapshot):
-            if let bundle = try? CompletedSetGroupShareBundle.decode(from: snapshot) {
-                return bundle.exerciseName
-            }
-            return "Completed Sets"
         case .decodeFailed(let originalType):
             if let type = originalType {
                 return "Failed to load \(type)"
@@ -305,36 +257,6 @@ struct SharedContentCard: View {
             if let bundle = try? CompletedModuleShareBundle.decode(from: snapshot) {
                 let exerciseCount = bundle.module.completedExercises.count
                 return "\(exerciseCount) exercises · \(bundle.date.formatted(date: .abbreviated, time: .omitted))"
-            }
-            return nil
-        case .sharedHighlights(let snapshot):
-            if let bundle = try? HighlightsShareBundle.decode(from: snapshot) {
-                return bundle.date.formatted(date: .abbreviated, time: .omitted)
-            }
-            return nil
-        case .sharedExerciseInstance(let snapshot):
-            if let bundle = try? ExerciseInstanceShareBundle.decode(from: snapshot) {
-                return bundle.exerciseInstance.exerciseType.rawValue.capitalized
-            }
-            return nil
-        case .sharedSetGroup(let snapshot):
-            if let bundle = try? SetGroupShareBundle.decode(from: snapshot) {
-                var parts: [String] = []
-                parts.append("\(bundle.setGroup.sets) sets")
-                if let reps = bundle.setGroup.targetReps {
-                    parts.append("\(reps) reps")
-                }
-                if let moduleName = bundle.moduleName {
-                    parts.append(moduleName)
-                }
-                return parts.joined(separator: " · ")
-            }
-            return nil
-        case .sharedCompletedSetGroup(let snapshot):
-            if let bundle = try? CompletedSetGroupShareBundle.decode(from: snapshot) {
-                let completedCount = bundle.completedSetGroup.sets.filter(\.completed).count
-                let totalCount = bundle.completedSetGroup.sets.count
-                return "\(completedCount)/\(totalCount) sets · \(bundle.date.formatted(date: .abbreviated, time: .omitted))"
             }
             return nil
         case .decodeFailed:

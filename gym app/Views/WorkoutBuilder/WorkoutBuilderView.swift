@@ -13,8 +13,12 @@ struct WorkoutBuilderView: View {
     @EnvironmentObject private var workoutViewModel: WorkoutViewModel
     @EnvironmentObject private var moduleViewModel: ModuleViewModel
 
+    /// Bound to MainTabView so re-tapping the Training tab can pop to root
+    /// (by clearing the path) without destroying and rebuilding this subtree.
+    @Binding var path: NavigationPath
+
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 VStack(spacing: AppSpacing.xl) {
                     // Custom Header
@@ -195,5 +199,5 @@ struct BuilderCard: View {
 }
 
 #Preview {
-    WorkoutBuilderView()
+    WorkoutBuilderView(path: .constant(NavigationPath()))
 }

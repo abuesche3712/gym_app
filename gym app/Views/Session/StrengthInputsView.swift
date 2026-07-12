@@ -75,13 +75,12 @@ struct StrengthInputs: View {
                 // String-based implement input (e.g., band color)
                 VStack(spacing: 4) {
                     TextField(stringMeasurable.measurableName, text: $inputBandColor)
-                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                        .foregroundColor(AppColors.textPrimary)
+                        .monoCallout(color: AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 60)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 6)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                         .focused(focusedField, equals: .bandColor)
 
                     Text(stringMeasurable.implementName.lowercased())
@@ -94,13 +93,12 @@ struct StrengthInputs: View {
                 VStack(spacing: 4) {
                     TextField("0", text: $inputHeight)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                        .foregroundColor(AppColors.textPrimary)
+                        .monoCallout(color: AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 48)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 6)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                         .focused(focusedField, equals: .height)
 
                     Text("in")
@@ -114,23 +112,22 @@ struct StrengthInputs: View {
                     // Show "BW +" with added weight input
                     HStack(spacing: 4) {
                         Text("BW")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(AppColors.dominant)
+                            .subheadline(color: AppColors.dominant)
+                            .fontWeight(.bold)
 
                         Text("+")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(AppColors.textTertiary)
+                            .caption(color: AppColors.textTertiary)
+                            .fontWeight(.semibold)
 
                         VStack(spacing: 4) {
                             TextField("0", text: $inputWeight)
                                 .keyboardType(.decimalPad)
-                                .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                                .foregroundColor(AppColors.textPrimary)
+                                .monoCallout(color: AppColors.textPrimary)
                                 .multilineTextAlignment(.center)
                                 .frame(width: 44)
                                 .padding(.vertical, 8)
                                 .padding(.horizontal, 6)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                                .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                                 .focused(focusedField, equals: .weight)
 
                             Text("lbs")
@@ -143,11 +140,11 @@ struct StrengthInputs: View {
                     // Just show "BW" badge without added weight input
                     VStack(spacing: 4) {
                         Text("BW")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
+                            .callout(color: .white)
+                            .fontWeight(.bold)
                             .frame(width: 44, height: 36)
                             .background(
-                                RoundedRectangle(cornerRadius: 8)
+                                RoundedRectangle(cornerRadius: AppCorners.small)
                                     .fill(AppColors.dominant)
                             )
 
@@ -162,13 +159,12 @@ struct StrengthInputs: View {
                 VStack(spacing: 4) {
                     TextField("0", text: $inputWeight)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                        .foregroundColor(AppColors.textPrimary)
+                        .monoCallout(color: AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 48)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 6)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                         .focused(focusedField, equals: .weight)
 
                     Text("lbs")
@@ -186,13 +182,12 @@ struct StrengthInputs: View {
             VStack(spacing: 4) {
                 TextField("0", text: $inputReps)
                     .keyboardType(.numberPad)
-                    .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                    .foregroundColor(AppColors.textPrimary)
+                    .monoCallout(color: AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 44)
                     .padding(.vertical, 8)
                     .padding(.horizontal, 6)
-                    .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     .focused(focusedField, equals: .reps)
 
                 Text(flatSet.isAMRAP ? "AMRAP" : "reps")
@@ -213,13 +208,12 @@ struct StrengthInputs: View {
                 VStack(spacing: 4) {
                     TextField("-", text: $inputRPE)
                         .keyboardType(.numberPad)
-                        .font(.system(size: 16, weight: .semibold, design: .monospaced))
-                        .foregroundColor(AppColors.textPrimary)
+                        .monoCallout(color: AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 36)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 6)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                         .focused(focusedField, equals: .rpe)
                         .onChange(of: inputRPE) { _, newValue in
                             // Validate RPE is 1-10
@@ -249,13 +243,12 @@ struct StrengthInputs: View {
                 set: { inputMeasurableValues[measurableKey] = $0 }
             ))
             .keyboardType(measurable.isStringBased ? .default : .decimalPad)
-            .font(.system(size: 16, weight: .semibold, design: .monospaced))
-            .foregroundColor(AppColors.textPrimary)
+            .monoCallout(color: AppColors.textPrimary)
             .multilineTextAlignment(.center)
             .frame(width: measurable.isStringBased ? 60 : 48)
             .padding(.vertical, 8)
             .padding(.horizontal, 6)
-            .background(RoundedRectangle(cornerRadius: 8).fill(AppColors.surfacePrimary))
+            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
 
             Text(measurable.unit.isEmpty ? measurable.measurableName : measurable.unit)
                 .caption2(color: AppColors.textTertiary)
@@ -283,9 +276,8 @@ struct StrengthInputs: View {
 
                     if timerRunning {
                         Text("\(timerSecondsRemaining)")
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
-                            .monospacedDigit()
-                            .foregroundColor(.white)
+                            .monoFootnote(color: .white)
+                            .fontWeight(.bold)
                     } else {
                         Image(systemName: "timer")
                             .body(color: AppColors.textSecondary)

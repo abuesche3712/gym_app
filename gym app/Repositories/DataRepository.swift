@@ -22,6 +22,7 @@ class DataRepository: ObservableObject {
     let friendshipRepo: FriendshipRepository
     let conversationRepo: ConversationRepository
     let messageRepo: MessageRepository
+    let bodyWeightRepo: BodyWeightRepository
 
     // Services
     private let persistence = PersistenceController.shared
@@ -50,6 +51,7 @@ class DataRepository: ObservableObject {
         friendshipRepo = FriendshipRepository()
         conversationRepo = ConversationRepository()
         messageRepo = MessageRepository()
+        bodyWeightRepo = BodyWeightRepository()
         loadAllData()
     }
 

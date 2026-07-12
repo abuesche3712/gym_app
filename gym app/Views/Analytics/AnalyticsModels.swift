@@ -14,19 +14,20 @@ enum AnalyticsTimeRange: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var decisionWindowDays: Int {
-        switch self {
-        case .month: return 28
-        case .quarter: return 90
-        case .allTime: return 0
-        }
-    }
-
     var weeklyVolumeWeeks: Int {
         switch self {
         case .month: return 5
         case .quarter: return 13
         case .allTime: return 26
+        }
+    }
+
+    /// Number of trailing days this range covers, or `nil` for all-time (no lower bound).
+    var dayWindow: Int? {
+        switch self {
+        case .month: return 28
+        case .quarter: return 90
+        case .allTime: return nil
         }
     }
 }
@@ -245,27 +246,20 @@ struct PersonalRecordEvent: Identifiable, Hashable {
     }
 }
 
-struct MuscleGroupVolume: Identifiable, Hashable {
-    let muscleGroup: String
-    let totalVolume: Double
-    let sessionCount: Int
-    let percentageOfTotal: Double
-    var id: String { muscleGroup }
+struct ExerciseSessionSummary: Identifiable, Hashable {
+    let id = UUID()
+    let date: Date
+    let topSet: StrengthTopSet
+    let volume: Double
+    let isPR: Bool
 }
 
-struct CardioSummary: Hashable {
-    let totalDuration: Int
-    let totalDistance: Double?
-    let sessionCount: Int
-    let avgDurationPerSession: Int
+/// A single bodyweight chart point (weight stored in kilograms; views convert for display).
+struct BodyWeightPoint: Identifiable, Hashable {
+    let date: Date
+    let weightKg: Double
 
-    static let empty = CardioSummary(totalDuration: 0, totalDistance: nil, sessionCount: 0, avgDurationPerSession: 0)
-}
-
-struct WeeklyCardioPoint: Identifiable, Hashable {
-    let weekStart: Date
-    let totalDuration: Int
-    var id: Date { weekStart }
+    var id: Date { date }
 }
 
 struct AnalyticsDashboardData {
@@ -275,14 +269,5 @@ struct AnalyticsDashboardData {
     let weeklyVolumeTrend: [WeeklyVolumePoint]
     let liftTrends: [LiftTrend]
     let exerciseProgress: [E1RMExerciseProgress]
-    let progressionBreakdown: ProgressionBreakdown
-    let engineHealth: ProgressionEngineHealth
-    let decisionProfileHealth: [DecisionProfileHealth]
-    let progressionAlerts: [ProgressionAlert]
-    let dryRunProfiles: [DryRunProfileResult]
-    let dryRunInputCount: Int
     let recentPRs: [PersonalRecordEvent]
-    let muscleGroupVolume: [MuscleGroupVolume]
-    let cardioSummary: CardioSummary
-    let weeklyCardioTrend: [WeeklyCardioPoint]
 }

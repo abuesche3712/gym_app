@@ -19,6 +19,7 @@ struct PostDetailView: View {
     @State private var showingShareSheet = false
     @State private var replyingTo: CommentWithAuthor?
     @State private var showReactionPicker = false
+    @State private var showingReportSheet = false
 
     init(post: PostWithAuthor) {
         _viewModel = StateObject(wrappedValue: PostDetailViewModel(post: post))
@@ -80,6 +81,13 @@ struct PostDetailView: View {
             .sheet(isPresented: $showingShareSheet) {
                 ShareWithFriendSheet(content: viewModel.post.post)
             }
+            .sheet(isPresented: $showingReportSheet) {
+                ReportSheet(
+                    reportedUserId: viewModel.post.post.authorId,
+                    contentType: .post,
+                    contentId: viewModel.post.post.id.uuidString
+                )
+            }
             .sheet(item: $previewingContent) { content in
                 SharedContentPreviewSheet(
                     content: content,
@@ -126,6 +134,22 @@ struct PostDetailView: View {
                 Text(formattedDate)
                     .font(.caption)
                     .foregroundColor(AppColors.textTertiary)
+
+                if viewModel.post.post.authorId != viewModel.currentUserId {
+                    Menu {
+                        Button {
+                            showingReportSheet = true
+                        } label: {
+                            Label("Report", systemImage: "flag")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(.caption)
+                            .foregroundColor(AppColors.textTertiary)
+                            .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+                            .contentShape(Rectangle())
+                    }
+                }
             }
             .padding(AppSpacing.cardPadding)
 

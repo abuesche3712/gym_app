@@ -26,7 +26,6 @@ class PostDetailViewModel: ObservableObject {
     private var likeListener: ListenerRegistration?
     private var postListener: ListenerRegistration?
     private let profileCache = ProfileCacheService.shared
-    private let activityService = FirestoreActivityService.shared
     private let initialCommentLimit = 50
     private let commentsPageSize = 50
     private var currentCommentLimit = 50
@@ -185,16 +184,6 @@ class PostDetailViewModel: ObservableObject {
                 object: ["postId": post.post.id, "commentCount": post.post.commentCount]
             )
 
-            // Create activity for post author
-            let activity = Activity(
-                recipientId: post.post.authorId,
-                actorId: userId,
-                type: .comment,
-                postId: post.post.id,
-                preview: String(sanitizedText.prefix(50))
-            )
-            try? await activityService.createActivity(activity)
-
             HapticManager.shared.success()
         } catch {
             self.error = error
@@ -244,16 +233,6 @@ class PostDetailViewModel: ObservableObject {
                 name: .didUpdatePostCommentCount,
                 object: ["postId": post.post.id, "commentCount": post.post.commentCount]
             )
-
-            // Create activity for comment author (the person being replied to)
-            let activity = Activity(
-                recipientId: parentComment.comment.authorId,
-                actorId: userId,
-                type: .comment,
-                postId: post.post.id,
-                preview: String(sanitizedText.prefix(50))
-            )
-            try? await activityService.createActivity(activity)
 
             HapticManager.shared.success()
         } catch {
@@ -355,15 +334,6 @@ class PostDetailViewModel: ObservableObject {
                 try await firestoreService.likePost(postId: post.post.id, userId: userId, reactionType: reactionType)
                 let like = PostLike(postId: post.post.id, userId: userId, reactionType: reactionType)
                 postRepo.saveLike(like)
-
-                // Create activity for post author
-                let activity = Activity(
-                    recipientId: post.post.authorId,
-                    actorId: userId,
-                    type: .like,
-                    postId: post.post.id
-                )
-                try? await activityService.createActivity(activity)
             }
             HapticManager.shared.tap()
         } catch {
@@ -397,15 +367,6 @@ class PostDetailViewModel: ObservableObject {
             try await firestoreService.likePost(postId: post.post.id, userId: userId, reactionType: reactionType)
             let like = PostLike(postId: post.post.id, userId: userId, reactionType: reactionType)
             postRepo.saveLike(like)
-
-            // Create activity for post author
-            let activity = Activity(
-                recipientId: post.post.authorId,
-                actorId: userId,
-                type: .like,
-                postId: post.post.id
-            )
-            try? await activityService.createActivity(activity)
             HapticManager.shared.tap()
         } catch {
             self.error = error

@@ -176,6 +176,9 @@ struct PersistenceController {
         let postLikeEntity = createPostLikeEntity()
         let postCommentEntity = createPostCommentEntity()
 
+        // Create body weight tracking entity (local-only, no cloud sync)
+        let bodyWeightEntryEntity = createBodyWeightEntryEntity()
+
         // Set up relationships
         setupRelationships(
             moduleEntity: moduleEntity,
@@ -244,7 +247,9 @@ struct PersistenceController {
             // Feed entities
             postEntity,
             postLikeEntity,
-            postCommentEntity
+            postCommentEntity,
+            // Body weight tracking (local-only)
+            bodyWeightEntryEntity
         ]
 
         return model
@@ -981,6 +986,21 @@ struct PersistenceController {
             createAttribute("updatedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncedAt", type: .dateAttributeType, optional: true),
             createAttribute("syncStatusRaw", type: .stringAttributeType)
+        ]
+
+        return entity
+    }
+
+    private static func createBodyWeightEntryEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = "BodyWeightEntryEntity"
+        entity.managedObjectClassName = "BodyWeightEntryEntity"
+
+        entity.properties = [
+            createAttribute("id", type: .UUIDAttributeType),
+            createAttribute("date", type: .dateAttributeType),
+            createAttribute("weightKg", type: .doubleAttributeType),
+            createAttribute("note", type: .stringAttributeType, optional: true)
         ]
 
         return entity

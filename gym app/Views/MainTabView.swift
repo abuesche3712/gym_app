@@ -27,11 +27,13 @@ struct MainTabView: View {
     @State private var hideTabBar = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    // Pop-to-root triggers - increment to signal navigation reset
-    @State private var homePopToRoot = 0
-    @State private var trainingPopToRoot = 0
-    @State private var socialPopToRoot = 0
-    @State private var analyticsPopToRoot = 0
+    // Real pop-to-root: each tab's NavigationStack binds one of these paths,
+    // so re-tapping the active tab pops its stack without destroying and
+    // rebuilding the subtree (or losing scroll/view state).
+    @State private var homePath = NavigationPath()
+    @State private var trainingPath = NavigationPath()
+    @State private var socialPath = NavigationPath()
+    @State private var analyticsPath = NavigationPath()
 
     private let tabCount = 4
 
@@ -55,20 +57,16 @@ struct MainTabView: View {
     var body: some View {
         ZStack(alignment: .top) {
             TabView(selection: $selectedTab) {
-                HomeView()
-                    .id("home-\(homePopToRoot)")
+                HomeView(path: $homePath)
                     .tag(0)
 
-                WorkoutBuilderView()
-                    .id("training-\(trainingPopToRoot)")
+                WorkoutBuilderView(path: $trainingPath)
                     .tag(1)
 
-                SocialView()
-                    .id("social-\(socialPopToRoot)")
+                SocialView(path: $socialPath)
                     .tag(2)
 
-                AnalyticsView()
-                    .id("analytics-\(analyticsPopToRoot)")
+                AnalyticsView(path: $analyticsPath)
                     .tag(3)
             }
             .toolbar(.hidden, for: .tabBar)
@@ -206,10 +204,10 @@ struct MainTabView: View {
 
     private func popToRoot(tab: Int) {
         switch tab {
-        case 0: homePopToRoot += 1
-        case 1: trainingPopToRoot += 1
-        case 2: socialPopToRoot += 1
-        case 3: analyticsPopToRoot += 1
+        case 0: homePath.removeLast(homePath.count)
+        case 1: trainingPath.removeLast(trainingPath.count)
+        case 2: socialPath.removeLast(socialPath.count)
+        case 3: analyticsPath.removeLast(analyticsPath.count)
         default: break
         }
     }

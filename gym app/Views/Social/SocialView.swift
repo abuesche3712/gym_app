@@ -24,12 +24,16 @@ struct SocialView: View {
     @State private var profileToView: PostWithAuthor?
     @State private var showRestoreSuccess = false
 
+    /// Owned by MainTabView so re-tapping the Social tab can pop to root
+    /// (by clearing the path) without destroying and rebuilding this subtree.
+    @Binding var path: NavigationPath
+
     private var profileRepo: ProfileRepository {
         dataRepository.profileRepo
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             if authService.isAuthenticated {
                 authenticatedFeedView
             } else {
@@ -366,6 +370,11 @@ struct SocialView: View {
                             if sessionViewModel.restoreSessionFromPost(post.post) {
                                 showRestoreSuccess = true
                             }
+                        } : nil,
+                        onBlockUser: post.post.authorId != feedViewModel.currentUserId ? {
+                            Task<Void, Never> { @MainActor in
+                                try? await friendsViewModel.blockUser(post.post.authorId)
+                            }
                         } : nil
                     )
                 }
@@ -523,5 +532,5 @@ struct SocialView: View {
 // MARK: - Preview
 
 #Preview {
-    SocialView()
+    SocialView(path: .constant(NavigationPath()))
 }

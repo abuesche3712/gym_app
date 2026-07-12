@@ -55,6 +55,11 @@ struct SettingsView: View {
                         }
                     }
 
+                    // Privacy & Safety Section (only show when signed in)
+                    if authService.isAuthenticated {
+                        privacySection
+                    }
+
                     // Cloud Sync Section (only show when signed in)
                     if authService.isAuthenticated {
                         cloudSyncSection
@@ -266,6 +271,18 @@ struct SettingsView: View {
                 }
             }
             .buttonStyle(.pressable)
+        }
+    }
+
+    // MARK: - Privacy & Safety Section
+
+    private var privacySection: some View {
+        SettingsSection(title: "Privacy & Safety") {
+            NavigationLink {
+                BlockedUsersView()
+            } label: {
+                SettingsRowLabel(icon: "hand.raised", title: "Blocked Users")
+            }
         }
     }
 

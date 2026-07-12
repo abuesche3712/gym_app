@@ -19,8 +19,11 @@ struct FeedPostRow: View {
     var onPostTap: (() -> Void)? = nil
     var onReact: ((ReactionType) -> Void)? = nil
     var onRestoreSession: (() -> Void)? = nil
+    var onBlockUser: (() -> Void)? = nil
 
     @State private var showingDeleteConfirmation = false
+    @State private var showingReportSheet = false
+    @State private var showingBlockConfirmation = false
     @State private var isLikeAnimating = false
     @State private var showReactionPicker = false
 
@@ -93,6 +96,25 @@ struct FeedPostRow: View {
         } message: {
             Text("This will permanently delete this post.")
         }
+        .confirmationDialog(
+            "Block User?",
+            isPresented: $showingBlockConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Block", role: .destructive) {
+                onBlockUser?()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("They won't be able to see your posts or message you.")
+        }
+        .sheet(isPresented: $showingReportSheet) {
+            ReportSheet(
+                reportedUserId: post.post.authorId,
+                contentType: .post,
+                contentId: post.post.id.uuidString
+            )
+        }
     }
 
     // MARK: - Author Line
@@ -121,39 +143,49 @@ struct FeedPostRow: View {
             Spacer()
 
             // More menu
-            if isOwnPost || onRestoreSession != nil {
-                Menu {
-                    if let onEdit = onEdit {
-                        Button {
-                            onEdit()
-                        } label: {
-                            Label("Edit", systemImage: "pencil")
-                        }
+            Menu {
+                if let onEdit = onEdit {
+                    Button {
+                        onEdit()
+                    } label: {
+                        Label("Edit", systemImage: "pencil")
                     }
-
-                    if let onRestoreSession = onRestoreSession {
-                        Button {
-                            onRestoreSession()
-                        } label: {
-                            Label("Restore to History", systemImage: "clock.arrow.counterclockwise")
-                        }
-                    }
-
-                    if isOwnPost {
-                        Button(role: .destructive) {
-                            showingDeleteConfirmation = true
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    }
-
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.caption)
-                        .foregroundColor(AppColors.textTertiary)
-                        .frame(width: 24, height: 24)
-                        .contentShape(Rectangle())
                 }
+
+                if let onRestoreSession = onRestoreSession {
+                    Button {
+                        onRestoreSession()
+                    } label: {
+                        Label("Restore to History", systemImage: "clock.arrow.counterclockwise")
+                    }
+                }
+
+                if isOwnPost {
+                    Button(role: .destructive) {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                } else {
+                    Button {
+                        showingReportSheet = true
+                    } label: {
+                        Label("Report", systemImage: "flag")
+                    }
+
+                    Button(role: .destructive) {
+                        showingBlockConfirmation = true
+                    } label: {
+                        Label("Block User", systemImage: "hand.raised")
+                    }
+                }
+
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.caption)
+                    .foregroundColor(AppColors.textTertiary)
+                    .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+                    .contentShape(Rectangle())
             }
         }
     }
@@ -189,9 +221,6 @@ struct FeedPostRow: View {
 
             case .module(_, let name, let snapshot):
                 TemplateAttachmentCard(type: "MODULE", name: name, snapshot: snapshot)
-
-            case .highlights(let snapshot):
-                HighlightsInlineCards(snapshot: snapshot)
             }
         }
     }

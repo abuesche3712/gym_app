@@ -16,8 +16,6 @@
 		196485342F25516E00078F82 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 196485332F25516E00078F82 /* GoogleService-Info.plist */; };
 		197B16192F2569D8006135E4 /* BackgroundSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197B16182F2569D8006135E4 /* BackgroundSessionManager.swift */; };
 		1C651C6390424CC3A0E14293 /* WorkoutSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96AA7ABE49544DD3B54CEF8B /* WorkoutSummaryView.swift */; };
-		29CC57FCAE2F50F9AA03FE2F /* ActivityFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E97682113C5D43548C7F565 /* ActivityFeedView.swift */; };
-		3065561983B445E59E349151 /* gym app/Views/Library/MuscleGroupPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD6911EEDEB4BB9B215AFBD /* gym app/Views/Library/MuscleGroupPickerView.swift */; };
 		34A15C16E7C4C417F54DC7C1 /* SyncHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B47EA18754D362A6C72724 /* SyncHandlers.swift */; };
 		39DB3468001A45CEA0E01B1F /* EndSessionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C0101650AF44AEA8A6F8A1 /* EndSessionSheet.swift */; };
 		5752B2C149CBD12B3690CBBB /* FirestoreLibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBA7D111F1233C5EFE90EDA6 /* FirestoreLibraryService.swift */; };
@@ -43,6 +41,9 @@
 		ANLSVC02BUILD001 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLSVC01FILE001 /* AnalyticsService.swift */; };
 		ANLVMO02BUILD001 /* AnalyticsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLVMO01FILE001 /* AnalyticsViewModel.swift */; };
 		ANLYT002BUILD002 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLYT001FILE001 /* AnalyticsView.swift */; };
+		BDWTVMO02BUILD001 /* BodyWeightViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDWTVMO01FILE001 /* BodyWeightViewModel.swift */; };
+		BDWTCRD02BUILD001 /* BodyWeightCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDWTCRD01FILE001 /* BodyWeightCardView.swift */; };
+		EXDETL002BUILD001 /* ExerciseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXDETL001FILE001 /* ExerciseDetailView.swift */; };
 		APPCFG02BUILD002 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = APPCFG01FILE001 /* AppConfig.swift */; };
 		ATCHHLP02BUILD01 /* AttachmentHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = ATCHHLP01FILE01 /* AttachmentHelpers.swift */; };
 		B610AC032F15B4DD008B2C15 /* gym_appApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610AC022F15B4DD008B2C15 /* gym_appApp.swift */; };
@@ -121,6 +122,7 @@
 		DATAREPO02BUILD01 /* DataRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DATAREPO01FILE01 /* DataRepositoryTests.swift */; };
 		DB4505338C4FD921A7C6EBA4 /* FirestoreCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89217DA0F8957EE059AB3FF9 /* FirestoreCore.swift */; };
 		DBGSYN02BUILD002 /* DebugSyncLogsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBGSYN01FILE001 /* DebugSyncLogsView.swift */; };
+		BLKUSR02BUILD001 /* BlockedUsersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLKUSR01FILE001 /* BlockedUsersView.swift */; };
 		DEBOUNCER002BUILD002 /* Debouncer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEBOUNCER001FILE001 /* Debouncer.swift */; };
 		DELTRC02BUILD002 /* DeletionTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = DELTRC01FILE001 /* DeletionTracker.swift */; };
 		E3A1B2C3D4E5F60000000002 /* ExerciseMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A1B2C3D4E5F60000000001 /* ExerciseMetrics.swift */; };
@@ -136,7 +138,6 @@
 		EXRATCD02BUILD01 /* ExerciseAttachmentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXRATCD01FILE01 /* ExerciseAttachmentCard.swift */; };
 		EXRCNCD02BUILD01 /* ExerciseContentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXRCNCD01FILE01 /* ExerciseContentCard.swift */; };
 		EXRSLV002BUILD002 /* ExerciseResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = EXRSLV001FILE001 /* ExerciseResolver.swift */; };
-		F2AE89AB15CB3092F6F4F7A8 /* ActivityViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 700932C12B5D85235A688B70 /* ActivityViewModel.swift */; };
 		F92592D922191FE336C0B476 /* OtherUserProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90CD920837A850E936642FE /* OtherUserProfileView.swift */; };
 		F9E8D7C6B5A443218765432B /* IntervalTimerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F647890123456A /* IntervalTimerView.swift */; };
 		FB314B4CB2D940F6B27703FF /* DataSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B12D1154F7E74A3385D7FF2E /* DataSeeder.swift */; };
@@ -146,16 +147,13 @@
 		FONTEXTENS1BUILD /* Font+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FONTEXTENS1FILE01 /* Font+Extensions.swift */; };
 		FORMATTING002HELPERS002 /* FormattingHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = FORMATTING001HELPERS001 /* FormattingHelpers.swift */; };
 		FRNDREPO02BUILD /* FriendshipRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDREPO01FILE /* FriendshipRepository.swift */; };
-		FRNDRQST02BUILD /* FriendRequestsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDRQST01FILE /* FriendRequestsView.swift */; };
+		BDWTREPO02BUILD /* BodyWeightRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDWTREPO01FILE /* BodyWeightRepository.swift */; };
 		FRNDSHP002BUILD /* Friendship.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDSHP001FILE /* Friendship.swift */; };
-		FRNDSLST02BUILD /* FriendsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDSLST01FILE /* FriendsListView.swift */; };
+		BDWTMDL002BUILD /* BodyWeightEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDWTMDL001FILE /* BodyWeightEntry.swift */; };
 		FRNDSRCH02BUILD /* UserSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDSRCH01FILE /* UserSearchView.swift */; };
 		FRNDSVMM02BUILD /* FriendsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRNDSVMM01FILE /* FriendsViewModel.swift */; };
 		FRSTYL02BUILD01 /* FreestyleAddExerciseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRSTYL01FILE01 /* FreestyleAddExerciseSheet.swift */; };
 		HAPTIC002BUILD002 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = HAPTIC001FILE001 /* HapticManager.swift */; };
-		HLTCNCD02BUILD01 /* HighlightsContentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = HLTCNCD01FILE01 /* HighlightsContentCard.swift */; };
-		HLTINLN02BUILD01 /* HighlightsInlineCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = HLTINLN01FILE01 /* HighlightsInlineCards.swift */; };
-		HLTPKR02BUILD001 /* HighlightPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HLTPKR01FILE001 /* HighlightPickerView.swift */; };
 		HLTSLCR02BUILD001 /* HighlightSelectionCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = HLTSLCR01FILE001 /* HighlightSelectionCore.swift */; };
 		HOMESC002BUILD002 /* HomeScheduleSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = HOMESC001FILE001 /* HomeScheduleSheets.swift */; };
 		IMPCNV02BUILD /* ImportConversionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMPCNV01FILE /* ImportConversionService.swift */; };
@@ -174,7 +172,6 @@
 		POSTREP02BUILD002 /* PostRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = POSTREP01FILE001 /* PostRepository.swift */; };
 		PREVPER2BUILD002 /* PreviousPerformanceSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = PREVPER1FILE001 /* PreviousPerformanceSection.swift */; };
 		PRFCCH01BUILD01 /* ProfileCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRFCCH01FILE001 /* ProfileCacheService.swift */; };
-		PRFLEDT02BUILD01 /* ProfileEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRFLEDT01FILE001 /* ProfileEditView.swift */; };
 		PRFLREP02BUILD01 /* ProfileRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRFLREP01FILE001 /* ProfileRepository.swift */; };
 		PRGACT002BUILD002 /* ActivateProgramSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGACT001FILE001 /* ActivateProgramSheet.swift */; };
 		PRGADD002BUILD002 /* AddWorkoutSlotSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRGADD001FILE001 /* AddWorkoutSlotSheet.swift */; };
@@ -307,10 +304,8 @@
 		3B6F8FF624F3F58D7C2AEC9B /* FirestoreActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreActivityService.swift; sourceTree = "<group>"; };
 		4ABBF73DE443197CE17EC619 /* FirestoreDeletionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreDeletionService.swift; sourceTree = "<group>"; };
 		67FA42E2E5A4400DBB4D6761 /* gym app/Views/Library/ImplementPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Views/Library/ImplementPickerView.swift"; sourceTree = SOURCE_ROOT; };
-		700932C12B5D85235A688B70 /* ActivityViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityViewModel.swift; sourceTree = "<group>"; };
 		73B47EA18754D362A6C72724 /* SyncHandlers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncHandlers.swift; sourceTree = "<group>"; };
 		7892D49050054B958D767C66 /* SessionModels.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SessionModels.swift; sourceTree = "<group>"; };
-		7E97682113C5D43548C7F565 /* ActivityFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityFeedView.swift; sourceTree = "<group>"; };
 		819E2E82C0C24D519F040C84 /* WorkoutOverviewSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WorkoutOverviewSheet.swift; sourceTree = "<group>"; };
 		89217DA0F8957EE059AB3FF9 /* FirestoreCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreCore.swift; sourceTree = "<group>"; };
 		8D9B5EAEA83B489586ACDC15 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
@@ -329,6 +324,9 @@
 		ANLSVC01FILE001 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		ANLVMO01FILE001 /* AnalyticsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsViewModel.swift; sourceTree = "<group>"; };
 		ANLYT001FILE001 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
+		BDWTVMO01FILE001 /* BodyWeightViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyWeightViewModel.swift; sourceTree = "<group>"; };
+		BDWTCRD01FILE001 /* BodyWeightCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyWeightCardView.swift; sourceTree = "<group>"; };
+		EXDETL001FILE001 /* ExerciseDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDetailView.swift; sourceTree = "<group>"; };
 		APPCFG01FILE001 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		ATCHHLP01FILE01 /* AttachmentHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentHelpers.swift; sourceTree = "<group>"; };
 		B12D1154F7E74A3385D7FF2E /* DataSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSeeder.swift; sourceTree = "<group>"; };
@@ -392,7 +390,6 @@
 		C8C0101650AF44AEA8A6F8A1 /* EndSessionSheet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EndSessionSheet.swift; sourceTree = "<group>"; };
 		CAPTNINP01FILE001 /* CaptionInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionInputView.swift; sourceTree = "<group>"; };
 		CARDIN01FILE001 /* CardioInputsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CardioInputsView.swift; sourceTree = "<group>"; };
-		CCD6911EEDEB4BB9B215AFBD /* gym app/Views/Library/MuscleGroupPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "gym app/Views/Library/MuscleGroupPickerView.swift"; sourceTree = SOURCE_ROOT; };
 		CDREP001FILE001 /* CoreDataRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataRepository.swift; sourceTree = "<group>"; };
 		CHATVM001FILE /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		CHATVW001FILE /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
@@ -409,6 +406,7 @@
 		D3E5F7A9B1C3D5E7F9A1B3C5 /* SetGroupFormView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SetGroupFormView.swift; sourceTree = "<group>"; };
 		DATAREPO01FILE01 /* DataRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataRepositoryTests.swift; sourceTree = "<group>"; };
 		DBGSYN01FILE001 /* DebugSyncLogsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSyncLogsView.swift; sourceTree = "<group>"; };
+		BLKUSR01FILE001 /* BlockedUsersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockedUsersView.swift; sourceTree = "<group>"; };
 		DEBOUNCER001FILE001 /* Debouncer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Debouncer.swift; sourceTree = "<group>"; };
 		DELTRC01FILE001 /* DeletionTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletionTracker.swift; sourceTree = "<group>"; };
 		E042C6DBCCF889BD355F6AC1 /* EditSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditSessionView.swift; sourceTree = "<group>"; };
@@ -433,16 +431,13 @@
 		FONTEXTENS1FILE01 /* Font+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font+Extensions.swift"; sourceTree = "<group>"; };
 		FORMATTING001HELPERS001 /* FormattingHelpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FormattingHelpers.swift; sourceTree = "<group>"; };
 		FRNDREPO01FILE /* FriendshipRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendshipRepository.swift; sourceTree = "<group>"; };
-		FRNDRQST01FILE /* FriendRequestsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendRequestsView.swift; sourceTree = "<group>"; };
+		BDWTREPO01FILE /* BodyWeightRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyWeightRepository.swift; sourceTree = "<group>"; };
 		FRNDSHP001FILE /* Friendship.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Friendship.swift; sourceTree = "<group>"; };
-		FRNDSLST01FILE /* FriendsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsListView.swift; sourceTree = "<group>"; };
+		BDWTMDL001FILE /* BodyWeightEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyWeightEntry.swift; sourceTree = "<group>"; };
 		FRNDSRCH01FILE /* UserSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSearchView.swift; sourceTree = "<group>"; };
 		FRNDSVMM01FILE /* FriendsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsViewModel.swift; sourceTree = "<group>"; };
 		FRSTYL01FILE01 /* FreestyleAddExerciseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreestyleAddExerciseSheet.swift; sourceTree = "<group>"; };
 		HAPTIC001FILE001 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
-		HLTCNCD01FILE01 /* HighlightsContentCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightsContentCard.swift; sourceTree = "<group>"; };
-		HLTINLN01FILE01 /* HighlightsInlineCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightsInlineCards.swift; sourceTree = "<group>"; };
-		HLTPKR01FILE001 /* HighlightPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightPickerView.swift; sourceTree = "<group>"; };
 		HLTSLCR01FILE001 /* HighlightSelectionCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightSelectionCore.swift; sourceTree = "<group>"; };
 		HOMESC001FILE001 /* HomeScheduleSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScheduleSheets.swift; sourceTree = "<group>"; };
 		IMPCNV01FILE /* ImportConversionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportConversionService.swift; sourceTree = "<group>"; };
@@ -461,7 +456,6 @@
 		POSTREP01FILE001 /* PostRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostRepository.swift; sourceTree = "<group>"; };
 		PREVPER1FILE001 /* PreviousPerformanceSection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PreviousPerformanceSection.swift; sourceTree = "<group>"; };
 		PRFCCH01FILE001 /* ProfileCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileCacheService.swift; sourceTree = "<group>"; };
-		PRFLEDT01FILE001 /* ProfileEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileEditView.swift; sourceTree = "<group>"; };
 		PRFLREP01FILE001 /* ProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRepository.swift; sourceTree = "<group>"; };
 		PRGACT001FILE001 /* ActivateProgramSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivateProgramSheet.swift; sourceTree = "<group>"; };
 		PRGADD001FILE001 /* AddWorkoutSlotSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddWorkoutSlotSheet.swift; sourceTree = "<group>"; };
@@ -624,6 +618,9 @@
 				ANLCAR01FILE001 /* AnalyticsCardModifier.swift */,
 				ANLYT001FILE001 /* AnalyticsView.swift */,
 				SHRSMY01FILE001 /* ShareSummaryView.swift */,
+				BDWTVMO01FILE001 /* BodyWeightViewModel.swift */,
+				BDWTCRD01FILE001 /* BodyWeightCardView.swift */,
+				EXDETL001FILE001 /* ExerciseDetailView.swift */,
 			);
 			path = Analytics;
 			sourceTree = "<group>";
@@ -720,7 +717,6 @@
 				CMPSTVM01FILE001 /* ComposePostViewModel.swift */,
 				QKLGVM01FILE /* QuickLogViewModel.swift */,
 				EDTPSTVM01FILE001 /* EditPostViewModel.swift */,
-				700932C12B5D85235A688B70 /* ActivityViewModel.swift */,
 				2C1B430A886BE30C7C6285A9 /* OtherUserProfileViewModel.swift */,
 			);
 			path = ViewModels;
@@ -752,6 +748,7 @@
 				USNMVAL01FILE001 /* UsernameValidation.swift */,
 				B63EBEF02F15E73700D8C22D /* Workout.swift */,
 				FRNDSHP001FILE /* Friendship.swift */,
+				BDWTMDL001FILE /* BodyWeightEntry.swift */,
 				CONVMDL001FILE /* Conversation.swift */,
 				MSGMDL001FILE /* Message.swift */,
 				POST001FILE001 /* Post.swift */,
@@ -816,6 +813,7 @@
 			isa = PBXGroup;
 			children = (
 				DBGSYN01FILE001 /* DebugSyncLogsView.swift */,
+				BLKUSR01FILE001 /* BlockedUsersView.swift */,
 				B6EXERC012F15E73700D8C22D /* ExerciseLibraryView.swift */,
 				EQUIPL001FILE001 /* EquipmentLibraryView.swift */,
 				IMPDTV01FILE /* ImportDataView.swift */,
@@ -882,6 +880,7 @@
 				CONVREP001FILE /* ConversationRepository.swift */,
 				MSGREP001FILE /* MessageRepository.swift */,
 				POSTREP01FILE001 /* PostRepository.swift */,
+				BDWTREPO01FILE /* BodyWeightRepository.swift */,
 			);
 			path = Repositories;
 			sourceTree = "<group>";
@@ -935,7 +934,6 @@
 			isa = PBXGroup;
 			children = (
 				09F384AAD9014FF9A582680C /* gym app/Services/LibraryService.swift */,
-				CCD6911EEDEB4BB9B215AFBD /* gym app/Views/Library/MuscleGroupPickerView.swift */,
 				67FA42E2E5A4400DBB4D6761 /* gym app/Views/Library/ImplementPickerView.swift */,
 				05D2B6AD67E44647BABA141E /* gym app/Views/Library/LibraryExerciseEditView.swift */,
 				SHRBND01FILE001 /* ShareBundles.swift */,
@@ -1012,7 +1010,6 @@
 			isa = PBXGroup;
 			children = (
 				ACCPRVWFILE0001 /* AccountProfileView.swift */,
-				PRFLEDT01FILE001 /* ProfileEditView.swift */,
 				B6PHOTO062F2A000000D8C22D /* ProfilePhotoPickerSheet.swift */,
 			);
 			path = Profile;
@@ -1061,15 +1058,11 @@
 				CHATVW001FILE /* ChatView.swift */,
 				NEWCNV001FILE /* NewConversationSheet.swift */,
 				FRNDSRCH01FILE /* UserSearchView.swift */,
-				FRNDSLST01FILE /* FriendsListView.swift */,
-				FRNDRQST01FILE /* FriendRequestsView.swift */,
 				FEEDPSTROW01FILE001 /* FeedPostRow.swift */,
 				SOCLCMP01FILE001 /* SocialComponents.swift */,
 				PSTDVW01FILE001 /* PostDetailView.swift */,
 				CMPSHT01FILE001 /* ComposePostSheet.swift */,
-				HLTPKR01FILE001 /* HighlightPickerView.swift */,
 				EDTPST01FILE001 /* EditPostSheet.swift */,
-				7E97682113C5D43548C7F565 /* ActivityFeedView.swift */,
 				B90CD920837A850E936642FE /* OtherUserProfileView.swift */,
 				RPRTSHT01FILE001 /* ReportSheet.swift */,
 			);
@@ -1089,14 +1082,12 @@
 				SETATCD01FILE01 /* SetAttachmentCard.swift */,
 				MDLATCD01FILE01 /* ModuleAttachmentCard.swift */,
 				TMPLATCD01FILE01 /* TemplateAttachmentCard.swift */,
-				HLTINLN01FILE01 /* HighlightsInlineCards.swift */,
 				PSTCNCD01FILE01 /* PostContentCard.swift */,
 				SSNCNCD01FILE01 /* SessionContentCard.swift */,
 				EXRCNCD01FILE01 /* ExerciseContentCard.swift */,
 				SETCNCD01FILE01 /* SetContentCard.swift */,
 				MDLCNCD01FILE01 /* ModuleContentCard.swift */,
 				TMPCNCD01FILE01 /* TemplateContentCard.swift */,
-				HLTCNCD01FILE01 /* HighlightsContentCard.swift */,
 				CMNTROW01FILE01 /* CommentRow.swift */,
 			);
 			path = Components;
@@ -1429,7 +1420,6 @@
 				1C651C6390424CC3A0E14293 /* WorkoutSummaryView.swift in Sources */,
 				7E3A26543EA449B5824C3A63 /* WorkoutOverviewSheet.swift in Sources */,
 				8D91368656994D20964FF8D1 /* gym app/Services/LibraryService.swift in Sources */,
-				3065561983B445E59E349151 /* gym app/Views/Library/MuscleGroupPickerView.swift in Sources */,
 				00FCCDDAC9AD41A7AAD9E386 /* gym app/Views/Library/ImplementPickerView.swift in Sources */,
 				0DE55B310BEE4A628944C240 /* gym app/Views/Library/LibraryExerciseEditView.swift in Sources */,
 				FORMATTING002HELPERS002 /* FormattingHelpers.swift in Sources */,
@@ -1471,10 +1461,10 @@
 				WKBLD002BUILD002 /* WorkoutBuilderView.swift in Sources */,
 				SOCAL002BUILD002 /* SocialView.swift in Sources */,
 				FRNDSRCH02BUILD /* UserSearchView.swift in Sources */,
-				FRNDSLST02BUILD /* FriendsListView.swift in Sources */,
-				FRNDRQST02BUILD /* FriendRequestsView.swift in Sources */,
 				FRNDSHP002BUILD /* Friendship.swift in Sources */,
+				BDWTMDL002BUILD /* BodyWeightEntry.swift in Sources */,
 				FRNDREPO02BUILD /* FriendshipRepository.swift in Sources */,
+				BDWTREPO02BUILD /* BodyWeightRepository.swift in Sources */,
 				FRNDSVMM02BUILD /* FriendsViewModel.swift in Sources */,
 				CONVMDL002BUILD /* Conversation.swift in Sources */,
 				MSGMDL002BUILD /* Message.swift in Sources */,
@@ -1494,7 +1484,6 @@
 				SOCLCMP02BUILD001 /* SocialComponents.swift in Sources */,
 				PSTDVW02BUILD002 /* PostDetailView.swift in Sources */,
 				CMPSHT02BUILD002 /* ComposePostSheet.swift in Sources */,
-				HLTPKR02BUILD001 /* HighlightPickerView.swift in Sources */,
 				EDTPST02BUILD001 /* EditPostSheet.swift in Sources */,
 				HLTSLCR02BUILD001 /* HighlightSelectionCore.swift in Sources */,
 				CAPTNINP02BUILD001 /* CaptionInputView.swift in Sources */,
@@ -1509,15 +1498,18 @@
 				ANLCHT02BUILD001 /* AnalyticsCharts.swift in Sources */,
 				ANLCAR02BUILD001 /* AnalyticsCardModifier.swift in Sources */,
 				SHRSMY02BUILD01 /* ShareSummaryView.swift in Sources */,
+				BDWTVMO02BUILD001 /* BodyWeightViewModel.swift in Sources */,
+				BDWTCRD02BUILD001 /* BodyWeightCardView.swift in Sources */,
+				EXDETL002BUILD001 /* ExerciseDetailView.swift in Sources */,
 				USRPFL002BUILD002 /* UserProfile.swift in Sources */,
 				USNMVAL02BUILD01 /* UsernameValidation.swift in Sources */,
 				PRFLREP02BUILD01 /* ProfileRepository.swift in Sources */,
-				PRFLEDT02BUILD01 /* ProfileEditView.swift in Sources */,
 				FLOWLAY02BUILD001 /* FlowLayout.swift in Sources */,
 				ACCPRVWBUILD001 /* AccountProfileView.swift in Sources */,
 				SYNCQU002BUILD002 /* SyncQueue.swift in Sources */,
 				SYNCLOG02BUILD002 /* SyncLogger.swift in Sources */,
 				DBGSYN02BUILD002 /* DebugSyncLogsView.swift in Sources */,
+				BLKUSR02BUILD001 /* BlockedUsersView.swift in Sources */,
 				DELTRC02BUILD002 /* DeletionTracker.swift in Sources */,
 				SCHMAV02BUILD002 /* SchemaVersions.swift in Sources */,
 				APPCFG02BUILD002 /* AppConfig.swift in Sources */,
@@ -1531,8 +1523,6 @@
 				QKLGVM02BUILD /* QuickLogViewModel.swift in Sources */,
 				QKLGSHT02BUILD /* QuickLogSheet.swift in Sources */,
 				7DDCA2C505189CE3DB3CACC3 /* Activity.swift in Sources */,
-				F2AE89AB15CB3092F6F4F7A8 /* ActivityViewModel.swift in Sources */,
-				29CC57FCAE2F50F9AA03FE2F /* ActivityFeedView.swift in Sources */,
 				9A3179BD6043C2A129426335 /* FirestoreActivityService.swift in Sources */,
 				F92592D922191FE336C0B476 /* OtherUserProfileView.swift in Sources */,
 				5BB70F59AE96249D975470D6 /* OtherUserProfileViewModel.swift in Sources */,
@@ -1545,14 +1535,12 @@
 				SETATCD02BUILD01 /* SetAttachmentCard.swift in Sources */,
 				MDLATCD02BUILD01 /* ModuleAttachmentCard.swift in Sources */,
 				TMPLATCD02BUILD01 /* TemplateAttachmentCard.swift in Sources */,
-				HLTINLN02BUILD01 /* HighlightsInlineCards.swift in Sources */,
 				PSTCNCD02BUILD01 /* PostContentCard.swift in Sources */,
 				SSNCNCD02BUILD01 /* SessionContentCard.swift in Sources */,
 				EXRCNCD02BUILD01 /* ExerciseContentCard.swift in Sources */,
 				SETCNCD02BUILD01 /* SetContentCard.swift in Sources */,
 				MDLCNCD02BUILD01 /* ModuleContentCard.swift in Sources */,
 				TMPCNCD02BUILD01 /* TemplateContentCard.swift in Sources */,
-				HLTCNCD02BUILD01 /* HighlightsContentCard.swift in Sources */,
 				CMNTROW02BUILD01 /* CommentRow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

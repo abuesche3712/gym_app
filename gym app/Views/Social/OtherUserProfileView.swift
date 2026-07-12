@@ -10,6 +10,7 @@ import SwiftUI
 struct OtherUserProfileView: View {
     @StateObject private var viewModel: OtherUserProfileViewModel
     @State private var showingBlockConfirmation = false
+    @State private var showingReportSheet = false
     @State private var showingConversation = false
     @State private var conversationData: (Conversation, UserProfile, String)?
     @State private var errorMessage = ""
@@ -68,6 +69,12 @@ struct OtherUserProfileView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("They won't be able to see your posts or message you.")
+        }
+        .sheet(isPresented: $showingReportSheet) {
+            ReportSheet(
+                reportedUserId: viewModel.firebaseUserId,
+                contentType: .user
+            )
         }
         .alert("Error", isPresented: $showError) {
             Button("OK") {}
@@ -134,6 +141,12 @@ struct OtherUserProfileView: View {
 
             // More menu
             Menu {
+                Button {
+                    showingReportSheet = true
+                } label: {
+                    Label("Report User", systemImage: "flag")
+                }
+
                 Button(role: .destructive) {
                     showingBlockConfirmation = true
                 } label: {
@@ -276,7 +289,12 @@ struct OtherUserProfileView: View {
                                 onComment: {},
                                 onEdit: nil,
                                 onDelete: nil,
-                                onProfileTap: {}
+                                onProfileTap: {},
+                                onBlockUser: {
+                                    Task<Void, Never> { @MainActor in
+                                        try? await viewModel.blockUser()
+                                    }
+                                }
                             )
                         }
                     }

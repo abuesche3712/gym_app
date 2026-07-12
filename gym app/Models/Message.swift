@@ -88,12 +88,6 @@ enum MessageContent: Codable, Equatable, Hashable {
     case sharedExercise(snapshot: Data)  // SessionExercise with all sets
     case sharedSet(snapshot: Data)       // Single SetData (PR brag)
     case sharedCompletedModule(snapshot: Data)  // CompletedModule from a session
-    case sharedHighlights(snapshot: Data)  // Multiple exercises/sets bundled together
-
-    // Granular sharing (Phase 4 extension)
-    case sharedExerciseInstance(snapshot: Data)  // Exercise config (importable)
-    case sharedSetGroup(snapshot: Data)           // Set prescription (view-only)
-    case sharedCompletedSetGroup(snapshot: Data)  // Completed sets from a session
 
     // Error handling
     case decodeFailed(originalType: String?)  // Fallback when decoding fails
@@ -105,8 +99,7 @@ enum MessageContent: Codable, Equatable, Hashable {
     }
 
     private enum ContentType: String, Codable {
-        case text, sharedProgram, sharedWorkout, sharedModule, sharedSession, sharedExercise, sharedSet, sharedCompletedModule, sharedHighlights
-        case sharedExerciseInstance, sharedSetGroup, sharedCompletedSetGroup
+        case text, sharedProgram, sharedWorkout, sharedModule, sharedSession, sharedExercise, sharedSet, sharedCompletedModule
         case decodeFailed
     }
 
@@ -148,18 +141,6 @@ enum MessageContent: Codable, Equatable, Hashable {
         case .sharedCompletedModule:
             let snapshot = try container.decode(Data.self, forKey: .snapshot)
             self = .sharedCompletedModule(snapshot: snapshot)
-        case .sharedHighlights:
-            let snapshot = try container.decode(Data.self, forKey: .snapshot)
-            self = .sharedHighlights(snapshot: snapshot)
-        case .sharedExerciseInstance:
-            let snapshot = try container.decode(Data.self, forKey: .snapshot)
-            self = .sharedExerciseInstance(snapshot: snapshot)
-        case .sharedSetGroup:
-            let snapshot = try container.decode(Data.self, forKey: .snapshot)
-            self = .sharedSetGroup(snapshot: snapshot)
-        case .sharedCompletedSetGroup:
-            let snapshot = try container.decode(Data.self, forKey: .snapshot)
-            self = .sharedCompletedSetGroup(snapshot: snapshot)
         case .decodeFailed:
             let originalType = try container.decodeIfPresent(String.self, forKey: .originalType)
             self = .decodeFailed(originalType: originalType)
@@ -203,18 +184,6 @@ enum MessageContent: Codable, Equatable, Hashable {
         case .sharedCompletedModule(let snapshot):
             try container.encode(ContentType.sharedCompletedModule, forKey: .type)
             try container.encode(snapshot, forKey: .snapshot)
-        case .sharedHighlights(let snapshot):
-            try container.encode(ContentType.sharedHighlights, forKey: .type)
-            try container.encode(snapshot, forKey: .snapshot)
-        case .sharedExerciseInstance(let snapshot):
-            try container.encode(ContentType.sharedExerciseInstance, forKey: .type)
-            try container.encode(snapshot, forKey: .snapshot)
-        case .sharedSetGroup(let snapshot):
-            try container.encode(ContentType.sharedSetGroup, forKey: .type)
-            try container.encode(snapshot, forKey: .snapshot)
-        case .sharedCompletedSetGroup(let snapshot):
-            try container.encode(ContentType.sharedCompletedSetGroup, forKey: .type)
-            try container.encode(snapshot, forKey: .snapshot)
         case .decodeFailed(let originalType):
             try container.encode(ContentType.decodeFailed, forKey: .type)
             try container.encodeIfPresent(originalType, forKey: .originalType)
@@ -244,14 +213,6 @@ extension MessageContent {
             return "Shared set"
         case .sharedCompletedModule:
             return "Shared module results"
-        case .sharedHighlights:
-            return "Shared workout highlights"
-        case .sharedExerciseInstance:
-            return "Shared exercise config"
-        case .sharedSetGroup:
-            return "Shared set prescription"
-        case .sharedCompletedSetGroup:
-            return "Shared completed sets"
         case .decodeFailed(let originalType):
             if let type = originalType {
                 return "[Failed to load \(type)]"
@@ -294,14 +255,6 @@ extension MessageContent: Identifiable {
             return "set-\(snapshot.hashValue)"
         case .sharedCompletedModule(let snapshot):
             return "completedModule-\(snapshot.hashValue)"
-        case .sharedHighlights(let snapshot):
-            return "highlights-\(snapshot.hashValue)"
-        case .sharedExerciseInstance(let snapshot):
-            return "exerciseInstance-\(snapshot.hashValue)"
-        case .sharedSetGroup(let snapshot):
-            return "setGroup-\(snapshot.hashValue)"
-        case .sharedCompletedSetGroup(let snapshot):
-            return "completedSetGroup-\(snapshot.hashValue)"
         case .decodeFailed(let originalType):
             return "decodeFailed-\(originalType ?? "unknown")"
         }

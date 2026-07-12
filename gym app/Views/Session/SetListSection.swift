@@ -832,38 +832,35 @@ struct UnilateralSideRow: View {
                 if !exercise.isBodyweight {
                     TextField("0", text: $inputWeight)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                        .foregroundColor(AppColors.textPrimary)
+                        .monoFootnote(color: AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 44)
                         .padding(.vertical, 6)
                         .padding(.horizontal, 4)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     Text("×")
                         .caption(color: AppColors.textTertiary)
                 }
                 TextField("0", text: $inputReps)
                     .keyboardType(.numberPad)
-                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                    .foregroundColor(AppColors.textPrimary)
+                    .monoFootnote(color: AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 40)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 4)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                 Text("reps")
                     .caption2(color: AppColors.textTertiary)
 
                 // Band color / string-based implement input
                 if let stringMeasurable = exercise.implementStringMeasurable {
                     TextField(stringMeasurable.measurableName, text: $inputBandColor)
-                        .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                        .foregroundColor(AppColors.textPrimary)
+                        .monoFootnote(color: AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 50)
                         .padding(.vertical, 6)
                         .padding(.horizontal, 4)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     Text(stringMeasurable.implementName.lowercased())
                         .caption2(color: AppColors.textTertiary)
                 }
@@ -876,13 +873,12 @@ struct UnilateralSideRow: View {
                         set: { inputMeasurableValues[measurableKey] = $0 }
                     ))
                     .keyboardType(.decimalPad)
-                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                    .foregroundColor(AppColors.textPrimary)
+                    .monoFootnote(color: AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 44)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 4)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     Text(measurable.unit.isEmpty ? measurable.measurableName : measurable.unit)
                         .caption2(color: AppColors.textTertiary)
                 }
@@ -897,12 +893,11 @@ struct UnilateralSideRow: View {
                             }
                         } label: {
                             Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
-                                .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                                .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
+                                .monoFootnote(color: timerRunning ? AppColors.warning : AppColors.textPrimary)
                                 .frame(minWidth: 48)
                                 .padding(.vertical, 6)
                                 .padding(.horizontal, 6)
-                                .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                                .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                         }
                         .buttonStyle(.pressable)
 
@@ -924,13 +919,12 @@ struct UnilateralSideRow: View {
                 if exercise.cardioMetric.tracksDistance {
                     TextField("0", text: $inputDistance)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                        .foregroundColor(AppColors.textPrimary)
+                        .monoFootnote(color: AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 40)
                         .padding(.vertical, 6)
                         .padding(.horizontal, 4)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     Text(exercise.distanceUnit.abbreviation)
                         .caption2(color: AppColors.textTertiary)
                 }
@@ -949,12 +943,11 @@ struct UnilateralSideRow: View {
                     }
                 } label: {
                     Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputHoldTime > 0 ? "\(inputHoldTime)s" : "0s"))
-                        .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                        .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
+                        .monoFootnote(color: timerRunning ? AppColors.warning : AppColors.textPrimary)
                         .frame(minWidth: 48)
                         .padding(.vertical, 6)
                         .padding(.horizontal, 6)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                 }
                 .buttonStyle(.pressable)
                 Text("hold")
@@ -963,13 +956,12 @@ struct UnilateralSideRow: View {
             case .explosive:
                 TextField("0", text: $inputReps)
                     .keyboardType(.numberPad)
-                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                    .foregroundColor(AppColors.textPrimary)
+                    .monoFootnote(color: AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 36)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 4)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                 Text("reps")
                     .caption2(color: AppColors.textTertiary)
 
@@ -980,13 +972,12 @@ struct UnilateralSideRow: View {
                         set: { inputMeasurableValues[measurableKey] = $0 }
                     ))
                     .keyboardType(measurable.isStringBased ? .default : .decimalPad)
-                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                    .foregroundColor(AppColors.textPrimary)
+                    .monoFootnote(color: AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: measurable.isStringBased ? 52 : 40)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 4)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     Text(measurable.unit.isEmpty ? measurable.measurableName : measurable.unit)
                         .caption2(color: AppColors.textTertiary)
                 }
@@ -994,13 +985,12 @@ struct UnilateralSideRow: View {
                 if showLegacyExplosiveHeightInput {
                     TextField("0", text: $inputHeight)
                         .keyboardType(.decimalPad)
-                        .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                        .foregroundColor(AppColors.textPrimary)
+                        .monoFootnote(color: AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 36)
                         .padding(.vertical, 6)
                         .padding(.horizontal, 4)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     Text("in")
                         .caption2(color: AppColors.textTertiary)
                 }
@@ -1009,13 +999,12 @@ struct UnilateralSideRow: View {
                 if exercise.mobilityTracking.tracksReps {
                     TextField("0", text: $inputReps)
                         .keyboardType(.numberPad)
-                        .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                        .foregroundColor(AppColors.textPrimary)
+                        .monoFootnote(color: AppColors.textPrimary)
                         .multilineTextAlignment(.center)
                         .frame(width: 36)
                         .padding(.vertical, 6)
                         .padding(.horizontal, 4)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                        .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     Text("reps")
                         .caption2(color: AppColors.textTertiary)
                 }
@@ -1027,12 +1016,11 @@ struct UnilateralSideRow: View {
                             }
                         } label: {
                             Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
-                                .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                                .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
+                                .monoFootnote(color: timerRunning ? AppColors.warning : AppColors.textPrimary)
                                 .frame(minWidth: 48)
                                 .padding(.vertical, 6)
                                 .padding(.horizontal, 6)
-                                .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                                .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                         }
                         .buttonStyle(.pressable)
 
@@ -1060,12 +1048,11 @@ struct UnilateralSideRow: View {
                         }
                     } label: {
                         Text(timerRunning ? formatDuration(sessionViewModel.exerciseTimerSeconds) : (inputDuration > 0 ? formatDuration(inputDuration) : "0:00"))
-                            .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                            .foregroundColor(timerRunning ? AppColors.warning : AppColors.textPrimary)
+                            .monoFootnote(color: timerRunning ? AppColors.warning : AppColors.textPrimary)
                             .frame(minWidth: 48)
                             .padding(.vertical, 6)
                             .padding(.horizontal, 6)
-                            .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     }
                     .buttonStyle(.pressable)
 
@@ -1085,25 +1072,23 @@ struct UnilateralSideRow: View {
                 // Temperature field
                 TextField("°F", text: $inputTemperature)
                     .keyboardType(.numberPad)
-                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                    .foregroundColor(AppColors.textPrimary)
+                    .monoFootnote(color: AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 36)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 4)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
             }
 
             if shouldTrackRPE {
                 TextField("-", text: $inputRPE)
                     .keyboardType(.numberPad)
-                    .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                    .foregroundColor(AppColors.textPrimary)
+                    .monoFootnote(color: AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .frame(width: 36)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 4)
-                    .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+                    .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
                     .onChange(of: inputRPE) { _, newValue in
                         if let rpe = Int(newValue), rpe > 10 { inputRPE = "10" }
                     }
@@ -1236,13 +1221,12 @@ struct CompactTextField: View {
     var body: some View {
         TextField(placeholder, text: $text)
             .keyboardType(keyboardType)
-            .font(.system(size: 14, weight: .semibold, design: .monospaced))
-            .foregroundColor(AppColors.textPrimary)
+            .monoFootnote(color: AppColors.textPrimary)
             .multilineTextAlignment(.center)
             .frame(width: width)
             .padding(.vertical, 6)
             .padding(.horizontal, 4)
-            .background(RoundedRectangle(cornerRadius: 6).fill(AppColors.surfacePrimary))
+            .background(RoundedRectangle(cornerRadius: AppCorners.small).fill(AppColors.surfacePrimary))
     }
 }
 

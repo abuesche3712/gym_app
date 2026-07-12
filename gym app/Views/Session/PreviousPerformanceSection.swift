@@ -303,7 +303,7 @@ struct MetricPill: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: AppCorners.small)
                 .fill(color.opacity(0.1))
         )
     }

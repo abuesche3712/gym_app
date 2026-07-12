@@ -110,6 +110,15 @@ struct WorkoutFormView: View {
                     .buttonStyle(.pressable)
                 }
             }
+
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedField = false
+                    hideKeyboard()
+                }
+                .fontWeight(.semibold)
+            }
         }
         .sheet(isPresented: $showingModulePicker) {
             NavigationStack {
@@ -610,6 +619,7 @@ struct WorkoutFormView: View {
     private var notesSection: some View {
         FormSection(title: "Notes", icon: "note.text", iconColor: AppColors.textTertiary) {
             TextEditor(text: $notes)
+                .focused($focusedField)
                 .frame(minHeight: 80)
                 .padding(AppSpacing.md)
                 .background(AppColors.surfacePrimary)
@@ -618,6 +628,13 @@ struct WorkoutFormView: View {
     }
 
     // MARK: - Actions
+
+    /// Resigns first responder globally so the keyboard toolbar's Done button
+    /// dismisses the keyboard regardless of which field (including fields inside
+    /// shared components like FormTextField) currently has focus.
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
 
     private func loadWorkout() {
         if let workout = workout {

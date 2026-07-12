@@ -154,12 +154,6 @@ class ComposePostViewModel: ObservableObject {
                 return "Module: \(bundle.module.moduleName)"
             }
             return "Completed Module"
-        case .highlights(let snapshot):
-            if let bundle = try? HighlightsShareBundle.decode(from: snapshot) {
-                let count = bundle.exercises.count + bundle.sets.count
-                return "\(count) Highlight\(count == 1 ? "" : "s") from \(bundle.workoutName)"
-            }
-            return "Highlights"
         case .text:
             return "Text post"
         }

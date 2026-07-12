@@ -14,27 +14,18 @@ struct AnalyticsComputationSnapshot {
     let weeklyVolumeTrend: [WeeklyVolumePoint]
     let liftTrends: [LiftTrend]
     let exerciseProgress: [E1RMExerciseProgress]
-    let progressionBreakdown: ProgressionBreakdown
-    let engineHealth: ProgressionEngineHealth
-    let decisionProfileHealth: [DecisionProfileHealth]
-    let progressionAlerts: [ProgressionAlert]
-    let dryRunProfiles: [DryRunProfileResult]
-    let dryRunInputCount: Int
     let recentPRs: [PersonalRecordEvent]
-    let muscleGroupVolume: [MuscleGroupVolume]
-    let cardioSummary: CardioSummary
-    let weeklyCardioTrend: [WeeklyCardioPoint]
 }
 
 protocol AnalyticsComputationPerforming {
-    func compute(from sessions: [Session], weeklyVolumeWeeks: Int, decisionWindowDays: Int) async -> AnalyticsComputationSnapshot
+    func compute(from sessions: [Session], weeklyVolumeWeeks: Int) async -> AnalyticsComputationSnapshot
 }
 
 actor AnalyticsComputationActor: AnalyticsComputationPerforming {
     private let analyticsService = AnalyticsService()
 
-    func compute(from sessions: [Session], weeklyVolumeWeeks: Int, decisionWindowDays: Int) async -> AnalyticsComputationSnapshot {
-        let data = analyticsService.dashboardData(from: sessions, weeklyVolumeWeeks: weeklyVolumeWeeks, decisionWindowDays: decisionWindowDays)
+    func compute(from sessions: [Session], weeklyVolumeWeeks: Int) async -> AnalyticsComputationSnapshot {
+        let data = analyticsService.dashboardData(from: sessions, weeklyVolumeWeeks: weeklyVolumeWeeks)
 
         return AnalyticsComputationSnapshot(
             analyzedSessionCount: data.analyzedSessionCount,
@@ -43,16 +34,7 @@ actor AnalyticsComputationActor: AnalyticsComputationPerforming {
             weeklyVolumeTrend: data.weeklyVolumeTrend,
             liftTrends: data.liftTrends,
             exerciseProgress: data.exerciseProgress,
-            progressionBreakdown: data.progressionBreakdown,
-            engineHealth: data.engineHealth,
-            decisionProfileHealth: data.decisionProfileHealth,
-            progressionAlerts: data.progressionAlerts,
-            dryRunProfiles: data.dryRunProfiles,
-            dryRunInputCount: data.dryRunInputCount,
-            recentPRs: data.recentPRs,
-            muscleGroupVolume: data.muscleGroupVolume,
-            cardioSummary: data.cardioSummary,
-            weeklyCardioTrend: data.weeklyCardioTrend
+            recentPRs: data.recentPRs
         )
     }
 }
@@ -130,17 +112,8 @@ final class AnalyticsViewModel: ObservableObject {
     @Published private(set) var strengthExerciseOptions: [String] = []
     @Published private(set) var e1RMProgressByExercise: [String: [E1RMProgressPoint]] = [:]
     @Published var selectedStrengthExercise: String = ""
-    @Published private(set) var progressionBreakdown: ProgressionBreakdown = .empty
-    @Published private(set) var engineHealth: ProgressionEngineHealth = .empty
-    @Published private(set) var decisionProfileHealth: [DecisionProfileHealth] = []
-    @Published private(set) var progressionAlerts: [ProgressionAlert] = []
-    @Published private(set) var dryRunProfiles: [DryRunProfileResult] = []
-    @Published private(set) var dryRunInputCount: Int = 0
     @Published private(set) var recentPRs: [PersonalRecordEvent] = []
     @Published private(set) var analyzedSessionCount = 0
-    @Published private(set) var muscleGroupVolume: [MuscleGroupVolume] = []
-    @Published private(set) var cardioSummary: CardioSummary = .empty
-    @Published private(set) var weeklyCardioTrend: [WeeklyCardioPoint] = []
     @Published var selectedTimeRange: AnalyticsTimeRange = .month
 
     private var computeTask: Task<Void, Never>?
@@ -194,8 +167,7 @@ final class AnalyticsViewModel: ObservableObject {
         computeTask = Task(priority: .userInitiated) {
             let snapshot = await computationPerformer.compute(
                 from: sessions,
-                weeklyVolumeWeeks: range.weeklyVolumeWeeks,
-                decisionWindowDays: range.decisionWindowDays
+                weeklyVolumeWeeks: range.weeklyVolumeWeeks
             )
             guard !Task.isCancelled else { return }
             apply(snapshot, preferredExercise: preferredExercise)
@@ -219,15 +191,6 @@ final class AnalyticsViewModel: ObservableObject {
             selectedStrengthExercise = options.first ?? ""
         }
 
-        progressionBreakdown = snapshot.progressionBreakdown
-        engineHealth = snapshot.engineHealth
-        decisionProfileHealth = snapshot.decisionProfileHealth
-        progressionAlerts = snapshot.progressionAlerts
-        dryRunProfiles = snapshot.dryRunProfiles
-        dryRunInputCount = snapshot.dryRunInputCount
         recentPRs = snapshot.recentPRs
-        muscleGroupVolume = snapshot.muscleGroupVolume
-        cardioSummary = snapshot.cardioSummary
-        weeklyCardioTrend = snapshot.weeklyCardioTrend
     }
 }

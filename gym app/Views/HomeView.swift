@@ -18,14 +18,20 @@ struct HomeView: View {
     @State private var showingTodayWorkoutDetail = false
     @State private var showingQuickSchedule = false
     @State private var showingQuickLog = false
+    @State private var showingStartNowSheet = false
+    @State private var showingActiveSessionAlert = false
 
     // Session recovery state
     @State private var showingRecoveryAlert = false
     @State private var recoverableSession: Session?
     @State private var recoveryInfo: (workoutName: String, startTime: Date, lastUpdated: Date)?
 
+    /// Owned by MainTabView so re-tapping the Home tab can pop to root
+    /// (by clearing the path) without destroying and rebuilding this subtree.
+    @Binding var path: NavigationPath
+
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.xl) {
                     // Custom header
@@ -104,6 +110,28 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showingQuickLog) {
                 QuickLogSheet()
+            }
+            .sheet(isPresented: $showingStartNowSheet) {
+                StartNowSheet(
+                    workouts: workoutViewModel.workouts,
+                    onStartWorkout: { workout in
+                        showingStartNowSheet = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            attemptStartNow(workout)
+                        }
+                    },
+                    onStartEmpty: {
+                        showingStartNowSheet = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            attemptStartFreestyle()
+                        }
+                    }
+                )
+            }
+            .alert("Workout In Progress", isPresented: $showingActiveSessionAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Finish or minimize your current workout before starting another one.")
             }
             .alert("Resume Workout?", isPresented: $showingRecoveryAlert) {
                 Button("Resume") {
@@ -219,19 +247,21 @@ struct HomeView: View {
     }
 
     private func completedTodayBar(session: Session) -> some View {
-        NavigationLink(destination: SessionDetailView(session: session)) {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                HStack {
-                    Text("Today")
-                        .elegantLabel(color: AppColors.success)
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            HStack {
+                Text("Today")
+                    .elegantLabel(color: AppColors.success)
 
-                    Spacer()
+                Spacer()
 
-                    Label("Completed", systemImage: "checkmark.circle.fill")
-                        .caption(color: AppColors.success)
-                        .fontWeight(.medium)
-                }
+                Label("Completed", systemImage: "checkmark.circle.fill")
+                    .caption(color: AppColors.success)
+                    .fontWeight(.medium)
 
+                startNowMenu
+            }
+
+            NavigationLink(destination: SessionDetailView(session: session)) {
                 HStack(spacing: AppSpacing.md) {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         Text(session.displayName)
@@ -270,30 +300,30 @@ struct HomeView: View {
                         .fontWeight(.semibold)
                 }
             }
-            .padding(AppSpacing.cardPadding)
-            .background(
-                ZStack {
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .fill(
-                            LinearGradient(
-                                colors: [AppColors.success.opacity(0.08), AppColors.success.opacity(0.03), AppColors.surfacePrimary],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                    RoundedRectangle(cornerRadius: AppCorners.large)
-                        .stroke(
-                            LinearGradient(
-                                colors: [AppColors.success.opacity(0.3), AppColors.surfaceTertiary.opacity(0.15)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                }
-            )
+            .buttonStyle(.pressable)
         }
-        .buttonStyle(.pressable)
+        .padding(AppSpacing.cardPadding)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .fill(
+                        LinearGradient(
+                            colors: [AppColors.success.opacity(0.08), AppColors.success.opacity(0.03), AppColors.surfacePrimary],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                RoundedRectangle(cornerRadius: AppCorners.large)
+                    .stroke(
+                        LinearGradient(
+                            colors: [AppColors.success.opacity(0.3), AppColors.surfaceTertiary.opacity(0.15)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            }
+        )
     }
 
     private func feelingColor(_ rating: Int) -> Color {
@@ -344,6 +374,8 @@ struct HomeView: View {
                         .caption(color: AppColors.success)
                         .fontWeight(.medium)
                 }
+
+                startNowMenu
             }
 
             HStack(spacing: AppSpacing.md) {
@@ -502,45 +534,102 @@ struct HomeView: View {
         .accessibilityHint("Log an activity without using a workout template")
     }
 
-    private var noScheduleBar: some View {
-        Button {
-            showingQuickSchedule = true
+    /// Discreet overflow menu offering an unplanned session even when today already
+    /// has a scheduled or completed workout. Kept small so it never competes with
+    /// the primary Start action.
+    private var startNowMenu: some View {
+        Menu {
+            Button {
+                attemptStartFreestyle()
+            } label: {
+                Label("Start Empty Workout", systemImage: "bolt.fill")
+            }
+
+            Button {
+                showingStartNowSheet = true
+            } label: {
+                Label("Start Other Workout", systemImage: "list.bullet")
+            }
         } label: {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text("Today")
-                    .elegantLabel(color: AppColors.textTertiary)
+            Image(systemName: "ellipsis.circle")
+                .subheadline(color: AppColors.textTertiary)
+                .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+        }
+        .accessibilityLabel("More workout options")
+    }
 
-                HStack(spacing: AppSpacing.md) {
-                    Image(systemName: "calendar.badge.plus")
-                        .displaySmall(color: AppColors.textTertiary)
+    private var noScheduleBar: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Button {
+                showingQuickSchedule = true
+            } label: {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("Today")
+                        .elegantLabel(color: AppColors.textTertiary)
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("No workout scheduled")
-                            .headline()
+                    HStack(spacing: AppSpacing.md) {
+                        Image(systemName: "calendar.badge.plus")
+                            .displaySmall(color: AppColors.textTertiary)
 
-                        Text("Tap to schedule a workout or rest day")
-                            .caption()
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("No workout scheduled")
+                                .headline()
+
+                            Text("Schedule ahead, or jump in now")
+                                .caption()
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .subheadline(color: AppColors.textTertiary)
+                            .fontWeight(.semibold)
                     }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .subheadline(color: AppColors.textTertiary)
-                        .fontWeight(.semibold)
                 }
             }
-            .padding(AppSpacing.cardPadding)
-            .background(
-                RoundedRectangle(cornerRadius: AppCorners.large)
-                    .fill(AppColors.surfacePrimary)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppCorners.large)
-                            .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [8]))
-                            .foregroundColor(AppColors.surfaceTertiary)
-                    )
-            )
+            .buttonStyle(.pressable)
+
+            // Secondary row: schedule for later, or start something right now.
+            HStack(spacing: AppSpacing.sm) {
+                Button {
+                    showingQuickSchedule = true
+                } label: {
+                    Label("Schedule", systemImage: "calendar")
+                        .caption()
+                        .fontWeight(.semibold)
+                        .foregroundColor(AppColors.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, AppSpacing.sm)
+                        .background(AppColors.surfaceTertiary)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.pressable)
+
+                Button {
+                    showingStartNowSheet = true
+                } label: {
+                    Label("Start Now", systemImage: "bolt.fill")
+                        .caption()
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, AppSpacing.sm)
+                        .background(AppGradients.dominantGradient)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.pressable)
+            }
         }
-        .buttonStyle(.pressable)
+        .padding(AppSpacing.cardPadding)
+        .background(
+            RoundedRectangle(cornerRadius: AppCorners.large)
+                .fill(AppColors.surfacePrimary)
+                .overlay(
+                    RoundedRectangle(cornerRadius: AppCorners.large)
+                        .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [8]))
+                        .foregroundColor(AppColors.surfaceTertiary)
+                )
+        )
     }
 
     // MARK: - Week Calendar
@@ -639,10 +728,37 @@ struct HomeView: View {
         sessionViewModel.startSession(workout: workout, modules: modules, scheduledWorkout: scheduledContext)
         // MainTabView will auto-show full session when isSessionActive becomes true
     }
+
+    // MARK: - Train Now (unplanned sessions)
+
+    /// Start an existing workout right now, outside of the schedule. Used by both the
+    /// no-schedule "Start Now" action and the discreet overflow menu on a day that
+    /// already has a scheduled/completed workout.
+    private func attemptStartNow(_ workout: Workout) {
+        guard !sessionViewModel.isSessionActive else {
+            Logger.debug("HomeView: blocked start-now, a session is already active")
+            showingActiveSessionAlert = true
+            return
+        }
+        Logger.debug("HomeView: starting workout now from Home: \(workout.name)")
+        startWorkout(workout)
+    }
+
+    /// Start an empty freestyle session directly from Home.
+    private func attemptStartFreestyle() {
+        guard !sessionViewModel.isSessionActive else {
+            Logger.debug("HomeView: blocked freestyle start, a session is already active")
+            showingActiveSessionAlert = true
+            return
+        }
+        Logger.debug("HomeView: starting freestyle session from Home")
+        sessionViewModel.startFreestyleSession()
+        // MainTabView will auto-show full session when isSessionActive becomes true
+    }
 }
 
 #Preview {
-    HomeView()
+    HomeView(path: .constant(NavigationPath()))
         .environmentObject(AppState.shared)
         .environmentObject(AppState.shared.moduleViewModel)
         .environmentObject(AppState.shared.workoutViewModel)

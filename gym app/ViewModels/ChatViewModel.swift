@@ -532,10 +532,6 @@ class ChatViewModel: ObservableObject {
             guard let bundle = try? ModuleShareBundle.decode(from: snapshot) else { return [] }
             return sharingService.detectConflicts(from: bundle)
 
-        case .sharedExerciseInstance(let snapshot):
-            guard let bundle = try? ExerciseInstanceShareBundle.decode(from: snapshot) else { return [] }
-            return sharingService.detectConflicts(from: bundle)
-
         default:
             return []
         }
@@ -563,12 +559,6 @@ class ChatViewModel: ObservableObject {
                 return .failure("Invalid module data")
             }
             return sharingService.importModule(from: bundle, options: options)
-
-        case .sharedExerciseInstance(let snapshot):
-            guard let bundle = try? ExerciseInstanceShareBundle.decode(from: snapshot) else {
-                return .failure("Invalid exercise data")
-            }
-            return sharingService.importExerciseInstance(from: bundle, options: options)
 
         default:
             return .failure("Content cannot be imported")

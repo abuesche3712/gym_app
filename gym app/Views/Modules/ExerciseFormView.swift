@@ -52,6 +52,7 @@ struct ExerciseFormView: View {
     @State private var showingAddSetGroup = false
     @State private var editingSetGroup: EditingIndex?
     @State private var showingExercisePicker = false
+    @FocusState private var focusedField: Bool
 
     // Session mode: preserve completed set data per set group
     @State private var completedSetsMap: [UUID: [SetData]] = [:]  // setGroupId -> completed sets
@@ -100,6 +101,7 @@ struct ExerciseFormView: View {
             }
             .padding(AppSpacing.screenPadding)
         }
+        .scrollDismissesKeyboard(.interactively)
         .background(AppColors.background.ignoresSafeArea())
         .navigationTitle(isEditing ? "Edit Exercise" : "New Exercise")
         .navigationBarTitleDisplayMode(.inline)
@@ -118,6 +120,15 @@ struct ExerciseFormView: View {
                 .fontWeight(.semibold)
                 .foregroundColor(name.trimmingCharacters(in: .whitespaces).isEmpty ? AppColors.textTertiary : AppColors.dominant)
                 .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedField = false
+                    hideKeyboard()
+                }
+                .fontWeight(.semibold)
             }
         }
         .sheet(isPresented: $showingAddSetGroup) {
@@ -539,6 +550,7 @@ struct ExerciseFormView: View {
     private var notesSection: some View {
         FormSection(title: "Notes", icon: "note.text", iconColor: AppColors.textTertiary) {
             TextEditor(text: $notes)
+                .focused($focusedField)
                 .frame(minHeight: 80)
                 .padding(AppSpacing.md)
                 .background(AppColors.surfacePrimary)
@@ -561,6 +573,12 @@ struct ExerciseFormView: View {
     }
 
     // MARK: - Helpers
+
+    /// Resigns first responder globally so the keyboard toolbar's Done button
+    /// dismisses the keyboard regardless of which field currently has focus.
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
 
     private func binding(for index: Int) -> Binding<SetGroup> {
         Binding(

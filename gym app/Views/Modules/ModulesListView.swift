@@ -9,12 +9,12 @@ import SwiftUI
 
 struct ModulesListView: View {
     @EnvironmentObject var moduleViewModel: ModuleViewModel
-    @Environment(\.dismiss) private var dismiss
     @State private var showingAddModule = false
     @State private var searchText = ""
     @State private var selectedType: ModuleType?
     @State private var navigateToModule: Module?
     @State private var editingModule: Module?
+    @State private var modulePendingDelete: Module?
 
     // Selection mode support for share flow
     var selectionMode: ViewSelectionMode? = nil
@@ -37,107 +37,106 @@ struct ModulesListView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: AppSpacing.lg) {
-                    // Custom header
-                    modulesHeader
-                        .padding(.horizontal, AppSpacing.screenPadding)
+        ScrollView {
+            VStack(spacing: AppSpacing.lg) {
+                // Custom header
+                modulesHeader
+                    .padding(.horizontal, AppSpacing.screenPadding)
 
-                    // Type filter pills
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: AppSpacing.sm) {
-                            FilterPill(title: "All", isSelected: selectedType == nil) {
+                // Type filter pills
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: AppSpacing.sm) {
+                        FilterPill(title: "All", isSelected: selectedType == nil) {
+                            withAnimation(AppAnimation.quick) {
+                                selectedType = nil
+                            }
+                        }
+
+                        ForEach(ModuleType.allCases) { type in
+                            FilterPill(
+                                title: type.displayName,
+                                isSelected: selectedType == type,
+                                tint: AppColors.moduleColor(type)
+                            ) {
                                 withAnimation(AppAnimation.quick) {
-                                    selectedType = nil
-                                }
-                            }
-
-                            ForEach(ModuleType.allCases) { type in
-                                FilterPill(
-                                    title: type.displayName,
-                                    isSelected: selectedType == type,
-                                    tint: AppColors.moduleColor(type)
-                                ) {
-                                    withAnimation(AppAnimation.quick) {
-                                        selectedType = type
-                                    }
+                                    selectedType = type
                                 }
                             }
                         }
-                        .padding(.horizontal, AppSpacing.screenPadding)
                     }
-
-                    // Modules list
-                    if filteredModules.isEmpty {
-                        Group {
-                            if moduleViewModel.modules.isEmpty {
-                                EmptyStateView(
-                                    icon: "square.stack.3d.up",
-                                    title: "No Modules",
-                                    subtitle: "Create a module to organize your exercises",
-                                    buttonTitle: "Create Module",
-                                    onButtonTap: {
-                                        showingAddModule = true
-                                    }
-                                )
-                            } else {
-                                EmptyStateView(
-                                    icon: "magnifyingglass",
-                                    title: "No Matches",
-                                    subtitle: "Try a different search or filter"
-                                )
-                            }
-                        }
-                        .padding(.top, AppSpacing.xxl)
-                    } else {
-                        LazyVStack(spacing: AppSpacing.md) {
-                            ForEach(filteredModules) { module in
-                                if isSelectionMode {
-                                    Button {
-                                        onSelectForShare?(module)
-                                    } label: {
-                                        ModuleListCard(module: module, showExercises: selectedType != nil, showShareIcon: true)
-                                    }
-                                    .buttonStyle(.pressable)
-                                    .transition(.asymmetric(
-                                        insertion: .opacity.combined(with: .scale(scale: 0.95)),
-                                        removal: .opacity
-                                    ))
-                                    .animation(AppMotion.reveal, value: filteredModules.count)
-                                } else {
-                                    Button {
-                                        editingModule = module
-                                    } label: {
-                                        ModuleListCard(module: module, showExercises: selectedType != nil)
-                                    }
-                                    .buttonStyle(.pressable)
-                                    .transition(.asymmetric(
-                                        insertion: .opacity.combined(with: .scale(scale: 0.95)),
-                                        removal: .opacity
-                                    ))
-                                    .animation(AppMotion.reveal, value: filteredModules.count)
-                                    .contextMenu {
-                                        Button(role: .destructive) {
-                                            moduleViewModel.deleteModule(module)
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.horizontal, AppSpacing.screenPadding)
-                        .animation(AppMotion.reveal, value: filteredModules.count)
-                    }
+                    .padding(.horizontal, AppSpacing.screenPadding)
                 }
-                .padding(.vertical, AppSpacing.md)
+
+                // Modules list
+                if filteredModules.isEmpty {
+                    Group {
+                        if moduleViewModel.modules.isEmpty {
+                            EmptyStateView(
+                                icon: "square.stack.3d.up",
+                                title: "No Modules",
+                                subtitle: "Create a module to organize your exercises",
+                                buttonTitle: "Create Module",
+                                onButtonTap: {
+                                    showingAddModule = true
+                                }
+                            )
+                        } else {
+                            EmptyStateView(
+                                icon: "magnifyingglass",
+                                title: "No Matches",
+                                subtitle: "Try a different search or filter"
+                            )
+                        }
+                    }
+                    .padding(.top, AppSpacing.xxl)
+                } else {
+                    LazyVStack(spacing: AppSpacing.md) {
+                        ForEach(filteredModules) { module in
+                            if isSelectionMode {
+                                Button {
+                                    onSelectForShare?(module)
+                                } label: {
+                                    ModuleListCard(module: module, showExercises: selectedType != nil, showShareIcon: true)
+                                }
+                                .buttonStyle(.pressable)
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                                    removal: .opacity
+                                ))
+                                .animation(AppMotion.reveal, value: filteredModules.count)
+                            } else {
+                                Button {
+                                    editingModule = module
+                                } label: {
+                                    ModuleListCard(module: module, showExercises: selectedType != nil)
+                                }
+                                .buttonStyle(.pressable)
+                                .transition(.asymmetric(
+                                    insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                                    removal: .opacity
+                                ))
+                                .animation(AppMotion.reveal, value: filteredModules.count)
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        modulePendingDelete = module
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, AppSpacing.screenPadding)
+                    .animation(AppMotion.reveal, value: filteredModules.count)
+                }
             }
-            .background(AppColors.background.ignoresSafeArea())
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar(.hidden, for: .navigationBar)
-            .searchable(text: $searchText, prompt: "Search modules")
-            .toolbar {
+            .padding(.vertical, AppSpacing.md)
+        }
+        .background(AppColors.background.ignoresSafeArea())
+        .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchText, prompt: "Search modules")
+        .toolbar {
+            if !isSelectionMode {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showingAddModule = true
@@ -148,24 +147,41 @@ struct ModulesListView: View {
                     .buttonStyle(.pressable)
                 }
             }
-            .sheet(isPresented: $showingAddModule) {
-                NavigationStack {
-                    ModuleFormView(module: nil) { createdModule in
-                        navigateToModule = createdModule
-                    }
+        }
+        .sheet(isPresented: $showingAddModule) {
+            NavigationStack {
+                ModuleFormView(module: nil) { createdModule in
+                    navigateToModule = createdModule
                 }
             }
-            .navigationDestination(item: $navigateToModule) { module in
-                ModuleDetailView(module: module)
+        }
+        .navigationDestination(item: $navigateToModule) { module in
+            ModuleDetailView(module: module)
+        }
+        .sheet(item: $editingModule) { module in
+            NavigationStack {
+                ModuleFormView(module: module)
             }
-            .sheet(item: $editingModule) { module in
-                NavigationStack {
-                    ModuleFormView(module: module)
-                }
+        }
+        .confirmationDialog(
+            "Delete Module",
+            isPresented: Binding(
+                get: { modulePendingDelete != nil },
+                set: { if !$0 { modulePendingDelete = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: modulePendingDelete
+        ) { module in
+            Button("Delete \"\(module.name)\"", role: .destructive) {
+                HapticManager.shared.warning()
+                moduleViewModel.deleteModule(module)
+                modulePendingDelete = nil
             }
-            .refreshable {
-                moduleViewModel.loadModules()
-            }
+        } message: { module in
+            Text("This will permanently delete \"\(module.name)\". This action cannot be undone.")
+        }
+        .refreshable {
+            moduleViewModel.loadModules()
         }
     }
 
@@ -173,47 +189,6 @@ struct ModulesListView: View {
 
     private var modulesHeader: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            // Navigation row with circular back and plus buttons
-            HStack {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .body(color: AppColors.accent3)
-                        .fontWeight(.semibold)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            Circle()
-                                .fill(AppColors.accent3.opacity(0.1))
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(AppColors.accent3.opacity(0.2), lineWidth: 1)
-                        )
-                }
-
-                Spacer()
-
-                if !isSelectionMode {
-                    Button {
-                        showingAddModule = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .body(color: AppColors.accent3)
-                            .fontWeight(.semibold)
-                            .frame(width: 36, height: 36)
-                            .background(
-                                Circle()
-                                    .fill(AppColors.accent3.opacity(0.1))
-                            )
-                            .overlay(
-                                Circle()
-                                    .stroke(AppColors.accent3.opacity(0.2), lineWidth: 1)
-                            )
-                    }
-                }
-            }
-
             // Title section
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -370,6 +345,8 @@ struct ModuleListCard: View {
 }
 
 #Preview {
-    ModulesListView()
-        .environmentObject(ModuleViewModel())
+    NavigationStack {
+        ModulesListView()
+    }
+    .environmentObject(ModuleViewModel())
 }

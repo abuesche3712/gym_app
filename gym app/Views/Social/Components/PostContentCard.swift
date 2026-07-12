@@ -40,9 +40,6 @@ struct PostContentCard: View {
             case .module(_, let name, let snapshot):
                 TemplateContentCard(type: "Module", name: name, icon: "square.stack.3d.up.fill", color: AppColors.accent3, snapshot: snapshot, onTap: onTap)
 
-            case .highlights(let snapshot):
-                HighlightsContentCard(snapshot: snapshot)
-
             case .text:
                 EmptyView()
             }

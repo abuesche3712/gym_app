@@ -717,6 +717,112 @@ struct QuickScheduleTodaySheet: View {
     }
 }
 
+// MARK: - Start Now Sheet
+
+/// Compact sheet for launching an unplanned session right now — either an existing
+/// workout started immediately (not scheduled) or an empty freestyle session.
+struct StartNowSheet: View {
+    let workouts: [Workout]
+    let onStartWorkout: (Workout) -> Void
+    let onStartEmpty: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppSpacing.xl) {
+                    // Freestyle option
+                    VStack(alignment: .leading, spacing: AppSpacing.md) {
+                        Label("Freestyle", systemImage: "bolt.fill")
+                            .headline(color: AppColors.dominant)
+
+                        Button {
+                            onStartEmpty()
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Start Empty Workout")
+                                        .subheadline(color: AppColors.textPrimary)
+                                        .fontWeight(.medium)
+
+                                    Text("Add exercises as you go")
+                                        .caption(color: AppColors.textSecondary)
+                                }
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .caption(color: AppColors.textTertiary)
+                                    .fontWeight(.semibold)
+                            }
+                            .padding(AppSpacing.md)
+                            .background(
+                                RoundedRectangle(cornerRadius: AppCorners.medium)
+                                    .fill(AppColors.dominant.opacity(0.1))
+                            )
+                        }
+                        .buttonStyle(.pressable)
+                    }
+
+                    // Existing workouts - tap to start immediately
+                    VStack(alignment: .leading, spacing: AppSpacing.md) {
+                        Label("Start a Workout", systemImage: "figure.strengthtraining.traditional")
+                            .headline(color: AppColors.textPrimary)
+
+                        if workouts.isEmpty {
+                            Text("No workouts available. Create a workout first.")
+                                .subheadline(color: AppColors.textSecondary)
+                                .padding()
+                        } else {
+                            ForEach(workouts) { workout in
+                                Button {
+                                    onStartWorkout(workout)
+                                } label: {
+                                    HStack {
+                                        Text(workout.name)
+                                            .subheadline(color: AppColors.textPrimary)
+                                            .fontWeight(.medium)
+
+                                        Spacer()
+
+                                        Text("Start")
+                                            .caption(color: .white)
+                                            .fontWeight(.bold)
+                                            .padding(.horizontal, AppSpacing.md)
+                                            .padding(.vertical, AppSpacing.xs)
+                                            .background(AppGradients.dominantGradient)
+                                            .clipShape(Capsule())
+                                    }
+                                    .padding(AppSpacing.md)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: AppCorners.medium)
+                                            .fill(AppColors.surfacePrimary)
+                                    )
+                                }
+                                .buttonStyle(.pressable)
+                            }
+                        }
+                    }
+                }
+                .padding(AppSpacing.screenPadding)
+            }
+            .sheetBackground()
+            .navigationTitle("Start Now")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(AppColors.textSecondary)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(.ultraThinMaterial)
+    }
+}
+
 // MARK: - Identifiable Date Wrapper
 
 struct IdentifiableDate: Identifiable {

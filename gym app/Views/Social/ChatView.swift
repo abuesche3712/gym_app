@@ -446,36 +446,6 @@ struct MessageBubble: View {
         case .sharedCompletedModule:
             sharedContentView(icon: "square.stack.3d.up.fill", label: "Module Results", name: "Completed module")
 
-        case .sharedHighlights(let snapshot):
-            if let bundle = try? HighlightsShareBundle.decode(from: snapshot) {
-                let count = bundle.exercises.count + bundle.sets.count
-                sharedContentView(icon: "star.fill", label: "\(count) Highlight\(count == 1 ? "" : "s")", name: bundle.workoutName)
-            } else {
-                sharedContentView(icon: "star.fill", label: "Highlights", name: "Workout highlights")
-            }
-
-        case .sharedExerciseInstance(let snapshot):
-            if let bundle = try? ExerciseInstanceShareBundle.decode(from: snapshot) {
-                sharedContentView(icon: "dumbbell.fill", label: "Exercise Config", name: bundle.exerciseInstance.name)
-            } else {
-                sharedContentView(icon: "dumbbell.fill", label: "Exercise Config", name: "Shared exercise")
-            }
-
-        case .sharedSetGroup(let snapshot):
-            if let bundle = try? SetGroupShareBundle.decode(from: snapshot) {
-                sharedContentView(icon: "list.bullet.rectangle", label: "Set Prescription", name: "\(bundle.setGroup.sets) sets of \(bundle.exerciseName)")
-            } else {
-                sharedContentView(icon: "list.bullet.rectangle", label: "Set Prescription", name: "Shared prescription")
-            }
-
-        case .sharedCompletedSetGroup(let snapshot):
-            if let bundle = try? CompletedSetGroupShareBundle.decode(from: snapshot) {
-                let completedCount = bundle.completedSetGroup.sets.filter(\.completed).count
-                sharedContentView(icon: "checkmark.rectangle.stack.fill", label: "Completed Sets", name: "\(completedCount) sets of \(bundle.exerciseName)")
-            } else {
-                sharedContentView(icon: "checkmark.rectangle.stack.fill", label: "Completed Sets", name: "Shared sets")
-            }
-
         case .decodeFailed(let originalType):
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 HStack(spacing: AppSpacing.xs) {

@@ -37,6 +37,12 @@ struct ProgramFormView: View {
     @State private var showingDeactivateAlert = false
     @State private var showingDeleteAlert = false
 
+    private enum FormField: Hashable {
+        case name
+        case description
+    }
+    @FocusState private var focusedField: FormField?
+
     private let durationOptions = [2, 4, 6, 8, 10, 12, 16]
     private let dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
@@ -103,9 +109,19 @@ struct ProgramFormView: View {
             }
             .padding(AppSpacing.screenPadding)
         }
+        .scrollDismissesKeyboard(.interactively)
         .background(AppColors.background.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    focusedField = nil
+                }
+                .fontWeight(.semibold)
+            }
+        }
         .sheet(isPresented: $showingAddSlotSheet) {
             if let dayOfWeek = selectedDayOfWeek {
                 InlineAddSlotSheet(
@@ -227,6 +243,7 @@ struct ProgramFormView: View {
 
                     TextField("e.g. 8-Week Strength", text: $name)
                         .font(.body)
+                        .focused($focusedField, equals: .name)
                         .padding(AppSpacing.md)
                         .background(AppColors.surfaceTertiary)
                         .cornerRadius(AppCorners.medium)
@@ -266,6 +283,7 @@ struct ProgramFormView: View {
 
                     TextField("Goals, focus areas, etc.", text: $description, axis: .vertical)
                         .font(.body)
+                        .focused($focusedField, equals: .description)
                         .lineLimit(2...4)
                         .padding(AppSpacing.md)
                         .background(AppColors.surfaceTertiary)

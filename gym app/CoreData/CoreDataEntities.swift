@@ -2075,6 +2075,34 @@ public class PostCommentEntity: NSManagedObject, SyncableEntity {
     }
 }
 
+// MARK: - Body Weight Entry Entity
+
+@objc(BodyWeightEntryEntity)
+public class BodyWeightEntryEntity: NSManagedObject {
+    @NSManaged public var id: UUID
+    @NSManaged public var date: Date
+    @NSManaged public var weightKg: Double
+    @NSManaged public var note: String?
+
+    /// Convert to domain model
+    func toModel() -> BodyWeightEntry {
+        BodyWeightEntry(
+            id: id,
+            date: date,
+            weightKg: weightKg,
+            note: note
+        )
+    }
+
+    /// Update entity from domain model
+    func update(from entry: BodyWeightEntry) {
+        self.id = entry.id
+        self.date = entry.date
+        self.weightKg = entry.weightKg
+        self.note = entry.note
+    }
+}
+
 /// Model representation of a deletion record
 struct DeletionRecord: Identifiable, Codable {
     let id: UUID

@@ -28,7 +28,6 @@ class FeedViewModel: ObservableObject {
     private var newPostObserver: Any?
     private var commentCountObserver: Any?
     private var friendshipCancellable: AnyCancellable?
-    private let activityService = FirestoreActivityService.shared
 
     var currentUserId: String? { authService.currentUser?.uid }
     var filteredFeedPosts: [PostWithAuthor] { posts }
@@ -302,15 +301,6 @@ class FeedViewModel: ObservableObject {
                 likedPostIds.insert(post.post.id)
                 let like = PostLike(postId: post.post.id, userId: userId, reactionType: reactionType)
                 postRepo.saveLike(like)
-
-                // Create activity for post author
-                let activity = Activity(
-                    recipientId: post.post.authorId,
-                    actorId: userId,
-                    type: .like,
-                    postId: post.post.id
-                )
-                try? await activityService.createActivity(activity)
             }
             HapticManager.shared.tap()
         } catch {
@@ -352,15 +342,6 @@ class FeedViewModel: ObservableObject {
             likedPostIds.insert(post.post.id)
             let like = PostLike(postId: post.post.id, userId: userId, reactionType: reactionType)
             postRepo.saveLike(like)
-
-            // Create activity for post author
-            let activity = Activity(
-                recipientId: post.post.authorId,
-                actorId: userId,
-                type: .like,
-                postId: post.post.id
-            )
-            try? await activityService.createActivity(activity)
             HapticManager.shared.tap()
         } catch {
             self.error = error

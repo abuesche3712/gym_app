@@ -351,45 +351,6 @@ final class gym_appTests: XCTestCase {
             service.strengthE1RMProgressByExercise(from: sessions)
         )
         XCTAssertEqual(
-            dashboard.progressionBreakdown,
-            service.progressionBreakdown(
-                from: sessions,
-                days: AnalyticsConfig.defaultBreakdownWindowDays,
-                referenceDate: reference
-            )
-        )
-        XCTAssertEqual(
-            dashboard.engineHealth,
-            service.engineHealth(
-                from: sessions,
-                days: AnalyticsConfig.defaultEngineHealthWindowDays,
-                referenceDate: reference
-            )
-        )
-        XCTAssertEqual(
-            dashboard.decisionProfileHealth,
-            service.decisionProfileHealth(
-                from: sessions,
-                days: AnalyticsConfig.defaultDecisionProfileWindowDays,
-                referenceDate: reference
-            )
-        )
-        XCTAssertEqual(
-            dashboard.progressionAlerts,
-            service.progressionAlerts(
-                from: sessions,
-                days: AnalyticsConfig.defaultAlertWindowDays,
-                referenceDate: reference
-            )
-        )
-
-        let dryRun = service.dryRunProfiles(
-            from: sessions,
-            recentSessionLimit: AnalyticsConfig.defaultRecentSessionLimit
-        )
-        XCTAssertEqual(dashboard.dryRunInputCount, dryRun.inputCount)
-        XCTAssertEqual(dashboard.dryRunProfiles, dryRun.results)
-        XCTAssertEqual(
             normalizedPersonalRecordEvents(dashboard.recentPRs),
             normalizedPersonalRecordEvents(
                 service.recentPRs(sessions: sessions, limit: AnalyticsConfig.defaultRecentPRLimit)
@@ -569,8 +530,7 @@ final class AnalyticsViewModelTests: XCTestCase {
 
         func compute(
             from sessions: [Session],
-            weeklyVolumeWeeks _: Int,
-            decisionWindowDays _: Int
+            weeklyVolumeWeeks _: Int
         ) async -> AnalyticsComputationSnapshot {
             callCount += 1
             if delayNanos > 0 {
@@ -584,16 +544,7 @@ final class AnalyticsViewModelTests: XCTestCase {
                 weeklyVolumeTrend: [],
                 liftTrends: [],
                 exerciseProgress: [],
-                progressionBreakdown: .empty,
-                engineHealth: .empty,
-                decisionProfileHealth: [],
-                progressionAlerts: [],
-                dryRunProfiles: [],
-                dryRunInputCount: 0,
-                recentPRs: [],
-                muscleGroupVolume: [],
-                cardioSummary: .empty,
-                weeklyCardioTrend: []
+                recentPRs: []
             )
         }
     }

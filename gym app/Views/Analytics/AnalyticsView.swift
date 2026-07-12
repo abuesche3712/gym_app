@@ -7,21 +7,45 @@
 
 import SwiftUI
 
+/// Identifies which exercise's drill-down detail sheet is presented, if any.
+private struct ExerciseDetailTarget: Identifiable {
+    let exerciseName: String
+    var id: String { exerciseName }
+}
+
 struct AnalyticsView: View {
     @EnvironmentObject var sessionViewModel: SessionViewModel
+    @EnvironmentObject var appState: AppState
     @StateObject private var viewModel = AnalyticsViewModel()
+    @StateObject private var bodyWeightViewModel = BodyWeightViewModel()
 
+    @AppStorage("analytics_bodyExpanded") private var bodyExpanded = true
     @AppStorage("analytics_trainingExpanded") private var trainingExpanded = true
     @AppStorage("analytics_strengthExpanded") private var strengthExpanded = true
 
     @State private var showingShareSummary = false
+    @State private var exerciseDetailTarget: ExerciseDetailTarget?
+
+    /// Owned by MainTabView so re-tapping the Analytics tab can pop to root
+    /// (by clearing the path) without destroying and rebuilding this subtree.
+    @Binding var path: NavigationPath
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 VStack(spacing: AppSpacing.xl) {
                     analyticsHeader
                     timeRangePicker
+
+                    // Bodyweight tracking is independent of session history
+                    sectionHeader("BODY", isExpanded: $bodyExpanded)
+                    if bodyExpanded {
+                        BodyWeightCard(
+                            viewModel: bodyWeightViewModel,
+                            unit: appState.weightUnit,
+                            timeRange: viewModel.selectedTimeRange
+                        )
+                    }
 
                     if viewModel.analyzedSessionCount == 0 {
                         emptyState
@@ -51,6 +75,9 @@ struct AnalyticsView: View {
             .sheet(isPresented: $showingShareSummary) {
                 ShareSummaryView(viewModel: viewModel)
             }
+            .sheet(item: $exerciseDetailTarget) { target in
+                ExerciseDetailView(exerciseName: target.exerciseName, sessions: sessionViewModel.sessions)
+            }
             .onAppear {
                 viewModel.load(from: sessionViewModel.sessions)
             }
@@ -73,6 +100,14 @@ struct AnalyticsView: View {
 
                 Button { showingShareSummary = true } label: {
                     Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(AppColors.textSecondary)
+                        .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
+                }
+                .buttonStyle(.pressable)
+
+                NavigationLink(destination: HistoryView()) {
+                    Image(systemName: "clock.arrow.circlepath")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundColor(AppColors.textSecondary)
                         .frame(width: AppSpacing.minTouchTarget, height: AppSpacing.minTouchTarget)
@@ -203,32 +238,41 @@ struct AnalyticsView: View {
                     .caption(color: AppColors.textTertiary)
             } else {
                 ForEach(viewModel.liftTrends) { trend in
-                    HStack(spacing: AppSpacing.sm) {
-                        Image(systemName: icon(for: trend.direction))
-                            .foregroundColor(color(for: trend.direction))
-                            .frame(width: 20)
+                    Button {
+                        exerciseDetailTarget = ExerciseDetailTarget(exerciseName: trend.exerciseName)
+                    } label: {
+                        HStack(spacing: AppSpacing.sm) {
+                            Image(systemName: icon(for: trend.direction))
+                                .foregroundColor(color(for: trend.direction))
+                                .frame(width: 20)
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(trend.exerciseName)
-                                .subheadline(color: AppColors.textPrimary)
-                                .fontWeight(.semibold)
-                            Text("\(trend.sessionCount) logged sessions")
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(trend.exerciseName)
+                                    .subheadline(color: AppColors.textPrimary)
+                                    .fontWeight(.semibold)
+                                Text("\(trend.sessionCount) logged sessions")
+                                    .caption(color: AppColors.textTertiary)
+                            }
+
+                            Spacer()
+
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text(trend.latestTopSet.formatted)
+                                    .monoSmall(color: AppColors.textPrimary)
+                                if let deltaWeight = trend.deltaWeight {
+                                    let deltaText = deltaWeight == 0 ? "No change" : "\(deltaWeight > 0 ? "+" : "")\(formatWeight(deltaWeight)) lbs"
+                                    Text(deltaText)
+                                        .caption(color: color(for: trend.direction))
+                                }
+                            }
+
+                            Image(systemName: "chevron.right")
                                 .caption(color: AppColors.textTertiary)
                         }
-
-                        Spacer()
-
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text(trend.latestTopSet.formatted)
-                                .monoSmall(color: AppColors.textPrimary)
-                            if let deltaWeight = trend.deltaWeight {
-                                let deltaText = deltaWeight == 0 ? "No change" : "\(deltaWeight > 0 ? "+" : "")\(formatWeight(deltaWeight)) lbs"
-                                Text(deltaText)
-                                    .caption(color: color(for: trend.direction))
-                            }
-                        }
+                        .padding(.vertical, 2)
+                        .contentShape(Rectangle())
                     }
-                    .padding(.vertical, 2)
+                    .buttonStyle(.pressable)
                 }
             }
         }
@@ -300,30 +344,39 @@ struct AnalyticsView: View {
                     .caption(color: AppColors.textTertiary)
             } else {
                 ForEach(viewModel.recentPRs.prefix(3)) { pr in
-                    HStack(spacing: AppSpacing.sm) {
-                        Image(systemName: "trophy.fill")
-                            .foregroundColor(AppColors.warning)
+                    Button {
+                        exerciseDetailTarget = ExerciseDetailTarget(exerciseName: pr.exerciseName)
+                    } label: {
+                        HStack(spacing: AppSpacing.sm) {
+                            Image(systemName: "trophy.fill")
+                                .foregroundColor(AppColors.warning)
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(pr.summary)
-                                .subheadline(color: AppColors.textPrimary)
-                                .fontWeight(.semibold)
-                            Text("Estimated 1RM: \(formatWeight(pr.newBest)) lbs")
-                                .caption(color: AppColors.textSecondary)
-                                .lineLimit(2)
-                        }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(pr.summary)
+                                    .subheadline(color: AppColors.textPrimary)
+                                    .fontWeight(.semibold)
+                                Text("Estimated 1RM: \(formatWeight(pr.newBest)) lbs")
+                                    .caption(color: AppColors.textSecondary)
+                                    .lineLimit(2)
+                            }
 
-                        Spacer()
+                            Spacer()
 
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text(formatMonthDay(pr.date))
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text(formatMonthDay(pr.date))
+                                    .caption(color: AppColors.textTertiary)
+                                Text("+\(formatWeight(pr.improvement)) e1RM")
+                                    .caption(color: AppColors.success)
+                                    .fontWeight(.semibold)
+                            }
+
+                            Image(systemName: "chevron.right")
                                 .caption(color: AppColors.textTertiary)
-                            Text("+\(formatWeight(pr.improvement)) e1RM")
-                                .caption(color: AppColors.success)
-                                .fontWeight(.semibold)
                         }
+                        .padding(.vertical, 2)
+                        .contentShape(Rectangle())
                     }
-                    .padding(.vertical, 2)
+                    .buttonStyle(.pressable)
                 }
             }
         }
@@ -371,6 +424,7 @@ struct AnalyticsView: View {
 }
 
 #Preview {
-    AnalyticsView()
+    AnalyticsView(path: .constant(NavigationPath()))
         .environmentObject(SessionViewModel())
+        .environmentObject(AppState.shared)
 }

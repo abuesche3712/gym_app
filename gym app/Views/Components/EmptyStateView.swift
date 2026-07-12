@@ -15,10 +15,13 @@ struct EmptyStateView: View {
     var buttonIcon: String? = nil
     var onButtonTap: (() -> Void)? = nil
 
+    /// Base icon point size (at the default Dynamic Type size), scaled with accessibility text sizes.
+    @ScaledMetric(relativeTo: .largeTitle) private var iconSize: CGFloat = 48
+
     var body: some View {
         VStack(spacing: AppSpacing.md) {
             Image(systemName: icon)
-                .font(.system(size: 48))
+                .font(.system(size: iconSize))
                 .foregroundColor(AppColors.textTertiary)
 
             Text(title)

@@ -27,7 +27,6 @@ class FirestoreService: ObservableObject {
     private let library = FirestoreLibraryService.shared
     private let conflict = FirestoreConflictService.shared
     private let deletion = FirestoreDeletionService.shared
-    private let activity = FirestoreActivityService.shared
 
     // MARK: - Published State (forwarded from sync service)
 
@@ -472,27 +471,5 @@ class FirestoreService: ObservableObject {
 
     func cleanupOldDeletionRecords(olderThan date: Date) async throws -> Int {
         try await deletion.cleanupOldDeletionRecords(olderThan: date)
-    }
-
-    // MARK: - Activity Operations
-
-    func createActivity(_ activityItem: Activity) async throws {
-        try await activity.createActivity(activityItem)
-    }
-
-    func listenToActivities(userId: String, limit: Int = 50, onChange: @escaping ([Activity]) -> Void, onError: ((Error) -> Void)? = nil) -> ListenerRegistration {
-        activity.listenToActivities(userId: userId, limit: limit, onChange: onChange, onError: onError)
-    }
-
-    func markActivityAsRead(userId: String, activityId: UUID) async throws {
-        try await activity.markAsRead(userId: userId, activityId: activityId)
-    }
-
-    func markAllActivitiesAsRead(userId: String) async throws {
-        try await activity.markAllAsRead(userId: userId)
-    }
-
-    func fetchUnreadActivityCount(userId: String) async throws -> Int {
-        try await activity.fetchUnreadCount(userId: userId)
     }
 }

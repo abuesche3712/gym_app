@@ -56,6 +56,32 @@ func formatWeight(_ weight: Double) -> String {
     return String(format: "%.1f", weight)
 }
 
+// MARK: - Weight Unit Conversion
+
+private let kgPerLb = 0.45359237
+
+/// Converts a kilogram value to the given display unit.
+func convertWeight(kg: Double, to unit: WeightUnit) -> Double {
+    switch unit {
+    case .kg: return kg
+    case .lbs: return kg / kgPerLb
+    }
+}
+
+/// Converts a value expressed in the given unit back to kilograms.
+func convertWeight(_ value: Double, from unit: WeightUnit) -> Double {
+    switch unit {
+    case .kg: return value
+    case .lbs: return value * kgPerLb
+    }
+}
+
+/// Formats a kilogram value in the user's preferred display unit, including the unit abbreviation.
+/// e.g. 82.5 kg with .lbs -> "181.9 lbs"; with .kg -> "82.5 kg"
+func formatBodyWeight(kg: Double, unit: WeightUnit) -> String {
+    "\(formatWeight(convertWeight(kg: kg, to: unit))) \(unit.abbreviation)"
+}
+
 // MARK: - Distance Formatting
 
 /// Formats distance with unit suffix
