@@ -17,6 +17,7 @@ struct SettingsView: View {
     @State private var showingSyncLogs = false
     @State private var debugTapCount = 0
     @State private var showingRecoveryReset = false
+    @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode = .dark
 
     var body: some View {
         NavigationStack {
@@ -24,6 +25,19 @@ struct SettingsView: View {
                 VStack(spacing: AppSpacing.lg) {
                     // Account Section
                     accountSection
+
+                    // Appearance Section
+                    SettingsSection(title: "Appearance") {
+                        SettingsRow(icon: "circle.lefthalf.filled", title: "Theme") {
+                            Picker("Theme", selection: $appearanceMode) {
+                                ForEach(AppearanceMode.allCases) { mode in
+                                    Text(mode.label).tag(mode)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 180)
+                        }
+                    }
 
                     // Units Section
                     SettingsSection(title: "Units") {

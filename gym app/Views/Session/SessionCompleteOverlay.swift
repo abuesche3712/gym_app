@@ -43,6 +43,11 @@ struct ModuleTransitionOverlay: View {
             .padding(AppSpacing.xl)
         }
         .transition(.opacity)
+        // This transition always reads as a dark, dramatic scrim (Color.black
+        // above) regardless of the app's light/dark appearance setting, so the
+        // adaptive AppColors text tokens must resolve dark here too or they'd
+        // render near-illegible dark-on-black in light mode.
+        .colorScheme(.dark)
     }
 }
 
@@ -119,6 +124,10 @@ struct WorkoutCompleteOverlay: View {
             }
             .padding(.bottom, AppSpacing.xl)
         }
+        // Same reasoning as ModuleTransitionOverlay: keep this celebratory
+        // full-bleed scrim dark regardless of the app's appearance setting so
+        // the adaptive text/success tokens stay legible against the black backdrop.
+        .colorScheme(.dark)
         .onAppear {
             // One short reward sequence; this is a rare completion moment.
             withAnimation(reduceMotion ? nil : AppMotion.celebration.delay(0.05)) {

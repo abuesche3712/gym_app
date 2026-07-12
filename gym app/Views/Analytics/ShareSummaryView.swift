@@ -54,7 +54,7 @@ struct ShareSummaryView: View {
                         height: previewWidth * (selectedFormat.size.height / selectedFormat.size.width)
                     )
                     .clipShape(RoundedRectangle(cornerRadius: AppCorners.large))
-                    .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
+                    .shadow(color: AppColors.adaptiveShadow(light: 0.15, dark: 0.3), radius: 8, y: 4)
 
                     Button {
                         renderAndShare()

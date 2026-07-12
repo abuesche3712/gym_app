@@ -15,19 +15,21 @@ struct AppGradients {
     // Elevated card treatment for the active-session header.
     static let cardGradientElevated = LinearGradient(
         colors: [
-            Color(hex: "1A1A1C"),  // Slightly lighter slate
+            AppColors.adaptive(light: "FFFFFF", dark: "1A1A1C"),  // Slightly lighter
             AppColors.surfacePrimary,
-            Color(hex: "0F0F10")   // Slightly darker
+            AppColors.adaptive(light: "F3F1F7", dark: "0F0F10")   // Slightly darker
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
-    // Refined shine effect - very subtle highlight
+    // Refined shine effect - very subtle highlight. Dark cards get a white glare;
+    // a white glare would vanish on a light (near-white) card, so light mode uses
+    // a soft dark tint at the same opacities to keep the same sense of depth.
     static let cardShine = LinearGradient(
         colors: [
-            Color.white.opacity(0.05),
-            Color.white.opacity(0.015),
+            AppColors.adaptive(light: "1A171F", dark: "FFFFFF").opacity(0.05),
+            AppColors.adaptive(light: "1A171F", dark: "FFFFFF").opacity(0.015),
             Color.clear
         ],
         startPoint: .topLeading,

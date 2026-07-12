@@ -26,6 +26,9 @@ struct MainTabView: View {
     @State private var showingFullSession = false
     @State private var hideTabBar = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    // Existing users keep today's forced-dark look; choosing "System" in
+    // Settings opts back into following the device appearance.
+    @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode = .dark
 
     // Real pop-to-root: each tab's NavigationStack binds one of these paths,
     // so re-tapping the active tab pops its stack without destroying and
@@ -121,7 +124,7 @@ struct MainTabView: View {
         .environmentObject(appState.workoutViewModel)
         .environmentObject(appState.sessionViewModel)
         .environmentObject(appState.programViewModel)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(appearanceMode.colorScheme)
         .transaction { transaction in
             if reduceMotion {
                 transaction.disablesAnimations = true
@@ -292,7 +295,7 @@ struct MiniSessionBar: View {
             .background(
                 RoundedRectangle(cornerRadius: AppCorners.large)
                     .fill(AppColors.dominant)
-                    .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
+                    .shadow(color: AppColors.adaptiveShadow(light: 0.15, dark: 0.3), radius: 8, y: 4)
             )
             .padding(.horizontal, AppSpacing.md)
             .padding(.bottom, AppSpacing.xs)

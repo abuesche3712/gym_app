@@ -15,10 +15,10 @@ struct UndoToast: View {
         HStack(spacing: AppSpacing.md) {
             Image(systemName: "trash")
                 .font(.body.weight(.medium))
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.textPrimary)
 
             Text(message)
-                .subheadline(color: .white)
+                .subheadline(color: AppColors.textPrimary)
                 .lineLimit(1)
 
             Spacer()

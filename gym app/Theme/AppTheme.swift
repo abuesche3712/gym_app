@@ -15,6 +15,37 @@
 
 import SwiftUI
 
+// MARK: - Appearance Mode
+
+/// User-facing appearance preference, stored via `@AppStorage("appearanceMode")`.
+/// Defaults to `.dark` so existing users keep today's look; choosing `.system`
+/// opts back into following the device setting.
+enum AppearanceMode: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .system: return "System"
+        case .light: return "Light"
+        case .dark: return "Dark"
+        }
+    }
+
+    /// `nil` means "follow the system appearance", matching
+    /// `.preferredColorScheme(nil)`'s behavior.
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .light: return .light
+        case .dark: return .dark
+        }
+    }
+}
+
 struct SheetBackgroundModifier: ViewModifier {
     func body(content: Content) -> some View {
         content

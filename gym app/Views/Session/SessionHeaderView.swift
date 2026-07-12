@@ -301,7 +301,7 @@ struct ExerciseCard: View {
                     .stroke(AppColors.surfaceTertiary.opacity(0.4), lineWidth: 0.5)
             }
         )
-        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+        .shadow(color: AppColors.adaptiveShadow(light: 0.15, dark: 0.3), radius: 8, x: 0, y: 4)
         .onLongPressGesture {
             onEdit()
         }
